@@ -8,7 +8,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionF
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		scripts\regenerate_api_clients.ps1 = scripts\regenerate_api_clients.ps1
-		.gitlab-ci.yml = .gitlab-ci.yml
 		Dockerfile = Dockerfile
 		Directory.Build.props = Directory.Build.props
 		scripts\link_wwwroot.ps1 = scripts\link_wwwroot.ps1

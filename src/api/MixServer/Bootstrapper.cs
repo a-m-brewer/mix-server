@@ -1,9 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.Users.Services;
-using MixServer.Infrastructure.Users.Settings;
 
 namespace MixServer;
 
@@ -15,8 +13,6 @@ public interface IBootstrapper
 public class Bootstrapper(
     IWebHostEnvironment environment,
     MixServerDbContext context,
-    IOptions<JwtSettings> jwtSettings,
-    ILogger<Bootstrapper> logger,
     IFirstUserInitializationService firstUserInitializationService,
     IUserRoleService userRoleService)
     : IBootstrapper

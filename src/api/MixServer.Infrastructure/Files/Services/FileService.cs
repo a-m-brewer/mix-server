@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Extensions;
@@ -16,7 +15,6 @@ namespace MixServer.Infrastructure.Files.Services;
 public class FileService(
     ICurrentUserRepository currentUserRepository,
     IFolderSortRepository folderSortRepository,
-    ILogger<FileService> logger,
     IMimeTypeService mimeTypeService,
     IOptions<RootFolderSettings> rootFolderSettings)
     : IFileService
