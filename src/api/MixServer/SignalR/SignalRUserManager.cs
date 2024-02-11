@@ -19,7 +19,7 @@ public interface ISignalRUserManager : IConnectionManager
     IReadOnlyList<SignalRConnectionId> GetConnectionsInGroups(params SignalRGroup[] groups);
 }
 
-public class SignalRUserManager(IServiceProvider serviceProvider) : ISignalRUserManager
+public class SignalRUserManager(ILogger<SignalRUserManager> logger, IServiceProvider serviceProvider) : ISignalRUserManager
 {
     private readonly ConcurrentDictionary<SignalRUserId, SignalRCallbackUser> _users = new();
 
@@ -43,6 +43,11 @@ public class SignalRUserManager(IServiceProvider serviceProvider) : ISignalRUser
         {
             return;
         }
+        
+        logger.LogInformation("User: {Username} (ID: {UserID}) connected from device: {DeviceId}",
+            user.UserName ?? "Unknown",
+            user.Id,
+            contextUser.FindFirst(CustomClaimTypes.DeviceId)?.Value ?? "Unknown");
         
         var userId = new SignalRUserId(contextUser.GetNameIdentifier());
 
@@ -90,16 +95,21 @@ public class SignalRUserManager(IServiceProvider serviceProvider) : ISignalRUser
     
     private void RemoveConnection(ClaimsPrincipal contextUser, SignalRConnectionId connectionId)
     {
-        var userId = new SignalRUserId(contextUser.GetNameIdentifier());
-        if (!_users.TryGetValue(userId, out var callbackUser))
+        var nameIdentifier = new SignalRUserId(contextUser.GetNameIdentifier());
+        if (!_users.TryGetValue(nameIdentifier, out var callbackUser))
         {
             return;
         }
 
+        logger.LogInformation("User: {UserName} (ID: {UserId}) disconnected from device: {DeviceId}",
+            nameIdentifier,
+            contextUser.FindFirst(CustomClaimTypes.UserId)?.Value ?? "Unknown",
+            contextUser.FindFirst(CustomClaimTypes.DeviceId)?.Value ?? "Unknown");
+
         callbackUser.RemoveConnection(connectionId);
         if (!callbackUser.GetConnections().Any())
         {
-            _users.TryRemove(userId, out _);
+            _users.TryRemove(nameIdentifier, out _);
         }
     }
 

@@ -14,12 +14,13 @@ import {
 import {ToastService} from "../toasts/toast-service";
 import {ServerConnectionState} from "./enums/ServerConnectionState";
 import {RoleRepositoryService} from "../repositories/role-repository.service";
+import {ServerConnectionStateEvent} from "./models/server-connection-state-event";
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthenticationService {
-  private _connectionStatusBehaviourSubject$ = new BehaviorSubject<ServerConnectionState>(ServerConnectionState.Initializing);
+  private _connectionStatusBehaviourSubject$ = new BehaviorSubject<ServerConnectionStateEvent>(new ServerConnectionStateEvent(ServerConnectionState.Initializing, 'Class Initialization'));
   private _jwtTokenBehaviour$ = new BehaviorSubject<JwtToken | null>(null);
 
   private _refreshScheduleTimeout: number | undefined;
@@ -40,41 +41,52 @@ export class AuthenticationService {
     });
   }
 
-  public get serverConnectionStatus(): ServerConnectionState {
+  public get serverConnectionStateEvent(): ServerConnectionStateEvent {
     return this._connectionStatusBehaviourSubject$.getValue();
   }
 
-  public get serverConnectionStatus$(): Observable<ServerConnectionState> {
+  public get serverConnectionStateEvent$(): Observable<ServerConnectionStateEvent> {
     return this._connectionStatusBehaviourSubject$.asObservable();
+  }
+
+  public get serverConnectionStatus(): ServerConnectionState {
+    return this._connectionStatusBehaviourSubject$.getValue().state;
+  }
+
+  public get serverConnectionStatus$(): Observable<ServerConnectionState> {
+    return this._connectionStatusBehaviourSubject$
+      .pipe(map(s => s.state));
   }
 
   public get connected$(): Observable<boolean> {
     return this._connectionStatusBehaviourSubject$
-      .pipe(map(s => s === ServerConnectionState.Connected))
+      .pipe(map(s => s.state === ServerConnectionState.Connected))
       .pipe(distinctUntilChanged());
   }
 
   private get unauthorized$(): Observable<boolean> {
     return this._connectionStatusBehaviourSubject$
-      .pipe(map(s => s === ServerConnectionState.Unauthorized))
+      .pipe(map(s => s.state === ServerConnectionState.Unauthorized))
       .pipe(distinctUntilChanged());
   }
 
-  public set serverConnectionStatus(next: ServerConnectionState) {
-    const current = this.serverConnectionStatus;
-    if (next === current) {
+  public setServerConnectionStatus(state: ServerConnectionState, reason: string) {
+    const current = this.serverConnectionStateEvent;
+    if (state === current.state) {
       return;
     }
 
-    if (next === ServerConnectionState.Disconnected && current === ServerConnectionState.Unauthorized) {
+    if (state === ServerConnectionState.Disconnected && current.state === ServerConnectionState.Unauthorized) {
       return;
     }
 
-    this._connectionStatusBehaviourSubject$.next(next);
+    console.log(`Server Connection Status Changed from: ${current.state} to: ${state} Reason: ${reason}`);
+    this._connectionStatusBehaviourSubject$.next(new ServerConnectionStateEvent(state, reason));
   }
 
   public async initialize(): Promise<ServerConnectionState> {
-    this.serverConnectionStatus = await this.performTokenRefresh();
+    const result = await this.performTokenRefresh();
+    this.setServerConnectionStatus(result.state, result.reason);
 
     if (this.serverConnectionStatus === ServerConnectionState.Unauthorized) {
       return this.serverConnectionStatus;
@@ -103,14 +115,14 @@ export class AuthenticationService {
       this.rolesRepository.roles = response.roles;
 
       if (response.passwordResetRequired) {
-        this.serverConnectionStatus = ServerConnectionState.AwaitingPasswordReset;
+        this.setServerConnectionStatus(ServerConnectionState.AwaitingPasswordReset, 'Password Reset Required')
         await this._router.navigate([PageRoutes.ResetPassword], {
           state: {
             loginPassword: password
           }
         });
       } else {
-        this.serverConnectionStatus = ServerConnectionState.Connected;
+        this.setServerConnectionStatus(ServerConnectionState.Connected, 'Logged In');
         await this._router.navigate([PageRoutes.Files]);
       }
 
@@ -119,7 +131,7 @@ export class AuthenticationService {
       return;
     }
 
-    this.serverConnectionStatus = response;
+    this.setServerConnectionStatus(response, 'Failed to login');
   }
 
   public async resetPassword(currentPassword: string,
@@ -138,7 +150,7 @@ export class AuthenticationService {
       });
 
     if (success) {
-      this.serverConnectionStatus = ServerConnectionState.Connected;
+      this.setServerConnectionStatus(ServerConnectionState.Connected, 'Password Reset')
       await this._router.navigate([PageRoutes.Files]);
     }
 
@@ -149,7 +161,7 @@ export class AuthenticationService {
     this.cancelScheduledRefresh();
     this.accessToken = null;
     this.refreshToken = null;
-    this.serverConnectionStatus = ServerConnectionState.Unauthorized;
+    this.setServerConnectionStatus(ServerConnectionState.Unauthorized, 'Logged Out');
   }
 
   public get accessToken(): JwtToken | null {
@@ -213,19 +225,19 @@ export class AuthenticationService {
     }
   }
 
-  public async performTokenRefreshAndScheduleRefresh(): Promise<ServerConnectionState> {
+  public async performTokenRefreshAndScheduleRefresh(): Promise<ServerConnectionStateEvent> {
     const status = await this.performTokenRefresh();
 
-    if (status !== ServerConnectionState.Unauthorized) {
+    if (status.state !== ServerConnectionState.Unauthorized) {
       this.startScheduleRefresh();
     }
 
     return status;
   }
 
-  private async performTokenRefresh(): Promise<ServerConnectionState> {
+  private async performTokenRefresh(): Promise<ServerConnectionStateEvent> {
     if (!this.accessToken || !this.refreshToken || !this.deviceId) {
-      return ServerConnectionState.Unauthorized;
+      return new ServerConnectionStateEvent(ServerConnectionState.Unauthorized, 'No Access Token, Refresh Token, or Device Id');
     }
 
     const refreshResponse = await firstValueFrom(this._userClient.refresh(new RefreshUserCommand({
@@ -248,18 +260,18 @@ export class AuthenticationService {
       }
 
       if (!this.accessToken || !this.refreshToken) {
-        return ServerConnectionState.Unauthorized;
+        return new ServerConnectionStateEvent(ServerConnectionState.Unauthorized, 'Missing Access or Refresh Token');
       }
 
       if (refreshResponse?.passwordResetRequired ?? false) {
         await this._router.navigate([PageRoutes.ResetPassword]);
-        return ServerConnectionState.AwaitingPasswordReset;
+        return new ServerConnectionStateEvent(ServerConnectionState.AwaitingPasswordReset, 'Password Reset Required');
       }
 
-      return ServerConnectionState.Connected;
+      return new ServerConnectionStateEvent(ServerConnectionState.Connected, 'Token Refreshed')
     }
 
-    return refreshResponse
+    return new ServerConnectionStateEvent(refreshResponse, 'Failed to refresh token');
   }
 
   private startScheduleRefresh(): void {
@@ -284,7 +296,8 @@ export class AuthenticationService {
       : 5 * 1000;
 
     this._refreshScheduleTimeout = setTimeout(async () => {
-      this.serverConnectionStatus = await this.performTokenRefresh();
+      const result = await this.performTokenRefresh()
+      this.setServerConnectionStatus(result.state, result.reason);
 
       if (this.serverConnectionStatus === ServerConnectionState.Unauthorized) {
         return;

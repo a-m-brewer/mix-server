@@ -102,12 +102,13 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       .catch(err => this._toastService.logServerError(err, 'failed to perform token during initialization'))
       .finally(() => this._initializationRepository.initialized = true);
 
-    this._authenticationService.serverConnectionStatus$
-      .subscribe(state => {
+    this._authenticationService.serverConnectionStateEvent$
+      .subscribe(event => {
+        const state = event.state;
         this.connected = state === ServerConnectionState.Connected;
         this.unauthorized = state === ServerConnectionState.Unauthorized;
         this.disconnected = state === ServerConnectionState.Disconnected;
-        this.disconnectedReason = this.disconnected ? 'Disconnected': null;
+        this.disconnectedReason = this.disconnected ? `Disconnected: ${event.reason}`: null;
       })
 
     this._authenticationService.connected$

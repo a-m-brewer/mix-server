@@ -29,12 +29,18 @@ export class MixServerSignalrConnectionServiceService {
   }
   public async connect(): Promise<void> {
     this._connection = this._signalRConnectionFactory.buildConnection(`${this._baseUrl}/callbacks`);
-    this._connection.onclose(err => this._authService.serverConnectionStatus = ServerConnectionState.Disconnected);
-    this._connection.onreconnecting(err => this._authService.serverConnectionStatus = ServerConnectionState.Disconnected);
+    this._connection.onclose(err => {
+      console.error(err);
+      this._authService.setServerConnectionStatus(ServerConnectionState.Disconnected, 'SignalR connection closed');
+    });
+    this._connection.onreconnecting(err => {
+      console.error(err);
+      this._authService.setServerConnectionStatus(ServerConnectionState.Disconnected, 'SignalR connection reconnecting');
+    });
     this.registerClientMethods();
 
     await this._connection.start()
-      .catch(() => this._authService.serverConnectionStatus = ServerConnectionState.Disconnected);
+      .catch(() => this._authService.setServerConnectionStatus(ServerConnectionState.Disconnected, 'Failed to start SignalR connection'));
   }
 
   public async disconnect(): Promise<void> {
