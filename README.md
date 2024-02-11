@@ -33,7 +33,7 @@ services:
   mix-server:
     hostname: mix-server
     container_name: mix-server
-    image: ambrevar/mix-server
+    image: adammbrewer/mix-server
     restart: unless-stopped
     networks:
       - mix-server-network
