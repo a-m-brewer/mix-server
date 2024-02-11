@@ -55,7 +55,8 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            mix-server
+            adammbrewer/mix-server
+            ghcr.io/a-m-brewer/mix-server
           # Docker tags based on the following events/attributes
           tags: |
             type=schedule
