@@ -1,0 +1,24 @@
+.nav-bar-spacer {
+  flex: 1 1 auto;
+}
+
+#content-scroll-container {
+  overflow-x: auto;
+  overflow-y: scroll;
+
+  width: 100%;
+  height: 100%;
+}
+
+#file-explorer-toolbar {
+  padding: 0;
+}
+
+.file-explorer-toolbar-button {
+  height: 100%;
+}
+
+.app-folder-sort-form {
+  padding-right: 16px;
+}
+

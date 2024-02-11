@@ -1,0 +1,13 @@
+.copy-text-container {
+  display: inline-grid;
+  grid-template-columns: auto 40px;
+}
+
+.copy-text-data {
+  align-self: center;
+  padding: 0 10px;
+}
+
+.copy-text-button {
+  align-self: center;
+}

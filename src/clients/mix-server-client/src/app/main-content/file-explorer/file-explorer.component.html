@@ -1,0 +1,21 @@
+<div>
+  <app-node-list-item
+    *ngIf="currentFolder && currentFolder.parentDirectory && currentFolder.absolutePath !== ''"
+    [node]="currentFolder.parentDirectory"
+    [loading]="nodeRepositoryLoading || playbackSessionLoading"
+    [last]="nodes.length === 0"
+    (click)="onNodeClick($event)"
+  />
+
+  <app-node-list-item
+    *ngFor="let node of nodes; last as last"
+    [node]="node"
+    [loading]="nodeRepositoryLoading || playbackSessionLoading"
+    [last]="last"
+    (click)="onNodeClick($event)"
+    >
+    <app-add-to-queue-button
+      [file]="node"
+    />
+  </app-node-list-item>
+</div>

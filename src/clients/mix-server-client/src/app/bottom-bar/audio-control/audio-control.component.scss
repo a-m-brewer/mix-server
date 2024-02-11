@@ -1,0 +1,60 @@
+.audio-control-button {
+  margin: 0 2px;
+}
+
+#audio-control-progress-slider {
+  width: 100%;
+}
+
+.session-component {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.parent {
+  display: grid;
+}
+
+@media (max-width: 600px) {
+  .parent {
+    height: auto;
+    text-align: center;
+  }
+
+  #audio-control-volume {
+    width: 100%;
+  }
+}
+
+@media (min-width: 600px) {
+  .parent {
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+  }
+
+  .content-right {
+    text-align: right;
+  }
+
+  .middle-buttons {
+    text-align: center;
+  }
+}
+
+#audio-control-volume {
+  display: inline-grid;
+  grid-template-columns: 40px auto;
+}
+
+.mute-volume-button {
+  align-self: center;
+}
+
+#playing-on-toolbar-row {
+  height: 32px;
+  padding: 0 16px;
+}
+
+#playing-on-text {
+  margin: 0;
+}

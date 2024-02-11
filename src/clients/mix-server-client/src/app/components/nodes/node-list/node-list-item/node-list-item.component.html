@@ -1,0 +1,53 @@
+<div
+  [ngClass]="{
+    'node-list-item-container': true,
+    'node-list-item-container-selectable': !node.disabled && !loading && !node.editing,
+    'node-list-item-container-disabled': (node.disabled || loading) && !node.isCurrentSession,
+    'node-list-item-container-current-session': node.isCurrentSession,
+  }"
+  matRipple
+  [matRippleTrigger]="rippleTrigger"
+  [matRippleDisabled]="node.disabled || loading || node.editing"
+>
+  <div
+    [ngClass]="{
+      'node-list-item-content-container': true,
+      'node-list-item': true,
+      'file-explorer-node-selectable': !node.disabled && !loading && !node.editing
+    }"
+    #rippleTrigger
+    (click)="onContentClicked()"
+  >
+    <div class="node-list-item-content-icon-container node-list-item">
+      <app-node-list-item-icon
+        [state]="node.state"
+        [defaultIcon]="node.mdIcon"
+        [(selected)]="node.selected"
+        class="node-list-item-content-icon"
+      />
+    </div>
+
+    <div class="node-list-item-content-text node-list-item">
+      {{ node.name }}
+    </div>
+  </div>
+
+  <div class="node-list-item-action-list-container node-list-item"
+       *ngIf="node.type === FileExplorerNodeType.File">
+    <ng-content select="[extra-action-list-content]"></ng-content>
+    <button mat-icon-button
+            class="node-list-item-action-list-context-menu"
+            *ngIf="!allContextMenuButtonsDisabled"
+            [disabled]="loading || editing || allContextMenuButtonsDisabled"
+            [matMenuTriggerFor]="contextMenu">
+      <mat-icon>
+        more_vert
+      </mat-icon>
+    </button>
+  </div>
+</div>
+<mat-divider [inset]="true" *ngIf="!last"></mat-divider>
+
+<mat-menu #contextMenu="matMenu">
+  <ng-content></ng-content>
+</mat-menu>

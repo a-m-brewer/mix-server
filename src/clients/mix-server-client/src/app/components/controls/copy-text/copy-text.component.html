@@ -1,0 +1,8 @@
+<div class="copy-text-container">
+  <div class="copy-text-data">{{ text }}</div>
+  <button mat-mini-fab color="primary"
+          class="copy-text-button"
+          [cdkCopyToClipboard]="text">
+    <mat-icon>content_copy</mat-icon>
+  </button>
+</div>

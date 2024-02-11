@@ -1,0 +1,32 @@
+<div
+  infinite-scroll
+  [infiniteScrollDistance]="scrollDistance"
+  [infiniteScrollUpDistance]="scrollUpDistance"
+  [infiniteScrollThrottle]="throttle"
+  [infiniteScrollContainer]="selector"
+  [fromRoot]="true"
+  (scrolled)="onScrollDown()"
+>
+  <app-node-list-item
+    *ngFor="let session of sessions; last as last"
+    [node]="session.currentNode"
+    [loading]="loading"
+    [last]="last"
+    (click)="onNodeClick($event)"
+  >
+    <app-add-to-queue-button
+      [file]="session.currentNode"
+    />
+
+    <app-open-location-button
+      [folder]="session.currentNode.parentFolder"
+    />
+  </app-node-list-item>
+
+  <div class="end-of-history-message-container" *ngIf="!lastFetchHadItems">
+    <mat-divider [inset]="true"></mat-divider>
+    <h3 class="end-of-history-message">
+      End of History
+    </h3>
+  </div>
+</div>

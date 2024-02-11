@@ -1,0 +1,57 @@
+<div>
+  <div #navBar>
+    <mat-toolbar id="nav-toolbar" *ngIf="initialized">
+      <mat-toolbar-row>
+        <a [disabled]="!connected" mat-button routerLink="/">Mix Server</a>
+        <span class="nav-bar-spacer"></span>
+
+        <a *ngIf="connected" mat-button routerLink="/queue">Queue</a>
+        <a *ngIf="connected" mat-button routerLink="/history">History</a>
+        <a *ngIf="connected" mat-button routerLink="/admin">Admin</a>
+
+        <a *ngIf="unauthorized" mat-button routerLink="/auth/user/login">Login</a>
+        <button *ngIf="!unauthorized" mat-button color="warn" (click)="logout()">Logout</button>
+      </mat-toolbar-row>
+
+      <mat-toolbar-row id="file-explorer-toolbar" *ngIf="showFileExplorerToolbar">
+        <button mat-button
+                class="file-explorer-toolbar-button"
+                [disabled]="folderBackButtonDisabled"
+                (click)="onFolderBackButtonClicked()"
+        >
+          <mat-icon>arrow_back_ios</mat-icon>
+        </button>
+        <span>
+          {{ currentFolder?.name ?? '' }}
+        </span>
+
+        <span class="nav-bar-spacer"></span>
+
+        <app-folder-sort-form
+          class="app-folder-sort-form">
+        </app-folder-sort-form>
+      </mat-toolbar-row>
+
+      <mat-toolbar-row id="queue-toolbar" *ngIf="showQueueToolbar">
+        <span class="nav-bar-spacer"></span>
+        <app-queue-edit-form />
+      </mat-toolbar-row>
+    </mat-toolbar>
+  </div>
+
+  <div id="content-container" #mainContent>
+    <div id="content-scroll-container" *ngIf="initialized" (scroll)="onScroll()" #scrollContainer>
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+
+  <div id="app-bottom-bar" #bottomBar>
+    <app-bottom-bar *ngIf="initialized">
+    </app-bottom-bar>
+  </div>
+</div>
+
+<app-spinner-overlay
+  *ngIf="disconnected"
+  [reason]="disconnectedReason"
+  />

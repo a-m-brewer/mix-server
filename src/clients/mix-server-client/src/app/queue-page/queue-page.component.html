@@ -1,0 +1,31 @@
+<div>
+  <app-node-list-item
+    *ngFor="let node of queue.items; last as last"
+    [node]="node"
+    [loading]="false"
+    [editing]="node.editing || editQueueForm.editing"
+    [last]="last"
+    (click)="onNodeClick($event)"
+  >
+    <mat-icon
+      *ngIf="node.itemType === UserItemType"
+      matTooltip="Added by user"
+      extra-action-list-content
+      class="user-queue-item-icon node-list-item-action-list-context-menu">
+      person_add
+    </mat-icon>
+
+    <app-add-to-queue-button
+      [file]="node.file"
+    />
+
+    <app-remove-from-queue-button
+      *ngIf="node.itemType === UserItemType && !node.isCurrentQueuePosition"
+      [item]="node"
+      />
+
+    <app-open-location-button
+      [folder]="node.file.parentFolder"
+    />
+  </app-node-list-item>
+</div>

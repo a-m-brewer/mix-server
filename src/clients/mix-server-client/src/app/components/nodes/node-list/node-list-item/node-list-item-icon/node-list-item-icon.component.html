@@ -1,0 +1,11 @@
+<mat-icon [ngClass]="{ 'mat-list-item-icon': true, 'node-list-item-container-current-session ': currentlyPlaying }"
+          (click)="onEditCheckboxClicked()">
+
+  <mat-spinner color="primary" *ngIf="loading" diameter="20"></mat-spinner>
+  <span class="edit-checkbox" *ngIf="editing && selected">check_box</span>
+  <span class="edit-checkbox" *ngIf="editing && !selected">check_box_outline_blank</span>
+  <span *ngIf="playing">play_arrow</span>
+  <span *ngIf="paused">pause</span>
+  <span *ngIf="defaultState">{{ defaultIcon }}</span>
+
+</mat-icon>

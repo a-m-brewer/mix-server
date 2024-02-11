@@ -1,0 +1,95 @@
+<div id="audio-control-component-container">
+  <mat-toolbar>
+    <mat-toolbar-row>
+      <app-duration-display
+        [duration]="currentTime">
+      </app-duration-display>
+      <mat-slider id="audio-control-progress-slider"
+                  step="1"
+                  min="0"
+                  [max]="duration"
+                  [disabled]="disconnected || currentPlaybackSession?.currentNode?.playbackDisabled ?? true || (!!currentPlaybackDevice && !currentPlaybackDevice.interactedWith)">
+        <input matSliderThumb
+               [(ngModel)]="currentTime"
+               (dragEnd)="sliderDragEnded($event)">
+      </mat-slider>
+      <app-duration-display
+        [duration]="duration">
+      </app-duration-display>
+    </mat-toolbar-row>
+
+    <mat-toolbar-row class="parent">
+      <app-session
+        class="session-component">
+      </app-session>
+
+      <div class="middle-buttons">
+        <button mat-mini-fab color="accent"
+                class="audio-control-button"
+                [disabled]="disconnected || currentPlaybackSession?.currentNode?.playbackDisabled ?? true || (!!currentPlaybackDevice && !currentPlaybackDevice.interactedWith)"
+                (click)="backward()"
+        >
+          <mat-icon>replay_30</mat-icon>
+        </button>
+        <button mat-fab color="accent"
+                class="audio-control-button"
+                [disabled]="disconnected || previousFile?.disabled ?? true || (!!currentPlaybackDevice && !currentPlaybackDevice.interactedWith)"
+                (click)="skipPrevious()"
+        >
+          <mat-icon>skip_previous</mat-icon>
+        </button>
+        <button mat-fab color="primary"
+                class="audio-control-button"
+                *ngIf="!playing"
+                [disabled]="disconnected || currentPlaybackSession?.currentNode?.playbackDisabled ?? true || (!!currentPlaybackDevice && !currentPlaybackDevice.interactedWith)"
+                (click)="play()">
+          <mat-icon>play_arrow</mat-icon>
+        </button>
+        <button mat-fab color="primary"
+                class="audio-control-button"
+                *ngIf="playing"
+                [disabled]="disconnected || currentPlaybackSession?.currentNode?.playbackDisabled ?? true || (!!currentPlaybackDevice && !currentPlaybackDevice.interactedWith)"
+                (click)="pause()">
+          <mat-icon>pause</mat-icon>
+        </button>
+        <button mat-fab color="accent"
+                class="audio-control-button"
+                [disabled]="disconnected || nextFile?.disabled ?? true || (!!currentPlaybackDevice && !currentPlaybackDevice.interactedWith)"
+                (click)="skipNext()"
+        >
+          <mat-icon>skip_next</mat-icon>
+        </button>
+        <button mat-mini-fab color="accent"
+                class="audio-control-button"
+                [disabled]="disconnected || currentPlaybackSession?.currentNode?.playbackDisabled ?? true || (!!currentPlaybackDevice && !currentPlaybackDevice.interactedWith)"
+                (click)="forward()"
+        >
+          <mat-icon>forward_30</mat-icon>
+        </button>
+
+        <app-audio-context-menu />
+      </div>
+
+      <div class="content-right">
+        <div id="audio-control-volume">
+          <button mat-mini-fab color="primary"
+                  class="audio-control-button mute-volume-button"
+                  [disabled]="!isCurrentPlaybackDevice"
+                  (click)="toggleMute()">
+            <mat-icon *ngIf="muted">volume_off</mat-icon>
+            <mat-icon *ngIf="!muted">volume_up</mat-icon>
+          </button>
+          <mat-slider id="audio-control-volume-slider" step="0.01" min="0" max="1" [disabled]="!isCurrentPlaybackDevice">
+            <input matSliderThumb [(ngModel)]="volume">
+          </mat-slider>
+        </div>
+      </div>
+    </mat-toolbar-row>
+
+    <mat-toolbar-row class="parent" id="playing-on-toolbar-row" *ngIf="currentPlaybackDevice && !isCurrentPlaybackDevice">
+      <div class="content-right">
+        <h5 id="playing-on-text">Currently playing on {{ currentPlaybackDevice.displayName }}</h5>
+      </div>
+    </mat-toolbar-row>
+  </mat-toolbar>
+</div>

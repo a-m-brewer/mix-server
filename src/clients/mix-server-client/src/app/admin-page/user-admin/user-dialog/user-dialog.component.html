@@ -1,0 +1,30 @@
+@if (data && data.username && data.username !== '') {
+  <h1 mat-dialog-title>Edit {{ data.username }}</h1>
+} @else {
+  <h1 mat-dialog-title>Add User</h1>
+}
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <mat-form-field class="form-field-block" *ngIf="!data || !data.username || data.username === ''">
+      <mat-label>Username</mat-label>
+      <input type="text" autocorrect="off" autocomplete="off" matInput [formControlName]="usernameKey">
+      <mat-error *ngIf="form.get(usernameKey)?.hasError('required')">
+        A username is required
+      </mat-error>
+    </mat-form-field>
+
+    <p>
+      <mat-checkbox [formControlName]="isAdminKey">Admin</mat-checkbox>
+    </p>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="null">Cancel</button>
+  <button mat-button
+          color="primary"
+          cdkFocusInitial
+          (click)="onSubmit()">
+    Submit
+  </button>
+</mat-dialog-actions>

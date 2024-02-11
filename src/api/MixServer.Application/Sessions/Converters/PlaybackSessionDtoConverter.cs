@@ -1,0 +1,38 @@
+﻿using MixServer.Application.FileExplorer.Queries.GetNode;
+using MixServer.Application.Sessions.Responses;
+using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.Interfaces;
+using MixServer.Domain.Sessions.Entities;
+
+namespace MixServer.Application.Sessions.Converters;
+
+public class PlaybackSessionDtoConverter : 
+    IConverter<IPlaybackSession, bool, PlaybackSessionDto>,
+    IConverter<IPlaybackSession, PlaybackSessionDto>
+{
+    private readonly IConverter<IFileExplorerFileNode, FileNodeResponse> _fileNodeConverter;
+
+    public PlaybackSessionDtoConverter(IConverter<IFileExplorerFileNode, FileNodeResponse> fileNodeConverter)
+    {
+        _fileNodeConverter = fileNodeConverter;
+    }
+    
+    public PlaybackSessionDto Convert(IPlaybackSession value, bool value2)
+    {
+        return new PlaybackSessionDto
+        {
+            Id = value.Id,
+            File = _fileNodeConverter.Convert(value.File ?? throw new InvalidOperationException()),
+            LastPlayed = value.LastPlayed,
+            AutoPlay = value2,
+            Playing = value.Playing,
+            CurrentTime = value.CurrentTime.TotalSeconds,
+            DeviceId = value.DeviceId
+        };
+    }
+
+    public PlaybackSessionDto Convert(IPlaybackSession value)
+    {
+        return Convert(value, false);
+    }
+}

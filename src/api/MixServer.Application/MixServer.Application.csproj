@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\MixServer.Domain\MixServer.Domain.csproj"/>
+        <ProjectReference Include="..\MixServer.Infrastructure\MixServer.Infrastructure.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
+        <PackageReference Include="NJsonSchema" Version="11.0.0" />
+        <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.0" />
+    </ItemGroup>
+
+</Project>
