@@ -15,9 +15,13 @@ export class FileExplorerFileNode extends FileExplorerNode {
     super(name, nameIdentifier, absolutePath, FileExplorerNodeType.File, exists, 'description', imageUrl);
   }
 
-  public get disabled(): boolean {
+  public override get disabled(): boolean {
     return this.playbackDisabled ||
       this.isCurrentSession
+  }
+
+  public override get parentDirectory(): FileExplorerFolderNode | undefined | null {
+    return this.parentFolder;
   }
 
   public get playbackDisabled(): boolean {

@@ -19,8 +19,10 @@ public interface ICallbackService
     Task PlaybackStateUpdated(IPlaybackState playbackState, AudioPlayerStateUpdateType audioPlayerStateUpdateType);
     Task PlaybackGranted(IPlaybackState state, bool useDeviceCurrentTime);
     Task PauseRequested(Guid deviceId);
-    void InvokeCallbackOnSaved(Func<ICallbackService, Task> callback);
     Task UserDeleted(string userId);
     Task UserAdded(IUser user);
     Task UserUpdated(IUser user);
+    Task FileExplorerNodeAdded(IFileExplorerNode node);
+    Task FileExplorerNodeUpdated(IFileExplorerNode node, string oldAbsolutePath);
+    Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath);
 }

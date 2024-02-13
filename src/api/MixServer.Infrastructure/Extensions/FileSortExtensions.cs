@@ -1,12 +1,13 @@
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Models.Caching;
 
 namespace MixServer.Infrastructure.Extensions;
 
 public static class FileSortExtensions
 {
     public static IOrderedEnumerable<T> OrderNodes<T>(this IEnumerable<T> values, IFolderSort sort)
-        where T : FileSystemInfo
+        where T : ICacheFileSystemInfo
     {
         Func<T, object> func = sort.SortMode switch
         {

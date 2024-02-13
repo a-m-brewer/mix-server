@@ -4,11 +4,15 @@ using MixServer.Domain.Interfaces;
 
 namespace MixServer.Application.FileExplorer.Queries.GetNode;
 
-public class NodeResponseConverter :
-    IConverter<IFileExplorerNode, NodeResponse>,
-    IConverter<IFileExplorerFileNode, FileNodeResponse>,
-    IConverter<IFileExplorerFolderNode, FolderNodeResponse>,
-    IConverter<IFileExplorerRootFolderNode, RootFolderNodeResponse>
+public interface INodeResponseConverter
+    : IConverter<IFileExplorerNode, NodeResponse>,
+        IConverter<IFileExplorerFileNode, FileNodeResponse>,
+        IConverter<IFileExplorerFolderNode, FolderNodeResponse>,
+        IConverter<IFileExplorerRootFolderNode, RootFolderNodeResponse>
+{
+}
+
+public class NodeResponseConverter : INodeResponseConverter
 {
     public FileNodeResponse Convert(IFileExplorerFileNode value)
     {
@@ -22,7 +26,7 @@ public class NodeResponseConverter :
             value.PlaybackSupported,
             Convert(value.Parent));
     }
-    
+
     public FolderNodeResponse Convert(IFileExplorerFolderNode value)
     {
         return value switch
@@ -44,12 +48,13 @@ public class NodeResponseConverter :
 
     public RootFolderNodeResponse Convert(IFileExplorerRootFolderNode value)
     {
-        return new RootFolderNodeResponse(value.Name, value.NameIdentifier, value.AbsolutePath, value.Type, value.Exists)
+        return new RootFolderNodeResponse(value.Name, value.NameIdentifier, value.AbsolutePath, value.Type,
+            value.Exists)
         {
             Children = value.Children.Select(Convert).ToList()
         };
     }
-    
+
     public NodeResponse Convert(IFileExplorerNode value)
     {
         return value switch

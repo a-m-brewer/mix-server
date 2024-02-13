@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.Users.Services;
@@ -13,6 +14,7 @@ public interface IBootstrapper
 public class Bootstrapper(
     IWebHostEnvironment environment,
     MixServerDbContext context,
+    IFileNotificationService fileNotificationService,
     IFirstUserInitializationService firstUserInitializationService,
     IUserRoleService userRoleService)
     : IBootstrapper
@@ -26,5 +28,6 @@ public class Bootstrapper(
 
         await userRoleService.InitializeAsync();
         await firstUserInitializationService.AddFirstUserIfNotExistsAsync();
+        fileNotificationService.Initialize();
     }
 }

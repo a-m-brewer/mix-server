@@ -1,11 +1,11 @@
-using Microsoft.Extensions.Options;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Extensions;
+using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
-using MixServer.Domain.FileExplorer.Settings;
+using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Sessions.Repositories;
 using MixServer.Infrastructure.Extensions;
 using MixServer.Infrastructure.Users.Repository;
@@ -14,22 +14,13 @@ namespace MixServer.Infrastructure.Files.Services;
 
 public class FileService(
     ICurrentUserRepository currentUserRepository,
+    IFileSystemInfoConverter fileSystemInfoConverter,
+    IFolderCacheService folderCacheService,
     IFolderSortRepository folderSortRepository,
     IMimeTypeService mimeTypeService,
-    IOptions<RootFolderSettings> rootFolderSettings)
+    IRootFolderService rootFolderService)
     : IFileService
 {
-    public IFileExplorerRootFolderNode GetRootFolder()
-    {
-        return new FileExplorerRootFolderNode
-        {
-            Children = rootFolderSettings.Value.ChildrenSplit
-                .Select(folder => new FileExplorerFolderNode(folder, null, true))
-                .Cast<IFileExplorerNode>()
-                .ToList()
-        };
-    }
-
     public Task<IFileExplorerFolderNode> GetFolderAsync(string absolutePath)
     {
         return GetFolderAsync(absolutePath, true, true);
@@ -37,28 +28,28 @@ public class FileService(
 
     public IFileExplorerFolderNode GetUnpopulatedFolder(string absolutePath)
     {
-        var isChild = IsChildOfRoot(absolutePath);
+        var isChild = rootFolderService.IsChildOfRoot(absolutePath);
 
         // Out of bounds of the configured folders. Therefore the user does not have permission to access it.
         if (!isChild)
         {
-            return new FileExplorerFolderNode(absolutePath, null, false);
+            return fileSystemInfoConverter.ConvertToFolderNode(absolutePath, null, false);
         }
         
         var parent = Directory.GetParent(absolutePath);
 
-        var parentPath = IsChildOfRoot(parent?.FullName)
+        var parentPath = rootFolderService.IsChildOfRoot(parent?.FullName)
             ? parent?.FullName
             : null;
 
-        var folder = new FileExplorerFolderNode(absolutePath, parentPath, true);
+        var folder = fileSystemInfoConverter.ConvertToFolderNode(absolutePath, parentPath, true);
 
         return folder;
     }
 
     public async Task<IFileExplorerFolderNode> GetFolderOrRootAsync(string? absolutePath)
     {
-        var rootFolder = GetRootFolder();
+        var rootFolder = rootFolderService.RootFolder;
         
         // If no folder is specified return the root folder
         if (string.IsNullOrWhiteSpace(absolutePath))
@@ -66,7 +57,7 @@ public class FileService(
             return rootFolder;
         }
 
-        var isChild = IsChildOfRoot(absolutePath);
+        var isChild = rootFolderService.IsChildOfRoot(absolutePath);
 
         // The folder is out of bounds return the root folder instead
         if (!isChild)
@@ -100,7 +91,7 @@ public class FileService(
     {
         var parentDirectoryPath = fileAbsolutePath.GetParentFolderPathOrThrow();
         var parent = GetUnpopulatedFolder(parentDirectoryPath);
-
+    
         return GetFile(fileAbsolutePath, parent);
     }
 
@@ -109,7 +100,7 @@ public class FileService(
         var fileName = Path.GetFileName(fileAbsolutePath);
         var mimeType = mimeTypeService.GetMimeType(fileAbsolutePath);
         
-        return new FileExplorerFileNode(fileName, mimeType, parent);
+        return new FileExplorerFileNode(fileName, mimeType, File.Exists(fileAbsolutePath), parent);
     }
 
     public async Task SetFolderSortAsync(IFolderSortRequest request)
@@ -141,7 +132,9 @@ public class FileService(
     
     private async Task<IFileExplorerFolderNode> GetFolderAsync(string absolutePath, bool includeFiles, bool includeFolders)
     {
-        var folder = GetUnpopulatedFolder(absolutePath);
+        var cacheItem = await folderCacheService.GetOrAddAsync(absolutePath);
+        var isChildOrRoot = rootFolderService.IsChildOfRoot(absolutePath);
+        var folder = fileSystemInfoConverter.ConvertToFolderNode(cacheItem.DirectoryInfo, isChildOrRoot);
 
         if (!folder.Exists)
         {
@@ -151,23 +144,21 @@ public class FileService(
         await currentUserRepository.LoadFileSortByAbsolutePathAsync(absolutePath);
         folder.Sort = currentUserRepository.CurrentUser.GetSortOrDefault(absolutePath);
         
-        var directoryInfo = new DirectoryInfo(absolutePath);
-        
         var folders = includeFolders
-            ? directoryInfo.GetDirectories()
+            ? cacheItem.Directories
                 .OrderNodes(folder.Sort)
-                .Select(f => new FileExplorerFolderNode(f.FullName, folder.AbsolutePath, true))
+                .Select(f => fileSystemInfoConverter.ConvertToFolderNode(f, true))
             : Array.Empty<FileExplorerFolderNode>();
 
         IEnumerable<IFileExplorerFileNode> files = new List<IFileExplorerFileNode>();
         if (includeFiles)
         {
             // Create a duplicate folder with no children to avoid recursive loop
-            var parentFolder = new FileExplorerFolderNode(folder.AbsolutePath, folder.ParentAbsolutePath, folder.CanRead);
+            var parentFolder = fileSystemInfoConverter.ConvertToFolderNode(cacheItem.DirectoryInfo, isChildOrRoot);
 
-            files = directoryInfo.GetFiles()
+            files = cacheItem.Files
                 .OrderNodes(folder.Sort)
-                .Select(file => GetFile(file.FullName, parentFolder));
+                .Select(f => fileSystemInfoConverter.ConvertToFileNode(f, parentFolder));
         }
 
         switch (folder.Sort.SortMode)
@@ -184,21 +175,5 @@ public class FileService(
         }
 
         return folder;
-    }
-
-    /// <summary>
-    /// Checks if the folder specified is a sub folder of any of the folders configured by the user
-    /// </summary>
-    private bool IsChildOfRoot(string? absolutePath)
-    {
-        var rootFolder = GetRootFolder();
-        
-        var isSubFolder = rootFolder.Children.OfType<IFileExplorerFolderNode>()
-            .Any(child => 
-                !string.IsNullOrWhiteSpace(absolutePath) &&
-                !string.IsNullOrWhiteSpace(child.AbsolutePath) &&
-                absolutePath.StartsWith(child.AbsolutePath));
-
-        return isSubFolder;
     }
 }

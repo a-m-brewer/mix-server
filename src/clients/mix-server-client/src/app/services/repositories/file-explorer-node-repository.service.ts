@@ -84,6 +84,51 @@ export class FileExplorerNodeRepositoryService {
         this.setLoading(false);
         this._loadingRepository.loading = false;
       });
+
+    this._folderSignalRClient.nodeAdded$()
+      .subscribe(node => {
+        const currentFolder = this._currentFolder$.getValue();
+        if (!node.parentDirectory?.absolutePath || currentFolder.absolutePath !== node.parentDirectory.absolutePath) {
+          return
+        }
+
+        this._currentLevelNodes$.next([...this._currentLevelNodes$.getValue(), node]);
+      })
+
+    this._folderSignalRClient.nodeUpdated$()
+      .subscribe(event => {
+        const node = event.node;
+        const currentFolder = this._currentFolder$.getValue();
+        if (!node.parentDirectory?.absolutePath || currentFolder.absolutePath !== node.parentDirectory.absolutePath) {
+          return
+        }
+
+        const currentLevelNodes = [...this._currentLevelNodes$.getValue()];
+        const oldPathIndex = currentLevelNodes.findIndex(n => n.absolutePath === event.oldAbsolutePath);
+        const index = oldPathIndex === -1
+          ? currentLevelNodes.findIndex(n => n.absolutePath === node.absolutePath)
+          : oldPathIndex;
+
+        if (index === -1) {
+          currentLevelNodes.push(node)
+        }
+        else {
+          currentLevelNodes[index] = node;
+        }
+
+        this._currentLevelNodes$.next(currentLevelNodes);
+      });
+
+    this._folderSignalRClient.nodeDeleted$()
+      .subscribe(event => {
+        const currentFolder = this._currentFolder$.getValue();
+        if (currentFolder.absolutePath !== event.parent.absolutePath) {
+          return;
+        }
+
+        const currentLevelNodes = this._currentLevelNodes$.getValue().filter(f => f.absolutePath !== event.absolutePath);
+        this._currentLevelNodes$.next(currentLevelNodes);
+      })
   }
 
   public get currentFolder$(): Observable<FileExplorerFolderNode> {

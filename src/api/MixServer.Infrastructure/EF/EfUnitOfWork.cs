@@ -2,11 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.Callbacks;
 using MixServer.Domain.Persistence;
 
 namespace MixServer.Infrastructure.EF;
 
 public class EfUnitOfWork<TDbContext>(
+    ICallbackService callbackService,
     TDbContext context,
     ILogger<EfUnitOfWork<TDbContext>> logger,
     IServiceProvider serviceProvider)
@@ -19,6 +21,11 @@ public class EfUnitOfWork<TDbContext>(
         serviceProvider.GetRequiredService<TRepository>();
 
     public void OnSaved(Expression<Func<Task>> command) => _deferredCommands.Add(command);
+    
+    public void InvokeCallbackOnSaved(Func<ICallbackService, Task> callback)
+    {
+        OnSaved(() => callback.Invoke(callbackService));
+    }
 
     public async Task SaveChangesAsync()
     {

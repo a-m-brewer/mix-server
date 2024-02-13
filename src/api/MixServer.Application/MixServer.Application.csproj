@@ -11,4 +11,8 @@
         <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="FileExplorer\Services\" />
+    </ItemGroup>
+
 </Project>

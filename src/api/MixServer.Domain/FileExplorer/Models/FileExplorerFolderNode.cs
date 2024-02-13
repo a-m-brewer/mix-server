@@ -13,25 +13,17 @@ public interface IFileExplorerFolderNode : IFileExplorerNode
     IFolderSort Sort { get; set; }
 }
 
-public class FileExplorerFolderNode : FileExplorerNode, IFileExplorerFolderNode
+public class FileExplorerFolderNode(string? name, string? absolutePath, string? parentDirectory, bool exists, bool canRead)
+    : FileExplorerNode(FileExplorerNodeType.Folder), IFileExplorerFolderNode
 {
-    public FileExplorerFolderNode(string? absolutePath, string? parentDirectory, bool canRead) : base(FileExplorerNodeType.Folder)
-    {
-        AbsolutePath = absolutePath;
-        ParentAbsolutePath = parentDirectory;
-        CanRead = canRead;
-    }
+    public override bool Exists => exists;
+    public override string? AbsolutePath { get; } = absolutePath;
 
-    public override bool Exists => Directory.Exists(AbsolutePath);
-    public override string? AbsolutePath { get; }
-    
-    public override string Name => Directory.Exists(AbsolutePath)
-        ? new DirectoryInfo(AbsolutePath).Name
-        : string.Empty;
+    public override string Name { get; } = name ?? string.Empty;
 
-    public string? ParentAbsolutePath { get; }
+    public string? ParentAbsolutePath { get; } = parentDirectory;
 
-    public bool CanRead { get; }
+    public bool CanRead { get; } = canRead;
     public List<IFileExplorerNode> Children { get; set; } = [];
     public List<IFileExplorerFolderNode> ChildFolders => Children.OfType<IFileExplorerFolderNode>().ToList();
     public List<IFileExplorerFileNode> ChildFiles => Children.OfType<IFileExplorerFileNode>().ToList();

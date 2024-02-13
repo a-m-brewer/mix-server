@@ -1,4 +1,4 @@
-namespace MixServer.Infrastructure.Files.Services;
+namespace MixServer.Domain.FileExplorer.Services;
 
 public interface IMimeTypeService
 {

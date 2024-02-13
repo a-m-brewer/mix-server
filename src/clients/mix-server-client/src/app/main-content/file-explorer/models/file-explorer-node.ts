@@ -2,6 +2,7 @@ import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
 import {FileExplorerNodeState} from "../enums/file-explorer-node-state.enum";
 import {NodeListItem} from "../../../components/nodes/node-list/node-list-item/models/node-list-item";
 import {BehaviorSubject, Observable} from "rxjs";
+import {FileExplorerFolderNode} from "./file-explorer-folder-node";
 
 export abstract class FileExplorerNode implements NodeListItem {
   protected _selected$ = new BehaviorSubject<boolean>(false);
@@ -17,6 +18,8 @@ export abstract class FileExplorerNode implements NodeListItem {
   }
 
   public abstract get disabled(): boolean;
+
+  public abstract get parentDirectory(): FileExplorerFolderNode | undefined | null;
 
   public get selected(): boolean {
     return this._selected$.getValue();

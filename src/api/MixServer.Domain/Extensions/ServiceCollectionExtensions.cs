@@ -1,5 +1,8 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using MixServer.Domain.FileExplorer.Converters;
+using MixServer.Domain.FileExplorer.Services;
+using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Validators;
@@ -12,6 +15,10 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddMixServerDomainServices(this IServiceCollection services)
     {
         services.AddScoped<IUserValidator, UserValidator>();
+        services.AddSingleton<IFolderCacheService, FolderCacheService>();
+        services.AddSingleton<IFileNotificationService, FileNotificationService>();
+        services.AddTransient<IFileSystemInfoConverter, FileSystemInfoConverter>();
+        services.AddSingleton<IRootFolderService, RootFolderService>();
 
         services.AddDomainInterfaces();
         services.AddDomainUtilities();

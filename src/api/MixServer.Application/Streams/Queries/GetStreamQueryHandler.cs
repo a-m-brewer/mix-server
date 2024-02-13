@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Services;

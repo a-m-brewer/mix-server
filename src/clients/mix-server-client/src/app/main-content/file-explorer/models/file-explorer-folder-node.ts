@@ -13,7 +13,7 @@ export class FileExplorerFolderNode extends FileExplorerNode {
     super(name, nameIdentifier, absolutePath, FileExplorerNodeType.Folder, exists, 'folder', undefined);
   }
 
-  public get disabled(): boolean {
+  public override get disabled(): boolean {
     return !!this.absolutePath && !this.exists;
   }
 

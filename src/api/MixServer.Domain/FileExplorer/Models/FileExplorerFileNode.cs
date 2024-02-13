@@ -10,11 +10,11 @@ public interface IFileExplorerFileNode : IFileExplorerNode
     public IFileExplorerFolderNode Parent { get; }
 }
 
-public partial class FileExplorerFileNode(string name, string? mimeType, IFileExplorerFolderNode parent)
+public partial class FileExplorerFileNode(string name, string? mimeType, bool exists, IFileExplorerFolderNode parent)
     : FileExplorerNode(FileExplorerNodeType.File), IFileExplorerFileNode
 {
     public override string Name { get; } = name;
-    public override bool Exists => File.Exists(AbsolutePath);
+    public override bool Exists { get; } = exists;
 
     public override string AbsolutePath => string.IsNullOrWhiteSpace(Parent.AbsolutePath)
         ? Name

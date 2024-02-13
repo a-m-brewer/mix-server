@@ -3785,6 +3785,89 @@ export interface IUserDeletedDto {
     userId: string;
 }
 
+export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
+    node!: NodeResponse;
+    oldAbsolutePath!: string;
+
+    constructor(data?: IFileExplorerNodeUpdatedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.node = _data["node"] ? NodeResponse.fromJS(_data["node"]) : <any>undefined;
+            this.oldAbsolutePath = _data["oldAbsolutePath"];
+        }
+    }
+
+    static fromJS(data: any): FileExplorerNodeUpdatedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new FileExplorerNodeUpdatedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["node"] = this.node ? this.node.toJSON() : <any>undefined;
+        data["oldAbsolutePath"] = this.oldAbsolutePath;
+        return data;
+    }
+}
+
+export interface IFileExplorerNodeUpdatedDto {
+    node: NodeResponse;
+    oldAbsolutePath: string;
+}
+
+export class FileExplorerNodeDeletedDto implements IFileExplorerNodeDeletedDto {
+    parent!: FolderNodeResponse;
+    absolutePath!: string;
+
+    constructor(data?: IFileExplorerNodeDeletedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.parent = new FolderNodeResponse();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.parent = _data["parent"] ? FolderNodeResponse.fromJS(_data["parent"]) : new FolderNodeResponse();
+            this.absolutePath = _data["absolutePath"];
+        }
+    }
+
+    static fromJS(data: any): FileExplorerNodeDeletedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new FileExplorerNodeDeletedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["parent"] = this.parent ? this.parent.toJSON() : <any>undefined;
+        data["absolutePath"] = this.absolutePath;
+        return data;
+    }
+}
+
+export interface IFileExplorerNodeDeletedDto {
+    parent: FolderNodeResponse;
+    absolutePath: string;
+}
+
 export class SignalRUpdatePlaybackStateCommand implements ISignalRUpdatePlaybackStateCommand {
     currentTime!: number;
 

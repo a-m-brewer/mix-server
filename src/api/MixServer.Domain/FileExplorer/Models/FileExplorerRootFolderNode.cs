@@ -5,4 +5,4 @@ public interface IFileExplorerRootFolderNode : IFileExplorerFolderNode
 }
 
 public class FileExplorerRootFolderNode()
-    : FileExplorerFolderNode(string.Empty, null, true), IFileExplorerRootFolderNode;
+    : FileExplorerFolderNode(string.Empty, string.Empty, null, true, true), IFileExplorerRootFolderNode;

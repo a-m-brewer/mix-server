@@ -3,7 +3,7 @@ using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Settings;
 
-namespace MixServer.Infrastructure.Files.Services;
+namespace MixServer.Domain.FileExplorer.Services;
 
 public interface IRootFolderService
 {

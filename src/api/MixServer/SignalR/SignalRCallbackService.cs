@@ -8,7 +8,6 @@ using MixServer.Application.Users.Responses;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Interfaces;
-using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
@@ -23,13 +22,12 @@ namespace MixServer.SignalR;
 public class SignalRCallbackService(
     IConverter<IDevice, DeviceDto> deviceDtoConverter,
     IConverter<IDeviceState, DeviceStateDto> deviceStateConverter,
-    IConverter<IFileExplorerFolderNode, FolderNodeResponse> folderNodeResponseConverter,
+    INodeResponseConverter nodeResponseConverter,
     IConverter<IPlaybackSession, bool, PlaybackSessionDto> playbackSessionConverter,
     IPlaybackStateConverter playbackStateConverter,
     IHubContext<SignalRCallbackHub, ISignalRCallbackClient> context,
     IConverter<QueueSnapshot, QueueSnapshotDto> queueSnapshotDtoConverter,
     IConverter<IUser, UserDto> userDtoConverter,
-    IUnitOfWork unitOfWork,
     ISignalRUserManager userManager)
     : ICallbackService
 {
@@ -96,7 +94,7 @@ public class SignalRCallbackService(
     {
         var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
 
-        var dto = folderNodeResponseConverter.Convert(folder);
+        var dto = nodeResponseConverter.Convert(folder);
 
         await context.Clients
             .Clients(clients)
@@ -181,6 +179,27 @@ public class SignalRCallbackService(
             .UserUpdated(userDtoConverter.Convert(user));
     }
 
+    public Task FileExplorerNodeAdded(IFileExplorerNode node)
+    {
+        return context.Clients
+            .All
+            .FileExplorerNodeAdded(nodeResponseConverter.Convert(node));
+    }
+    
+    public Task FileExplorerNodeUpdated(IFileExplorerNode node, string oldAbsolutePath)
+    {
+        return context.Clients
+            .All
+            .FileExplorerNodeUpdated(new FileExplorerNodeUpdatedDto(nodeResponseConverter.Convert(node), oldAbsolutePath));
+    }
+
+    public Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath)
+    {
+        return context.Clients
+            .All
+            .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto(nodeResponseConverter.Convert(parentNode), absolutePath));
+    }
+
     public async Task UserDeleted(string userId)
     {
         var connections = userManager.GetConnectionsInGroups(
@@ -190,11 +209,6 @@ public class SignalRCallbackService(
         await context.Clients
             .Clients(connections)
             .UserDeleted(new UserDeletedDto { UserId = userId });
-    }
-    
-    public void InvokeCallbackOnSaved(Func<ICallbackService, Task> callback)
-    {
-        unitOfWork.OnSaved(() => callback.Invoke(this));
     }
 
     private 

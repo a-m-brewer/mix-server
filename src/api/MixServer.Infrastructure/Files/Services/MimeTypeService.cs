@@ -1,12 +1,8 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
+using MixServer.Domain.FileExplorer.Services;
 using MixServer.Infrastructure.Files.Constants;
 
 namespace MixServer.Infrastructure.Files.Services;
-
-public interface IMimeTypeService
-{
-    string GetMimeType(string filePath);
-}
 
 public class MimeTypeService : IMimeTypeService
 {

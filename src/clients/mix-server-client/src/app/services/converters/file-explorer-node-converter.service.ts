@@ -29,7 +29,7 @@ export class FileExplorerNodeConverterService {
     return new FileExplorerPopulatedFolderNode(folderNode, dto.children.map(m => this.fromResponse(m)));
   }
 
-  private fromResponse(response: NodeResponse): FileExplorerNode {
+  public fromResponse(response: NodeResponse): FileExplorerNode {
     switch (response.type) {
       case FileExplorerNodeType.File:
         return this.fromFileResponse(response as FileNodeResponse);
@@ -42,7 +42,7 @@ export class FileExplorerNodeConverterService {
     return new FileExplorerFileNode(file.name, file.nameIdentifier, file.absolutePath, file.exists, file.playbackSupported, undefined, this.fromFolderResponse(file.parent));
   }
 
-  private fromFolderResponse(response: FolderNodeResponse): FileExplorerFolderNode {
+  public fromFolderResponse(response: FolderNodeResponse): FileExplorerFolderNode {
     return new FileExplorerFolderNode(response.name, response.nameIdentifier, response.exists, response.absolutePath, this.fromFolderSortDto(response.sort), this.fromParentAbsolutePath(response.parentAbsolutePath));
   }
 
