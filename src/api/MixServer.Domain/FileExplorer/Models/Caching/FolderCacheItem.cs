@@ -66,6 +66,7 @@ public class FolderCacheItem : IFolderCacheItem
         _watcher.Deleted += OnDeleted;
         _watcher.Changed += OnChanged;
         _watcher.Renamed += OnRenamed;
+        _watcher.Error += WatcherOnError;
         
         _watcher.EnableRaisingEvents = true;
     }
@@ -95,6 +96,11 @@ public class FolderCacheItem : IFolderCacheItem
     private void OnRenamed(object sender, RenamedEventArgs e) =>
         UpdateCache(e.FullPath, ChangeType.Renamed, e.OldFullPath);
 
+    private void WatcherOnError(object sender, ErrorEventArgs e)
+    {
+        _logger.LogError(e.GetException(), "Error occurred in FileSystemWatcher for {AbsolutePath}", _absolutePath);
+    }
+    
     private async void UpdateCache(string fullName, ChangeType changeType, string oldFullName = "")
     {
         await _semaphore.WaitAsync();
@@ -192,6 +198,7 @@ public class FolderCacheItem : IFolderCacheItem
         _watcher.Deleted -= OnDeleted;
         _watcher.Changed -= OnChanged;
         _watcher.Renamed -= OnRenamed;
+        _watcher.Error -= WatcherOnError;
         _watcher.Dispose();
     }
 }
