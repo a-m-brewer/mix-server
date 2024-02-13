@@ -3,19 +3,22 @@ using MixServer.Domain.FileExplorer.Services;
 
 namespace MixServer.Domain.FileExplorer.Models.Caching;
 
-public interface IFolderCacheItem : IDisposable
+public interface IFolder
+{
+    ICacheDirectoryInfo DirectoryInfo { get; }
+
+    IReadOnlyCollection<ICacheDirectoryInfo> Directories { get; }
+
+    IReadOnlyCollection<ICacheFileInfo> Files { get; }
+}
+
+public interface IFolderCacheItem : IFolder, IDisposable
 {
     event EventHandler<ICacheFileSystemInfo> ItemAdded;
 
     event EventHandler<FolderItemUpdatedEventArgs> ItemUpdated;
 
     event EventHandler<string> ItemRemoved;
-    
-    ICacheDirectoryInfo DirectoryInfo { get; }
-
-    IReadOnlyCollection<ICacheDirectoryInfo> Directories { get; }
-
-    IReadOnlyCollection<ICacheFileInfo> Files { get; }
 }
 
 public class FolderCacheItem : IFolderCacheItem

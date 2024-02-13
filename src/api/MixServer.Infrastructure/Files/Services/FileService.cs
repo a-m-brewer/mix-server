@@ -86,8 +86,8 @@ public class FileService(
     {
         return GetFile(Path.Join(absoluteFolderPath, filename));
     }
-    
-    public IFileExplorerFileNode GetFile(string fileAbsolutePath)
+
+    private IFileExplorerFileNode GetFile(string fileAbsolutePath)
     {
         var parentDirectoryPath = fileAbsolutePath.GetParentFolderPathOrThrow();
         var parent = GetUnpopulatedFolder(parentDirectoryPath);

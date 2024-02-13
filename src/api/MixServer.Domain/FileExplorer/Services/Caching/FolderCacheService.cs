@@ -17,7 +17,7 @@ public interface IFolderCacheService
 
     event EventHandler<FolderCacheServiceItemRemovedEventArgs> ItemRemoved;
 
-    Task<IFolderCacheItem> GetOrAddAsync(string absolutePath);
+    Task<IFolder> GetOrAddAsync(string absolutePath);
 }
 
 public class FolderCacheService(
@@ -27,7 +27,7 @@ public class FolderCacheService(
     IOptions<FolderCacheSettings> options,
     IMimeTypeService mimeTypeService) : IFolderCacheService
 {
-    private ConcurrentDictionary<object, SemaphoreSlim> _cacheKeySemaphores = new();
+    private readonly ConcurrentDictionary<object, SemaphoreSlim> _cacheKeySemaphores = new();
 
     private readonly MemoryCache _cache = new(new MemoryCacheOptions
     {
@@ -40,10 +40,16 @@ public class FolderCacheService(
 
     public event EventHandler<FolderCacheServiceItemRemovedEventArgs>? ItemRemoved;
 
-    public async Task<IFolderCacheItem> GetOrAddAsync(string absolutePath)
+    public async Task<IFolder> GetOrAddAsync(string absolutePath)
     {
         return await readWriteLock.ForUpgradeableRead(async () =>
         {
+            if (!Directory.Exists(absolutePath))
+            {
+                readWriteLock.ForWrite(() => _cache.Remove(absolutePath));
+                return (IFolder) new MissingFolder(absolutePath);
+            }
+            
             var maxDirectories = options.Value.MaxCachedDirectories;
             if (maxDirectories > 0 && _cache.Count >= maxDirectories)
             {
