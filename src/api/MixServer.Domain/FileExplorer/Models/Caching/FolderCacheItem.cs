@@ -1,20 +1,18 @@
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Services;
+using DirectoryInfo = System.IO.DirectoryInfo;
 
 namespace MixServer.Domain.FileExplorer.Models.Caching;
 
-public interface IFolder
+public interface ICacheFolder
 {
-    ICacheDirectoryInfo DirectoryInfo { get; }
-
-    IReadOnlyCollection<ICacheDirectoryInfo> Directories { get; }
-
-    IReadOnlyCollection<ICacheFileInfo> Files { get; }
+    IFileExplorerFolderNode Node { get; }
 }
 
-public interface IFolderCacheItem : IFolder, IDisposable
+public interface IFolderCacheItem : ICacheFolder, IDisposable
 {
-    event EventHandler<ICacheFileSystemInfo> ItemAdded;
+    event EventHandler<IFileExplorerNode> ItemAdded;
 
     event EventHandler<FolderItemUpdatedEventArgs> ItemUpdated;
 
@@ -23,34 +21,37 @@ public interface IFolderCacheItem : IFolder, IDisposable
 
 public class FolderCacheItem : IFolderCacheItem
 {
-    private SemaphoreSlim _semaphore = new(1, 1);
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
     
     private readonly string _absolutePath;
     private readonly ILogger<FolderCacheItem> _logger;
-    private readonly IMimeTypeService _mimeTypeService;
+    private readonly IRootFolderService _rootFolderService;
+    private readonly IFileSystemInfoConverter _fileSystemInfoConverter;
 
     private readonly FileSystemWatcher _watcher;
 
     public FolderCacheItem(
         string absolutePath,
         ILogger<FolderCacheItem> logger,
-        IMimeTypeService mimeTypeService)
+        IRootFolderService rootFolderService,
+        IFileSystemInfoConverter fileSystemInfoConverter)
     {
         _absolutePath = absolutePath;
         _logger = logger;
-        _mimeTypeService = mimeTypeService;
+        _rootFolderService = rootFolderService;
+        _fileSystemInfoConverter = fileSystemInfoConverter;
 
         var directoryInfo = new DirectoryInfo(absolutePath);
-        DirectoryInfo = new CacheDirectoryInfo(directoryInfo);
+        Node = fileSystemInfoConverter.ConvertToFolderNode(directoryInfo, rootFolderService.IsChildOfRoot(directoryInfo.FullName));
 
         foreach (var directory in directoryInfo.GetDirectories())
         {
-            FileSystemItems.Add(new CacheDirectoryInfo(directory));
+            Node.Children.Add(fileSystemInfoConverter.ConvertToFolderNode(directory, rootFolderService.IsChildOfRoot(directoryInfo.FullName)));
         }
 
         foreach (var file in directoryInfo.GetFiles())
         {
-            FileSystemItems.Add(new CacheFileInfo(file, _mimeTypeService.GetMimeType(file.FullName)));
+            Node.Children.Add(fileSystemInfoConverter.ConvertToFileNode(file, Node.Info));
         }
 
         _watcher = new FileSystemWatcher(absolutePath)
@@ -74,18 +75,11 @@ public class FolderCacheItem : IFolderCacheItem
         _watcher.EnableRaisingEvents = true;
     }
 
-    public event EventHandler<ICacheFileSystemInfo>? ItemAdded;
+    public event EventHandler<IFileExplorerNode>? ItemAdded;
     public event EventHandler<FolderItemUpdatedEventArgs>? ItemUpdated;
     public event EventHandler<string>? ItemRemoved;
     
-    public ICacheDirectoryInfo DirectoryInfo { get; }
-    
-    private ICollection<ICacheFileSystemInfo> FileSystemItems { get; } = new List<ICacheFileSystemInfo>();
-
-    public IReadOnlyCollection<ICacheDirectoryInfo> Directories =>
-        FileSystemItems.OfType<ICacheDirectoryInfo>().ToList();
-
-    public IReadOnlyCollection<ICacheFileInfo> Files => FileSystemItems.OfType<ICacheFileInfo>().ToList();
+    public IFileExplorerFolderNode Node { get; }
 
     private void OnCreated(object sender, FileSystemEventArgs e) =>
         UpdateCache(e.FullPath, ChangeType.Created);
@@ -122,7 +116,7 @@ public class FolderCacheItem : IFolderCacheItem
             switch (changeType)
             {
                 case ChangeType.Created:
-                    if (FileSystemItems.Any(a => a.FullName == fullName))
+                    if (Node.Children.Any(a => a.AbsolutePath == fullName))
                     {
                         _logger.LogTrace("Item already exists in cache, skipping: {FullName}", fullName);
                         return;
@@ -151,21 +145,21 @@ public class FolderCacheItem : IFolderCacheItem
     }
 
 
-    private ICacheFileSystemInfo Replace(bool isFile, string fullName) => Replace(isFile, fullName, fullName);
+    private IFileExplorerNode Replace(bool isFile, string fullName) => Replace(isFile, fullName, fullName);
 
-    private ICacheFileSystemInfo Replace(bool isFile, string fullName, string oldFullName)
+    private IFileExplorerNode Replace(bool isFile, string fullName, string oldFullName)
     {
         Delete(oldFullName);
         
         return Create(isFile, fullName);
     }
 
-    private ICacheFileSystemInfo Create(bool isFile, string fullName)
+    private IFileExplorerNode Create(bool isFile, string fullName)
     {
-        ICacheFileSystemInfo info = isFile
-            ? new CacheFileInfo(new FileInfo(fullName), _mimeTypeService.GetMimeType(fullName))
-            : new CacheDirectoryInfo(new DirectoryInfo(fullName));
-        FileSystemItems.Add(info);
+        IFileExplorerNode info = isFile
+            ? _fileSystemInfoConverter.ConvertToFileNode(new FileInfo(fullName), Node.Info)
+            : _fileSystemInfoConverter.ConvertToFolderNode(new DirectoryInfo(fullName), _rootFolderService.IsChildOfRoot(fullName));
+        Node.Children.Add(info);
         _logger.LogDebug("Added: {AbsolutePath} to {CurrentFolder}", fullName, _absolutePath);
 
         return info;
@@ -173,10 +167,10 @@ public class FolderCacheItem : IFolderCacheItem
 
     private void Delete(string fullName)
     {
-        var item = FileSystemItems.FirstOrDefault(x => x.FullName == fullName);
+        var item = Node.Children.FirstOrDefault(x => x.AbsolutePath == fullName);
         if (item is not null)
         {
-            FileSystemItems.Remove(item);
+            Node.Children.Remove(item);
             _logger.LogDebug("Removed: {AbsolutePath} from {CurrentFolder}", fullName, _absolutePath);
         }
         else

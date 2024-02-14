@@ -7,10 +7,10 @@ public interface IFileExplorerFileNode : IFileExplorerNode
 {
     string? MimeType { get; }
     bool PlaybackSupported { get; }
-    public IFileExplorerFolderNode Parent { get; }
+    public IFolderInfo Parent { get; }
 }
 
-public partial class FileExplorerFileNode(string name, string? mimeType, bool exists, IFileExplorerFolderNode parent)
+public partial class FileExplorerFileNode(string name, string? mimeType, bool exists, DateTime creationTimeUtc, IFolderInfo parent)
     : FileExplorerNode(FileExplorerNodeType.File), IFileExplorerFileNode
 {
     public override string Name { get; } = name;
@@ -20,6 +20,8 @@ public partial class FileExplorerFileNode(string name, string? mimeType, bool ex
         ? Name
         : Path.Join(Parent.AbsolutePath, Name);
 
+    public override DateTime CreationTimeUtc { get; } = creationTimeUtc;
+
     public string? MimeType { get; } = mimeType;
 
     public bool PlaybackSupported => Parent.CanRead &&
@@ -27,7 +29,7 @@ public partial class FileExplorerFileNode(string name, string? mimeType, bool ex
                                      !string.IsNullOrWhiteSpace(MimeType) &&
                                      AudioVideoMimeTypeRegex().IsMatch(MimeType);
 
-    public IFileExplorerFolderNode Parent { get; } = parent;
+    public IFolderInfo Parent { get; } = parent;
 
     [GeneratedRegex(@"^(audio|video)\/(.*)")]
     private static partial Regex AudioVideoMimeTypeRegex();

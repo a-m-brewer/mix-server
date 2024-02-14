@@ -20,6 +20,7 @@ export class LoadingRepositoryService {
     const nextLoading = 0 < nextCount;
 
     this._loadingCount = nextCount;
+    console.log('Loading count: ' + this._loadingCount);
     if (this._loadingBehaviour.getValue() !== nextLoading) {
       this._loadingBehaviour.next(nextLoading);
     }

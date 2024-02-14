@@ -22,7 +22,7 @@ public class RootFolderService(
     public IFileExplorerRootFolderNode RootFolder { get; } = new FileExplorerRootFolderNode
     {
         Children = rootFolderSettings.Value.ChildrenSplit
-            .Select(folder => fileSystemInfoConverter.ConvertToFolderNode(folder, null, true))
+            .Select(folder => fileSystemInfoConverter.ConvertToFolderNode(folder, true))
             .Cast<IFileExplorerNode>()
             .ToList()
     };

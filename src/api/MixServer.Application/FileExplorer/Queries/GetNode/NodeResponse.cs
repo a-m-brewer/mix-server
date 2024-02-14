@@ -2,6 +2,7 @@ using System.Runtime.Serialization;
 using JetBrains.Annotations;
 using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.FileExplorer.Enums;
+using MixServer.Domain.FileExplorer.Models;
 using Newtonsoft.Json;
 using NJsonSchema.NewtonsoftJson.Converters;
 
@@ -62,7 +63,7 @@ public class FileNodeResponse : NodeResponse
         bool exists,
         string? mimeType,
         bool playbackSupported,
-        FolderNodeResponse parent) : base(name, nameIdentifier, absolutePath, type, exists)
+        FolderInfoResponse parent) : base(name, nameIdentifier, absolutePath, type, exists)
     {
         MimeType = mimeType;
         PlaybackSupported = playbackSupported;
@@ -73,7 +74,7 @@ public class FileNodeResponse : NodeResponse
 
     public bool PlaybackSupported { get; }
     
-    public FolderNodeResponse Parent { get; }
+    public FolderInfoResponse Parent { get; }
 }
 
 public class FolderNodeResponse : NodeResponse
@@ -109,4 +110,18 @@ public class RootFolderNodeResponse : FolderNodeResponse
         : base(name, nameIdentifier, absolutePath, type, exists, null, FolderSortDto.Default)
     {
     }
+}
+
+public class FolderInfoResponse(
+    string name,
+    string? absolutePath,
+    string? parentAbsolutePath,
+    bool exists,
+    bool canRead)
+{
+    public string Name { get; } = name;
+    public string? AbsolutePath { get; } = absolutePath;
+    public string? ParentAbsolutePath { get; } = parentAbsolutePath;
+    public bool Exists { get; } = exists;
+    public bool CanRead { get; } = canRead;
 }

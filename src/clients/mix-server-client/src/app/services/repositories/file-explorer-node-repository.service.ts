@@ -166,7 +166,7 @@ export class FileExplorerNodeRepositoryService {
       ? {dir: absolutePath}
       : {}
 
-    this._loadingRepository.loading = true;
+    // this._loadingRepository.loading = true;
     this.setLoading(true);
 
     return from(this._router.navigate(
@@ -175,7 +175,7 @@ export class FileExplorerNodeRepositoryService {
         queryParams: query
       }))
       .pipe(tap(() => {
-        this._loadingRepository.loading = false;
+        // this._loadingRepository.loading = false;
       }));
   }
 
@@ -187,6 +187,7 @@ export class FileExplorerNodeRepositoryService {
       .subscribe({
         next: (folder: FolderNodeResponse) => {
           const { parent, children } = this._fileExplorerNodeConverter.fromDto(folder);
+
           this._loadingRepository.loading = false;
           this.setLoading(false);
 
@@ -200,8 +201,9 @@ export class FileExplorerNodeRepositoryService {
           this._currentLevelNodes$.next(children);
         },
         error: err => {
-          this._toastService.logServerError(err, 'Failed to get current directory');
+          this._toastService.logServerError(err, `Failed to navigate to directory ${absolutePath}`);
           this._loadingRepository.loading = false;
+          this.navigateToDirectory(null);
         }
       });
   }

@@ -203,8 +203,10 @@ public class QueueService(
             return [];
         }
 
-        var folder = await fileService.GetFilesInFolderAsync(absoluteFolderPath);
+        var folder = await fileService.GetFolderAsync(absoluteFolderPath);
 
-        return folder.ChildPlayableFiles;
+        return folder.GenerateSortedChildren<IFileExplorerFileNode>()
+            .Where(w => w.PlaybackSupported)
+            .ToList();
     }
 }

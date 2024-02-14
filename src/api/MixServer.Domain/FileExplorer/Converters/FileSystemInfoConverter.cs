@@ -1,33 +1,48 @@
-using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Models;
-using MixServer.Domain.FileExplorer.Models.Caching;
+using MixServer.Domain.FileExplorer.Services;
 
 namespace MixServer.Domain.FileExplorer.Converters;
 
 public interface IFileSystemInfoConverter
 {
-    IFileExplorerFolderNode ConvertToFolderNode(string absolutePath, string? parentDirectory, bool canRead);
-    IFileExplorerFolderNode ConvertToFolderNode(ICacheDirectoryInfo directoryInfo, bool canRead);
-    IFileExplorerFileNode ConvertToFileNode(ICacheFileInfo fileInfo, IFileExplorerFolderNode parent);
+    IFileExplorerFolderNode ConvertToFolderNode(string absolutePath, bool canRead);
+
+    IFileExplorerFolderNode ConvertToFolderNode(DirectoryInfo directoryInfo, bool canRead);
+    IFileExplorerFileNode ConvertToFileNode(string fileAbsolutePath, IFolderInfo parentInfo);
+    IFileExplorerFileNode ConvertToFileNode(FileInfo file, IFolderInfo nodeInfo);
 }
 
-public class FileSystemInfoConverter : IFileSystemInfoConverter
+public class FileSystemInfoConverter(IMimeTypeService mimeTypeService) : IFileSystemInfoConverter
 {
-    public IFileExplorerFolderNode ConvertToFolderNode(string absolutePath, string? parentDirectory, bool canRead)
+    public IFileExplorerFolderNode ConvertToFolderNode(string absolutePath, bool canRead)
     {
-        var exists = Directory.Exists(absolutePath);
-        var name = exists ? new DirectoryInfo(absolutePath).Name : null;
-        return new FileExplorerFolderNode(name, absolutePath, parentDirectory, exists, canRead);
+        return ConvertToFolderNode(new DirectoryInfo(absolutePath), canRead);
     }
 
-    public IFileExplorerFolderNode ConvertToFolderNode(ICacheDirectoryInfo directoryInfo, bool canRead)
+    public IFileExplorerFolderNode ConvertToFolderNode(DirectoryInfo directoryInfo, bool canRead)
     {
-        return new FileExplorerFolderNode(directoryInfo.Name, directoryInfo.FullName, directoryInfo.ParentDirectory,
-            directoryInfo.Exists, canRead);
+        return new FileExplorerFolderNode(ConvertToFolderInfo(directoryInfo, canRead));
     }
 
-    public IFileExplorerFileNode ConvertToFileNode(ICacheFileInfo fileInfo, IFileExplorerFolderNode parent)
+    public IFileExplorerFileNode ConvertToFileNode(string fileAbsolutePath, IFolderInfo parentInfo)
     {
-        return new FileExplorerFileNode(fileInfo.Name, fileInfo.MimeType, fileInfo.Exists, parent);
+        return ConvertToFileNode(new FileInfo(fileAbsolutePath), parentInfo);
+    }
+
+    public IFileExplorerFileNode ConvertToFileNode(FileInfo file, IFolderInfo nodeInfo)
+    {
+        return new FileExplorerFileNode(file.Name, mimeTypeService.GetMimeType(file.FullName), file.Exists, file.CreationTimeUtc, nodeInfo);
+    }
+    
+    private static IFolderInfo ConvertToFolderInfo(DirectoryInfo directoryInfo, bool canRead)
+    {
+        return new FolderInfo
+        {
+            Name = directoryInfo.Name,
+            AbsolutePath = directoryInfo.FullName,
+            ParentAbsolutePath = directoryInfo.Parent?.FullName,
+            CanRead = canRead,
+            Exists = directoryInfo.Exists
+        };
     }
 }

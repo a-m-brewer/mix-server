@@ -163,10 +163,7 @@ public class SessionService(
     private void SetSessionNonMappedProperties(
         IPlaybackSession session)
     {
-        var parentFolderPath = session.GetParentFolderPathOrThrow();
-        var parent = fileService.GetUnpopulatedFolder(parentFolderPath);
-
-        var currentNode = fileService.GetFile(session.AbsolutePath, parent);
+        var currentNode = fileService.GetFile(session.AbsolutePath);
 
         playbackTrackingService.Populate(session);
 

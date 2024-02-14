@@ -8,7 +8,8 @@ public interface INodeResponseConverter
     : IConverter<IFileExplorerNode, NodeResponse>,
         IConverter<IFileExplorerFileNode, FileNodeResponse>,
         IConverter<IFileExplorerFolderNode, FolderNodeResponse>,
-        IConverter<IFileExplorerRootFolderNode, RootFolderNodeResponse>
+        IConverter<IFileExplorerRootFolderNode, RootFolderNodeResponse>,
+        IConverter<IFolderInfo, FolderInfoResponse>
 {
 }
 
@@ -41,7 +42,10 @@ public class NodeResponseConverter : INodeResponseConverter
                 value.ParentAbsolutePath,
                 new FolderSortDto(value.Sort))
             {
-                Children = value.Children.Select(Convert).ToList()
+                Children = value
+                    .SortedChildren
+                    .Select(Convert)
+                    .ToList()
             }
         };
     }
@@ -51,7 +55,9 @@ public class NodeResponseConverter : INodeResponseConverter
         return new RootFolderNodeResponse(value.Name, value.NameIdentifier, value.AbsolutePath, value.Type,
             value.Exists)
         {
-            Children = value.Children.Select(Convert).ToList()
+            Children = value.SortedChildren
+                .Select(Convert)
+                .ToList()
         };
     }
 
@@ -64,5 +70,10 @@ public class NodeResponseConverter : INodeResponseConverter
             IFileExplorerFolderNode fileExplorerFolderNode => Convert(fileExplorerFolderNode),
             _ => throw new ArgumentOutOfRangeException(nameof(value))
         };
+    }
+
+    public FolderInfoResponse Convert(IFolderInfo value)
+    {
+        return new FolderInfoResponse(value.Name, value.AbsolutePath, value.ParentAbsolutePath, value.Exists, value.CanRead);
     }
 }

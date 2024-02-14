@@ -14,6 +14,7 @@ public interface IFileExplorerNode
     FileExplorerNodeType Type { get; }
     bool Exists { get; }
     string? AbsolutePath { get; }
+    DateTime CreationTimeUtc { get; }
 }
 
 public abstract class FileExplorerNode : IFileExplorerNode
@@ -34,4 +35,5 @@ public abstract class FileExplorerNode : IFileExplorerNode
     public abstract bool Exists { get; }
 
     public abstract string? AbsolutePath { get; }
+    public abstract DateTime CreationTimeUtc { get; }
 }

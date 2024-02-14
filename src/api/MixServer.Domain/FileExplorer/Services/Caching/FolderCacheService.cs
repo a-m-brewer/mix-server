@@ -4,6 +4,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Converters;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Caching;
 using MixServer.Domain.Utilities;
 
@@ -11,13 +13,13 @@ namespace MixServer.Domain.FileExplorer.Services.Caching;
 
 public interface IFolderCacheService
 {
-    event EventHandler<FolderCacheServiceItemAddedEventArgs> ItemAdded;
+    event EventHandler<IFileExplorerNode> ItemAdded;
 
     event EventHandler<FolderCacheServiceItemUpdatedEventArgs> ItemUpdated;
 
     event EventHandler<FolderCacheServiceItemRemovedEventArgs> ItemRemoved;
 
-    Task<IFolder> GetOrAddAsync(string absolutePath);
+    Task<ICacheFolder> GetOrAddAsync(string absolutePath);
 }
 
 public class FolderCacheService(
@@ -25,7 +27,8 @@ public class FolderCacheService(
     ILogger<FolderCacheService> logger,
     ILoggerFactory loggerFactory,
     IOptions<FolderCacheSettings> options,
-    IMimeTypeService mimeTypeService) : IFolderCacheService
+    IFileSystemInfoConverter fileSystemInfoConverter,
+    IRootFolderService rootFolderService) : IFolderCacheService
 {
     private readonly ConcurrentDictionary<object, SemaphoreSlim> _cacheKeySemaphores = new();
 
@@ -34,20 +37,20 @@ public class FolderCacheService(
         SizeLimit = options.Value.MaxCachedDirectories
     });
 
-    public event EventHandler<FolderCacheServiceItemAddedEventArgs>? ItemAdded;
+    public event EventHandler<IFileExplorerNode>? ItemAdded;
 
     public event EventHandler<FolderCacheServiceItemUpdatedEventArgs>? ItemUpdated;
 
     public event EventHandler<FolderCacheServiceItemRemovedEventArgs>? ItemRemoved;
 
-    public async Task<IFolder> GetOrAddAsync(string absolutePath)
+    public async Task<ICacheFolder> GetOrAddAsync(string absolutePath)
     {
         return await readWriteLock.ForUpgradeableRead(async () =>
         {
             if (!Directory.Exists(absolutePath))
             {
                 readWriteLock.ForWrite(() => _cache.Remove(absolutePath));
-                return (IFolder) new MissingFolder(absolutePath);
+                throw new NotFoundException("Folder", absolutePath);
             }
             
             var maxDirectories = options.Value.MaxCachedDirectories;
@@ -75,7 +78,10 @@ public class FolderCacheService(
                     entry.RegisterPostEvictionCallback(PostEvictionCallback);
 
                     IFolderCacheItem item =
-                        new FolderCacheItem(absolutePath, loggerFactory.CreateLogger<FolderCacheItem>(), mimeTypeService);
+                        new FolderCacheItem(absolutePath,
+                            loggerFactory.CreateLogger<FolderCacheItem>(),
+                            rootFolderService,
+                            fileSystemInfoConverter);
                     item.ItemAdded += OnItemAdded;
                     item.ItemUpdated += OnItemUpdated;
                     item.ItemRemoved += OnItemRemoved;
@@ -102,22 +108,22 @@ public class FolderCacheService(
         item.Dispose();
     }
 
-    private void OnItemAdded(object? sender, ICacheFileSystemInfo e)
+    private void OnItemAdded(object? sender, IFileExplorerNode e)
     {
-        if (!IsFolderCacheItem(sender, out var parent)) return;
-        ItemAdded?.Invoke(this, new FolderCacheServiceItemAddedEventArgs(parent.DirectoryInfo, e));
+        if (!IsFolderCacheItem(sender, out _)) return;
+        ItemAdded?.Invoke(this, e);
     }
 
     private void OnItemUpdated(object? sender, FolderItemUpdatedEventArgs e)
     {
         if (!IsFolderCacheItem(sender, out var parent)) return;
-        ItemUpdated?.Invoke(this, new FolderCacheServiceItemUpdatedEventArgs(parent.DirectoryInfo, e.Item, e.OldFullPath));
+        ItemUpdated?.Invoke(this, new FolderCacheServiceItemUpdatedEventArgs(e.Item, e.OldFullPath));
     }
 
     private void OnItemRemoved(object? sender, string e)
     {
         if (!IsFolderCacheItem(sender, out var parent)) return;
-        ItemRemoved?.Invoke(this, new FolderCacheServiceItemRemovedEventArgs(parent.DirectoryInfo, e));
+        ItemRemoved?.Invoke(this, new FolderCacheServiceItemRemovedEventArgs(parent.Node, e));
     }
 
     private bool IsFolderCacheItem(object? sender, [MaybeNullWhen(false)] out IFolderCacheItem parent)
