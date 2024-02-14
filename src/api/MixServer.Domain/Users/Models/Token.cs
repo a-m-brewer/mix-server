@@ -6,14 +6,8 @@ public interface IToken
     string RefreshToken { get; }
 }
 
-public class Token : IToken
+public class Token(string accessToken, string refreshToken) : IToken
 {
-    public Token(string accessToken, string refreshToken)
-    {
-        AccessToken = accessToken;
-        RefreshToken = refreshToken;
-    }
-
-    public string AccessToken { get; }
-    public string RefreshToken { get; }
+    public string AccessToken { get; } = accessToken;
+    public string RefreshToken { get; } = refreshToken;
 }

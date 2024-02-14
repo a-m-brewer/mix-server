@@ -14,28 +14,17 @@ public interface IPlaybackState
     TimeSpan CurrentTime { get; }
 }
 
-public class PlaybackState : IPlaybackState
+public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger) : IPlaybackState
 {
-    private readonly ILogger<PlaybackState> _logger;
     private readonly ManualResetEventSlim _pauseSemaphore = new(true);
-
-    public PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger)
-    {
-        _logger = logger;
-        SessionId = session.SessionId;
-        DeviceId = session.DeviceId;
-        CurrentTime = session.CurrentTime;
-        Playing = session.Playing;
-        UserId = session.UserId;
-    }
 
     public event EventHandler<AudioPlayerStateUpdateType>? AudioPlayerStateUpdated;
     
-    public string UserId { get; }
+    public string UserId { get; } = session.UserId;
 
-    public Guid? SessionId { get; private set; }
+    public Guid? SessionId { get; private set; } = session.SessionId;
 
-    public Guid? DeviceId { get; set; }
+    public Guid? DeviceId { get; set; } = session.DeviceId;
 
     public bool HasDevice => DeviceId.HasValue && DeviceId.Value != Guid.Empty;
     
@@ -44,9 +33,9 @@ public class PlaybackState : IPlaybackState
         : throw new InvalidRequestException(nameof(DeviceId),
             $"Playback State for {UserId} currently does not have a device");
 
-    public bool Playing { get; private set; }
+    public bool Playing { get; private set; } = session.Playing;
 
-    public TimeSpan CurrentTime { get; private set; }
+    public TimeSpan CurrentTime { get; private set; } = session.CurrentTime;
 
     public void UpdateWithoutEvents(IPlaybackSession session, bool includePlaying)
     {
@@ -73,7 +62,7 @@ public class PlaybackState : IPlaybackState
     {
         _pauseSemaphore.Reset();
         
-        _logger.LogWarning("Set Waiting For Pause IsSet: {IsSet}", _pauseSemaphore.IsSet);
+        logger.LogWarning("Set Waiting For Pause IsSet: {IsSet}", _pauseSemaphore.IsSet);
     }
 
     public void WaitForPause()

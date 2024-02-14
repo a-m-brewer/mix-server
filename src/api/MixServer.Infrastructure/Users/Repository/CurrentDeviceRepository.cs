@@ -5,20 +5,13 @@ using MixServer.Infrastructure.Users.Constants;
 
 namespace MixServer.Infrastructure.Users.Repository;
 
-public class CurrentDeviceRepository : ICurrentDeviceRepository
+public class CurrentDeviceRepository(IHttpContextAccessor httpContextAccessor) : ICurrentDeviceRepository
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public CurrentDeviceRepository(IHttpContextAccessor httpContextAccessor)
-    {
-        _httpContextAccessor = httpContextAccessor;
-    }
-
     public Guid DeviceId
     {
         get
         {
-            var deviceIdString = _httpContextAccessor.HttpContext?.User.Claims
+            var deviceIdString = httpContextAccessor.HttpContext?.User.Claims
                 .SingleOrDefault(s => s.Type == CustomClaimTypes.DeviceId)?.Value;
 
             if (string.IsNullOrWhiteSpace(deviceIdString))

@@ -5,13 +5,9 @@ using DeviceDetectorClientType = DeviceDetectorNET.Parser.Client.ClientType;
 
 namespace MixServer.Infrastructure.Users.Services;
 
-public class DeviceDetectorWrapper : DeviceDetector
+public class DeviceDetectorWrapper(string? userAgent = "", ClientHints? clientHints = null)
+    : DeviceDetector(userAgent, clientHints)
 {
-    public DeviceDetectorWrapper(string? userAgent = "", ClientHints? clientHints = null) : base(userAgent, clientHints)
-    {
-    }
-    
-    
     public DeviceType DeviceType => device.HasValue
         ? (DeviceType)device.Value
         : DeviceType.Unknown;

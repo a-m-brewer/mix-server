@@ -8,34 +8,24 @@ using MixServer.Domain.Utilities;
 
 namespace MixServer.Infrastructure.Users.Services;
 
-public class DeviceTrackingService : IDeviceTrackingService
+public class DeviceTrackingService(
+    ILogger<DeviceTrackingService> logger,
+    IReadWriteLock readWriteLock,
+    IServiceProvider serviceProvider)
+    : IDeviceTrackingService
 {
     private readonly Dictionary<Guid, DeviceState> _states = new();
 
-    private readonly ILogger<DeviceTrackingService> _logger;
-    private readonly IReadWriteLock _readWriteLock;
-    private readonly IServiceProvider _serviceProvider;
-
-    public DeviceTrackingService(
-        ILogger<DeviceTrackingService> logger,
-        IReadWriteLock readWriteLock,
-        IServiceProvider serviceProvider)
-    {
-        _logger = logger;
-        _readWriteLock = readWriteLock;
-        _serviceProvider = serviceProvider;
-    }
-
     public bool DeviceInteractedWith(Guid deviceId)
     {
-        return _readWriteLock.ForRead(() => _states.TryGetValue(deviceId, out var state) && state.InteractedWith);
+        return readWriteLock.ForRead(() => _states.TryGetValue(deviceId, out var state) && state.InteractedWith);
     }
 
     public void SetInteraction(string userId, Guid deviceId, bool interactedWith)
     {
-        _readWriteLock.ForWrite(() =>
+        readWriteLock.ForWrite(() =>
         {
-            _logger.LogInformation("User: {UserId} device: {DeviceId} interacted with: {InteractedWith}",
+            logger.LogInformation("User: {UserId} device: {DeviceId} interacted with: {InteractedWith}",
                 userId,
                 deviceId,
                 interactedWith);
@@ -62,7 +52,7 @@ public class DeviceTrackingService : IDeviceTrackingService
 
     public void Populate(List<Device> devices)
     {
-        _readWriteLock.ForRead(() =>
+        readWriteLock.ForRead(() =>
         {
             foreach (var device in devices)
             {
@@ -81,10 +71,10 @@ public class DeviceTrackingService : IDeviceTrackingService
             return;
         }
         
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var callbackService = scope.ServiceProvider.GetRequiredService<ICallbackService>();
         
-        _logger.LogInformation("Device: {DeviceId} interaction state: {InteractedWith}",
+        logger.LogInformation("Device: {DeviceId} interaction state: {InteractedWith}",
             deviceState.DeviceId,
             deviceState.InteractedWith);
         await callbackService.DeviceStateUpdated(deviceState);

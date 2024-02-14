@@ -9,13 +9,8 @@ using MixServer.Infrastructure.EF.Entities;
 
 namespace MixServer.Infrastructure.EF;
 
-public class MixServerDbContext : IdentityDbContext<DbUser>
+public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : IdentityDbContext<DbUser>(options)
 {
-    public MixServerDbContext(DbContextOptions<MixServerDbContext> options)
-        : base(options)
-    {
-    }
-
     public DbSet<PlaybackSession> PlaybackSessions { get; set; }
     
     public DbSet<FolderSort> FolderSorts { get; set; }

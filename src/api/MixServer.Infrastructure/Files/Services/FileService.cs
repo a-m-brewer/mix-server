@@ -15,7 +15,6 @@ public class FileService(
     IFileSystemInfoConverter fileSystemInfoConverter,
     IFolderCacheService folderCacheService,
     IFolderSortRepository folderSortRepository,
-    IMimeTypeService mimeTypeService,
     IRootFolderService rootFolderService)
     : IFileService
 {

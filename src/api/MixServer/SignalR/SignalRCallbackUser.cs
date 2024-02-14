@@ -2,18 +2,12 @@
 
 namespace MixServer.SignalR;
 
-public class SignalRCallbackUser
+public class SignalRCallbackUser(SignalRUserId signalRUserId, string accessToken)
 {
     private readonly ConcurrentDictionary<SignalRConnectionId, List<SignalRGroup>> _connections = new();
 
-    public SignalRCallbackUser(SignalRUserId signalRUserId, string accessToken)
-    {
-        SignalRUserId = signalRUserId;
-        AccessToken = accessToken;
-    }
-
-    public string AccessToken { get; set; }
-    public SignalRUserId SignalRUserId { get; }
+    public string AccessToken { get; set; } = accessToken;
+    public SignalRUserId SignalRUserId { get; } = signalRUserId;
 
     public void AddConnection(SignalRConnectionId connectionId, List<SignalRGroup> groups)
     {

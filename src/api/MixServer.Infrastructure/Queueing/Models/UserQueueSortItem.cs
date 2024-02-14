@@ -1,13 +1,9 @@
 ﻿namespace MixServer.Infrastructure.Queueing.Models;
 
-public class UserQueueSortItem : QueueSortItem
+public class UserQueueSortItem(Guid id, string absoluteFilePath, Guid? previousFolderItemId)
+    : QueueSortItem(id, absoluteFilePath)
 {
-    public UserQueueSortItem(Guid id, string absoluteFilePath, Guid? previousFolderItemId) : base(id, absoluteFilePath)
-    {
-        PreviousFolderItemId = previousFolderItemId;
-    }
-
-    public Guid? PreviousFolderItemId { get; }
+    public Guid? PreviousFolderItemId { get; } = previousFolderItemId;
 
     public DateTime Added { get; set; } = DateTime.UtcNow;
 }

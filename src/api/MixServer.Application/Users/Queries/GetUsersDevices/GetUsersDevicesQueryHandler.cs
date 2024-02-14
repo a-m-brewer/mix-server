@@ -4,23 +4,15 @@ using MixServer.Domain.Users.Services;
 
 namespace MixServer.Application.Users.Queries.GetUsersDevices;
 
-public class GetUsersDevicesQueryHandler : IQueryHandler<GetUsersDevicesQueryResponse>
+public class GetUsersDevicesQueryHandler(
+    IDeviceService deviceService,
+    IConverter<List<IDevice>, GetUsersDevicesQueryResponse> getUsersDevicesQueryResponseConverter)
+    : IQueryHandler<GetUsersDevicesQueryResponse>
 {
-    private readonly IDeviceService _deviceService;
-    private readonly IConverter<List<IDevice>, GetUsersDevicesQueryResponse> _getUsersDevicesQueryResponseConverter;
-
-    public GetUsersDevicesQueryHandler(
-        IDeviceService deviceService,
-        IConverter<List<IDevice>, GetUsersDevicesQueryResponse> getUsersDevicesQueryResponseConverter)
-    {
-        _deviceService = deviceService;
-        _getUsersDevicesQueryResponseConverter = getUsersDevicesQueryResponseConverter;
-    }
-    
     public async Task<GetUsersDevicesQueryResponse> HandleAsync()
     {
-        var devices = await _deviceService.GetUsersDevicesAsync();
+        var devices = await deviceService.GetUsersDevicesAsync();
 
-        return _getUsersDevicesQueryResponseConverter.Convert(devices);
+        return getUsersDevicesQueryResponseConverter.Convert(devices);
     }
 }

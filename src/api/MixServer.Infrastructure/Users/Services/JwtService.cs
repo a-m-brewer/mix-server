@@ -24,19 +24,11 @@ public interface IJwtService
     Task<ClaimsIdentity> GetPrincipalFromTokenAsync(string token);
 }
 
-public class JwtService : IJwtService
+public class JwtService(
+    IOptions<HostSettings> hostSettings,
+    IOptions<JwtSettings> jwtSettings)
+    : IJwtService
 {
-    private readonly IOptions<HostSettings> _hostSettings;
-    private readonly IOptions<JwtSettings> _jwtSettings;
-
-    public JwtService(
-        IOptions<HostSettings> hostSettings,
-        IOptions<JwtSettings> jwtSettings)
-    {
-        _hostSettings = hostSettings;
-        _jwtSettings = jwtSettings;
-    }
-
     public SigningCredentials GetSigningCredentials()
     {
         var secret = GetPrivateKey();
@@ -49,16 +41,16 @@ public class JwtService : IJwtService
         SigningCredentials signingCredentials,
         IEnumerable<Claim> claims)
     {
-        if (!_hostSettings.Value.ValidAuthorities.Contains(audience))
+        if (!hostSettings.Value.ValidAuthorities.Contains(audience))
         {
             throw new UnauthorizedRequestException();
         }
         
         var tokenOptions = new JwtSecurityToken(
-            issuer: _jwtSettings.Value.ValidIssuer,
+            issuer: jwtSettings.Value.ValidIssuer,
             audience: audience,
             claims: claims,
-            expires: DateTime.Now.AddMinutes(Convert.ToDouble(_jwtSettings.Value.ExpiryInMinutes)),
+            expires: DateTime.Now.AddMinutes(Convert.ToDouble(jwtSettings.Value.ExpiryInMinutes)),
             signingCredentials: signingCredentials);
 
         return tokenOptions;
@@ -115,13 +107,13 @@ public class JwtService : IJwtService
 
     private TokenValidationParameters GetTokenValidationParameters(bool validateLifetime = true)
         => GetTokenValidationParameters(
-            _hostSettings.Value,
-            _jwtSettings.Value,
+            hostSettings.Value,
+            jwtSettings.Value,
             validateLifetime);
     
     private SymmetricSecurityKey GetPrivateKey()
     {
-        var key = Encoding.UTF8.GetBytes(_jwtSettings.Value.SecurityKey);
+        var key = Encoding.UTF8.GetBytes(jwtSettings.Value.SecurityKey);
         var secret = new SymmetricSecurityKey(key);
 
         return secret;

@@ -10,16 +10,11 @@ public interface IDeviceState
     void UpdateInteractionState(string userId, bool interactedWith);
 }
 
-public class DeviceState : IDeviceState
+public class DeviceState(Guid deviceId) : IDeviceState
 {
-    public DeviceState(Guid deviceId)
-    {
-        DeviceId = deviceId;
-    }
-
     public event EventHandler? StateChanged;
 
-    public Guid DeviceId { get; }
+    public Guid DeviceId { get; } = deviceId;
 
     public string LastInteractedWith { get; private set; } = string.Empty;
 

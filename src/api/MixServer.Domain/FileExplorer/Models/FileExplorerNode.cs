@@ -17,21 +17,15 @@ public interface IFileExplorerNode
     DateTime CreationTimeUtc { get; }
 }
 
-public abstract class FileExplorerNode : IFileExplorerNode
+public abstract class FileExplorerNode(FileExplorerNodeType type) : IFileExplorerNode
 {
-    protected FileExplorerNode(
-        FileExplorerNodeType type)
-    {
-        Type = type;
-    }
-
     public abstract string Name { get; }
     
     public string NameIdentifier => Name
         .ToValidHtmlId() ?? string.Empty;
 
-    public FileExplorerNodeType Type { get; }
-    
+    public FileExplorerNodeType Type { get; } = type;
+
     public abstract bool Exists { get; }
 
     public abstract string? AbsolutePath { get; }

@@ -11,32 +11,23 @@ namespace MixServer.Application.FileExplorer.Queries.GetNode;
 
 [KnownType(nameof(GetKnownTypes))]
 [JsonConverter(typeof(JsonInheritanceConverter), "discriminator")]
-public abstract class NodeResponse
+public abstract class NodeResponse(
+    string name,
+    string nameIdentifier,
+    string? absolutePath,
+    FileExplorerNodeType type,
+    bool exists)
 {
-    protected NodeResponse(
-        string name,
-        string nameIdentifier,
-        string? absolutePath,
-        FileExplorerNodeType type,
-        bool exists)
-    {
-        Name = name;
-        NameIdentifier = nameIdentifier;
-        AbsolutePath = absolutePath;
-        Type = type;
-        Exists = exists;
-    }
-    
-    public string Name { get; }
-    
-    public string NameIdentifier { get; }
-    
-    public string? AbsolutePath { get; }
+    public string Name { get; } = name;
 
-    public FileExplorerNodeType Type { get; }
-    
-    public bool Exists { get; }
-    
+    public string NameIdentifier { get; } = nameIdentifier;
+
+    public string? AbsolutePath { get; } = absolutePath;
+
+    public FileExplorerNodeType Type { get; } = type;
+
+    public bool Exists { get; } = exists;
+
     /// <summary>
     /// Used to return the known derived types, for serialization purposes.
     /// </summary>
@@ -53,64 +44,47 @@ public abstract class NodeResponse
     }
 }
 
-public class FileNodeResponse : NodeResponse
+public class FileNodeResponse(
+    string name,
+    string nameIdentifier,
+    string? absolutePath,
+    FileExplorerNodeType type,
+    bool exists,
+    string? mimeType,
+    bool playbackSupported,
+    FolderInfoResponse parent)
+    : NodeResponse(name, nameIdentifier, absolutePath, type, exists)
 {
-    public FileNodeResponse(
-        string name,
-        string nameIdentifier,
-        string? absolutePath,
-        FileExplorerNodeType type,
-        bool exists,
-        string? mimeType,
-        bool playbackSupported,
-        FolderInfoResponse parent) : base(name, nameIdentifier, absolutePath, type, exists)
-    {
-        MimeType = mimeType;
-        PlaybackSupported = playbackSupported;
-        Parent = parent;
-    }
-    
-    public string? MimeType { get; }
+    public string? MimeType { get; } = mimeType;
 
-    public bool PlaybackSupported { get; }
-    
-    public FolderInfoResponse Parent { get; }
+    public bool PlaybackSupported { get; } = playbackSupported;
+
+    public FolderInfoResponse Parent { get; } = parent;
 }
 
-public class FolderNodeResponse : NodeResponse
+public class FolderNodeResponse(
+    string name,
+    string nameIdentifier,
+    string? absolutePath,
+    FileExplorerNodeType type,
+    bool exists,
+    string? parentAbsolutePath,
+    FolderSortDto sort)
+    : NodeResponse(name, nameIdentifier, absolutePath, type, exists)
 {
-    public FolderNodeResponse(
-        string name,
-        string nameIdentifier,
-        string? absolutePath,
-        FileExplorerNodeType type,
-        bool exists,
-        string? parentAbsolutePath,
-        FolderSortDto sort) 
-        : base(name, nameIdentifier, absolutePath, type, exists)
-    {
-        ParentAbsolutePath = parentAbsolutePath;
-        Sort = sort;
-    }
-
-    public string? ParentAbsolutePath { get; set; }
+    public string? ParentAbsolutePath { get; set; } = parentAbsolutePath;
     public List<NodeResponse> Children { get; set; } = [];
 
-    public FolderSortDto Sort { get; set; }
+    public FolderSortDto Sort { get; set; } = sort;
 }
 
-public class RootFolderNodeResponse : FolderNodeResponse
-{
-    public RootFolderNodeResponse(
-        string name,
-        string nameIdentifier,
-        string? absolutePath,
-        FileExplorerNodeType type,
-        bool exists) 
-        : base(name, nameIdentifier, absolutePath, type, exists, null, FolderSortDto.Default)
-    {
-    }
-}
+public class RootFolderNodeResponse(
+    string name,
+    string nameIdentifier,
+    string? absolutePath,
+    FileExplorerNodeType type,
+    bool exists)
+    : FolderNodeResponse(name, nameIdentifier, absolutePath, type, exists, null, FolderSortDto.Default);
 
 public class FolderInfoResponse(
     string name,

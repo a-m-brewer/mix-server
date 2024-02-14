@@ -14,36 +14,20 @@ using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Infrastructure.Sessions.Services;
 
-public class PlaybackTrackingService : IPlaybackTrackingService
+public class PlaybackTrackingService(
+    ISaveSessionStateRateLimiter saveSessionStateRateLimiter,
+    IUpdateSessionStateRateLimiter updateSessionStateRateLimiter,
+    ILogger<PlaybackTrackingService> logger,
+    ILoggerFactory loggerFactory,
+    IReadWriteLock readWriteLock,
+    IServiceProvider serviceProvider)
+    : IPlaybackTrackingService
 {
     private readonly Dictionary<string, PlaybackState> _playingItems = new();
 
-    private readonly ISaveSessionStateRateLimiter _saveSessionStateRateLimiter;
-    private readonly IUpdateSessionStateRateLimiter _updateSessionStateRateLimiter;
-    private readonly ILogger<PlaybackTrackingService> _logger;
-    private readonly ILoggerFactory _loggerFactory;
-    private readonly IReadWriteLock _readWriteLock;
-    private readonly IServiceProvider _serviceProvider;
-
-    public PlaybackTrackingService(
-        ISaveSessionStateRateLimiter saveSessionStateRateLimiter,
-        IUpdateSessionStateRateLimiter updateSessionStateRateLimiter,
-        ILogger<PlaybackTrackingService> logger,
-        ILoggerFactory loggerFactory,
-        IReadWriteLock readWriteLock,
-        IServiceProvider serviceProvider)
-    {
-        _saveSessionStateRateLimiter = saveSessionStateRateLimiter;
-        _updateSessionStateRateLimiter = updateSessionStateRateLimiter;
-        _logger = logger;
-        _loggerFactory = loggerFactory;
-        _readWriteLock = readWriteLock;
-        _serviceProvider = serviceProvider;
-    }
-
     public PlaybackState GetOrThrow(string userId)
     {
-        return _readWriteLock.ForRead(() =>
+        return readWriteLock.ForRead(() =>
         {
             if (_playingItems.TryGetValue(userId, out var state))
             {
@@ -56,7 +40,7 @@ public class PlaybackTrackingService : IPlaybackTrackingService
 
     public bool TryGet(string userId, [MaybeNullWhen(false)] out PlaybackState state)
     {
-        var res = _readWriteLock.ForRead(() =>
+        var res = readWriteLock.ForRead(() =>
         {
             var found = _playingItems.TryGetValue(userId, out var existingState);
 
@@ -69,7 +53,7 @@ public class PlaybackTrackingService : IPlaybackTrackingService
 
     public bool IsTracking(string userId)
     {
-        return _readWriteLock.ForRead(() => _playingItems.ContainsKey(userId));
+        return readWriteLock.ForRead(() => _playingItems.ContainsKey(userId));
     }
 
     public void UpdateSessionState(IPlaybackSession session)
@@ -84,7 +68,7 @@ public class PlaybackTrackingService : IPlaybackTrackingService
 
     private void UpdateSessionState(IPlaybackSession session, bool includePlaying)
     {
-        _readWriteLock.ForWrite(() =>
+        readWriteLock.ForWrite(() =>
         {
             if (_playingItems.TryGetValue(session.UserId, out var existingItem))
             {
@@ -92,9 +76,9 @@ public class PlaybackTrackingService : IPlaybackTrackingService
             }
             else
             {
-                _logger.LogInformation("Started tracking user's ({UserId}) playback state", session.UserId);
+                logger.LogInformation("Started tracking user's ({UserId}) playback state", session.UserId);
                 
-                var newSession = new PlaybackState(session, _loggerFactory.CreateLogger<PlaybackState>());
+                var newSession = new PlaybackState(session, loggerFactory.CreateLogger<PlaybackState>());
                 newSession.AudioPlayerStateUpdated += OnAudioPlayerStateUpdated;
                 
                 _playingItems[session.UserId] = newSession;
@@ -104,7 +88,7 @@ public class PlaybackTrackingService : IPlaybackTrackingService
 
     public void ClearSession(string userId)
     {
-        _readWriteLock.ForWrite(() =>
+        readWriteLock.ForWrite(() =>
         {
             if (!_playingItems.TryGetValue(userId, out var state))
             {
@@ -117,23 +101,23 @@ public class PlaybackTrackingService : IPlaybackTrackingService
 
     public void UpdatePlaybackState(string userId, Guid requestingDeviceId, TimeSpan currentTime)
     {
-        _readWriteLock.ForWrite(() =>
+        readWriteLock.ForWrite(() =>
         {
             if (!_playingItems.TryGetValue(userId, out var state))
             {
-                _logger.LogWarning("Could not find playback state for user: {UserId}", userId);
+                logger.LogWarning("Could not find playback state for user: {UserId}", userId);
                 return;
             }
 
-            if (!_updateSessionStateRateLimiter.TryAcquire(userId))
+            if (!updateSessionStateRateLimiter.TryAcquire(userId))
             {
-                _logger.LogTrace("Failed to acquire lease to update user: {UserId}'s session due to to many requests", userId);
+                logger.LogTrace("Failed to acquire lease to update user: {UserId}'s session due to to many requests", userId);
                 return;
             }
             
             if (state.DeviceId != requestingDeviceId)
             {
-                _logger.LogWarning("Could not update playback state for user: {UserId} due mismatching devices" + 
+                logger.LogWarning("Could not update playback state for user: {UserId} due mismatching devices" + 
                                    " Requesting Device: {RequestingDeviceId} State DeviceId: {StateDeviceId}",
                     userId,
                     requestingDeviceId,
@@ -147,7 +131,7 @@ public class PlaybackTrackingService : IPlaybackTrackingService
 
     public void UpdatePlaybackDevice(string userId, Guid deviceId)
     {
-        _readWriteLock.ForWrite(() =>
+        readWriteLock.ForWrite(() =>
         {
             if (!_playingItems.TryGetValue(userId, out var state))
             {
@@ -205,7 +189,7 @@ public class PlaybackTrackingService : IPlaybackTrackingService
             return;
         }
         
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var callbackService = scope.ServiceProvider.GetRequiredService<ICallbackService>();
 
         await callbackService.PlaybackStateUpdated(playbackState, type);
@@ -215,11 +199,11 @@ public class PlaybackTrackingService : IPlaybackTrackingService
 
     public void HandleDeviceDisconnected(string userId, Guid deviceId)
     {
-        _readWriteLock.ForUpgradeableRead(() =>
+        readWriteLock.ForUpgradeableRead(() =>
         {
             if (_playingItems.TryGetValue(userId, out var state))
             {
-                _readWriteLock.ForWrite(() =>
+                readWriteLock.ForWrite(() =>
                 {
                     state.HandleDeviceDisconnected(deviceId);
                 });
@@ -229,7 +213,7 @@ public class PlaybackTrackingService : IPlaybackTrackingService
 
     public void Populate(IPlaybackSession session)
     {
-        _readWriteLock.ForRead(() =>
+        readWriteLock.ForRead(() =>
         {
             if (!_playingItems.TryGetValue(session.UserId, out var playingItem))
             {
@@ -244,24 +228,24 @@ public class PlaybackTrackingService : IPlaybackTrackingService
     {
         if (!playbackState.SessionId.HasValue || playbackState.SessionId.Value == Guid.Empty)
         {
-            _logger.LogWarning("Failed to save playback state as there is currently no session associated with User: {UserId}", playbackState.UserId);
+            logger.LogWarning("Failed to save playback state as there is currently no session associated with User: {UserId}", playbackState.UserId);
             return;
         }
         
-        if (type == AudioPlayerStateUpdateType.CurrentTime && !_saveSessionStateRateLimiter.TryAcquire(playbackState.SessionId.Value))
+        if (type == AudioPlayerStateUpdateType.CurrentTime && !saveSessionStateRateLimiter.TryAcquire(playbackState.SessionId.Value))
         {
-            _logger.LogTrace("Failed to acquire lease to save session: {SessionId} due to to many requests", playbackState.SessionId);
+            logger.LogTrace("Failed to acquire lease to save session: {SessionId} due to to many requests", playbackState.SessionId);
             return;
         }
         
         try
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = serviceProvider.CreateScope();
             var currentUserRepository = scope.ServiceProvider.GetRequiredService<ICurrentUserRepository>();
             var playbackSessionRepository = scope.ServiceProvider.GetRequiredService<IPlaybackSessionRepository>();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-            _logger.LogDebug("Saving Session: {SessionId}", playbackState.SessionId);
+            logger.LogDebug("Saving Session: {SessionId}", playbackState.SessionId);
             await currentUserRepository.LoadUserAsync(playbackState.UserId);
             var currentUser = currentUserRepository.CurrentUser;
 
@@ -278,7 +262,7 @@ public class PlaybackTrackingService : IPlaybackTrackingService
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed to save playback state");
+            logger.LogError(e, "Failed to save playback state");
         }
     }
 }

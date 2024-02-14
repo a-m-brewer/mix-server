@@ -9,17 +9,10 @@ public interface IUserRepository
     Task<DbUser> GetUserAsync(string username);
 }
 
-public class UserRepository : IUserRepository
+public class UserRepository(UserManager<DbUser> userManager) : IUserRepository
 {
-    private readonly UserManager<DbUser> _userManager;
-
-    public UserRepository(UserManager<DbUser> userManager)
-    {
-        _userManager = userManager;
-    }
-    
     public async Task<DbUser> GetUserAsync(string username)
     {
-        return await _userManager.FindByNameAsync(username) ?? throw new UnauthorizedRequestException();
+        return await userManager.FindByNameAsync(username) ?? throw new UnauthorizedRequestException();
     }
 }

@@ -1,9 +1,8 @@
 ﻿namespace MixServer.SignalR;
 
-public struct SignalRGroup : IEquatable<SignalRGroup>
+public struct SignalRGroup(string groupName) : IEquatable<SignalRGroup>
 {
-    public SignalRGroup(string groupName) : this() { Name = groupName; }
-    public string Name { get; }
+    public string Name { get; } = groupName;
 
     public static implicit operator string(SignalRGroup g) => g.Name;
 
