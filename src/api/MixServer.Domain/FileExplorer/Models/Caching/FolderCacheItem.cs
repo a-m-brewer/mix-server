@@ -40,16 +40,16 @@ public class FolderCacheItem : IFolderCacheItem
 
         var directoryInfo = new DirectoryInfo(absolutePath);
 
-        _folder = fileExplorerConverter.ConvertToFolder(directoryInfo);
+        _folder = new FileExplorerFolder(_fileExplorerConverter.Convert(directoryInfo));
 
         foreach (var directory in directoryInfo.GetDirectories())
         {
-            _folder.AddChild(fileExplorerConverter.ConvertToFolderNode(directory));
+            _folder.AddChild(fileExplorerConverter.Convert(directory));
         }
 
         foreach (var file in directoryInfo.GetFiles())
         {
-            _folder.AddChild(fileExplorerConverter.ConvertToFileNode(file, _folder.Node));
+            _folder.AddChild(fileExplorerConverter.Convert(file, _folder.Node));
         }
 
         _watcher = new FileSystemWatcher(absolutePath)
@@ -155,8 +155,8 @@ public class FolderCacheItem : IFolderCacheItem
     private IFileExplorerNode Create(bool isFile, string fullName)
     {
         IFileExplorerNode info = isFile
-            ? _fileExplorerConverter.ConvertToFileNode(new FileInfo(fullName), _folder.Node)
-            : _fileExplorerConverter.ConvertToFolderNode(new DirectoryInfo(fullName));
+            ? _fileExplorerConverter.Convert(new FileInfo(fullName), _folder.Node)
+            : _fileExplorerConverter.Convert(new DirectoryInfo(fullName));
         _folder.AddChild(info);
         _logger.LogDebug("Added: {AbsolutePath} to {CurrentFolder}", fullName, _absolutePath);
 

@@ -16,7 +16,7 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 export const MIXSERVER_BASE_URL = new InjectionToken<string>('MIXSERVER_BASE_URL');
 
 export interface INodeClient {
-    getNode(absolutePath?: string | null | undefined): Observable<FolderNodeResponse>;
+    getNode(absolutePath?: string | null | undefined): Observable<FileExplorerFolderResponse>;
     setFolderSortMode(command: SetFolderSortCommand): Observable<void>;
 }
 
@@ -33,7 +33,7 @@ export class NodeClient implements INodeClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getNode(absolutePath?: string | null | undefined): Observable<FolderNodeResponse> {
+    getNode(absolutePath?: string | null | undefined): Observable<FileExplorerFolderResponse> {
         let url_ = this.baseUrl + "/api/node?";
         if (absolutePath !== undefined && absolutePath !== null)
             url_ += "AbsolutePath=" + encodeURIComponent("" + absolutePath) + "&";
@@ -54,14 +54,14 @@ export class NodeClient implements INodeClient {
                 try {
                     return this.processGetNode(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<FolderNodeResponse>;
+                    return _observableThrow(e) as any as Observable<FileExplorerFolderResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<FolderNodeResponse>;
+                return _observableThrow(response_) as any as Observable<FileExplorerFolderResponse>;
         }));
     }
 
-    protected processGetNode(response: HttpResponseBase): Observable<FolderNodeResponse> {
+    protected processGetNode(response: HttpResponseBase): Observable<FileExplorerFolderResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -72,7 +72,7 @@ export class NodeClient implements INodeClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = FolderNodeResponse.fromJS(resultData200);
+            result200 = FileExplorerFolderResponse.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status === 400) {
@@ -1764,65 +1764,120 @@ export class UserClient implements IUserClient {
     }
 }
 
-export abstract class NodeResponse implements INodeResponse {
-    name!: string;
-    nameIdentifier!: string;
-    absolutePath?: string | undefined;
-    type!: FileExplorerNodeType;
-    exists!: boolean;
+export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
+    node!: FileExplorerFolderNodeResponse;
+    children!: FileExplorerNodeResponse[];
+    sort!: FolderSortDto;
 
     protected _discriminator: string;
 
-    constructor(data?: INodeResponse) {
+    constructor(data?: IFileExplorerFolderResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
                     (<any>this)[property] = (<any>data)[property];
             }
         }
-        this._discriminator = "NodeResponse";
+        if (!data) {
+            this.node = new FileExplorerFolderNodeResponse();
+            this.children = [];
+            this.sort = new FolderSortDto();
+        }
+        this._discriminator = "FileExplorerFolderResponse";
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.node = _data["node"] ? FileExplorerFolderNodeResponse.fromJS(_data["node"]) : new FileExplorerFolderNodeResponse();
+            if (Array.isArray(_data["children"])) {
+                this.children = [] as any;
+                for (let item of _data["children"])
+                    this.children!.push(FileExplorerNodeResponse.fromJS(item));
+            }
+            this.sort = _data["sort"] ? FolderSortDto.fromJS(_data["sort"]) : new FolderSortDto();
+        }
+    }
+
+    static fromJS(data: any): FileExplorerFolderResponse {
+        data = typeof data === 'object' ? data : {};
+        if (data["discriminator"] === "RootFileExplorerFolderResponse") {
+            let result = new RootFileExplorerFolderResponse();
+            result.init(data);
+            return result;
+        }
+        let result = new FileExplorerFolderResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["discriminator"] = this._discriminator;
+        data["node"] = this.node ? this.node.toJSON() : <any>undefined;
+        if (Array.isArray(this.children)) {
+            data["children"] = [];
+            for (let item of this.children)
+                data["children"].push(item.toJSON());
+        }
+        data["sort"] = this.sort ? this.sort.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface IFileExplorerFolderResponse {
+    node: FileExplorerFolderNodeResponse;
+    children: FileExplorerNodeResponse[];
+    sort: FolderSortDto;
+}
+
+export class FileExplorerNodeResponse implements IFileExplorerNodeResponse {
+    name!: string;
+    absolutePath!: string;
+    type!: FileExplorerNodeType;
+    exists!: boolean;
+
+    protected _discriminator: string;
+
+    constructor(data?: IFileExplorerNodeResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        this._discriminator = "FileExplorerNodeResponse";
     }
 
     init(_data?: any) {
         if (_data) {
             this.name = _data["name"];
-            this.nameIdentifier = _data["nameIdentifier"];
             this.absolutePath = _data["absolutePath"];
             this.type = _data["type"];
             this.exists = _data["exists"];
         }
     }
 
-    static fromJS(data: any): NodeResponse {
+    static fromJS(data: any): FileExplorerNodeResponse {
         data = typeof data === 'object' ? data : {};
-        if (data["discriminator"] === "FolderNodeResponse") {
-            let result = new FolderNodeResponse();
+        if (data["discriminator"] === "FileExplorerFolderNodeResponse") {
+            let result = new FileExplorerFolderNodeResponse();
             result.init(data);
             return result;
         }
-        if (data["discriminator"] === "FileNodeResponse") {
-            let result = new FileNodeResponse();
+        if (data["discriminator"] === "FileExplorerFileNodeResponse") {
+            let result = new FileExplorerFileNodeResponse();
             result.init(data);
             return result;
         }
-        if (data["discriminator"] === "RootFolderNodeResponse") {
-            let result = new RootFolderNodeResponse();
-            result.init(data);
-            return result;
-        }
-        if (data["discriminator"] === "RootFolderChildNodeResponse") {
-            let result = new RootFolderChildNodeResponse();
-            result.init(data);
-            return result;
-        }
-        throw new Error("The abstract class 'NodeResponse' cannot be instantiated.");
+        let result = new FileExplorerNodeResponse();
+        result.init(data);
+        return result;
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["discriminator"] = this._discriminator;
         data["name"] = this.name;
-        data["nameIdentifier"] = this.nameIdentifier;
         data["absolutePath"] = this.absolutePath;
         data["type"] = this.type;
         data["exists"] = this.exists;
@@ -1830,77 +1885,49 @@ export abstract class NodeResponse implements INodeResponse {
     }
 }
 
-export interface INodeResponse {
+export interface IFileExplorerNodeResponse {
     name: string;
-    nameIdentifier: string;
-    absolutePath?: string | undefined;
+    absolutePath: string;
     type: FileExplorerNodeType;
     exists: boolean;
 }
 
-export class FolderNodeResponse extends NodeResponse implements IFolderNodeResponse {
-    children!: NodeResponse[];
-    info!: FolderInfoResponse;
-    sort!: FolderSortDto;
+export class FileExplorerFolderNodeResponse extends FileExplorerNodeResponse implements IFileExplorerFolderNodeResponse {
+    belongsToRoot!: boolean;
+    belongsToRootChild!: boolean;
 
-    constructor(data?: IFolderNodeResponse) {
+    constructor(data?: IFileExplorerFolderNodeResponse) {
         super(data);
-        if (!data) {
-            this.children = [];
-            this.info = new FolderInfoResponse();
-            this.sort = new FolderSortDto();
-        }
-        this._discriminator = "FolderNodeResponse";
+        this._discriminator = "FileExplorerFolderNodeResponse";
     }
 
     override init(_data?: any) {
         super.init(_data);
         if (_data) {
-            if (Array.isArray(_data["children"])) {
-                this.children = [] as any;
-                for (let item of _data["children"])
-                    this.children!.push(NodeResponse.fromJS(item));
-            }
-            this.info = _data["info"] ? FolderInfoResponse.fromJS(_data["info"]) : new FolderInfoResponse();
-            this.sort = _data["sort"] ? FolderSortDto.fromJS(_data["sort"]) : new FolderSortDto();
+            this.belongsToRoot = _data["belongsToRoot"];
+            this.belongsToRootChild = _data["belongsToRootChild"];
         }
     }
 
-    static override fromJS(data: any): FolderNodeResponse {
+    static override fromJS(data: any): FileExplorerFolderNodeResponse {
         data = typeof data === 'object' ? data : {};
-        if (data["discriminator"] === "RootFolderNodeResponse") {
-            let result = new RootFolderNodeResponse();
-            result.init(data);
-            return result;
-        }
-        if (data["discriminator"] === "RootFolderChildNodeResponse") {
-            let result = new RootFolderChildNodeResponse();
-            result.init(data);
-            return result;
-        }
-        let result = new FolderNodeResponse();
+        let result = new FileExplorerFolderNodeResponse();
         result.init(data);
         return result;
     }
 
     override toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        if (Array.isArray(this.children)) {
-            data["children"] = [];
-            for (let item of this.children)
-                data["children"].push(item.toJSON());
-        }
-        data["info"] = this.info ? this.info.toJSON() : <any>undefined;
-        data["sort"] = this.sort ? this.sort.toJSON() : <any>undefined;
+        data["belongsToRoot"] = this.belongsToRoot;
+        data["belongsToRootChild"] = this.belongsToRootChild;
         super.toJSON(data);
         return data;
     }
 }
 
-export interface IFolderNodeResponse extends INodeResponse {
-    children: NodeResponse[];
-    info: FolderInfoResponse;
-    sort: FolderSortDto;
+export interface IFileExplorerFolderNodeResponse extends IFileExplorerNodeResponse {
+    belongsToRoot: boolean;
+    belongsToRootChild: boolean;
 }
 
 export enum FileExplorerNodeType {
@@ -1908,73 +1935,17 @@ export enum FileExplorerNodeType {
     Folder = "Folder",
 }
 
-export class RootFolderNodeResponse extends FolderNodeResponse implements IRootFolderNodeResponse {
-
-    constructor(data?: IRootFolderNodeResponse) {
-        super(data);
-        this._discriminator = "RootFolderNodeResponse";
-    }
-
-    override init(_data?: any) {
-        super.init(_data);
-    }
-
-    static override fromJS(data: any): RootFolderNodeResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new RootFolderNodeResponse();
-        result.init(data);
-        return result;
-    }
-
-    override toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        super.toJSON(data);
-        return data;
-    }
-}
-
-export interface IRootFolderNodeResponse extends IFolderNodeResponse {
-}
-
-export class RootFolderChildNodeResponse extends FolderNodeResponse implements IRootFolderChildNodeResponse {
-
-    constructor(data?: IRootFolderChildNodeResponse) {
-        super(data);
-        this._discriminator = "RootFolderChildNodeResponse";
-    }
-
-    override init(_data?: any) {
-        super.init(_data);
-    }
-
-    static override fromJS(data: any): RootFolderChildNodeResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new RootFolderChildNodeResponse();
-        result.init(data);
-        return result;
-    }
-
-    override toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        super.toJSON(data);
-        return data;
-    }
-}
-
-export interface IRootFolderChildNodeResponse extends IFolderNodeResponse {
-}
-
-export class FileNodeResponse extends NodeResponse implements IFileNodeResponse {
-    mimeType?: string | undefined;
+export class FileExplorerFileNodeResponse extends FileExplorerNodeResponse implements IFileExplorerFileNodeResponse {
+    mimeType!: string;
     playbackSupported!: boolean;
-    parent!: FolderInfoResponse;
+    parent!: FileExplorerFolderNodeResponse;
 
-    constructor(data?: IFileNodeResponse) {
+    constructor(data?: IFileExplorerFileNodeResponse) {
         super(data);
         if (!data) {
-            this.parent = new FolderInfoResponse();
+            this.parent = new FileExplorerFolderNodeResponse();
         }
-        this._discriminator = "FileNodeResponse";
+        this._discriminator = "FileExplorerFileNodeResponse";
     }
 
     override init(_data?: any) {
@@ -1982,13 +1953,13 @@ export class FileNodeResponse extends NodeResponse implements IFileNodeResponse 
         if (_data) {
             this.mimeType = _data["mimeType"];
             this.playbackSupported = _data["playbackSupported"];
-            this.parent = _data["parent"] ? FolderInfoResponse.fromJS(_data["parent"]) : new FolderInfoResponse();
+            this.parent = _data["parent"] ? FileExplorerFolderNodeResponse.fromJS(_data["parent"]) : new FileExplorerFolderNodeResponse();
         }
     }
 
-    static override fromJS(data: any): FileNodeResponse {
+    static override fromJS(data: any): FileExplorerFileNodeResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new FileNodeResponse();
+        let result = new FileExplorerFileNodeResponse();
         result.init(data);
         return result;
     }
@@ -2003,66 +1974,10 @@ export class FileNodeResponse extends NodeResponse implements IFileNodeResponse 
     }
 }
 
-export interface IFileNodeResponse extends INodeResponse {
-    mimeType?: string | undefined;
+export interface IFileExplorerFileNodeResponse extends IFileExplorerNodeResponse {
+    mimeType: string;
     playbackSupported: boolean;
-    parent: FolderInfoResponse;
-}
-
-export class FolderInfoResponse implements IFolderInfoResponse {
-    name!: string;
-    absolutePath?: string | undefined;
-    parentAbsolutePath?: string | undefined;
-    exists!: boolean;
-    belongsToRoot!: boolean;
-    belongsToRootChild!: boolean;
-
-    constructor(data?: IFolderInfoResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["name"];
-            this.absolutePath = _data["absolutePath"];
-            this.parentAbsolutePath = _data["parentAbsolutePath"];
-            this.exists = _data["exists"];
-            this.belongsToRoot = _data["belongsToRoot"];
-            this.belongsToRootChild = _data["belongsToRootChild"];
-        }
-    }
-
-    static fromJS(data: any): FolderInfoResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new FolderInfoResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["name"] = this.name;
-        data["absolutePath"] = this.absolutePath;
-        data["parentAbsolutePath"] = this.parentAbsolutePath;
-        data["exists"] = this.exists;
-        data["belongsToRoot"] = this.belongsToRoot;
-        data["belongsToRootChild"] = this.belongsToRootChild;
-        return data;
-    }
-}
-
-export interface IFolderInfoResponse {
-    name: string;
-    absolutePath?: string | undefined;
-    parentAbsolutePath?: string | undefined;
-    exists: boolean;
-    belongsToRoot: boolean;
-    belongsToRootChild: boolean;
+    parent: FileExplorerFolderNodeResponse;
 }
 
 export class FolderSortDto implements IFolderSortDto {
@@ -2108,6 +2023,34 @@ export interface IFolderSortDto {
 export enum FolderSortMode {
     Name = "Name",
     Created = "Created",
+}
+
+export class RootFileExplorerFolderResponse extends FileExplorerFolderResponse implements IRootFileExplorerFolderResponse {
+
+    constructor(data?: IRootFileExplorerFolderResponse) {
+        super(data);
+        this._discriminator = "RootFileExplorerFolderResponse";
+    }
+
+    override init(_data?: any) {
+        super.init(_data);
+    }
+
+    static override fromJS(data: any): RootFileExplorerFolderResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RootFileExplorerFolderResponse();
+        result.init(data);
+        return result;
+    }
+
+    override toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        super.toJSON(data);
+        return data;
+    }
+}
+
+export interface IRootFileExplorerFolderResponse extends IFileExplorerFolderResponse {
 }
 
 export class ProblemDetails implements IProblemDetails {
@@ -2411,7 +2354,7 @@ export interface IQueueSnapshotDto {
 export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
     id!: string;
     type!: QueueSnapshotItemType;
-    file!: FileNodeResponse;
+    file!: FileExplorerFileNodeResponse;
 
     constructor(data?: IQueueSnapshotItemDto) {
         if (data) {
@@ -2421,7 +2364,7 @@ export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
             }
         }
         if (!data) {
-            this.file = new FileNodeResponse();
+            this.file = new FileExplorerFileNodeResponse();
         }
     }
 
@@ -2429,7 +2372,7 @@ export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
         if (_data) {
             this.id = _data["id"];
             this.type = _data["type"];
-            this.file = _data["file"] ? FileNodeResponse.fromJS(_data["file"]) : new FileNodeResponse();
+            this.file = _data["file"] ? FileExplorerFileNodeResponse.fromJS(_data["file"]) : new FileExplorerFileNodeResponse();
         }
     }
 
@@ -2452,7 +2395,7 @@ export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
 export interface IQueueSnapshotItemDto {
     id: string;
     type: QueueSnapshotItemType;
-    file: FileNodeResponse;
+    file: FileExplorerFileNodeResponse;
 }
 
 export enum QueueSnapshotItemType {
@@ -2626,7 +2569,7 @@ export interface ISyncPlaybackSessionResponse {
 export class PlaybackSessionDto implements IPlaybackSessionDto {
     id!: string;
     fileDirectory!: string;
-    file!: FileNodeResponse;
+    file!: FileExplorerFileNodeResponse;
     lastPlayed!: Date;
     playing!: boolean;
     currentTime!: number;
@@ -2641,7 +2584,7 @@ export class PlaybackSessionDto implements IPlaybackSessionDto {
             }
         }
         if (!data) {
-            this.file = new FileNodeResponse();
+            this.file = new FileExplorerFileNodeResponse();
         }
     }
 
@@ -2649,7 +2592,7 @@ export class PlaybackSessionDto implements IPlaybackSessionDto {
         if (_data) {
             this.id = _data["id"];
             this.fileDirectory = _data["fileDirectory"];
-            this.file = _data["file"] ? FileNodeResponse.fromJS(_data["file"]) : new FileNodeResponse();
+            this.file = _data["file"] ? FileExplorerFileNodeResponse.fromJS(_data["file"]) : new FileExplorerFileNodeResponse();
             this.lastPlayed = _data["lastPlayed"] ? new Date(_data["lastPlayed"].toString()) : <any>undefined;
             this.playing = _data["playing"];
             this.currentTime = _data["currentTime"];
@@ -2682,7 +2625,7 @@ export class PlaybackSessionDto implements IPlaybackSessionDto {
 export interface IPlaybackSessionDto {
     id: string;
     fileDirectory: string;
-    file: FileNodeResponse;
+    file: FileExplorerFileNodeResponse;
     lastPlayed: Date;
     playing: boolean;
     currentTime: number;
@@ -3881,7 +3824,7 @@ export interface IUserDeletedDto {
 }
 
 export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
-    node!: NodeResponse;
+    node!: FileExplorerNodeResponse;
     oldAbsolutePath!: string;
 
     constructor(data?: IFileExplorerNodeUpdatedDto) {
@@ -3891,11 +3834,14 @@ export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
                     (<any>this)[property] = (<any>data)[property];
             }
         }
+        if (!data) {
+            this.node = new FileExplorerNodeResponse();
+        }
     }
 
     init(_data?: any) {
         if (_data) {
-            this.node = _data["node"] ? NodeResponse.fromJS(_data["node"]) : <any>undefined;
+            this.node = _data["node"] ? FileExplorerNodeResponse.fromJS(_data["node"]) : new FileExplorerNodeResponse();
             this.oldAbsolutePath = _data["oldAbsolutePath"];
         }
     }
@@ -3916,12 +3862,12 @@ export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
 }
 
 export interface IFileExplorerNodeUpdatedDto {
-    node: NodeResponse;
+    node: FileExplorerNodeResponse;
     oldAbsolutePath: string;
 }
 
 export class FileExplorerNodeDeletedDto implements IFileExplorerNodeDeletedDto {
-    parent!: FolderNodeResponse;
+    parent!: FileExplorerFolderNodeResponse;
     absolutePath!: string;
 
     constructor(data?: IFileExplorerNodeDeletedDto) {
@@ -3932,13 +3878,13 @@ export class FileExplorerNodeDeletedDto implements IFileExplorerNodeDeletedDto {
             }
         }
         if (!data) {
-            this.parent = new FolderNodeResponse();
+            this.parent = new FileExplorerFolderNodeResponse();
         }
     }
 
     init(_data?: any) {
         if (_data) {
-            this.parent = _data["parent"] ? FolderNodeResponse.fromJS(_data["parent"]) : new FolderNodeResponse();
+            this.parent = _data["parent"] ? FileExplorerFolderNodeResponse.fromJS(_data["parent"]) : new FileExplorerFolderNodeResponse();
             this.absolutePath = _data["absolutePath"];
         }
     }
@@ -3959,7 +3905,7 @@ export class FileExplorerNodeDeletedDto implements IFileExplorerNodeDeletedDto {
 }
 
 export interface IFileExplorerNodeDeletedDto {
-    parent: FolderNodeResponse;
+    parent: FileExplorerFolderNodeResponse;
     absolutePath: string;
 }
 

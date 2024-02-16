@@ -2,30 +2,30 @@ using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
+using MixServer.Domain.Interfaces;
 
 namespace MixServer.Domain.FileExplorer.Converters;
 
 public interface IFileExplorerConverter
+    : IConverter<string, IFileExplorerFileNode>,
+    IConverter<DirectoryInfo, IFileExplorerFolderNode>,
+    IConverter<FileInfo, IFileExplorerFolderNode, IFileExplorerFileNode>
 {
-    IFileExplorerFileNode ConvertToFileNode(string fileAbsolutePath);
-    IFileExplorerFolderNode ConvertToFolderNode(DirectoryInfo directoryInfo);
-    IFileExplorerFileNode ConvertToFileNode(FileInfo fileInfo, IFileExplorerFolderNode parent);
-    FileExplorerFolder ConvertToFolder(DirectoryInfo directoryInfo);
 }
 
 public class FileExplorerConverter(
     IRootFileExplorerFolder rootFolder,
     IMimeTypeService mimeTypeService) : IFileExplorerConverter
 {
-    public IFileExplorerFileNode ConvertToFileNode(string fileAbsolutePath)
+    public IFileExplorerFileNode Convert(string fileAbsolutePath)
     {
         var parentAbsolutePath = fileAbsolutePath.GetParentFolderPathOrThrow();
-        var parent = ConvertToFolderNode(new DirectoryInfo(parentAbsolutePath));
+        var parent = Convert(new DirectoryInfo(parentAbsolutePath));
         
-        return ConvertToFileNode(new FileInfo(fileAbsolutePath), parent);
+        return Convert(new FileInfo(fileAbsolutePath), parent);
     }
 
-    public IFileExplorerFolderNode ConvertToFolderNode(DirectoryInfo directoryInfo)
+    public IFileExplorerFolderNode Convert(DirectoryInfo directoryInfo)
     {
         return new FileExplorerFolderNode(
             directoryInfo.Name,
@@ -37,7 +37,7 @@ public class FileExplorerConverter(
             rootFolder.BelongsToRootChild(directoryInfo.FullName));
     }
 
-    public IFileExplorerFileNode ConvertToFileNode(FileInfo fileInfo, IFileExplorerFolderNode parent)
+    public IFileExplorerFileNode Convert(FileInfo fileInfo, IFileExplorerFolderNode parent)
     {
         return new FileExplorerFileNode(
             fileInfo.Name,
@@ -48,10 +48,5 @@ public class FileExplorerConverter(
             mimeTypeService.GetMimeType(fileInfo.FullName),
             parent);
 
-    }
-
-    public FileExplorerFolder ConvertToFolder(DirectoryInfo directoryInfo)
-    {
-        return new FileExplorerFolder(ConvertToFolderNode(directoryInfo));
     }
 }

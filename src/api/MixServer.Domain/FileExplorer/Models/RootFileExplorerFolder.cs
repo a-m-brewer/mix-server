@@ -1,6 +1,9 @@
+using MixServer.Domain.FileExplorer.Enums;
+
 namespace MixServer.Domain.FileExplorer.Models;
 
-public class RootFileExplorerFolder(IFileExplorerFolderNode node) : FileExplorerFolder(node), IRootFileExplorerFolder
+public class RootFileExplorerFolder() : FileExplorerFolder(
+    new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true, DateTime.MinValue, false, false)), IRootFileExplorerFolder
 {
     public bool BelongsToRoot(string? absolutePath)
     {
@@ -13,7 +16,7 @@ public class RootFileExplorerFolder(IFileExplorerFolderNode node) : FileExplorer
             .OfType<IFileExplorerFolderNode>()
             .Any(f => f.AbsolutePath == absolutePath);
     }
-    
+
     public bool BelongsToRootChild(string? absolutePath)
     {
         var isSubFolder = Children.OfType<IFileExplorerFolderNode>()

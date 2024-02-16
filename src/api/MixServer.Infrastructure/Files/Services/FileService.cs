@@ -1,5 +1,4 @@
 using MixServer.Domain.Exceptions;
-using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
@@ -68,7 +67,7 @@ public class FileService(
 
     public IFileExplorerFileNode GetFile(string fileAbsolutePath)
     {
-        return fileExplorerConverter.ConvertToFileNode(fileAbsolutePath);
+        return fileExplorerConverter.Convert(fileAbsolutePath);
     }
 
     public async Task SetFolderSortAsync(IFolderSortRequest request)
