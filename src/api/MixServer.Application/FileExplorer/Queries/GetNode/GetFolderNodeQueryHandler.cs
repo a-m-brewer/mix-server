@@ -5,11 +5,11 @@ using MixServer.Domain.Interfaces;
 namespace MixServer.Application.FileExplorer.Queries.GetNode;
 
 public class GetFolderNodeQueryHandler(
-    IConverter<IFileExplorerFolderNode, FolderNodeResponse> folderNodeConverter,
+    IConverter<IFileExplorerFolder, FileExplorerFolderResponse> folderNodeConverter,
     IFileService fileService)
-    : IQueryHandler<GetFolderNodeQuery, FolderNodeResponse>
+    : IQueryHandler<GetFolderNodeQuery, FileExplorerFolderResponse>
 {
-    public async Task<FolderNodeResponse> HandleAsync(GetFolderNodeQuery request)
+    public async Task<FileExplorerFolderResponse> HandleAsync(GetFolderNodeQuery request)
     {
         var folder = await fileService.GetFolderOrRootAsync(request.AbsolutePath);
 

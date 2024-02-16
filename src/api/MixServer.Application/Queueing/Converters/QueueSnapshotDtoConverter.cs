@@ -6,7 +6,8 @@ using MixServer.Domain.Queueing.Entities;
 
 namespace MixServer.Application.Queueing.Converters;
 
-public class QueueSnapshotDtoConverter(IConverter<IFileExplorerFileNode, FileNodeResponse> fileNodeResponseConverter)
+public class QueueSnapshotDtoConverter(
+    IConverter<IFileExplorerFileNode, FileExplorerFileNodeResponse> fileNodeResponseConverter)
     :
         IConverter<QueueSnapshot, QueueSnapshotDto>,
         IConverter<QueueSnapshotItem, QueueSnapshotItemDto>

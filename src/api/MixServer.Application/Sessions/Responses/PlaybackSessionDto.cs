@@ -8,7 +8,7 @@ public class PlaybackSessionDto
 
     public string FileDirectory { get; set; } = string.Empty;
 
-    public FileNodeResponse File { get; set; } = null!;
+    public FileExplorerFileNodeResponse File { get; set; } = null!;
     
     public DateTime LastPlayed { get; set; }
 

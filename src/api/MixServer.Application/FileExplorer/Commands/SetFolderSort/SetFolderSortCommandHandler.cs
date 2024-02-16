@@ -30,7 +30,7 @@ public class SetFolderSortCommandHandler(
         unitOfWork.OnSaved(() => callbackService.FolderSorted(currentUserRepository.CurrentUserId, nextFolder));
         
         // The folder being sorted is the queues current folder
-        if (queueService.GetCurrentQueueFolderAbsolutePath() == nextFolder.AbsolutePath &&
+        if (queueService.GetCurrentQueueFolderAbsolutePath() == nextFolder.Node.AbsolutePath &&
             !previousFolder.Sort.Equals(nextFolder.Sort))
         {
             await queueService.ResortQueueAsync();

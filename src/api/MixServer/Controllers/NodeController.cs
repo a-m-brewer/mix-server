@@ -9,12 +9,12 @@ namespace MixServer.Controllers;
 [Produces("application/json")]
 [Route("api/[controller]")]
 public class NodeController(
-    IQueryHandler<GetFolderNodeQuery, FolderNodeResponse> getFolderNodeQueryHandler,
+    IQueryHandler<GetFolderNodeQuery, FileExplorerFolderResponse> getFolderNodeQueryHandler,
     ICommandHandler<SetFolderSortCommand> setFolderSortCommandHandler)
     : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType(typeof(FolderNodeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(FileExplorerFolderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetNode([FromQuery] GetFolderNodeQuery query)

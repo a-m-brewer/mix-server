@@ -27,7 +27,7 @@ public class FolderCacheService(
     ILogger<FolderCacheService> logger,
     ILoggerFactory loggerFactory,
     IOptions<FolderCacheSettings> options,
-    IFileSystemInfoConverter fileSystemInfoConverter) : IFolderCacheService
+    IFileExplorerConverter fileExplorerConverter) : IFolderCacheService
 {
     private readonly ConcurrentDictionary<object, SemaphoreSlim> _cacheKeySemaphores = new();
 
@@ -79,7 +79,7 @@ public class FolderCacheService(
                     IFolderCacheItem item =
                         new FolderCacheItem(absolutePath,
                             loggerFactory.CreateLogger<FolderCacheItem>(),
-                            fileSystemInfoConverter);
+                            fileExplorerConverter);
                     item.ItemAdded += OnItemAdded;
                     item.ItemUpdated += OnItemUpdated;
                     item.ItemRemoved += OnItemRemoved;
@@ -121,7 +121,7 @@ public class FolderCacheService(
     private void OnItemRemoved(object? sender, string e)
     {
         if (!IsFolderCacheItem(sender, out var parent)) return;
-        ItemRemoved?.Invoke(this, new FolderCacheServiceItemRemovedEventArgs(parent.Node, e));
+        ItemRemoved?.Invoke(this, new FolderCacheServiceItemRemovedEventArgs(parent.Folder.Node, e));
     }
 
     private bool IsFolderCacheItem(object? sender, [MaybeNullWhen(false)] out IFolderCacheItem parent)

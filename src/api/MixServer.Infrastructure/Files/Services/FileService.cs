@@ -12,19 +12,19 @@ namespace MixServer.Infrastructure.Files.Services;
 
 public class FileService(
     ICurrentUserRepository currentUserRepository,
-    IFileSystemInfoConverter fileSystemInfoConverter,
+    IFileExplorerConverter fileExplorerConverter,
     IFolderCacheService folderCacheService,
     IFolderSortRepository folderSortRepository,
-    IFileExplorerRootFolderNode rootFolder)
+    IRootFileExplorerFolder rootFolder)
     : IFileService
 {
-    public async Task<IFileExplorerFolderNode> GetFolderAsync(string absolutePath)
+    public async Task<IFileExplorerFolder> GetFolderAsync(string absolutePath)
     {
         var cacheItem = await folderCacheService.GetOrAddAsync(absolutePath);
 
-        var folder = cacheItem.Node;
+        var folder = cacheItem.Folder;
 
-        if (!folder.Exists)
+        if (!folder.Node.Exists)
         {
             return folder;
         }
@@ -35,7 +35,7 @@ public class FileService(
         return folder;
     }
 
-    public async Task<IFileExplorerFolderNode> GetFolderOrRootAsync(string? absolutePath)
+    public async Task<IFileExplorerFolder> GetFolderOrRootAsync(string? absolutePath)
     {
         // If no folder is specified return the root folder
         if (string.IsNullOrWhiteSpace(absolutePath))
@@ -51,7 +51,7 @@ public class FileService(
         
         var folder = await GetFolderAsync(absolutePath);
 
-        return folder.Exists
+        return folder.Node.Exists
             ? folder
             : throw new NotFoundException("Folder", absolutePath);
     }
@@ -68,10 +68,7 @@ public class FileService(
 
     public IFileExplorerFileNode GetFile(string fileAbsolutePath)
     {
-        var parentDirectoryPath = fileAbsolutePath.GetParentFolderPathOrThrow();
-        var parent = fileSystemInfoConverter.ConvertToFolderNode(parentDirectoryPath);
-    
-        return fileSystemInfoConverter.ConvertToFileNode(fileAbsolutePath, parent.Info);
+        return fileExplorerConverter.ConvertToFileNode(fileAbsolutePath);
     }
 
     public async Task SetFolderSortAsync(IFolderSortRequest request)

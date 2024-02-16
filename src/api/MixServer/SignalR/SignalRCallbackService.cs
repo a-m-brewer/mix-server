@@ -22,7 +22,7 @@ namespace MixServer.SignalR;
 public class SignalRCallbackService(
     IConverter<IDevice, DeviceDto> deviceDtoConverter,
     IConverter<IDeviceState, DeviceStateDto> deviceStateConverter,
-    INodeResponseConverter nodeResponseConverter,
+    IFileExplorerResponseConverter fileExplorerResponseConverter,
     IConverter<IPlaybackSession, bool, PlaybackSessionDto> playbackSessionConverter,
     IPlaybackStateConverter playbackStateConverter,
     IHubContext<SignalRCallbackHub, ISignalRCallbackClient> context,
@@ -90,11 +90,11 @@ public class SignalRCallbackService(
             .DeviceStateUpdated(dto);
     }
 
-    public async Task FolderSorted(string userId, IFileExplorerFolderNode folder)
+    public async Task FolderSorted(string userId, IFileExplorerFolder folder)
     {
         var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
 
-        var dto = nodeResponseConverter.Convert(folder);
+        var dto = fileExplorerResponseConverter.Convert(folder);
 
         await context.Clients
             .Clients(clients)
@@ -183,21 +183,21 @@ public class SignalRCallbackService(
     {
         return context.Clients
             .All
-            .FileExplorerNodeAdded(nodeResponseConverter.Convert(node));
+            .FileExplorerNodeAdded(fileExplorerResponseConverter.Convert(node));
     }
     
     public Task FileExplorerNodeUpdated(IFileExplorerNode node, string oldAbsolutePath)
     {
         return context.Clients
             .All
-            .FileExplorerNodeUpdated(new FileExplorerNodeUpdatedDto(nodeResponseConverter.Convert(node), oldAbsolutePath));
+            .FileExplorerNodeUpdated(new FileExplorerNodeUpdatedDto(fileExplorerResponseConverter.Convert(node), oldAbsolutePath));
     }
 
     public Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath)
     {
         return context.Clients
             .All
-            .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto(nodeResponseConverter.Convert(parentNode), absolutePath));
+            .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto(fileExplorerResponseConverter.Convert(parentNode), absolutePath));
     }
 
     public async Task UserDeleted(string userId)

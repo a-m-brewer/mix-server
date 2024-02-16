@@ -6,7 +6,7 @@ using MixServer.Domain.Sessions.Entities;
 
 namespace MixServer.Application.Sessions.Converters;
 
-public class PlaybackSessionDtoConverter(IConverter<IFileExplorerFileNode, FileNodeResponse> fileNodeConverter)
+public class PlaybackSessionDtoConverter(IConverter<IFileExplorerFileNode, FileExplorerFileNodeResponse> fileNodeConverter)
     :
         IConverter<IPlaybackSession, bool, PlaybackSessionDto>,
         IConverter<IPlaybackSession, PlaybackSessionDto>

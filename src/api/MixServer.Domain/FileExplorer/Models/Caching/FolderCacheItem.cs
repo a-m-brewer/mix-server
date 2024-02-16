@@ -1,13 +1,12 @@
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.FileExplorer.Converters;
-using MixServer.Domain.FileExplorer.Services;
 using DirectoryInfo = System.IO.DirectoryInfo;
 
 namespace MixServer.Domain.FileExplorer.Models.Caching;
 
 public interface ICacheFolder
 {
-    IFileExplorerFolderNode Node { get; }
+    IFileExplorerFolder Folder { get; }
 }
 
 public interface IFolderCacheItem : ICacheFolder, IDisposable
@@ -25,30 +24,32 @@ public class FolderCacheItem : IFolderCacheItem
     
     private readonly string _absolutePath;
     private readonly ILogger<FolderCacheItem> _logger;
-    private readonly IFileSystemInfoConverter _fileSystemInfoConverter;
+    private readonly IFileExplorerConverter _fileExplorerConverter;
 
     private readonly FileSystemWatcher _watcher;
+    private readonly FileExplorerFolder _folder;
 
     public FolderCacheItem(
         string absolutePath,
         ILogger<FolderCacheItem> logger,
-        IFileSystemInfoConverter fileSystemInfoConverter)
+        IFileExplorerConverter fileExplorerConverter)
     {
         _absolutePath = absolutePath;
         _logger = logger;
-        _fileSystemInfoConverter = fileSystemInfoConverter;
+        _fileExplorerConverter = fileExplorerConverter;
 
         var directoryInfo = new DirectoryInfo(absolutePath);
-        Node = fileSystemInfoConverter.ConvertToFolderNode(directoryInfo);
+
+        _folder = fileExplorerConverter.ConvertToFolder(directoryInfo);
 
         foreach (var directory in directoryInfo.GetDirectories())
         {
-            Node.Children.Add(fileSystemInfoConverter.ConvertToFolderNode(directory));
+            _folder.AddChild(fileExplorerConverter.ConvertToFolderNode(directory));
         }
 
         foreach (var file in directoryInfo.GetFiles())
         {
-            Node.Children.Add(fileSystemInfoConverter.ConvertToFileNode(file, Node.Info));
+            _folder.AddChild(fileExplorerConverter.ConvertToFileNode(file, _folder.Node));
         }
 
         _watcher = new FileSystemWatcher(absolutePath)
@@ -76,7 +77,7 @@ public class FolderCacheItem : IFolderCacheItem
     public event EventHandler<FolderItemUpdatedEventArgs>? ItemUpdated;
     public event EventHandler<string>? ItemRemoved;
     
-    public IFileExplorerFolderNode Node { get; }
+    public IFileExplorerFolder Folder => _folder;
 
     private void OnCreated(object sender, FileSystemEventArgs e) =>
         UpdateCache(e.FullPath, ChangeType.Created);
@@ -113,7 +114,7 @@ public class FolderCacheItem : IFolderCacheItem
             switch (changeType)
             {
                 case ChangeType.Created:
-                    if (Node.Children.Any(a => a.AbsolutePath == fullName))
+                    if (Folder.Children.Any(a => a.AbsolutePath == fullName))
                     {
                         _logger.LogTrace("Item already exists in cache, skipping: {FullName}", fullName);
                         return;
@@ -154,9 +155,9 @@ public class FolderCacheItem : IFolderCacheItem
     private IFileExplorerNode Create(bool isFile, string fullName)
     {
         IFileExplorerNode info = isFile
-            ? _fileSystemInfoConverter.ConvertToFileNode(new FileInfo(fullName), Node.Info)
-            : _fileSystemInfoConverter.ConvertToFolderNode(new DirectoryInfo(fullName));
-        Node.Children.Add(info);
+            ? _fileExplorerConverter.ConvertToFileNode(new FileInfo(fullName), _folder.Node)
+            : _fileExplorerConverter.ConvertToFolderNode(new DirectoryInfo(fullName));
+        _folder.AddChild(info);
         _logger.LogDebug("Added: {AbsolutePath} to {CurrentFolder}", fullName, _absolutePath);
 
         return info;
@@ -164,10 +165,10 @@ public class FolderCacheItem : IFolderCacheItem
 
     private void Delete(string fullName)
     {
-        var item = Node.Children.FirstOrDefault(x => x.AbsolutePath == fullName);
+        var item = Folder.Children.FirstOrDefault(x => x.AbsolutePath == fullName);
         if (item is not null)
         {
-            Node.Children.Remove(item);
+            _folder.RemoveChild(item);
             _logger.LogDebug("Removed: {AbsolutePath} from {CurrentFolder}", fullName, _absolutePath);
         }
         else
