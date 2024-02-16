@@ -16,18 +16,3 @@ public interface IFileExplorerNode
     string? AbsolutePath { get; }
     DateTime CreationTimeUtc { get; }
 }
-
-public abstract class FileExplorerNode(FileExplorerNodeType type) : IFileExplorerNode
-{
-    public abstract string Name { get; }
-    
-    public string NameIdentifier => Name
-        .ToValidHtmlId() ?? string.Empty;
-
-    public FileExplorerNodeType Type { get; } = type;
-
-    public abstract bool Exists { get; }
-
-    public abstract string? AbsolutePath { get; }
-    public abstract DateTime CreationTimeUtc { get; }
-}

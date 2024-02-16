@@ -4,32 +4,40 @@ namespace MixServer.Domain.FileExplorer.Models;
 
 public interface IFileExplorerFolderNode : IFileExplorerNode
 {
-    string? ParentAbsolutePath { get; }
     public IFolderInfo Info { get; }
     List<IFileExplorerNode> Children { get; }
-    IReadOnlyCollection<IFileExplorerNode> SortedChildren { get; }
+    IEnumerable<IFileExplorerNode> SortedChildren { get; }
     IFolderSort Sort { get; set; }
     
     public List<T> GenerateSortedChildren<T>()
         where T : IFileExplorerNode;
 }
 
-public class FileExplorerFolderNode(IFolderInfo info)
-    : FileExplorerNode(FileExplorerNodeType.Folder), IFileExplorerFolderNode
+public class FileExplorerFolderNode : FileExplorerNode, IFileExplorerFolderNode
 {
+    public FileExplorerFolderNode(IFolderInfo info) : base(FileExplorerNodeType.Folder)
+    {
+        Info = info;
+    }
+
+    public FileExplorerFolderNode(IFolderInfo info, List<IFileExplorerNode> children) : base(FileExplorerNodeType.Folder)
+    {
+        Info = info;
+        Children = children;
+    }
+    
     public override bool Exists => Info.Exists;
 
     public override string? AbsolutePath => Info.AbsolutePath;
     public override DateTime CreationTimeUtc => Info.CreationTimeUtc;
 
-    public IFolderInfo Info => info;
+    public IFolderInfo Info { get; }
     
     public override string Name => Info.Name;
 
-    public string? ParentAbsolutePath => Info.ParentAbsolutePath;
+    public List<IFileExplorerNode> Children { get; init; } = [];
 
-    public List<IFileExplorerNode> Children { get; set; } = [];
-    public IReadOnlyCollection<IFileExplorerNode> SortedChildren =>
+    public IEnumerable<IFileExplorerNode> SortedChildren =>
         GenerateSortedChildren<IFileExplorerNode>().AsReadOnly();
 
     public IFolderSort Sort { get; set; } = FolderSortModel.Default;

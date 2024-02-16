@@ -27,8 +27,7 @@ public class FolderCacheService(
     ILogger<FolderCacheService> logger,
     ILoggerFactory loggerFactory,
     IOptions<FolderCacheSettings> options,
-    IFileSystemInfoConverter fileSystemInfoConverter,
-    IRootFolderService rootFolderService) : IFolderCacheService
+    IFileSystemInfoConverter fileSystemInfoConverter) : IFolderCacheService
 {
     private readonly ConcurrentDictionary<object, SemaphoreSlim> _cacheKeySemaphores = new();
 
@@ -80,7 +79,6 @@ public class FolderCacheService(
                     IFolderCacheItem item =
                         new FolderCacheItem(absolutePath,
                             loggerFactory.CreateLogger<FolderCacheItem>(),
-                            rootFolderService,
                             fileSystemInfoConverter);
                     item.ItemAdded += OnItemAdded;
                     item.ItemUpdated += OnItemUpdated;

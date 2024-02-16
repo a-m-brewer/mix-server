@@ -1810,6 +1810,11 @@ export abstract class NodeResponse implements INodeResponse {
             result.init(data);
             return result;
         }
+        if (data["discriminator"] === "RootFolderChildNodeResponse") {
+            let result = new RootFolderChildNodeResponse();
+            result.init(data);
+            return result;
+        }
         throw new Error("The abstract class 'NodeResponse' cannot be instantiated.");
     }
 
@@ -1834,14 +1839,15 @@ export interface INodeResponse {
 }
 
 export class FolderNodeResponse extends NodeResponse implements IFolderNodeResponse {
-    parentAbsolutePath?: string | undefined;
     children!: NodeResponse[];
+    info!: FolderInfoResponse;
     sort!: FolderSortDto;
 
     constructor(data?: IFolderNodeResponse) {
         super(data);
         if (!data) {
             this.children = [];
+            this.info = new FolderInfoResponse();
             this.sort = new FolderSortDto();
         }
         this._discriminator = "FolderNodeResponse";
@@ -1850,12 +1856,12 @@ export class FolderNodeResponse extends NodeResponse implements IFolderNodeRespo
     override init(_data?: any) {
         super.init(_data);
         if (_data) {
-            this.parentAbsolutePath = _data["parentAbsolutePath"];
             if (Array.isArray(_data["children"])) {
                 this.children = [] as any;
                 for (let item of _data["children"])
                     this.children!.push(NodeResponse.fromJS(item));
             }
+            this.info = _data["info"] ? FolderInfoResponse.fromJS(_data["info"]) : new FolderInfoResponse();
             this.sort = _data["sort"] ? FolderSortDto.fromJS(_data["sort"]) : new FolderSortDto();
         }
     }
@@ -1867,6 +1873,11 @@ export class FolderNodeResponse extends NodeResponse implements IFolderNodeRespo
             result.init(data);
             return result;
         }
+        if (data["discriminator"] === "RootFolderChildNodeResponse") {
+            let result = new RootFolderChildNodeResponse();
+            result.init(data);
+            return result;
+        }
         let result = new FolderNodeResponse();
         result.init(data);
         return result;
@@ -1874,12 +1885,12 @@ export class FolderNodeResponse extends NodeResponse implements IFolderNodeRespo
 
     override toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["parentAbsolutePath"] = this.parentAbsolutePath;
         if (Array.isArray(this.children)) {
             data["children"] = [];
             for (let item of this.children)
                 data["children"].push(item.toJSON());
         }
+        data["info"] = this.info ? this.info.toJSON() : <any>undefined;
         data["sort"] = this.sort ? this.sort.toJSON() : <any>undefined;
         super.toJSON(data);
         return data;
@@ -1887,8 +1898,8 @@ export class FolderNodeResponse extends NodeResponse implements IFolderNodeRespo
 }
 
 export interface IFolderNodeResponse extends INodeResponse {
-    parentAbsolutePath?: string | undefined;
     children: NodeResponse[];
+    info: FolderInfoResponse;
     sort: FolderSortDto;
 }
 
@@ -1925,15 +1936,43 @@ export class RootFolderNodeResponse extends FolderNodeResponse implements IRootF
 export interface IRootFolderNodeResponse extends IFolderNodeResponse {
 }
 
+export class RootFolderChildNodeResponse extends FolderNodeResponse implements IRootFolderChildNodeResponse {
+
+    constructor(data?: IRootFolderChildNodeResponse) {
+        super(data);
+        this._discriminator = "RootFolderChildNodeResponse";
+    }
+
+    override init(_data?: any) {
+        super.init(_data);
+    }
+
+    static override fromJS(data: any): RootFolderChildNodeResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RootFolderChildNodeResponse();
+        result.init(data);
+        return result;
+    }
+
+    override toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        super.toJSON(data);
+        return data;
+    }
+}
+
+export interface IRootFolderChildNodeResponse extends IFolderNodeResponse {
+}
+
 export class FileNodeResponse extends NodeResponse implements IFileNodeResponse {
     mimeType?: string | undefined;
     playbackSupported!: boolean;
-    parent!: FolderNodeResponse;
+    parent!: FolderInfoResponse;
 
     constructor(data?: IFileNodeResponse) {
         super(data);
         if (!data) {
-            this.parent = new FolderNodeResponse();
+            this.parent = new FolderInfoResponse();
         }
         this._discriminator = "FileNodeResponse";
     }
@@ -1943,7 +1982,7 @@ export class FileNodeResponse extends NodeResponse implements IFileNodeResponse 
         if (_data) {
             this.mimeType = _data["mimeType"];
             this.playbackSupported = _data["playbackSupported"];
-            this.parent = _data["parent"] ? FolderNodeResponse.fromJS(_data["parent"]) : new FolderNodeResponse();
+            this.parent = _data["parent"] ? FolderInfoResponse.fromJS(_data["parent"]) : new FolderInfoResponse();
         }
     }
 
@@ -1967,7 +2006,63 @@ export class FileNodeResponse extends NodeResponse implements IFileNodeResponse 
 export interface IFileNodeResponse extends INodeResponse {
     mimeType?: string | undefined;
     playbackSupported: boolean;
-    parent: FolderNodeResponse;
+    parent: FolderInfoResponse;
+}
+
+export class FolderInfoResponse implements IFolderInfoResponse {
+    name!: string;
+    absolutePath?: string | undefined;
+    parentAbsolutePath?: string | undefined;
+    exists!: boolean;
+    belongsToRoot!: boolean;
+    belongsToRootChild!: boolean;
+
+    constructor(data?: IFolderInfoResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.absolutePath = _data["absolutePath"];
+            this.parentAbsolutePath = _data["parentAbsolutePath"];
+            this.exists = _data["exists"];
+            this.belongsToRoot = _data["belongsToRoot"];
+            this.belongsToRootChild = _data["belongsToRootChild"];
+        }
+    }
+
+    static fromJS(data: any): FolderInfoResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new FolderInfoResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["absolutePath"] = this.absolutePath;
+        data["parentAbsolutePath"] = this.parentAbsolutePath;
+        data["exists"] = this.exists;
+        data["belongsToRoot"] = this.belongsToRoot;
+        data["belongsToRootChild"] = this.belongsToRootChild;
+        return data;
+    }
+}
+
+export interface IFolderInfoResponse {
+    name: string;
+    absolutePath?: string | undefined;
+    parentAbsolutePath?: string | undefined;
+    exists: boolean;
+    belongsToRoot: boolean;
+    belongsToRootChild: boolean;
 }
 
 export class FolderSortDto implements IFolderSortDto {
@@ -2159,7 +2254,7 @@ export interface IHttpValidationProblemDetails extends IProblemDetails {
 }
 
 export class ValidationProblemDetails extends HttpValidationProblemDetails implements IValidationProblemDetails {
-    override errors!: { [key: string]: string[]; };
+    errors!: { [key: string]: string[]; };
 
     [key: string]: any;
 

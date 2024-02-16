@@ -2,7 +2,6 @@ using System.Runtime.Serialization;
 using JetBrains.Annotations;
 using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.FileExplorer.Enums;
-using MixServer.Domain.FileExplorer.Models;
 using Newtonsoft.Json;
 using NJsonSchema.NewtonsoftJson.Converters;
 
@@ -39,6 +38,7 @@ public abstract class NodeResponse(
             typeof(NodeResponse),
             typeof(FolderNodeResponse),
             typeof(RootFolderNodeResponse),
+            typeof(RootFolderChildNodeResponse),
             typeof(FileNodeResponse)
         };
     }
@@ -63,39 +63,41 @@ public class FileNodeResponse(
 }
 
 public class FolderNodeResponse(
-    string name,
     string nameIdentifier,
-    string? absolutePath,
-    FileExplorerNodeType type,
-    bool exists,
-    string? parentAbsolutePath,
+    FolderInfoResponse info,
     FolderSortDto sort)
-    : NodeResponse(name, nameIdentifier, absolutePath, type, exists)
+    : NodeResponse(info.Name, nameIdentifier, info.AbsolutePath, FileExplorerNodeType.Folder, info.Exists)
 {
-    public string? ParentAbsolutePath { get; set; } = parentAbsolutePath;
-    public List<NodeResponse> Children { get; set; } = [];
+    public List<NodeResponse> Children { get; init; } = [];
 
-    public FolderSortDto Sort { get; set; } = sort;
+    public FolderInfoResponse Info { get; } = info;
+
+    public FolderSortDto Sort { get; init; } = sort;
 }
 
 public class RootFolderNodeResponse(
-    string name,
     string nameIdentifier,
-    string? absolutePath,
-    FileExplorerNodeType type,
-    bool exists)
-    : FolderNodeResponse(name, nameIdentifier, absolutePath, type, exists, null, FolderSortDto.Default);
+    FolderInfoResponse info)
+    : FolderNodeResponse(nameIdentifier, info, FolderSortDto.Default);
+
+public class RootFolderChildNodeResponse(
+    string nameIdentifier,
+    FolderInfoResponse info,
+    FolderSortDto sort)
+    : FolderNodeResponse(nameIdentifier, info, sort);
 
 public class FolderInfoResponse(
     string name,
     string? absolutePath,
     string? parentAbsolutePath,
     bool exists,
-    bool canRead)
+    bool belongsToRoot,
+    bool belongsToRootChild)
 {
     public string Name { get; } = name;
     public string? AbsolutePath { get; } = absolutePath;
     public string? ParentAbsolutePath { get; } = parentAbsolutePath;
     public bool Exists { get; } = exists;
-    public bool CanRead { get; } = canRead;
+    public bool BelongsToRoot { get; } = belongsToRoot;
+    public bool BelongsToRootChild { get; } = belongsToRootChild;
 }

@@ -27,7 +27,7 @@ public class SyncPlaybackSessionCommandCommandHandler(
         
         var serverSession = await sessionService.GetCurrentPlaybackSessionWithFileAsync();
 
-        if (serverSession.File is { Parent.CanRead: false })
+        if (serverSession.File is { Parent.BelongsToRootChild: false })
         {
             sessionService.ClearUsersCurrentSession();
             await unitOfWork.SaveChangesAsync();

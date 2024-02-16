@@ -25,7 +25,6 @@ public class FolderCacheItem : IFolderCacheItem
     
     private readonly string _absolutePath;
     private readonly ILogger<FolderCacheItem> _logger;
-    private readonly IRootFolderService _rootFolderService;
     private readonly IFileSystemInfoConverter _fileSystemInfoConverter;
 
     private readonly FileSystemWatcher _watcher;
@@ -33,20 +32,18 @@ public class FolderCacheItem : IFolderCacheItem
     public FolderCacheItem(
         string absolutePath,
         ILogger<FolderCacheItem> logger,
-        IRootFolderService rootFolderService,
         IFileSystemInfoConverter fileSystemInfoConverter)
     {
         _absolutePath = absolutePath;
         _logger = logger;
-        _rootFolderService = rootFolderService;
         _fileSystemInfoConverter = fileSystemInfoConverter;
 
         var directoryInfo = new DirectoryInfo(absolutePath);
-        Node = fileSystemInfoConverter.ConvertToFolderNode(directoryInfo, rootFolderService.IsChildOfRoot(directoryInfo.FullName));
+        Node = fileSystemInfoConverter.ConvertToFolderNode(directoryInfo);
 
         foreach (var directory in directoryInfo.GetDirectories())
         {
-            Node.Children.Add(fileSystemInfoConverter.ConvertToFolderNode(directory, rootFolderService.IsChildOfRoot(directoryInfo.FullName)));
+            Node.Children.Add(fileSystemInfoConverter.ConvertToFolderNode(directory));
         }
 
         foreach (var file in directoryInfo.GetFiles())
@@ -158,7 +155,7 @@ public class FolderCacheItem : IFolderCacheItem
     {
         IFileExplorerNode info = isFile
             ? _fileSystemInfoConverter.ConvertToFileNode(new FileInfo(fullName), Node.Info)
-            : _fileSystemInfoConverter.ConvertToFolderNode(new DirectoryInfo(fullName), _rootFolderService.IsChildOfRoot(fullName));
+            : _fileSystemInfoConverter.ConvertToFolderNode(new DirectoryInfo(fullName));
         Node.Children.Add(info);
         _logger.LogDebug("Added: {AbsolutePath} to {CurrentFolder}", fullName, _absolutePath);
 

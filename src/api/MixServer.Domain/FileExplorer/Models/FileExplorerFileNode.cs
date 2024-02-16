@@ -24,7 +24,7 @@ public partial class FileExplorerFileNode(string name, string? mimeType, bool ex
 
     public string? MimeType { get; } = mimeType;
 
-    public bool PlaybackSupported => Parent.CanRead &&
+    public bool PlaybackSupported => Parent.BelongsToRootChild &&
                                      Exists && 
                                      !string.IsNullOrWhiteSpace(MimeType) &&
                                      AudioVideoMimeTypeRegex().IsMatch(MimeType);

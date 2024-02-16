@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using MixServer.Domain.FileExplorer.Converters;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
@@ -18,7 +19,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFolderCacheService, FolderCacheService>();
         services.AddSingleton<IFileNotificationService, FileNotificationService>();
         services.AddTransient<IFileSystemInfoConverter, FileSystemInfoConverter>();
-        services.AddSingleton<IRootFolderService, RootFolderService>();
+        services.AddSingleton<IFileExplorerRootFolderNode, FileExplorerRootFolderNode>();
 
         services.AddDomainInterfaces();
         services.AddDomainUtilities();

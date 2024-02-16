@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {
   FileExplorerNodeType,
-  FileNodeResponse,
+  FileNodeResponse, FolderInfoResponse,
   FolderNodeResponse,
   FolderSortDto,
   FolderSortMode,
@@ -39,10 +39,14 @@ export class FileExplorerNodeConverterService {
   }
 
   public fromFileResponse(file: FileNodeResponse): FileExplorerFileNode {
-    return new FileExplorerFileNode(file.name, file.nameIdentifier, file.absolutePath, file.exists, file.playbackSupported, undefined, this.fromFolderResponse(file.parent));
+    return new FileExplorerFileNode(file.name, file.nameIdentifier, file.absolutePath, file.exists, file.playbackSupported, undefined, this.fromFolderInfoResponse(file.parent));
   }
 
   public fromFolderResponse(response: FolderNodeResponse): FileExplorerFolderNode {
+    return new FileExplorerFolderNode(response.name, response.nameIdentifier, response.exists, response.absolutePath, this.fromFolderSortDto(response.sort), this.fromParentAbsolutePath(response.info.parentAbsolutePath));
+  }
+
+  public fromFolderInfoResponse(response: FolderInfoResponse): FileExplorerFolderNode {
     return new FileExplorerFolderNode(response.name, response.nameIdentifier, response.exists, response.absolutePath, this.fromFolderSortDto(response.sort), this.fromParentAbsolutePath(response.parentAbsolutePath));
   }
 

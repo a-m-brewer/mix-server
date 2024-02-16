@@ -15,7 +15,7 @@ public class FileService(
     IFileSystemInfoConverter fileSystemInfoConverter,
     IFolderCacheService folderCacheService,
     IFolderSortRepository folderSortRepository,
-    IRootFolderService rootFolderService)
+    IFileExplorerRootFolderNode rootFolder)
     : IFileService
 {
     public async Task<IFileExplorerFolderNode> GetFolderAsync(string absolutePath)
@@ -35,41 +35,16 @@ public class FileService(
         return folder;
     }
 
-    public IFileExplorerFolderNode GetUnpopulatedFolder(string absolutePath)
-    {
-        var isChild = rootFolderService.IsChildOfRoot(absolutePath);
-
-        // Out of bounds of the configured folders. Therefore the user does not have permission to access it.
-        if (!isChild)
-        {
-            return fileSystemInfoConverter.ConvertToFolderNode(absolutePath, false);
-        }
-        
-        var parent = Directory.GetParent(absolutePath);
-
-        var parentPath = rootFolderService.IsChildOfRoot(parent?.FullName)
-            ? parent?.FullName
-            : null;
-
-        var folder = fileSystemInfoConverter.ConvertToFolderNode(absolutePath, true);
-
-        return folder;
-    }
-
     public async Task<IFileExplorerFolderNode> GetFolderOrRootAsync(string? absolutePath)
     {
-        var rootFolder = rootFolderService.RootFolder;
-        
         // If no folder is specified return the root folder
         if (string.IsNullOrWhiteSpace(absolutePath))
         {
             return rootFolder;
         }
 
-        var isChild = rootFolderService.IsChildOfRoot(absolutePath);
-
         // The folder is out of bounds return the root folder instead
-        if (!isChild)
+        if (!rootFolder.BelongsToRootChild(absolutePath))
         {
             throw new ForbiddenRequestException("You do not have permission to access this folder");
         }
@@ -94,7 +69,7 @@ public class FileService(
     public IFileExplorerFileNode GetFile(string fileAbsolutePath)
     {
         var parentDirectoryPath = fileAbsolutePath.GetParentFolderPathOrThrow();
-        var parent = fileSystemInfoConverter.ConvertToFolderNode(parentDirectoryPath, rootFolderService.IsChildOfRoot(parentDirectoryPath));
+        var parent = fileSystemInfoConverter.ConvertToFolderNode(parentDirectoryPath);
     
         return fileSystemInfoConverter.ConvertToFileNode(fileAbsolutePath, parent.Info);
     }

@@ -5,23 +5,25 @@ namespace MixServer.Domain.FileExplorer.Converters;
 
 public interface IFileSystemInfoConverter
 {
-    IFileExplorerFolderNode ConvertToFolderNode(string absolutePath, bool canRead);
+    IFileExplorerFolderNode ConvertToFolderNode(string absolutePath);
 
-    IFileExplorerFolderNode ConvertToFolderNode(DirectoryInfo directoryInfo, bool canRead);
+    IFileExplorerFolderNode ConvertToFolderNode(DirectoryInfo directoryInfo);
     IFileExplorerFileNode ConvertToFileNode(string fileAbsolutePath, IFolderInfo parentInfo);
     IFileExplorerFileNode ConvertToFileNode(FileInfo file, IFolderInfo nodeInfo);
 }
 
-public class FileSystemInfoConverter(IMimeTypeService mimeTypeService) : IFileSystemInfoConverter
+public class FileSystemInfoConverter(
+    IFileExplorerRootFolderNode rootFolder,
+    IMimeTypeService mimeTypeService) : IFileSystemInfoConverter
 {
-    public IFileExplorerFolderNode ConvertToFolderNode(string absolutePath, bool canRead)
+    public IFileExplorerFolderNode ConvertToFolderNode(string absolutePath)
     {
-        return ConvertToFolderNode(new DirectoryInfo(absolutePath), canRead);
+        return ConvertToFolderNode(new DirectoryInfo(absolutePath));
     }
 
-    public IFileExplorerFolderNode ConvertToFolderNode(DirectoryInfo directoryInfo, bool canRead)
+    public IFileExplorerFolderNode ConvertToFolderNode(DirectoryInfo directoryInfo)
     {
-        return new FileExplorerFolderNode(ConvertToFolderInfo(directoryInfo, canRead));
+        return new FileExplorerFolderNode(ConvertToFolderInfo(directoryInfo));
     }
 
     public IFileExplorerFileNode ConvertToFileNode(string fileAbsolutePath, IFolderInfo parentInfo)
@@ -34,14 +36,15 @@ public class FileSystemInfoConverter(IMimeTypeService mimeTypeService) : IFileSy
         return new FileExplorerFileNode(file.Name, mimeTypeService.GetMimeType(file.FullName), file.Exists, file.CreationTimeUtc, nodeInfo);
     }
     
-    private static IFolderInfo ConvertToFolderInfo(DirectoryInfo directoryInfo, bool canRead)
+    private FolderInfo ConvertToFolderInfo(DirectoryInfo directoryInfo)
     {
         return new FolderInfo
         {
             Name = directoryInfo.Name,
             AbsolutePath = directoryInfo.FullName,
             ParentAbsolutePath = directoryInfo.Parent?.FullName,
-            CanRead = canRead,
+            BelongsToRoot = rootFolder.BelongsToRoot(directoryInfo.FullName),
+            BelongsToRootChild = rootFolder.BelongsToRootChild(directoryInfo.FullName),
             Exists = directoryInfo.Exists
         };
     }
