@@ -9,7 +9,7 @@ namespace MixServer.Domain.FileExplorer.Converters;
 public interface IFileExplorerConverter
     : IConverter<string, IFileExplorerFileNode>,
     IConverter<DirectoryInfo, IFileExplorerFolderNode>,
-    IConverter<FileInfo, IFileExplorerFolderNode, IFileExplorerFileNode>
+    IConverter<FileInfo, IFileExplorerFolderNodeInfo, IFileExplorerFileNode>
 {
 }
 
@@ -20,7 +20,7 @@ public class FileExplorerConverter(
     public IFileExplorerFileNode Convert(string fileAbsolutePath)
     {
         var parentAbsolutePath = fileAbsolutePath.GetParentFolderPathOrThrow();
-        var parent = Convert(new DirectoryInfo(parentAbsolutePath));
+        var parent = ConvertInfo(new DirectoryInfo(parentAbsolutePath));
         
         return Convert(new FileInfo(fileAbsolutePath), parent);
     }
@@ -34,10 +34,11 @@ public class FileExplorerConverter(
             directoryInfo.Exists,
             directoryInfo.CreationTimeUtc,
             rootFolder.BelongsToRoot(directoryInfo.FullName),
-            rootFolder.BelongsToRootChild(directoryInfo.FullName));
+            rootFolder.BelongsToRootChild(directoryInfo.FullName),
+            directoryInfo.Parent is null ? null : ConvertInfo(directoryInfo.Parent));
     }
 
-    public IFileExplorerFileNode Convert(FileInfo fileInfo, IFileExplorerFolderNode parent)
+    public IFileExplorerFileNode Convert(FileInfo fileInfo, IFileExplorerFolderNodeInfo parent)
     {
         return new FileExplorerFileNode(
             fileInfo.Name,
@@ -47,6 +48,17 @@ public class FileExplorerConverter(
             fileInfo.CreationTimeUtc,
             mimeTypeService.GetMimeType(fileInfo.FullName),
             parent);
-
+    }
+    
+    private IFileExplorerFolderNodeInfo ConvertInfo(DirectoryInfo directoryInfo)
+    {
+        return new FileExplorerFolderNodeInfo(
+            directoryInfo.Name,
+            directoryInfo.FullName,
+            FileExplorerNodeType.Folder,
+            directoryInfo.Exists,
+            directoryInfo.CreationTimeUtc,
+            rootFolder.BelongsToRoot(directoryInfo.FullName),
+            rootFolder.BelongsToRootChild(directoryInfo.FullName));
     }
 }

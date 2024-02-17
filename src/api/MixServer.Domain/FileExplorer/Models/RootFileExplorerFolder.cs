@@ -3,7 +3,7 @@ using MixServer.Domain.FileExplorer.Enums;
 namespace MixServer.Domain.FileExplorer.Models;
 
 public class RootFileExplorerFolder() : FileExplorerFolder(
-    new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true, DateTime.MinValue, false, false)), IRootFileExplorerFolder
+    new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true, DateTime.MinValue, false, false, null)), IRootFileExplorerFolder
 {
     public bool BelongsToRoot(string? absolutePath)
     {

@@ -5,7 +5,7 @@ import {FileExplorerFileNode} from "./models/file-explorer-file-node";
 import {FileExplorerNodeRepositoryService} from "../../services/repositories/file-explorer-node-repository.service";
 import {Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../services/repositories/current-playback-session-repository.service";
-import {NodeListItem} from "../../components/nodes/node-list/node-list-item/models/node-list-item";
+import {FileExplorerFolder} from "./models/file-explorer-folder";
 
 @Component({
   selector: 'app-file-explorer',
@@ -15,8 +15,7 @@ import {NodeListItem} from "../../components/nodes/node-list/node-list-item/mode
 export class FileExplorerComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
-  public nodes: FileExplorerNode[] = []
-  public currentFolder?: FileExplorerFolderNode | null;
+  public currentFolder: FileExplorerFolder = FileExplorerFolder.Default;
   public nodeRepositoryLoading: boolean = false;
   public playbackSessionLoading: boolean = false;
 
@@ -25,12 +24,6 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this._nodeRepository.getCurrentLevelNodes$()
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(remoteNodes => {
-        this.nodes = [...remoteNodes];
-      });
-
     this._nodeRepository.currentFolder$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(currentFolder => {
@@ -55,7 +48,7 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: NodeListItem): void {
+  public onNodeClick(node: FileExplorerNode): void {
     if (node instanceof FileExplorerFolderNode) {
       this.onFolderClick(node as FileExplorerFolderNode);
     }

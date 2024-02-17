@@ -11,4 +11,8 @@ export class FileExplorerFolder {
   public static get Default(): FileExplorerFolder {
     return new FileExplorerFolder(FileExplorerFolderNode.Default, [], FolderSort.Default);
   }
+
+  public copy(): FileExplorerFolder {
+    return new FileExplorerFolder(this.node.copy(), this.children.map(m => m.copy()), this.sort.copy());
+  }
 }

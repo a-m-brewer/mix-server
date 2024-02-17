@@ -122,7 +122,7 @@ export class CurrentPlaybackSessionRepositoryService {
     this._loadingRepository.loading = true;
 
     this._sessionClient.setCurrentSession(new SetCurrentSessionCommand({
-      absoluteFolderPath: file.parentFolder.absolutePath ?? '',
+      absoluteFolderPath: file.parent.absolutePath,
       fileName: file.name
     })).subscribe({
       next: _ => {},

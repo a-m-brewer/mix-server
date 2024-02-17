@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {NodeClient} from "../../generated-clients/mix-server-clients";
+import {FileExplorerFolderResponse, NodeClient} from "../../generated-clients/mix-server-clients";
 import {BehaviorSubject, filter, firstValueFrom, from, map, Observable, tap} from "rxjs";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {LoadingRepositoryService} from "./loading-repository.service";
@@ -15,6 +15,11 @@ import {FolderSignalrClientService} from "../signalr/folder-signalr-client.servi
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
+import {FileExplorerNode} from "../../main-content/file-explorer/models/file-explorer-node";
+import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
+import {
+  FileExplorerFolderInfoNodeInterface
+} from "../../main-content/file-explorer/models/file-explorer-folder-info-node";
 
 @Injectable({
   providedIn: 'root'
@@ -51,34 +56,16 @@ export class FileExplorerNodeRepositoryService {
         if (this._loggedIn) {
           this.loadDirectoryFromPathName(window.location.pathname);
         }
-      })
-
-    this._audioPlayerState.state$
-      .subscribe(state => {
-        const nextCurrentLevelNodes = [...this._currentLevelNodes$.getValue()]
-        nextCurrentLevelNodes.forEach(node => {
-          if (node instanceof FileExplorerFileNode) {
-            node.updateState(state);
-          }
-        });
-
-        this._currentLevelNodes$.next(nextCurrentLevelNodes);
       });
 
     this._folderSignalRClient.folderSorted$()
       .subscribe(updatedFolder => {
         const currentFolder = this._currentFolder$.getValue();
-        if (currentFolder.absolutePath !== updatedFolder.parent.absolutePath) {
+        if (currentFolder.node.absolutePath !== updatedFolder.node.absolutePath) {
           return;
         }
 
-        updatedFolder.children.forEach(child => {
-          if (child instanceof FileExplorerFileNode) {
-            child.updateState(this._audioPlayerState.state);
-          }
-        })
-
-        this._currentLevelNodes$.next([...updatedFolder.children]);
+        this._currentFolder$.next(updatedFolder);
         this.setLoading(false);
         this._loadingRepository.loading = false;
       });
@@ -86,63 +73,69 @@ export class FileExplorerNodeRepositoryService {
     this._folderSignalRClient.nodeAdded$()
       .subscribe(node => {
         const currentFolder = this._currentFolder$.getValue();
-        if (!node.parentDirectory?.absolutePath || currentFolder.absolutePath !== node.parentDirectory.absolutePath) {
+        if (!node.parent?.absolutePath || currentFolder.node.absolutePath !== node.parent.absolutePath) {
           return
         }
 
-        this._currentLevelNodes$.next([...this._currentLevelNodes$.getValue(), node]);
+        const nextFolder = currentFolder.copy();
+        nextFolder.children.push(node);
+
+        this._currentFolder$.next(nextFolder);
       })
 
     this._folderSignalRClient.nodeUpdated$()
       .subscribe(event => {
         const node = event.node;
         const currentFolder = this._currentFolder$.getValue();
-        if (!node.parentDirectory?.absolutePath || currentFolder.node.absolutePath !== node.parentDirectory.absolutePath) {
+        if (!node.parent?.absolutePath || currentFolder.node.absolutePath !== node.parent.absolutePath) {
           return
         }
 
-        const currentLevelNodes = [...this._currentLevelNodes$.getValue()];
-        const oldPathIndex = currentLevelNodes.findIndex(n => n.absolutePath === event.oldAbsolutePath);
+        const nextFolder = currentFolder.copy();
+
+        const oldPathIndex = nextFolder.children.findIndex(n => n.absolutePath === event.oldAbsolutePath);
         const index = oldPathIndex === -1
-          ? currentLevelNodes.findIndex(n => n.absolutePath === node.absolutePath)
+          ? nextFolder.children.findIndex(n => n.absolutePath === node.absolutePath)
           : oldPathIndex;
 
         if (index === -1) {
-          currentLevelNodes.push(node)
+          nextFolder.children.push(node)
         }
         else {
-          currentLevelNodes[index] = node;
+          nextFolder.children[index] = node;
         }
 
-        this._currentLevelNodes$.next(currentLevelNodes);
+        this._currentFolder$.next(nextFolder);
       });
 
     this._folderSignalRClient.nodeDeleted$()
       .subscribe(event => {
         const currentFolder = this._currentFolder$.getValue();
-        if (currentFolder.absolutePath !== event.parent.absolutePath) {
+        if (currentFolder.node.absolutePath !== event.parent.absolutePath) {
           return;
         }
 
-        const currentLevelNodes = this._currentLevelNodes$.getValue().filter(f => f.absolutePath !== event.absolutePath);
-        this._currentLevelNodes$.next(currentLevelNodes);
+        const nextFolder = currentFolder.copy();
+        nextFolder.children = currentFolder.children.filter(f => f.absolutePath !== event.absolutePath);
+
+        this._currentFolder$.next(nextFolder);
       })
   }
 
-  public get currentFolder$(): Observable<FileExplorerFolderNode> {
+  public get currentFolder$(): Observable<FileExplorerFolder> {
     return this._currentFolder$.asObservable();
   }
 
   public getCurrentLevelNodes$(): Observable<ReadonlyArray<FileExplorerNode>> {
-    return this._currentLevelNodes$
-      .asObservable();
+    return this._currentFolder$
+      .pipe(map(folder => folder.children));
   }
 
   public get loading$(): Observable<boolean> {
     return this._loading.asObservable();
   }
 
-  public changeDirectory(node?: FileExplorerFolderNode): void {
+  public changeDirectory(node?: FileExplorerFolderInfoNodeInterface): void {
     if (this._loading.getValue()) {
       return;
     }
@@ -183,8 +176,8 @@ export class FileExplorerNodeRepositoryService {
 
     this._client.getNode(absolutePath)
       .subscribe({
-        next: (folder: FolderNodeResponse) => {
-          const { parent, children } = this._fileExplorerNodeConverter.fromDto(folder);
+        next: (folderResponse: FileExplorerFolderResponse) => {
+          const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(folderResponse);
 
           this._loadingRepository.loading = false;
           this.setLoading(false);
@@ -195,8 +188,7 @@ export class FileExplorerNodeRepositoryService {
             }
           })
 
-          this._currentFolder$.next(parent);
-          this._currentLevelNodes$.next(children);
+          this._currentFolder$.next(folder);
         },
         error: err => {
           this._toastService.logServerError(err, `Failed to navigate to directory ${absolutePath}`);
@@ -221,7 +213,7 @@ export class FileExplorerNodeRepositoryService {
   }
 
   public setFolderSort(sortMode: FileExplorerFolderSortMode, descending: boolean) {
-    const currentFolder = this._currentFolder$.getValue().absolutePath;
+    const currentFolder = this._currentFolder$.getValue().node.absolutePath;
 
     if (!currentFolder) {
       return;

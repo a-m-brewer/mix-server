@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Converters;
 using DirectoryInfo = System.IO.DirectoryInfo;
 
@@ -39,7 +40,7 @@ public class FolderCacheItem : IFolderCacheItem
         _fileExplorerConverter = fileExplorerConverter;
 
         var directoryInfo = new DirectoryInfo(absolutePath);
-
+        
         _folder = new FileExplorerFolder(_fileExplorerConverter.Convert(directoryInfo));
 
         foreach (var directory in directoryInfo.GetDirectories())

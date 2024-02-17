@@ -19,6 +19,7 @@ import {ServerConnectionState} from "./services/auth/enums/ServerConnectionState
 import {VisibilityRepositoryService} from "./services/repositories/visibility-repository.service";
 import {TitleService} from "./services/title/title.service";
 import {ToastService} from "./services/toasts/toast-service";
+import {FileExplorerFolder} from "./main-content/file-explorer/models/file-explorer-folder";
 
 @Component({
   selector: 'app-root',
@@ -37,7 +38,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   public disconnected: boolean = true;
   public disconnectedReason: string | null = 'Loading';
 
-  public currentFolder?: FileExplorerFolderNode | null;
+  public currentFolder?: FileExplorerFolder | null;
   public showFileExplorerToolbar: boolean = false;
   public showQueueToolbar: boolean = false;
   public nodeRepositoryLoading: boolean = false;
@@ -179,8 +180,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   public get folderBackButtonDisabled(): boolean {
     return this.nodeRepositoryLoading ||
       this.playbackSessionLoading ||
-      (this.currentFolder?.parentDirectory?.disabled ?? true) ||
-      this.currentFolder?.absolutePath === '';
+      (this.currentFolder?.node.parent?.disabled ?? true) ||
+      this.currentFolder?.node.absolutePath === '';
   }
 
   public logout(): void {
@@ -192,7 +193,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public onFolderBackButtonClicked(): void {
-    const parent = this.currentFolder?.parentDirectory;
+    const parent = this.currentFolder?.node.parent;
     if (!parent) {
       return;
     }

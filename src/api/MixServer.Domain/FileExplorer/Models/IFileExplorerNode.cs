@@ -2,7 +2,7 @@ using MixServer.Domain.FileExplorer.Enums;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
-public interface IFileExplorerNode
+public interface IFileExplorerNodeInfo
 {
     string Name { get; }
 
@@ -11,7 +11,12 @@ public interface IFileExplorerNode
     FileExplorerNodeType Type { get; }
 
     bool Exists { get; }
+
     DateTime CreationTimeUtc { get; }
+}
+
+public interface IFileExplorerNode : IFileExplorerNodeInfo
+{
 }
 
 public interface IFileExplorerFileNode : IFileExplorerNode
@@ -19,15 +24,20 @@ public interface IFileExplorerFileNode : IFileExplorerNode
     string MimeType { get; }
 
     bool PlaybackSupported { get; }
-
-    IFileExplorerFolderNode Parent { get; }
+    
+    IFileExplorerFolderNodeInfo Parent { get; }
 }
 
-public interface IFileExplorerFolderNode : IFileExplorerNode
+public interface IFileExplorerFolderNodeInfo : IFileExplorerNodeInfo
 {
     bool BelongsToRoot { get; }
 
     bool BelongsToRootChild { get; }
+}
+
+public interface IFileExplorerFolderNode : IFileExplorerFolderNodeInfo, IFileExplorerNode
+{
+    IFileExplorerFolderNodeInfo? Parent { get; }
 }
 
 public interface IFileExplorerFolder

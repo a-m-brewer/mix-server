@@ -9,7 +9,8 @@ public interface IFileExplorerResponseConverter
         IConverter<IFileExplorerFileNode, FileExplorerFileNodeResponse>,
         IConverter<IFileExplorerFolderNode, FileExplorerFolderNodeResponse>,
         IConverter<IFileExplorerFolder, FileExplorerFolderResponse>,
-        IConverter<IRootFileExplorerFolder, RootFileExplorerFolderResponse>
+        IConverter<IRootFileExplorerFolder, RootFileExplorerFolderResponse>,
+        IConverter<IFileExplorerFolderNodeInfo, FileExplorerFolderInfoNodeResponse>
 {
 }
 
@@ -33,6 +34,7 @@ public class FileExplorerResponseConverter : IFileExplorerResponseConverter
             Exists = value.Exists,
             Name = value.Name,
             Type = value.Type,
+            CreationTimeUtc = value.CreationTimeUtc,
             MimeType = value.MimeType,
             PlaybackSupported = value.PlaybackSupported,
             Parent = Convert(value.Parent)
@@ -47,8 +49,10 @@ public class FileExplorerResponseConverter : IFileExplorerResponseConverter
             Exists = value.Exists,
             Name = value.Name,
             Type = value.Type,
+            CreationTimeUtc = value.CreationTimeUtc,
             BelongsToRoot = value.BelongsToRoot,
-            BelongsToRootChild = value.BelongsToRootChild
+            BelongsToRootChild = value.BelongsToRootChild,
+            Parent = value.Parent is null ? null : Convert(value.Parent)
         };
     }
 
@@ -73,6 +77,20 @@ public class FileExplorerResponseConverter : IFileExplorerResponseConverter
             Node = Convert(value.Node),
             Children = value.Children.Select(Convert).ToList(),
             Sort = new FolderSortDto(value.Sort)
+        };
+    }
+
+    public FileExplorerFolderInfoNodeResponse Convert(IFileExplorerFolderNodeInfo value)
+    {
+        return new FileExplorerFolderInfoNodeResponse
+        {
+            Name = value.Name,
+            AbsolutePath = value.AbsolutePath,
+            Exists = value.Exists,
+            Type = value.Type,
+            CreationTimeUtc = value.CreationTimeUtc,
+            BelongsToRoot = value.BelongsToRoot,
+            BelongsToRootChild = value.BelongsToRootChild
         };
     }
 }

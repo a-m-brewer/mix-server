@@ -24,7 +24,7 @@ export class SessionComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(s => {
         this.fileName = s?.currentNode.name ?? '';
-        this._sessionCurrentDirectory = s?.currentNode.parentFolder;
+        this._sessionCurrentDirectory = s?.currentNode.parent;
       });
   }
 

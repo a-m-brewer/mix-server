@@ -9,14 +9,10 @@ public class FileExplorerFolderNode(
     bool exists,
     DateTime creationTimeUtc,
     bool belongsToRoot,
-    bool belongsToRootChild)
-    : IFileExplorerFolderNode
+    bool belongsToRootChild,
+    IFileExplorerFolderNodeInfo? parent)
+    : FileExplorerFolderNodeInfo(name, absolutePath, type, exists, creationTimeUtc, belongsToRoot, belongsToRootChild),
+        IFileExplorerFolderNode
 {
-    public string Name { get; } = name;
-    public string AbsolutePath { get; } = absolutePath;
-    public FileExplorerNodeType Type { get; } = type;
-    public bool Exists { get; } = exists;
-    public DateTime CreationTimeUtc { get; } = creationTimeUtc;
-    public bool BelongsToRoot { get; } = belongsToRoot;
-    public bool BelongsToRootChild { get; } = belongsToRootChild;
+    public IFileExplorerFolderNodeInfo? Parent { get; } = parent;
 }

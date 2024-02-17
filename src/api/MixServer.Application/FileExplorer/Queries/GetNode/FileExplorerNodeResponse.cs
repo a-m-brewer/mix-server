@@ -20,6 +20,8 @@ public class FileExplorerNodeResponse
 
     public bool Exists { get; init; }
     
+    public DateTime CreationTimeUtc { get; init; }
+    
     [UsedImplicitly]
     public static IEnumerable<Type> GetKnownTypes()
     {
@@ -32,13 +34,30 @@ public class FileExplorerNodeResponse
     }
 }
 
+public class FileExplorerFolderInfoNodeResponse
+{
+    public string Name { get; init; } = string.Empty;
+
+    public string AbsolutePath { get; init; } = string.Empty;
+
+    public FileExplorerNodeType Type { get; init; }
+
+    public bool Exists { get; init; }
+    
+    public DateTime CreationTimeUtc { get; init; }
+    
+    public bool BelongsToRoot { get; init; }
+
+    public bool BelongsToRootChild { get; init; }
+}
+
 public class FileExplorerFileNodeResponse : FileExplorerNodeResponse
 {
     public string MimeType { get; init; } = MimeTypeConstants.DefaultMimeType;
 
     public bool PlaybackSupported { get; init; }
 
-    public FileExplorerFolderNodeResponse Parent { get; init; } = new ();
+    public FileExplorerFolderInfoNodeResponse Parent { get; init; } = new ();
 }
 
 public class FileExplorerFolderNodeResponse : FileExplorerNodeResponse
@@ -46,6 +65,8 @@ public class FileExplorerFolderNodeResponse : FileExplorerNodeResponse
     public bool BelongsToRoot { get; init; }
 
     public bool BelongsToRootChild { get; init; }
+    
+    public FileExplorerFolderInfoNodeResponse? Parent { get; init; }
 }
 
 [KnownType(nameof(GetKnownTypes))]
