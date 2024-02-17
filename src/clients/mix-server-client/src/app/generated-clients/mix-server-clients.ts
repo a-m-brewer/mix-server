@@ -1899,7 +1899,7 @@ export interface IFileExplorerNodeResponse {
 export class FileExplorerFolderNodeResponse extends FileExplorerNodeResponse implements IFileExplorerFolderNodeResponse {
     belongsToRoot!: boolean;
     belongsToRootChild!: boolean;
-    parent?: FileExplorerFolderInfoNodeResponse | undefined;
+    parent?: FileExplorerFolderNodeResponse | undefined;
 
     constructor(data?: IFileExplorerFolderNodeResponse) {
         super(data);
@@ -1911,7 +1911,7 @@ export class FileExplorerFolderNodeResponse extends FileExplorerNodeResponse imp
         if (_data) {
             this.belongsToRoot = _data["belongsToRoot"];
             this.belongsToRootChild = _data["belongsToRootChild"];
-            this.parent = _data["parent"] ? FileExplorerFolderInfoNodeResponse.fromJS(_data["parent"]) : <any>undefined;
+            this.parent = _data["parent"] ? FileExplorerFolderNodeResponse.fromJS(_data["parent"]) : <any>undefined;
         }
     }
 
@@ -1935,67 +1935,7 @@ export class FileExplorerFolderNodeResponse extends FileExplorerNodeResponse imp
 export interface IFileExplorerFolderNodeResponse extends IFileExplorerNodeResponse {
     belongsToRoot: boolean;
     belongsToRootChild: boolean;
-    parent?: FileExplorerFolderInfoNodeResponse | undefined;
-}
-
-export class FileExplorerFolderInfoNodeResponse implements IFileExplorerFolderInfoNodeResponse {
-    name!: string;
-    absolutePath!: string;
-    type!: FileExplorerNodeType;
-    exists!: boolean;
-    creationTimeUtc!: Date;
-    belongsToRoot!: boolean;
-    belongsToRootChild!: boolean;
-
-    constructor(data?: IFileExplorerFolderInfoNodeResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["name"];
-            this.absolutePath = _data["absolutePath"];
-            this.type = _data["type"];
-            this.exists = _data["exists"];
-            this.creationTimeUtc = _data["creationTimeUtc"] ? new Date(_data["creationTimeUtc"].toString()) : <any>undefined;
-            this.belongsToRoot = _data["belongsToRoot"];
-            this.belongsToRootChild = _data["belongsToRootChild"];
-        }
-    }
-
-    static fromJS(data: any): FileExplorerFolderInfoNodeResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new FileExplorerFolderInfoNodeResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["name"] = this.name;
-        data["absolutePath"] = this.absolutePath;
-        data["type"] = this.type;
-        data["exists"] = this.exists;
-        data["creationTimeUtc"] = this.creationTimeUtc ? this.creationTimeUtc.toISOString() : <any>undefined;
-        data["belongsToRoot"] = this.belongsToRoot;
-        data["belongsToRootChild"] = this.belongsToRootChild;
-        return data;
-    }
-}
-
-export interface IFileExplorerFolderInfoNodeResponse {
-    name: string;
-    absolutePath: string;
-    type: FileExplorerNodeType;
-    exists: boolean;
-    creationTimeUtc: Date;
-    belongsToRoot: boolean;
-    belongsToRootChild: boolean;
+    parent?: FileExplorerFolderNodeResponse | undefined;
 }
 
 export enum FileExplorerNodeType {
@@ -2006,12 +1946,12 @@ export enum FileExplorerNodeType {
 export class FileExplorerFileNodeResponse extends FileExplorerNodeResponse implements IFileExplorerFileNodeResponse {
     mimeType!: string;
     playbackSupported!: boolean;
-    parent!: FileExplorerFolderInfoNodeResponse;
+    parent!: FileExplorerFolderNodeResponse;
 
     constructor(data?: IFileExplorerFileNodeResponse) {
         super(data);
         if (!data) {
-            this.parent = new FileExplorerFolderInfoNodeResponse();
+            this.parent = new FileExplorerFolderNodeResponse();
         }
         this._discriminator = "FileExplorerFileNodeResponse";
     }
@@ -2021,7 +1961,7 @@ export class FileExplorerFileNodeResponse extends FileExplorerNodeResponse imple
         if (_data) {
             this.mimeType = _data["mimeType"];
             this.playbackSupported = _data["playbackSupported"];
-            this.parent = _data["parent"] ? FileExplorerFolderInfoNodeResponse.fromJS(_data["parent"]) : new FileExplorerFolderInfoNodeResponse();
+            this.parent = _data["parent"] ? FileExplorerFolderNodeResponse.fromJS(_data["parent"]) : new FileExplorerFolderNodeResponse();
         }
     }
 
@@ -2045,7 +1985,7 @@ export class FileExplorerFileNodeResponse extends FileExplorerNodeResponse imple
 export interface IFileExplorerFileNodeResponse extends IFileExplorerNodeResponse {
     mimeType: string;
     playbackSupported: boolean;
-    parent: FileExplorerFolderInfoNodeResponse;
+    parent: FileExplorerFolderNodeResponse;
 }
 
 export class FolderSortDto implements IFolderSortDto {

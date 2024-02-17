@@ -20,12 +20,17 @@ public class FileExplorerConverter(
     public IFileExplorerFileNode Convert(string fileAbsolutePath)
     {
         var parentAbsolutePath = fileAbsolutePath.GetParentFolderPathOrThrow();
-        var parent = Convert(new DirectoryInfo(parentAbsolutePath));
+        var parent = Convert(new DirectoryInfo(parentAbsolutePath), false);
         
         return Convert(new FileInfo(fileAbsolutePath), parent);
     }
 
-    public IFileExplorerFolderNode Convert(DirectoryInfo directoryInfo)
+    public IFileExplorerFolderNode Convert(DirectoryInfo value)
+    {
+        return Convert(value, true);
+    }
+    
+    private FileExplorerFolderNode Convert(DirectoryInfo directoryInfo, bool includeParent)
     {
         return new FileExplorerFolderNode(
             directoryInfo.Name,
@@ -35,7 +40,7 @@ public class FileExplorerConverter(
             directoryInfo.CreationTimeUtc,
             rootFolder.BelongsToRoot(directoryInfo.FullName),
             rootFolder.BelongsToRootChild(directoryInfo.FullName),
-            directoryInfo.Parent is null ? null : Convert(directoryInfo.Parent));
+            directoryInfo.Parent is null || !includeParent ? null : Convert(directoryInfo.Parent, false));
     }
 
     public IFileExplorerFileNode Convert(FileInfo fileInfo, IFileExplorerFolderNode parent)
