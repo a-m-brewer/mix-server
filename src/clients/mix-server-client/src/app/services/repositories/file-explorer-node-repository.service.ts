@@ -16,7 +16,6 @@ import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {FileExplorerNode} from "../../main-content/file-explorer/models/file-explorer-node";
-import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 
 @Injectable({
   providedIn: 'root'
