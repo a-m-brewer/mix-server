@@ -12,7 +12,7 @@ public class RootFileExplorerFolder : FileExplorerFolder, IRootFileExplorerFolde
         {
             var directoryInfo = new DirectoryInfo(folder);
             ChildNodes.Add(new FileExplorerFolderNode(directoryInfo.Name, directoryInfo.FullName,
-                FileExplorerNodeType.Folder, directoryInfo.Exists, directoryInfo.CreationTimeUtc, true, false, null));
+                FileExplorerNodeType.Folder, directoryInfo.Exists, directoryInfo.CreationTimeUtc, true, false, Node));
         }
     }
     

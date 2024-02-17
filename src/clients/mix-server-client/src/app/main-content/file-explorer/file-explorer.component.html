@@ -1,7 +1,8 @@
 <div>
   <app-node-list-item
-    *ngIf="currentFolder && currentFolder.node.parent && currentFolder.node.absolutePath !== ''"
+    *ngIf="currentFolder.node.parent"
     [node]="currentFolder.node.parent"
+    nameOverride=".."
     [loading]="nodeRepositoryLoading || playbackSessionLoading"
     [last]="currentFolder.children.length === 0"
     (click)="onNodeClick($event)"

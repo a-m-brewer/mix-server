@@ -12,7 +12,7 @@ export class FileExplorerFolderNode implements FileExplorerNode {
               public belongsToRootChild: boolean,
               public parent: FileExplorerFolderNode | undefined | null,
               public state: FileExplorerNodeStateInterface) {
-    this.disabled = absolutePath.trim() === '' || !exists;
+    this.disabled = !exists;
   }
 
   public disabled: boolean = false;

@@ -28,7 +28,11 @@
     </div>
 
     <div class="node-list-item-content-text node-list-item">
-      {{ node.name }}
+      @if (nameOverride) {
+        {{ nameOverride }}
+      } @else {
+        {{ node.name }}
+      }
     </div>
   </div>
 

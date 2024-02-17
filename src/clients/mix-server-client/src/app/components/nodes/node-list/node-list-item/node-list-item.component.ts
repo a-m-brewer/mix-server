@@ -17,6 +17,9 @@ export class NodeListItemComponent {
   public node: FileExplorerNode = undefined!;
 
   @Input()
+  public nameOverride?: string | null;
+
+  @Input()
   public loading: boolean = false;
 
   @Input()

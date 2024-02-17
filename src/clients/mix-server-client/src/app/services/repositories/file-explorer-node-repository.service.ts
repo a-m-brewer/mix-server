@@ -142,7 +142,7 @@ export class FileExplorerNodeRepositoryService {
     }
 
     firstValueFrom(this.navigateToDirectory(node?.absolutePath))
-      .catch(() => {
+      .finally(() => {
         if (node) {
           node.state.folderState = FileExplorerNodeState.None;
         }
