@@ -1,10 +1,21 @@
+using Microsoft.Extensions.Options;
 using MixServer.Domain.FileExplorer.Enums;
+using MixServer.Domain.FileExplorer.Settings;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
-public class RootFileExplorerFolder() : FileExplorerFolder(
-    new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true, DateTime.MinValue, false, false, null)), IRootFileExplorerFolder
+public class RootFileExplorerFolder : FileExplorerFolder, IRootFileExplorerFolder
 {
+    public RootFileExplorerFolder(IOptions<RootFolderSettings> rootFolderSettings) : base(new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true, DateTime.MinValue, false, false, null))
+    {
+        foreach (var folder in rootFolderSettings.Value.ChildrenSplit)
+        {
+            var directoryInfo = new DirectoryInfo(folder);
+            ChildNodes.Add(new FileExplorerFolderNode(directoryInfo.Name, directoryInfo.FullName,
+                FileExplorerNodeType.Folder, directoryInfo.Exists, directoryInfo.CreationTimeUtc, true, false, null));
+        }
+    }
+    
     public bool BelongsToRoot(string? absolutePath)
     {
         if (string.IsNullOrWhiteSpace(absolutePath))

@@ -4,11 +4,11 @@ namespace MixServer.Domain.FileExplorer.Models;
 
 public class FileExplorerFolder(IFileExplorerFolderNode node) : IFileExplorerFolder
 {
-    private readonly List<IFileExplorerNode> _children = new();
+    protected readonly List<IFileExplorerNode> ChildNodes = [];
 
     public IFileExplorerFolderNode Node { get; } = node;
 
-    public IReadOnlyCollection<IFileExplorerNode> Children => _children;
+    public IReadOnlyCollection<IFileExplorerNode> Children => GenerateSortedChildren<IFileExplorerNode>();
 
     public IFolderSort Sort { get; set; } = FolderSortModel.Default;
 
@@ -23,8 +23,8 @@ public class FileExplorerFolder(IFileExplorerFolderNode node) : IFileExplorerFol
 
         var values = Sort.SortMode switch
         {
-            FolderSortMode.Name => Children.OrderByDescending(o => o.Type),
-            _ => Children.OrderBy(o => o.Type)
+            FolderSortMode.Name => ChildNodes.OrderByDescending(o => o.Type),
+            _ => ChildNodes.OrderBy(o => o.Type)
         };
 
         values = Sort.Descending
@@ -36,11 +36,11 @@ public class FileExplorerFolder(IFileExplorerFolderNode node) : IFileExplorerFol
 
     public void AddChild(IFileExplorerNode node)
     {
-        _children.Add(node);
+        ChildNodes.Add(node);
     }
 
     public void RemoveChild(IFileExplorerNode node)
     {
-        _children.Remove(node);
+        ChildNodes.Remove(node);
     }
 }
