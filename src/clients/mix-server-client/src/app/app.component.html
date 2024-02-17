@@ -21,8 +21,10 @@
         >
           <mat-icon>arrow_back_ios</mat-icon>
         </button>
-        <span>
-          {{ currentFolder?.name ?? '' }}
+        <span *ngIf="currentFolder">
+          @if (currentFolder) {
+            {{ currentFolder.node.name  }}
+          }
         </span>
 
         <span class="nav-bar-spacer"></span>

@@ -62,23 +62,23 @@ export class FolderSignalrClientService implements ISignalrClient {
   }
 
   private handleFolderSorted(dto: FileExplorerFolderResponse): void {
-    const converted = this._folderNodeConverter.fromDto(dto);
+    const converted = this._folderNodeConverter.fromFileExplorerFolder(dto);
 
     this._folderSortedSubject$.next(converted);
   }
 
   private handleFileExplorerNodeAdded(dto: FileExplorerNodeResponse): void {
-    const node = this._folderNodeConverter.fromResponse(dto);
+    const node = this._folderNodeConverter.fromFileExplorerNode(dto);
     this._nodeAddedSubject$.next(node);
   }
 
   private handleFileExplorerNodeUpdated(dto: FileExplorerNodeUpdatedDto): void {
-    const node = this._folderNodeConverter.fromResponse(dto.node);
+    const node = this._folderNodeConverter.fromFileExplorerNode(dto.node);
     this._nodeUpdatedSubject$.next(new NodeUpdatedEvent(node, dto.oldAbsolutePath));
   }
 
   private handleFileExplorerNodeDeleted(dto: FileExplorerNodeDeletedDto): void {
-    const parent = this._folderNodeConverter.fromFolderResponse(dto.parent);
+    const parent = this._folderNodeConverter.fromFileExplorerFolderNode(dto.parent);
     this._nodeDeletedSubject$.next(new NodeDeletedEvent(parent, dto.absolutePath));
   }
 }

@@ -1,7 +1,7 @@
 import {Component, ContentChildren, EventEmitter, Input, Output, QueryList} from '@angular/core';
 import {FileExplorerNodeType} from "../../../../main-content/file-explorer/enums/file-explorer-node-type";
 import {ContextMenuButton} from "./context-menu/context-menu-button";
-import {NodeListItem} from "./models/node-list-item";
+import {FileExplorerNode} from "../../../../main-content/file-explorer/models/file-explorer-node";
 
 @Component({
   selector: 'app-node-list-item',
@@ -14,7 +14,7 @@ export class NodeListItemComponent {
   @ContentChildren(ContextMenuButton) contextMenuButtons: QueryList<ContextMenuButton> | null | undefined;
 
   @Input()
-  public node: NodeListItem = undefined!;
+  public node: FileExplorerNode = undefined!;
 
   @Input()
   public loading: boolean = false;
@@ -26,7 +26,7 @@ export class NodeListItemComponent {
   public last: boolean = false;
 
   @Output()
-  public click = new EventEmitter<NodeListItem>();
+  public click = new EventEmitter<FileExplorerNode>();
 
   public get allContextMenuButtonsDisabled(): boolean {
     return !this.contextMenuButtons ||
@@ -35,7 +35,7 @@ export class NodeListItemComponent {
   }
 
   public onContentClicked(): void {
-    if (this.node.disabled || this.node.editing || this.loading) {
+    if (this.node.disabled || this.node.state.editing || this.loading) {
       return;
     }
 

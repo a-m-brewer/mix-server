@@ -23,7 +23,7 @@ export class AuthenticationService {
   private _connectionStatusBehaviourSubject$ = new BehaviorSubject<ServerConnectionStateEvent>(new ServerConnectionStateEvent(ServerConnectionState.Initializing, 'Class Initialization'));
   private _jwtTokenBehaviour$ = new BehaviorSubject<JwtToken | null>(null);
 
-  private _refreshScheduleTimeout: number | undefined;
+  private _refreshScheduleTimeout: number = 0;
   private _accessTokenKey: string = 'accessToken';
   private _refreshTokenKey: string = 'refreshToken';
   private _deviceIdKey: string = 'deviceId';

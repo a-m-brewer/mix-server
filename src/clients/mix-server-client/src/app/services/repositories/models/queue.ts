@@ -16,7 +16,7 @@ export class Queue {
   }
 
   private subscribeQueueSubscriptions(): void {
-    this._subscriptions = this.items.map(i => i.selected$.subscribe(s => this.handleSelectionChange(i)));
+    this._subscriptions = this.items.map(i => i.file.state.selected$.subscribe(s => this.handleSelectionChange(i)));
   }
 
   public unsubscribeQueueSubscriptions(): void {

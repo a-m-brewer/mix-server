@@ -5,15 +5,14 @@ import {SessionClient} from "../generated-clients/mix-server-clients";
 import {PlaybackSessionConverterService} from "../services/converters/playback-session-converter.service";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
 import {FileExplorerFileNode} from "../main-content/file-explorer/models/file-explorer-file-node";
-import {FileExplorerNodeRepositoryService} from "../services/repositories/file-explorer-node-repository.service";
 import {ToastService} from "../services/toasts/toast-service";
 import {GetUsersSessionsResponse} from "../generated-clients/mix-server-clients";
 import {AudioPlayerStateService} from "../services/audio-player/audio-player-state.service";
 import {
   CurrentPlaybackSessionRepositoryService
 } from "../services/repositories/current-playback-session-repository.service";
-import {NodeListItem} from "../components/nodes/node-list/node-list-item/models/node-list-item";
 import {AuthenticationService} from "../services/auth/authentication.service";
+import {FileExplorerNode} from "../main-content/file-explorer/models/file-explorer-node";
 
 @Component({
   selector: 'app-history-page',
@@ -43,13 +42,6 @@ export class HistoryPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this._audioPlayerState.state$
-      .subscribe(state => {
-        this.sessions.forEach(session => {
-          session.currentNode.updateState(state);
-        })
-      })
-
     this._authService.connected$
       .subscribe(connected => {
         if (connected) {
@@ -67,7 +59,7 @@ export class HistoryPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: NodeListItem) {
+  public onNodeClick(node: FileExplorerNode) {
     if (!(node instanceof FileExplorerFileNode)) {
       return;
     }
@@ -97,10 +89,6 @@ export class HistoryPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this.lastFetchHadItems) {
       this.sessions.push(...history.sessions.map(m => this._converter.fromDto(m)));
-
-      this.sessions.forEach(session => {
-        session.currentNode.updateState(this._audioPlayerState.state);
-      })
     }
 
     this.loading = false;

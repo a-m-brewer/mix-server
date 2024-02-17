@@ -1,9 +1,9 @@
 <div>
   <app-node-list-item
     *ngFor="let node of queue.items; last as last"
-    [node]="node"
+    [node]="node.file"
     [loading]="false"
-    [editing]="node.editing || editQueueForm.editing"
+    [editing]="node.file.state.editing || editQueueForm.editing"
     [last]="last"
     (click)="onNodeClick($event)"
   >
@@ -25,7 +25,7 @@
       />
 
     <app-open-location-button
-      [folder]="node.file.parentFolder"
+      [folder]="node.file.parent"
     />
   </app-node-list-item>
 </div>

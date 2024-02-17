@@ -2,11 +2,11 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {QueueRepositoryService} from "../services/repositories/queue-repository.service";
 import {Subject, Subscription, takeUntil} from "rxjs";
 import {Queue} from "../services/repositories/models/queue";
-import {NodeListItem} from "../components/nodes/node-list/node-list-item/models/node-list-item";
 import {QueueItem} from "../services/repositories/models/queue-item";
 import {QueueSnapshotItemType} from "../generated-clients/mix-server-clients";
 import {EditQueueFormModel} from "../services/repositories/models/edit-queue-form-model";
 import {FileExplorerNodeState} from "../main-content/file-explorer/enums/file-explorer-node-state.enum";
+import {FileExplorerNode} from "../main-content/file-explorer/models/file-explorer-node";
 
 @Component({
   selector: 'app-queue-page',
@@ -33,7 +33,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
         this.queue = queue;
         this.queue.itemSelected$
           .subscribe(i =>
-            this._queueRepository.updateEditForm(f => f.selectedItems[i.id] = i.selected))
+            this._queueRepository.updateEditForm(f => f.selectedItems[i.id] = i.file.state.selected))
       });
 
     this._queueRepository.editForm$
@@ -42,13 +42,13 @@ export class QueuePageComponent implements OnInit, OnDestroy {
         this.editQueueForm = form
 
         this.queue.items.forEach(item => {
-          if (item.file.isCurrentSession || item.itemType !== QueueSnapshotItemType.User) {
+          if (item.file.state.isPlayingOrPaused || item.itemType !== QueueSnapshotItemType.User) {
             return;
           }
 
-          item.selected = item.id in form.selectedItems && form.selectedItems[item.id];
+          item.file.state.selected = item.id in form.selectedItems && form.selectedItems[item.id];
 
-          item.state = form.editing ? FileExplorerNodeState.Editing : FileExplorerNodeState.None;
+          item.file.state.folderState = form.editing ? FileExplorerNodeState.Editing : FileExplorerNodeState.None;
         })
       });
   }
@@ -58,7 +58,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: NodeListItem): void {
+  public onNodeClick(node: FileExplorerNode): void {
     if (node instanceof QueueItem) {
       this._queueRepository.setQueuePosition(node.id);
     }

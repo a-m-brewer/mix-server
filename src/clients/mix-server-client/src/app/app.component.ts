@@ -38,7 +38,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   public disconnected: boolean = true;
   public disconnectedReason: string | null = 'Loading';
 
-  public currentFolder?: FileExplorerFolder | null;
+  public currentFolder: FileExplorerFolder | null = null;
   public showFileExplorerToolbar: boolean = false;
   public showQueueToolbar: boolean = false;
   public nodeRepositoryLoading: boolean = false;

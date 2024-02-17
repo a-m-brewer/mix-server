@@ -39,10 +39,6 @@ export class QueueRepositoryService {
               next: dto => {
                 const queue = this._queueConverter.fromDto(dto);
 
-                queue.items.forEach(item => {
-                  item.updateState(this._audioPlayerState.state, this.editForm.editing);
-                })
-
                 this.nextQueue(queue);
               },
               error: err => {
@@ -53,15 +49,6 @@ export class QueueRepositoryService {
             });
         }
       });
-
-    this._audioPlayerState.state$
-      .subscribe(state => {
-        const nextQueue = this._queueBehaviourSubject$.getValue();
-        nextQueue.items.forEach(item => {
-          item.updateState(state, this.editForm.editing);
-        });
-        this.nextQueue(nextQueue);
-      })
 
     this.initializeSignalR();
   }
@@ -168,16 +155,6 @@ export class QueueRepositoryService {
     this._queueSignalRClient.queue$()
       .subscribe({
         next: updatedQueue => {
-          const previousQueue = this.queue;
-
-          updatedQueue.items.forEach(item => {
-            item.updateState(this._audioPlayerState.state, this.editForm.editing);
-            const previousItem = previousQueue.items.find(f => f.id === item.id);
-            if (previousItem) {
-              item.restoreState(previousItem);
-            }
-          })
-
           this.nextQueue(updatedQueue);
         }
       })

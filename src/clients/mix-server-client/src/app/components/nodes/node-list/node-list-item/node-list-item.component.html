@@ -1,28 +1,28 @@
 <div
   [ngClass]="{
     'node-list-item-container': true,
-    'node-list-item-container-selectable': !node.disabled && !loading && !node.editing,
-    'node-list-item-container-disabled': (node.disabled || loading) && !node.isCurrentSession,
-    'node-list-item-container-current-session': node.isCurrentSession,
+    'node-list-item-container-selectable': !node.disabled && !loading && !node.state.editing,
+    'node-list-item-container-disabled': (node.disabled || loading) && !node.state.isPlayingOrPaused,
+    'node-list-item-container-current-session': node.state.isPlayingOrPaused,
   }"
   matRipple
   [matRippleTrigger]="rippleTrigger"
-  [matRippleDisabled]="node.disabled || loading || node.editing"
+  [matRippleDisabled]="node.disabled || loading || node.state.editing"
 >
   <div
     [ngClass]="{
       'node-list-item-content-container': true,
       'node-list-item': true,
-      'file-explorer-node-selectable': !node.disabled && !loading && !node.editing
+      'file-explorer-node-selectable': !node.disabled && !loading && !node.state.editing
     }"
     #rippleTrigger
     (click)="onContentClicked()"
   >
     <div class="node-list-item-content-icon-container node-list-item">
       <app-node-list-item-icon
-        [state]="node.state"
+        [state]="node.state.folderState"
         [defaultIcon]="node.mdIcon"
-        [(selected)]="node.selected"
+        [(selected)]="node.state.selected"
         class="node-list-item-content-icon"
       />
     </div>

@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {
   FileExplorerFileNodeResponse,
-  FileExplorerFolderInfoNodeResponse,
   FileExplorerFolderNodeResponse,
   FileExplorerFolderResponse,
   FileExplorerNodeResponse,
@@ -14,14 +13,15 @@ import {FileExplorerNode} from "../../main-content/file-explorer/models/file-exp
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/file-explorer-folder-node";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
-import {FileExplorerFolderInfoNode} from "../../main-content/file-explorer/models/file-explorer-folder-info-node";
+import {FileExplorerNodeStateRepositoryService} from "../repositories/file-explorer-node-state-repository.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FileExplorerNodeConverterService {
 
-  constructor() { }
+  constructor(private _stateRepository: FileExplorerNodeStateRepositoryService)
+  {}
 
   public fromFileExplorerFolder(dto: FileExplorerFolderResponse): FileExplorerFolder {
     return new FileExplorerFolder(
@@ -52,7 +52,8 @@ export class FileExplorerNodeConverterService {
       dto.creationTimeUtc,
       dto.mimeType,
       dto.playbackSupported,
-      this.fromFolderInfoNodeResponse(dto.parent)
+      this.fromFileExplorerFolderNode(dto.parent),
+      this._stateRepository.getState(dto.absolutePath)
     );
   }
 
@@ -65,19 +66,8 @@ export class FileExplorerNodeConverterService {
       dto.creationTimeUtc,
       dto.belongsToRoot,
       dto.belongsToRootChild,
-      dto.parent ? this.fromFolderInfoNodeResponse(dto.parent) : null
-    );
-  }
-
-  public fromFolderInfoNodeResponse(dto: FileExplorerFolderInfoNodeResponse) : FileExplorerFolderInfoNode {
-    return new FileExplorerFolderInfoNode(
-      dto.name,
-      dto.absolutePath,
-      dto.type,
-      dto.exists,
-      dto.creationTimeUtc,
-      dto.belongsToRoot,
-      dto.belongsToRootChild
+      dto.parent ? this.fromFileExplorerFolderNode(dto.parent) : null,
+      this._stateRepository.getState(dto.absolutePath)
     );
   }
 

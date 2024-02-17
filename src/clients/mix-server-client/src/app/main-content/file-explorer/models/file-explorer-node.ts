@@ -1,5 +1,6 @@
 import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
-import {FileExplorerFolderInfoNode} from "./file-explorer-folder-info-node";
+import {FileExplorerFolderNode} from "./file-explorer-folder-node";
+import {FileExplorerNodeStateInterface} from "./file-explorer-node-state";
 
 export interface FileExplorerNode {
   name: string;
@@ -8,7 +9,9 @@ export interface FileExplorerNode {
   exists: boolean;
   creationTimeUtc: Date;
   disabled: boolean,
-  parent: FileExplorerFolderInfoNode | null | undefined;
+  parent: FileExplorerFolderNode | null | undefined;
+  state: FileExplorerNodeStateInterface;
+  mdIcon: string;
   isEqual(node: FileExplorerNode | null | undefined): boolean;
   copy(): FileExplorerNode;
 }

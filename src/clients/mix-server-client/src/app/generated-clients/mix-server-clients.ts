@@ -2205,7 +2205,7 @@ export interface IHttpValidationProblemDetails extends IProblemDetails {
 }
 
 export class ValidationProblemDetails extends HttpValidationProblemDetails implements IValidationProblemDetails {
-    errors!: { [key: string]: string[]; };
+    override errors!: { [key: string]: string[]; };
 
     [key: string]: any;
 

@@ -17,9 +17,6 @@ import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {FileExplorerNode} from "../../main-content/file-explorer/models/file-explorer-node";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
-import {
-  FileExplorerFolderInfoNodeInterface
-} from "../../main-content/file-explorer/models/file-explorer-folder-info-node";
 
 @Injectable({
   providedIn: 'root'
@@ -135,19 +132,19 @@ export class FileExplorerNodeRepositoryService {
     return this._loading.asObservable();
   }
 
-  public changeDirectory(node?: FileExplorerFolderInfoNodeInterface): void {
+  public changeDirectory(node?: FileExplorerFolderNode): void {
     if (this._loading.getValue()) {
       return;
     }
 
     if (node) {
-      node.state = FileExplorerNodeState.Loading
+      node.state.folderState = FileExplorerNodeState.Loading
     }
 
     firstValueFrom(this.navigateToDirectory(node?.absolutePath))
       .catch(() => {
         if (node) {
-          node.state = FileExplorerNodeState.None;
+          node.state.folderState = FileExplorerNodeState.None;
         }
       });
   }
@@ -181,12 +178,6 @@ export class FileExplorerNodeRepositoryService {
 
           this._loadingRepository.loading = false;
           this.setLoading(false);
-
-          children.forEach((child: FileExplorerNode) => {
-            if (child instanceof FileExplorerFileNode) {
-              child.updateState(this._audioPlayerState.state);
-            }
-          })
 
           this._currentFolder$.next(folder);
         },
