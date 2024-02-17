@@ -7,6 +7,7 @@ import {QueueSnapshotItemType} from "../generated-clients/mix-server-clients";
 import {EditQueueFormModel} from "../services/repositories/models/edit-queue-form-model";
 import {FileExplorerNodeState} from "../main-content/file-explorer/enums/file-explorer-node-state.enum";
 import {FileExplorerNode} from "../main-content/file-explorer/models/file-explorer-node";
+import {QueueEditFormRepositoryService} from "../services/repositories/queue-edit-form-repository.service";
 
 @Component({
   selector: 'app-queue-page',
@@ -22,7 +23,8 @@ export class QueuePageComponent implements OnInit, OnDestroy {
   public queue: Queue = new Queue(null, []);
   public editQueueForm: EditQueueFormModel = new EditQueueFormModel();
 
-  constructor(private _queueRepository: QueueRepositoryService) {
+  constructor(private _queueRepository: QueueRepositoryService,
+              private _queueEditFormRepository: QueueEditFormRepositoryService) {
   }
 
   public ngOnInit(): void {
@@ -33,10 +35,10 @@ export class QueuePageComponent implements OnInit, OnDestroy {
         this.queue = queue;
         this.queue.itemSelected$
           .subscribe(i =>
-            this._queueRepository.updateEditForm(f => f.selectedItems[i.id] = i.file.state.selected))
+            this._queueEditFormRepository.updateEditForm(f => f.selectedItems[i.id] = i.file.state.selected))
       });
 
-    this._queueRepository.editForm$
+    this._queueEditFormRepository.editForm$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(form => {
         this.editQueueForm = form

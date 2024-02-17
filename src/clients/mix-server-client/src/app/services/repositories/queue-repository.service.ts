@@ -12,25 +12,23 @@ import {
 import {ToastService} from "../toasts/toast-service";
 import {QueueSignalrClientService} from "../signalr/queue-signalr-client.service";
 import {AuthenticationService} from "../auth/authentication.service";
-import {AudioPlayerStateService} from "../audio-player/audio-player-state.service";
 import {QueueItem} from "./models/queue-item";
-import {EditQueueFormModel} from "./models/edit-queue-form-model";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
+import {QueueEditFormRepositoryService} from "./queue-edit-form-repository.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class QueueRepositoryService {
   private _queueBehaviourSubject$ = new BehaviorSubject<Queue>(new Queue(null, []));
-  private _editQueueFormBehaviourSubject$ = new BehaviorSubject<EditQueueFormModel>(new EditQueueFormModel());
 
 
-  constructor(private _audioPlayerState: AudioPlayerStateService,
-              private _queueConverter: QueueConverterService,
+  constructor(private _queueConverter: QueueConverterService,
               private _queueSignalRClient: QueueSignalrClientService,
               private _queueClient: QueueClient,
               private _toastService: ToastService,
-              private _authenticationService: AuthenticationService) {
+              private _authenticationService: AuthenticationService,
+              private _queueEditFormRepository: QueueEditFormRepositoryService) {
     this._authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
@@ -95,22 +93,6 @@ export class QueueRepositoryService {
       }));
   }
 
-  public get editForm$(): Observable<EditQueueFormModel> {
-    return this._editQueueFormBehaviourSubject$.asObservable();
-  }
-
-  public get editForm(): EditQueueFormModel {
-    return this._editQueueFormBehaviourSubject$.getValue();
-  }
-
-  public updateEditForm(update: (form: EditQueueFormModel) => void): void {
-    const form = EditQueueFormModel.copy(this.editForm);
-
-    update(form);
-
-    this._editQueueFormBehaviourSubject$.next(form);
-  }
-
   public addToQueue(file: FileExplorerFileNode): void {
     this._queueClient.addToQueue(new AddToQueueCommand({
       absoluteFolderPath: file.parent.absolutePath ?? '',
@@ -138,7 +120,7 @@ export class QueueRepositoryService {
 
     this._queueClient.removeFromQueue2(new RemoveFromQueueCommand({queueItems}))
       .subscribe({
-        next: () => this.updateEditForm(f => f.selectedItems = {}),
+        next: () => this._queueEditFormRepository.updateEditForm(f => f.selectedItems = {}),
         error: err => this._toastService.logServerError(err, 'Failed to remove items from queue')
       });
   }

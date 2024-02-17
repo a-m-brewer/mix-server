@@ -5,6 +5,7 @@ import {
 } from "../../main-content/file-explorer/models/file-explorer-node-state";
 import {AudioPlayerStateService} from "../audio-player/audio-player-state.service";
 import {FileExplorerNodeState} from "../../main-content/file-explorer/enums/file-explorer-node-state.enum";
+import {QueueEditFormRepositoryService} from "./queue-edit-form-repository.service";
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,8 @@ import {FileExplorerNodeState} from "../../main-content/file-explorer/enums/file
 export class FileExplorerNodeStateRepositoryService {
   private _states: { [absolutePath: string]: FileExplorerNodeStateClass } = {};
 
-  constructor(audioPlayerState: AudioPlayerStateService) {
+  constructor(audioPlayerState: AudioPlayerStateService,
+              queueEditFormRepository: QueueEditFormRepositoryService) {
     audioPlayerState.state$
       .subscribe((audioPlayerState) => {
         for (const key in this._states) {
@@ -22,6 +24,17 @@ export class FileExplorerNodeStateRepositoryService {
             state.folderState = audioPlayerState.playing ? FileExplorerNodeState.Playing : FileExplorerNodeState.Paused;
           } else if (state.folderState === FileExplorerNodeState.Playing ||state.folderState === FileExplorerNodeState.Paused) {
             state.folderState = FileExplorerNodeState.None;
+          }
+        }
+      });
+
+    queueEditFormRepository.editForm$
+      .subscribe((editForm) => {
+        for (const key in this._states) {
+          let state = this._states[key];
+
+          if (editForm.editing) {
+            state.folderState = FileExplorerNodeState.Editing;
           }
         }
       });
