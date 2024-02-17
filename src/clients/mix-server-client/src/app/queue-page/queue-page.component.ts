@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {QueueRepositoryService} from "../services/repositories/queue-repository.service";
-import {Subject, Subscription, takeUntil} from "rxjs";
+import {Subject, takeUntil} from "rxjs";
 import {Queue} from "../services/repositories/models/queue";
 import {QueueItem} from "../services/repositories/models/queue-item";
 import {QueueSnapshotItemType} from "../generated-clients/mix-server-clients";
@@ -15,7 +15,6 @@ import {QueueEditFormRepositoryService} from "../services/repositories/queue-edi
   styleUrls: ['./queue-page.component.scss']
 })
 export class QueuePageComponent implements OnInit, OnDestroy {
-  private _subscriptions: Array<Subscription> = [];
   private _unsubscribe$ = new Subject();
 
   protected readonly UserItemType = QueueSnapshotItemType.User;
