@@ -1,14 +1,15 @@
 import {FileExplorerNode} from "./file-explorer-node";
 import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
-import {FileExplorerFolderInfo} from "./file-explorer-folder-info";
+import {FileExplorerFolderNode} from "./file-explorer-folder-node";
 
-export class FileExplorerFileNode extends FileExplorerNode {
-  constructor(name: string,
-              exists: boolean,
-              creationTimeUtc: Date,
+export class FileExplorerFileNode implements FileExplorerNode {
+  constructor(public name: string,
+              public absolutePath: string,
+              public type: FileExplorerNodeType,
+              public exists: boolean,
+              public creationTimeUtc: Date,
               public mimeType: string,
               public playbackSupported: boolean,
-              public parent: FileExplorerFolderInfo) {
-    super(name, FileExplorerNodeType.File, exists, creationTimeUtc)
+              public parent: FileExplorerFolderNode) {
   }
 }

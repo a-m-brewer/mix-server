@@ -10,12 +10,12 @@ import {
   SetQueuePositionCommand
 } from "../../generated-clients/mix-server-clients";
 import {ToastService} from "../toasts/toast-service";
-import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {QueueSignalrClientService} from "../signalr/queue-signalr-client.service";
 import {AuthenticationService} from "../auth/authentication.service";
 import {AudioPlayerStateService} from "../audio-player/audio-player-state.service";
 import {QueueItem} from "./models/queue-item";
 import {EditQueueFormModel} from "./models/edit-queue-form-model";
+import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 
 @Injectable({
   providedIn: 'root'
@@ -126,7 +126,7 @@ export class QueueRepositoryService {
 
   public addToQueue(file: FileExplorerFileNode): void {
     this._queueClient.addToQueue(new AddToQueueCommand({
-      absoluteFolderPath: file.parentFolder.absolutePath ?? '',
+      absoluteFolderPath: file.parent.absolutePath ?? '',
       fileName: file.name
     })).subscribe({
       error: err => this._toastService.logServerError(err, 'Failed to add item to queue')

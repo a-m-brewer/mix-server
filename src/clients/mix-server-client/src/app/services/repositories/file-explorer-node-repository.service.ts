@@ -1,29 +1,27 @@
 import {Injectable} from '@angular/core';
 import {NodeClient} from "../../generated-clients/mix-server-clients";
 import {BehaviorSubject, filter, firstValueFrom, from, map, Observable, tap} from "rxjs";
-import {FileExplorerNode} from "../../main-content/file-explorer/models/file-explorer-node";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {LoadingRepositoryService} from "./loading-repository.service";
 import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/file-explorer-folder-node";
 import {FileExplorerNodeState} from "../../main-content/file-explorer/enums/file-explorer-node-state.enum";
 import {ActivatedRoute, NavigationEnd, Router} from "@angular/router";
-import {FolderNodeResponse, FolderSortMode, SetFolderSortCommand} from "../../generated-clients/mix-server-clients";
+import {FolderSortMode, SetFolderSortCommand} from "../../generated-clients/mix-server-clients";
 import {PageRoutes} from "../../page-routes.enum";
 import {ToastService} from "../toasts/toast-service";
 import {AudioPlayerStateService} from "../audio-player/audio-player-state.service";
-import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {AuthenticationService} from "../auth/authentication.service";
 import {FolderSignalrClientService} from "../signalr/folder-signalr-client.service";
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
+import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FileExplorerNodeRepositoryService {
   private _loading = new BehaviorSubject<boolean>(false);
-  private _currentLevelNodes$ = new BehaviorSubject<ReadonlyArray<FileExplorerNode>>([]);
-  private _currentFolder$ = new BehaviorSubject<FileExplorerFolderNode>(FileExplorerFolderNode.Default);
+  private _currentFolder$ = new BehaviorSubject<FileExplorerFolder>(FileExplorerFolder.Default);
   private _loggedIn: boolean = false;
 
   constructor(private _authenticationService: AuthenticationService,
@@ -99,7 +97,7 @@ export class FileExplorerNodeRepositoryService {
       .subscribe(event => {
         const node = event.node;
         const currentFolder = this._currentFolder$.getValue();
-        if (!node.parentDirectory?.absolutePath || currentFolder.absolutePath !== node.parentDirectory.absolutePath) {
+        if (!node.parentDirectory?.absolutePath || currentFolder.node.absolutePath !== node.parentDirectory.absolutePath) {
           return
         }
 
@@ -242,8 +240,7 @@ export class FileExplorerNodeRepositoryService {
   }
 
   private clear(): void {
-    this._currentLevelNodes$.next([]);
-    this._currentFolder$.next(FileExplorerFolderNode.Default);
+    this._currentFolder$.next(FileExplorerFolder.Default);
   }
 
   private toFolderSortMode(sortMode: FileExplorerFolderSortMode): FolderSortMode {
