@@ -32,6 +32,7 @@ public class FileExplorerConverter(
     
     private FileExplorerFolderNode Convert(DirectoryInfo directoryInfo, bool includeParent)
     {
+        var hideParent = !includeParent || !rootFolder.BelongsToRootChild(directoryInfo.Parent?.FullName);
         return new FileExplorerFolderNode(
             directoryInfo.Name,
             directoryInfo.FullName,
@@ -40,7 +41,7 @@ public class FileExplorerConverter(
             directoryInfo.CreationTimeUtc,
             rootFolder.BelongsToRoot(directoryInfo.FullName),
             rootFolder.BelongsToRootChild(directoryInfo.FullName),
-            directoryInfo.Parent is null || !includeParent ? null : Convert(directoryInfo.Parent, false));
+            directoryInfo.Parent is null || hideParent ? null : Convert(directoryInfo.Parent, false));
     }
 
     public IFileExplorerFileNode Convert(FileInfo fileInfo, IFileExplorerFolderNode parent)
