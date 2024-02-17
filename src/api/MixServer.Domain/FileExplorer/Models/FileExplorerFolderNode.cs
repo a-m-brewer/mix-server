@@ -10,9 +10,15 @@ public class FileExplorerFolderNode(
     DateTime creationTimeUtc,
     bool belongsToRoot,
     bool belongsToRootChild,
-    IFileExplorerFolderNodeInfo? parent)
-    : FileExplorerFolderNodeInfo(name, absolutePath, type, exists, creationTimeUtc, belongsToRoot, belongsToRootChild),
-        IFileExplorerFolderNode
+    IFileExplorerFolderNode? parent)
+    : IFileExplorerFolderNode
 {
-    public IFileExplorerFolderNodeInfo? Parent { get; } = parent;
+    public string Name { get; } = name;
+    public string AbsolutePath { get; } = absolutePath;
+    public FileExplorerNodeType Type { get; } = type;
+    public bool Exists { get; } = exists;
+    public DateTime CreationTimeUtc { get; } = creationTimeUtc;
+    public bool BelongsToRoot { get; } = belongsToRoot;
+    public bool BelongsToRootChild { get; } = belongsToRootChild;
+    public IFileExplorerFolderNode? Parent { get; } = parent;
 }
