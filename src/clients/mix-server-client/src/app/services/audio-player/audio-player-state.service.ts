@@ -1,22 +1,22 @@
 import { Injectable } from '@angular/core';
 import {BehaviorSubject, Observable} from "rxjs";
-import {AudioPlayerState} from "./models/audio-player-state";
+import {AudioPlayerStateModel} from "./models/audio-player-state-model";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 
 @Injectable({
   providedIn: 'root'
 })
 export class AudioPlayerStateService {
-  private _stateBehaviourSubject$ = new BehaviorSubject<AudioPlayerState>(new AudioPlayerState());
+  private _stateBehaviourSubject$ = new BehaviorSubject<AudioPlayerStateModel>(new AudioPlayerStateModel());
 
   constructor() {
   }
 
-  public get state$(): Observable<AudioPlayerState | null | undefined> {
+  public get state$(): Observable<AudioPlayerStateModel> {
     return this._stateBehaviourSubject$.asObservable();
   }
 
-  public get state(): AudioPlayerState {
+  public get state(): AudioPlayerStateModel {
     return this._stateBehaviourSubject$.getValue();
   }
 
@@ -27,7 +27,7 @@ export class AudioPlayerStateService {
       return;
     }
 
-    const nextState = AudioPlayerState.copy(state);
+    const nextState = AudioPlayerStateModel.copy(state);
     nextState.node = node;
 
     this.next(nextState);
@@ -40,7 +40,7 @@ export class AudioPlayerStateService {
       return;
     }
 
-    const nextState = AudioPlayerState.copy(state);
+    const nextState = AudioPlayerStateModel.copy(state);
     nextState.queueItemId = queueItemId;
 
     this.next(nextState);
@@ -53,7 +53,7 @@ export class AudioPlayerStateService {
       return;
     }
 
-    const nextState = AudioPlayerState.copy(state);
+    const nextState = AudioPlayerStateModel.copy(state);
     nextState.playing = playing;
 
     this.next(nextState);
@@ -64,10 +64,10 @@ export class AudioPlayerStateService {
       return;
     }
 
-    this.next(new AudioPlayerState());
+    this.next(new AudioPlayerStateModel());
   }
 
-  private next(state: AudioPlayerState): void {
+  private next(state: AudioPlayerStateModel): void {
     this._stateBehaviourSubject$.next(state);
   }
 }

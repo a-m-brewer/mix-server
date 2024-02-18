@@ -12,6 +12,8 @@ import {
 } from "../components/nodes/node-list/node-list-item/enums/node-list-item-changed-event";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
 import {LoadingNodeStatus} from "../services/repositories/models/loading-node-status";
+import {AudioPlayerStateModel} from "../services/audio-player/models/audio-player-state-model";
+import {AudioPlayerStateService} from "../services/audio-player/audio-player-state.service";
 
 @Component({
   selector: 'app-queue-page',
@@ -23,16 +25,24 @@ export class QueuePageComponent implements OnInit, OnDestroy {
 
   protected readonly UserItemType = QueueSnapshotItemType.User;
 
+  public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
   public queue: Queue = new Queue(null, []);
   public editQueueForm: EditQueueFormModel = new EditQueueFormModel();
   public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
 
-  constructor(private _loadingRepository: LoadingRepositoryService,
+  constructor(private _audioPlayerStateService: AudioPlayerStateService,
+              private _loadingRepository: LoadingRepositoryService,
               private _queueRepository: QueueRepositoryService,
               private _queueEditFormRepository: QueueEditFormRepositoryService) {
   }
 
   public ngOnInit(): void {
+    this._audioPlayerStateService.state$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(state => {
+        this.audioPlayerState = state;
+      });
+
     this._queueRepository.queue$()
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(queue => {

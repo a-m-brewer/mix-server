@@ -3,7 +3,7 @@
     'node-list-item-container': true,
     'node-list-item-container-selectable': !loadingStatus.loading,
     'node-list-item-container-disabled': loadingStatus.loading,
-    'node-list-item-container-current-session': false,
+    'node-list-item-container-current-session': isPlayingOrPaused,
   }"
   matRipple
   [matRippleTrigger]="rippleTrigger"
@@ -21,6 +21,7 @@
     <div class="node-list-item-content-icon-container node-list-item">
       <app-node-list-item-icon
         [loading]="loadingStatus.loading && loadingStatus.loadingIds.includes(id)"
+        [playingState]="playingState"
         [disabled]="loadingStatus.loading"
         [defaultIcon]="defaultIcon"
         class="node-list-item-content-icon"

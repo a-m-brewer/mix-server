@@ -1,18 +1,17 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {FileExplorerNode} from "./models/file-explorer-node";
 import {FileExplorerFolderNode} from "./models/file-explorer-folder-node";
 import {FileExplorerFileNode} from "./models/file-explorer-file-node";
 import {FileExplorerNodeRepositoryService} from "../../services/repositories/file-explorer-node-repository.service";
 import {Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../services/repositories/current-playback-session-repository.service";
 import {FileExplorerFolder} from "./models/file-explorer-folder";
-import {NodeListItemInterface} from "../../components/nodes/node-list/node-list-item/node-list-item.interface";
 import {LoadingNodeStatus} from "../../services/repositories/models/loading-node-status";
 import {LoadingRepositoryService} from "../../services/repositories/loading-repository.service";
 import {
   NodeListItemChangedEvent
 } from "../../components/nodes/node-list/node-list-item/enums/node-list-item-changed-event";
-import {FileExplorerNodeType} from "./enums/file-explorer-node-type";
+import {AudioPlayerStateService} from "../../services/audio-player/audio-player-state.service";
+import {AudioPlayerStateModel} from "../../services/audio-player/models/audio-player-state-model";
 
 @Component({
   selector: 'app-file-explorer',
@@ -22,15 +21,23 @@ import {FileExplorerNodeType} from "./enums/file-explorer-node-type";
 export class FileExplorerComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
+  public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
   public currentFolder: FileExplorerFolder = FileExplorerFolder.Default;
   public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
 
-  constructor(private _loadingRepository: LoadingRepositoryService,
+  constructor(private _audioPlayerStateService: AudioPlayerStateService,
+              private _loadingRepository: LoadingRepositoryService,
               private _nodeRepository: FileExplorerNodeRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
   public ngOnInit(): void {
+    this._audioPlayerStateService.state$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(state => {
+        this.audioPlayerState = state;
+      });
+
     this._nodeRepository.currentFolder$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(currentFolder => {

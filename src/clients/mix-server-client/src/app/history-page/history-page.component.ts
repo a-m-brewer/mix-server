@@ -13,6 +13,8 @@ import {LoadingRepositoryService} from "../services/repositories/loading-reposit
 import {
   NodeListItemChangedEvent
 } from "../components/nodes/node-list/node-list-item/enums/node-list-item-changed-event";
+import {AudioPlayerStateService} from "../services/audio-player/audio-player-state.service";
+import {AudioPlayerStateModel} from "../services/audio-player/models/audio-player-state-model";
 
 @Component({
   selector: 'app-history-page',
@@ -22,6 +24,7 @@ import {
 export class HistoryPageComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
+  public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
   public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
   public sessions: PlaybackSession[] = [];
   public moreItemsAvailable: boolean = true;
@@ -31,12 +34,19 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
   public scrollUpDistance = 2;
   public selector: string = '#content-scroll-container';
 
-  constructor(private _historyRepository: HistoryRepositoryService,
+  constructor(private _audioPlayerStateService: AudioPlayerStateService,
+              private _historyRepository: HistoryRepositoryService,
               private _loadingRepository: LoadingRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
   public ngOnInit(): void {
+    this._audioPlayerStateService.state$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(state => {
+        this.audioPlayerState = state;
+      });
+
     this._historyRepository.sessions$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(sessions => {

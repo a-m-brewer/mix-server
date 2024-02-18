@@ -1,4 +1,5 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {FileExplorerPlayingState} from "../../../../../main-content/file-explorer/enums/file-explorer-playing-state";
 
 @Component({
   selector: 'app-node-list-item-icon',
@@ -6,6 +7,8 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
   styleUrls: ['./node-list-item-icon.component.scss']
 })
 export class NodeListItemIcon {
+  protected readonly FileExplorerPlayingState = FileExplorerPlayingState;
+
   @Input()
   public defaultIcon: string = 'folder';
 
@@ -14,6 +17,9 @@ export class NodeListItemIcon {
 
   @Input()
   public disabled: boolean = false;
+
+  @Input()
+  public playingState: FileExplorerPlayingState = FileExplorerPlayingState.None;
 
   @Input()
   public selected: boolean = false;

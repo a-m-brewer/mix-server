@@ -3,6 +3,8 @@ import {FileExplorerNodeType} from "../../../../main-content/file-explorer/enums
 import {ContextMenuButton} from "./context-menu/context-menu-button";
 import {LoadingNodeStatus} from "../../../../services/repositories/models/loading-node-status";
 import {NodeListItemChangedEvent} from "./enums/node-list-item-changed-event";
+import {AudioPlayerStateModel} from "../../../../services/audio-player/models/audio-player-state-model";
+import {FileExplorerPlayingState} from "../../../../main-content/file-explorer/enums/file-explorer-playing-state";
 @Component({
   selector: 'app-node-list-item',
   templateUrl: './node-list-item.component.html',
@@ -29,6 +31,9 @@ export class NodeListItemComponent {
   public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
 
   @Input()
+  public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
+
+  @Input()
   public last: boolean = false;
 
   @Output()
@@ -38,6 +43,18 @@ export class NodeListItemComponent {
     return !this.contextMenuButtons ||
       this.contextMenuButtons.length === 0 ||
       !this.contextMenuButtons.some(s => !s.disabled);
+  }
+
+  public get playingState(): FileExplorerPlayingState {
+    if (this.audioPlayerState.queueItemId === this.id || this.audioPlayerState.node?.absolutePath === this.id) {
+      return this.audioPlayerState.playing ? FileExplorerPlayingState.Playing : FileExplorerPlayingState.Paused;
+    }
+
+    return FileExplorerPlayingState.None;
+  }
+
+  public get isPlayingOrPaused(): boolean {
+    return this.playingState === FileExplorerPlayingState.Playing || this.playingState === FileExplorerPlayingState.Paused;
   }
 
   public onContentClicked(): void {

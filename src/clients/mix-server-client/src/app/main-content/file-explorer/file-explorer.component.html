@@ -6,6 +6,7 @@
     [nodeType]="currentFolder.node.parent.type"
     [defaultIcon]="currentFolder.node.parent.mdIcon"
     [loadingStatus]="loadingStatus"
+    [audioPlayerState]="audioPlayerState"
     [last]="currentFolder.children.length === 0"
     (click)="onNodeClick($event)"
   />
@@ -17,6 +18,7 @@
     [nodeType]="node.type"
     [defaultIcon]="node.mdIcon"
     [loadingStatus]="loadingStatus"
+    [audioPlayerState]="audioPlayerState"
     [last]="last"
     (click)="onNodeClick($event)"
     >

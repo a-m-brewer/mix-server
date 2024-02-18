@@ -1,11 +1,20 @@
-<mat-icon [ngClass]="{ 'mat-list-item-icon': true, 'node-list-item-container-current-session ': false }"
+<mat-icon [ngClass]="{ 'mat-list-item-icon': true, 'node-list-item-container-current-session ': playingState !== FileExplorerPlayingState.None }"
           (click)="onEditCheckboxClicked()">
 
-  <mat-spinner color="primary" *ngIf="loading" diameter="20"></mat-spinner>
+  @if (loading) {
+    <mat-spinner color="primary" *ngIf="loading" diameter="20"></mat-spinner>
+  } @else if (playingState !== FileExplorerPlayingState.None) {
+    @if (playingState === FileExplorerPlayingState.Playing) {
+      <span>play_arrow</span>
+    } @else {
+      <span>pause</span>
+    }
+  } @else {
+    <span>{{ defaultIcon }}</span>
+  }
+
+
 <!--  <span class="edit-checkbox" *ngIf="editing && selected">check_box</span>-->
 <!--  <span class="edit-checkbox" *ngIf="editing && !selected">check_box_outline_blank</span>-->
-<!--  <span *ngIf="playing">play_arrow</span>-->
-<!--  <span *ngIf="paused">pause</span>-->
-  <span>{{ defaultIcon }}</span>
 
 </mat-icon>
