@@ -58,7 +58,7 @@ export class FileExplorerNodeRepositoryService {
         }
 
         this._currentFolder$.next(updatedFolder);
-        this._loadingRepository.stopLoading();
+        this._loadingRepository.stopLoadingId(updatedFolder.node.absolutePath);
       });
 
     this._folderSignalRClient.nodeAdded$()
@@ -143,22 +143,17 @@ export class FileExplorerNodeRepositoryService {
 
   private loadDirectory(absolutePath?: string | null): void {
     this._loadingRepository.startLoadingItem(absolutePath);
-
-    this._client.getNode(absolutePath)
-      .subscribe({
-        next: (folderResponse: FileExplorerFolderResponse) => {
-          const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(folderResponse);
-
-          this._loadingRepository.stopLoading();
-
-          this._currentFolder$.next(folder);
-        },
-        error: err => {
-          this._toastService.logServerError(err, `Failed to navigate to directory ${absolutePath}`);
-          this._loadingRepository.stopLoading();
-          this.navigateToDirectory(null);
-        }
-      });
+    firstValueFrom(this._client.getNode(absolutePath))
+      .then(folderResponse => {
+        const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(folderResponse);
+        this._currentFolder$.next(folder);
+      })
+      .catch(err => {
+        this._toastService.logServerError(err, `Failed to navigate to directory ${absolutePath}`);
+        this._loadingRepository.stopLoadingId(absolutePath);
+        this.navigateToDirectory(null);
+      })
+      .finally(() => this._loadingRepository.stopLoadingId(absolutePath));
   }
 
   private loadDirectoryFromPathName(pathname: string): void {

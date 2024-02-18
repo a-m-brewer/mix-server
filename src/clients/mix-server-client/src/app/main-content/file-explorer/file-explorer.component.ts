@@ -23,7 +23,7 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
   public currentFolder: FileExplorerFolder = FileExplorerFolder.Default;
-  public loadingStatus: LoadingNodeStatus = {loading: false};
+  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
 
   constructor(private _loadingRepository: LoadingRepositoryService,
               private _nodeRepository: FileExplorerNodeRepositoryService,

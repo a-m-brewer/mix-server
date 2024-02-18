@@ -26,7 +26,7 @@ export class NodeListItemComponent {
   public defaultIcon: string = 'folder';
 
   @Input()
-  public loadingStatus: LoadingNodeStatus = {loading: false};
+  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
 
   @Input()
   public last: boolean = false;

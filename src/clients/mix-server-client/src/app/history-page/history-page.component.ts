@@ -22,9 +22,9 @@ import {
 export class HistoryPageComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
-  public loadingStatus: LoadingNodeStatus = {loading: false};
+  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
   public sessions: PlaybackSession[] = [];
-  public lastFetchHadItems: boolean = true;
+  public moreItemsAvailable: boolean = true;
 
   public throttle = 300;
   public scrollDistance = 1;
@@ -43,10 +43,10 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
         this.sessions = sessions;
       });
 
-    this._historyRepository.lastFetchHadItems$
+    this._historyRepository.moreItemsAvailable$
       .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(lastFetchHadItems => {
-        this.lastFetchHadItems = lastFetchHadItems;
+      .subscribe(moreItemsAvailable => {
+        this.moreItemsAvailable = moreItemsAvailable;
       });
 
     this._loadingRepository.status$()
@@ -54,6 +54,8 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
       .subscribe(status => {
         this.loadingStatus = status;
       });
+
+    this._historyRepository.loadMoreItems().then();
   }
 
   public ngOnDestroy(): void {

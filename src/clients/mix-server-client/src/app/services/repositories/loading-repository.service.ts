@@ -6,7 +6,8 @@ import {LoadingNodeStatus} from "./models/loading-node-status";
   providedIn: 'root'
 })
 export class LoadingRepositoryService {
-  private _status$ = new BehaviorSubject<LoadingNodeStatus>({loading: false});
+  private _loadingCount = 0;
+  private _status$ = new BehaviorSubject<LoadingNodeStatus>({loading: false, loadingIds: []});
 
   constructor() { }
 
@@ -18,15 +19,39 @@ export class LoadingRepositoryService {
     return this._status$.asObservable();
   }
 
-  public startLoadingItem(id?: string | null): void {
-    this._status$.next({loading: true, id});
+  public startLoadingItem(id: string | null | undefined): void {
+    this.nextLoading(true, id);
   }
 
   public startLoading(): void {
-    this._status$.next({loading: true});
+    this.nextLoading(true)
+  }
+
+  public stopLoadingId(id: string | null | undefined): void {
+    this.nextLoading(false, id);
   }
 
   public stopLoading(): void {
-    this._status$.next({loading: false});
+    this.nextLoading(false);
+  }
+
+  public nextLoading(loading: boolean, id?: string | null): void {
+    const change = loading ? 1 : -1;
+    const nextCount = Math.max(0, this._loadingCount + change);
+
+    const nextLoading = 0 < nextCount;
+
+    let nextLoadingIds = [...this._status$.value.loadingIds];
+    if (id) {
+      if (loading) {
+        nextLoadingIds.push(id);
+      } else {
+        nextLoadingIds = nextLoadingIds.filter(x => x !== id);
+      }
+    }
+    nextLoadingIds = [...new Set(nextLoadingIds)];
+
+    this._loadingCount = nextCount;
+    this._status$.next({loading: nextLoading, loadingIds: nextLoadingIds});
   }
 }

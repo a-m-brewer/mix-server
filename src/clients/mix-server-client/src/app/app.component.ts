@@ -42,7 +42,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   public currentFolder: FileExplorerFolder | null = null;
   public showFileExplorerToolbar: boolean = false;
   public showQueueToolbar: boolean = false;
-  public loadingStatus: LoadingNodeStatus = {loading: false};
+  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
 
   @ViewChild('navBar')
   public navBar?: ElementRef;

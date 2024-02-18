@@ -25,7 +25,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
 
   public queue: Queue = new Queue(null, []);
   public editQueueForm: EditQueueFormModel = new EditQueueFormModel();
-  public loadingStatus: LoadingNodeStatus = {loading: false};
+  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
 
   constructor(private _loadingRepository: LoadingRepositoryService,
               private _queueRepository: QueueRepositoryService,

@@ -12,7 +12,7 @@ import {PlaybackSessionConverterService} from "../converters/playback-session-co
 })
 export class HistoryRepositoryService {
   private _sessions$ = new BehaviorSubject<Array<PlaybackSession>>([]);
-  private _lastFetchHadItems$ = new BehaviorSubject<boolean>(true);
+  private _moreItemsAvailable$ = new BehaviorSubject<boolean>(true);
 
   constructor(authenticationService: AuthenticationService,
               private _loadingRepository: LoadingRepositoryService,
@@ -31,12 +31,12 @@ export class HistoryRepositoryService {
     return this._sessions$.asObservable();
   }
 
-  public get lastFetchHadItems$(): Observable<boolean> {
-    return this._lastFetchHadItems$.asObservable();
+  public get moreItemsAvailable$(): Observable<boolean> {
+    return this._moreItemsAvailable$.asObservable();
   }
 
   public async loadMoreItems(): Promise<void> {
-    if (this._loadingRepository.status.loading || !this._lastFetchHadItems$.value) {
+    if (!this._moreItemsAvailable$.value) {
       return;
     }
 
@@ -44,15 +44,16 @@ export class HistoryRepositoryService {
 
     const previousSessionHistory = this._sessions$.value;
 
-    const history = await firstValueFrom(this._sessionClient.history(previousSessionHistory.length, 15))
+    const pageSize = 15;
+    const history = await firstValueFrom(this._sessionClient.history(previousSessionHistory.length, pageSize))
       .catch(err => {
         this._toastService.logServerError(err, 'Failed to fetch history');
         return new GetUsersSessionsResponse();
       });
 
-    this._lastFetchHadItems$.next(history.sessions.length > 0);
+    this._moreItemsAvailable$.next(history.sessions.length === pageSize);
 
-    if (this._lastFetchHadItems$.value) {
+    if (history.sessions.length > 0) {
       const nextSessionHistory = [
         ...previousSessionHistory,
         ...history.sessions.map(m => this._playbackSessionConverter.fromDto(m))

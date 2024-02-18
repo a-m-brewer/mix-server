@@ -43,30 +43,30 @@ export class CurrentPlaybackSessionRepositoryService {
       .subscribe(serverConnectionStatus => {
         if (serverConnectionStatus === ServerConnectionState.Connected) {
           const currentSession = this.currentPlaybackSession;
-          this._sessionClient.syncPlaybackSession(new SyncPlaybackSessionCommand({
+          this._loadingRepository.startLoading();
+          firstValueFrom(this._sessionClient.syncPlaybackSession(new SyncPlaybackSessionCommand({
             playbackSessionId: currentSession?.id,
             playing: audioElementRepository.audio.duration > 0 && !audioElementRepository.audio.paused,
             currentTime: audioElementRepository.audio.currentTime
-          }))
-            .subscribe({
-              next: value => {
-                if (value.useClientState) {
-                  return;
-                }
-
-                const nextSession =
-                  value.session
-                    ? this._playbackSessionConverter.fromDto(value.session)
-                    : null;
-
-                this.nextSession(nextSession);
-              },
-              error: err => {
-                if ((err as ProblemDetails)?.status !== 404) {
-                  this._toastService.logServerError(err, 'Failed to fetch current session');
-                }
+          })))
+            .then(value => {
+              if (value.useClientState) {
+                return;
               }
-            });
+
+              const nextSession =
+                value.session
+                  ? this._playbackSessionConverter.fromDto(value.session)
+                  : null;
+
+              this.nextSession(nextSession);
+            })
+            .catch(err => {
+              if ((err as ProblemDetails)?.status !== 404) {
+                this._toastService.logServerError(err, 'Failed to fetch current session');
+              }
+            })
+            .finally(() => this._loadingRepository.stopLoading());
         }
 
         if (serverConnectionStatus === ServerConnectionState.Unauthorized) {
@@ -131,6 +131,7 @@ export class CurrentPlaybackSessionRepositoryService {
 
     if (!requestedDeviceId) {
       this._toastService.error('Missing current device id', 'Not Found');
+      this._loadingRepository.stopLoadingId(deviceId);
       return;
     }
 
@@ -138,8 +139,8 @@ export class CurrentPlaybackSessionRepositoryService {
       deviceId: requestedDeviceId
     }))).catch(err => {
       this._toastService.logServerError(err, 'Failed to request playback');
-      this._loadingRepository.stopLoading();
-    });
+    })
+      .finally(() => this._loadingRepository.stopLoadingId(deviceId));
   }
 
   public requestPause(): void {
@@ -252,7 +253,6 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   private nextSession(playbackSession: PlaybackSession | null): void {
-    this._loadingRepository.startLoadingItem(playbackSession?.currentNode.absolutePath);
     this._currentSession$.next(playbackSession);
   }
 
