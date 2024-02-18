@@ -8,7 +8,6 @@ import {AuthenticationService} from "./services/auth/authentication.service";
 import {InitializationRepositoryService} from "./services/repositories/initialization-repository.service";
 import {ScrollContainerRepositoryService} from "./services/repositories/scroll-container-repository.service";
 import {FileExplorerNodeRepositoryService} from "./services/repositories/file-explorer-node-repository.service";
-import {FileExplorerFolderNode} from "./main-content/file-explorer/models/file-explorer-folder-node";
 import {
   CurrentPlaybackSessionRepositoryService
 } from "./services/repositories/current-playback-session-repository.service";

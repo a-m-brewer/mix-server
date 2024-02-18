@@ -5,7 +5,6 @@ import {Queue} from "../services/repositories/models/queue";
 import {QueueItem} from "../services/repositories/models/queue-item";
 import {QueueSnapshotItemType} from "../generated-clients/mix-server-clients";
 import {EditQueueFormModel} from "../services/repositories/models/edit-queue-form-model";
-import {FileExplorerNodeState} from "../main-content/file-explorer/enums/file-explorer-node-state.enum";
 import {FileExplorerNode} from "../main-content/file-explorer/models/file-explorer-node";
 import {QueueEditFormRepositoryService} from "../services/repositories/queue-edit-form-repository.service";
 
