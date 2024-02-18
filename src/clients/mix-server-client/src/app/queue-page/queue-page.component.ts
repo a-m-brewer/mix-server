@@ -7,6 +7,7 @@ import {QueueSnapshotItemType} from "../generated-clients/mix-server-clients";
 import {EditQueueFormModel} from "../services/repositories/models/edit-queue-form-model";
 import {FileExplorerNode} from "../main-content/file-explorer/models/file-explorer-node";
 import {QueueEditFormRepositoryService} from "../services/repositories/queue-edit-form-repository.service";
+import {NodeListItemInterface} from "../components/nodes/node-list/node-list-item/node-list-item.interface";
 
 @Component({
   selector: 'app-queue-page',
@@ -57,7 +58,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: FileExplorerNode): void {
+  public onNodeClick(node: NodeListItemInterface): void {
     if (node instanceof QueueItem) {
       this._queueRepository.setQueuePosition(node.id);
     }

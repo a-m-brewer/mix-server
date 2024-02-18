@@ -2,6 +2,7 @@ import {Component, ContentChildren, EventEmitter, Input, Output, QueryList} from
 import {FileExplorerNodeType} from "../../../../main-content/file-explorer/enums/file-explorer-node-type";
 import {ContextMenuButton} from "./context-menu/context-menu-button";
 import {FileExplorerNode} from "../../../../main-content/file-explorer/models/file-explorer-node";
+import {NodeListItemInterface} from "./node-list-item.interface";
 
 @Component({
   selector: 'app-node-list-item',
@@ -14,7 +15,7 @@ export class NodeListItemComponent {
   @ContentChildren(ContextMenuButton) contextMenuButtons: QueryList<ContextMenuButton> | null | undefined;
 
   @Input()
-  public node: FileExplorerNode = undefined!;
+  public node: NodeListItemInterface = undefined!;
 
   @Input()
   public nameOverride?: string | null;
@@ -29,7 +30,7 @@ export class NodeListItemComponent {
   public last: boolean = false;
 
   @Output()
-  public click = new EventEmitter<FileExplorerNode>();
+  public click = new EventEmitter<NodeListItemInterface>();
 
   public get allContextMenuButtonsDisabled(): boolean {
     return !this.contextMenuButtons ||

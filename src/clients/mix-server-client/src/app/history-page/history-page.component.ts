@@ -7,6 +7,7 @@ import {
 } from "../services/repositories/current-playback-session-repository.service";
 import {FileExplorerNode} from "../main-content/file-explorer/models/file-explorer-node";
 import {HistoryRepositoryService} from "../services/repositories/history-repository.service";
+import {NodeListItemInterface} from "../components/nodes/node-list/node-list-item/node-list-item.interface";
 
 @Component({
   selector: 'app-history-page',
@@ -54,7 +55,7 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: FileExplorerNode) {
+  public onNodeClick(node: NodeListItemInterface) {
     if (!(node instanceof FileExplorerFileNode)) {
       return;
     }

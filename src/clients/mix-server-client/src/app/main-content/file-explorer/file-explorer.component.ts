@@ -6,6 +6,7 @@ import {FileExplorerNodeRepositoryService} from "../../services/repositories/fil
 import {Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../services/repositories/current-playback-session-repository.service";
 import {FileExplorerFolder} from "./models/file-explorer-folder";
+import {NodeListItemInterface} from "../../components/nodes/node-list/node-list-item/node-list-item.interface";
 
 @Component({
   selector: 'app-file-explorer',
@@ -48,7 +49,7 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: FileExplorerNode): void {
+  public onNodeClick(node: NodeListItemInterface): void {
     if (node instanceof FileExplorerFolderNode) {
       this.onFolderClick(node as FileExplorerFolderNode);
     }
