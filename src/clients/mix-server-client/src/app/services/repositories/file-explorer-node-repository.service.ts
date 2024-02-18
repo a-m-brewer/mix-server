@@ -9,7 +9,6 @@ import {ActivatedRoute, NavigationEnd, Router} from "@angular/router";
 import {FolderSortMode, SetFolderSortCommand} from "../../generated-clients/mix-server-clients";
 import {PageRoutes} from "../../page-routes.enum";
 import {ToastService} from "../toasts/toast-service";
-import {AudioPlayerStateService} from "../audio-player/audio-player-state.service";
 import {AuthenticationService} from "../auth/authentication.service";
 import {FolderSignalrClientService} from "../signalr/folder-signalr-client.service";
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
@@ -26,7 +25,6 @@ export class FileExplorerNodeRepositoryService {
   private _loggedIn: boolean = false;
 
   constructor(private _authenticationService: AuthenticationService,
-              private _audioPlayerState: AudioPlayerStateService,
               private _client: NodeClient,
               private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
               private _folderSignalRClient: FolderSignalrClientService,
@@ -112,6 +110,7 @@ export class FileExplorerNodeRepositoryService {
         }
 
         const nextFolder = currentFolder.copy();
+
         nextFolder.children = currentFolder.children.filter(f => f.absolutePath !== event.absolutePath);
 
         this._currentFolder$.next(nextFolder);

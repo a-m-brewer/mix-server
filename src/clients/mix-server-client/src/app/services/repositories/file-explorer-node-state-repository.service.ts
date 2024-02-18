@@ -45,4 +45,22 @@ export class FileExplorerNodeStateRepositoryService {
 
     return this._states[absolutePath];
   }
+
+  public clearState(absolutePath: string) {
+    delete this._states[absolutePath];
+  }
+
+  public clearRange(absolutePaths: string[]) {
+    for (const path of absolutePaths) {
+      this.clearState(path);
+    }
+  }
+
+  public moveState(oldPath: string, newPath: string) {
+    if (this._states[oldPath]) {
+      this._states[newPath] = this._states[oldPath];
+      this._states[newPath].absolutePath = newPath;
+      delete this._states[oldPath];
+    }
+  }
 }
