@@ -13,13 +13,12 @@ import {FolderSignalrClientService} from "../signalr/folder-signalr-client.servi
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
-import {FileExplorerNode} from "../../main-content/file-explorer/models/file-explorer-node";
+import {LoadingNodeStatus} from "./models/loading-node-status";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FileExplorerNodeRepositoryService {
-  private _loading = new BehaviorSubject<boolean>(false);
   private _currentFolder$ = new BehaviorSubject<FileExplorerFolder>(FileExplorerFolder.Default);
   private _loggedIn: boolean = false;
 
@@ -59,8 +58,7 @@ export class FileExplorerNodeRepositoryService {
         }
 
         this._currentFolder$.next(updatedFolder);
-        this.setLoading(false);
-        this._loadingRepository.loading = false;
+        this._loadingRepository.stopLoading();
       });
 
     this._folderSignalRClient.nodeAdded$()
@@ -120,30 +118,13 @@ export class FileExplorerNodeRepositoryService {
     return this._currentFolder$.asObservable();
   }
 
-  public getCurrentLevelNodes$(): Observable<ReadonlyArray<FileExplorerNode>> {
-    return this._currentFolder$
-      .pipe(map(folder => folder.children));
-  }
-
-  public get loading$(): Observable<boolean> {
-    return this._loading.asObservable();
-  }
-
   public changeDirectory(node?: FileExplorerFolderNode): void {
-    if (this._loading.getValue()) {
+    if (this._loadingRepository.status.loading) {
       return;
     }
 
-    if (node) {
-      node.state.loading = true;
-    }
-
     firstValueFrom(this.navigateToDirectory(node?.absolutePath))
-      .finally(() => {
-        if (node) {
-          node.state.loading = false;
-        }
-      });
+      .then();
   }
 
   private navigateToDirectory(absolutePath?: string | null): Observable<boolean> {
@@ -151,36 +132,30 @@ export class FileExplorerNodeRepositoryService {
       ? {dir: absolutePath}
       : {}
 
-    // this._loadingRepository.loading = true;
-    this.setLoading(true);
+    this._loadingRepository.startLoadingItem(absolutePath);
 
     return from(this._router.navigate(
       [PageRoutes.Files],
       {
         queryParams: query
-      }))
-      .pipe(tap(() => {
-        // this._loadingRepository.loading = false;
       }));
   }
 
   private loadDirectory(absolutePath?: string | null): void {
-    this._loadingRepository.loading = true;
-    this.setLoading(true);
+    this._loadingRepository.startLoadingItem(absolutePath);
 
     this._client.getNode(absolutePath)
       .subscribe({
         next: (folderResponse: FileExplorerFolderResponse) => {
           const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(folderResponse);
 
-          this._loadingRepository.loading = false;
-          this.setLoading(false);
+          this._loadingRepository.stopLoading();
 
           this._currentFolder$.next(folder);
         },
         error: err => {
           this._toastService.logServerError(err, `Failed to navigate to directory ${absolutePath}`);
-          this._loadingRepository.loading = false;
+          this._loadingRepository.stopLoading();
           this.navigateToDirectory(null);
         }
       });
@@ -207,8 +182,7 @@ export class FileExplorerNodeRepositoryService {
       return;
     }
 
-    this.setLoading(true);
-    this._loadingRepository.loading = true;
+    this._loadingRepository.startLoadingItem(currentFolder)
 
     this._client.setFolderSortMode(new SetFolderSortCommand({
       absoluteFolderPath: currentFolder,
@@ -232,13 +206,5 @@ export class FileExplorerNodeRepositoryService {
       default:
         return FolderSortMode.Name;
     }
-  }
-
-  private setLoading(loading: boolean) {
-    if (loading === this._loading.getValue()) {
-      return;
-    }
-
-    this._loading.next(loading);
   }
 }

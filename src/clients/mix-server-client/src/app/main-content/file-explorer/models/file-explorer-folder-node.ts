@@ -1,6 +1,5 @@
 import {FileExplorerNode} from "./file-explorer-node";
 import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
-import {FileExplorerNodeStateClass, FileExplorerNodeStateInterface} from "./file-explorer-node-state";
 
 export class FileExplorerFolderNode implements FileExplorerNode {
   constructor(public name: string,
@@ -10,8 +9,7 @@ export class FileExplorerFolderNode implements FileExplorerNode {
               public creationTimeUtc: Date,
               public belongsToRoot: boolean,
               public belongsToRootChild: boolean,
-              public parent: FileExplorerFolderNode | undefined | null,
-              public state: FileExplorerNodeStateInterface) {
+              public parent: FileExplorerFolderNode | undefined | null) {
     this.disabled = !exists;
   }
 
@@ -40,8 +38,7 @@ export class FileExplorerFolderNode implements FileExplorerNode {
       new Date(),
       false,
       false,
-      null,
-      new FileExplorerNodeStateClass('')
+      null
     );
   }
 
@@ -54,8 +51,7 @@ export class FileExplorerFolderNode implements FileExplorerNode {
       this.creationTimeUtc,
       this.belongsToRoot,
       this.belongsToRootChild,
-      this.parent ? this.parent.copy() : null,
-      this.state
+      this.parent ? this.parent.copy() : null
     );
   }
 }

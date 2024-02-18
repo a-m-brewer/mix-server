@@ -1,6 +1,4 @@
-import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
 import {FileExplorerFolderNode} from "./file-explorer-folder-node";
-import {FileExplorerNodeStateInterface} from "./file-explorer-node-state";
 import {NodeListItemInterface} from "../../../components/nodes/node-list/node-list-item/node-list-item.interface";
 
 export interface FileExplorerNode extends NodeListItemInterface {

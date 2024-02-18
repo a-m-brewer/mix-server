@@ -1,27 +1,32 @@
 import { Injectable } from '@angular/core';
 import {BehaviorSubject, Observable} from "rxjs";
+import {LoadingNodeStatus} from "./models/loading-node-status";
 
 @Injectable({
   providedIn: 'root'
 })
 export class LoadingRepositoryService {
-  private _loadingCount: number = 0;
-  private _loadingBehaviour = new BehaviorSubject<boolean>(false);
+  private _status$ = new BehaviorSubject<LoadingNodeStatus>({loading: false});
 
   constructor() { }
 
-  public loading$(): Observable<boolean> {
-    return this._loadingBehaviour.asObservable();
+  public get status(): LoadingNodeStatus {
+    return this._status$.value;
   }
 
-  public set loading(value: boolean) {
-    const change = value ? 1 : -1;
-    const nextCount = Math.max(0, this._loadingCount + change);
-    const nextLoading = 0 < nextCount;
+  public status$(): Observable<LoadingNodeStatus> {
+    return this._status$.asObservable();
+  }
 
-    this._loadingCount = nextCount;
-    if (this._loadingBehaviour.getValue() !== nextLoading) {
-      this._loadingBehaviour.next(nextLoading);
-    }
+  public startLoadingItem(id?: string | null): void {
+    this._status$.next({loading: true, id});
+  }
+
+  public startLoading(): void {
+    this._status$.next({loading: true});
+  }
+
+  public stopLoading(): void {
+    this._status$.next({loading: false});
   }
 }

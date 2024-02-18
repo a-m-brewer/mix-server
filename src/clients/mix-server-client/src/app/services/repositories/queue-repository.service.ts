@@ -143,7 +143,6 @@ export class QueueRepositoryService {
   }
 
   private nextQueue(queue: Queue): void {
-    this._queueBehaviourSubject$.getValue().unsubscribeQueueSubscriptions();
     this._queueBehaviourSubject$.next(queue);
   }
 }

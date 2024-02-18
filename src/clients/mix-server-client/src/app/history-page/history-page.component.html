@@ -9,8 +9,11 @@
 >
   <app-node-list-item
     *ngFor="let session of sessions; last as last"
-    [node]="session.currentNode"
-    [loading]="loading"
+    [id]="session.currentNode.absolutePath"
+    [name]="session.currentNode.name"
+    [nodeType]="session.currentNode.type"
+    [defaultIcon]="session.currentNode.mdIcon"
+    [loadingStatus]="loadingStatus"
     [last]="last"
     (click)="onNodeClick($event)"
   >

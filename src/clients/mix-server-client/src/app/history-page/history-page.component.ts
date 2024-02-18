@@ -8,6 +8,11 @@ import {
 import {FileExplorerNode} from "../main-content/file-explorer/models/file-explorer-node";
 import {HistoryRepositoryService} from "../services/repositories/history-repository.service";
 import {NodeListItemInterface} from "../components/nodes/node-list/node-list-item/node-list-item.interface";
+import {LoadingNodeStatus} from "../services/repositories/models/loading-node-status";
+import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
+import {
+  NodeListItemChangedEvent
+} from "../components/nodes/node-list/node-list-item/enums/node-list-item-changed-event";
 
 @Component({
   selector: 'app-history-page',
@@ -17,7 +22,7 @@ import {NodeListItemInterface} from "../components/nodes/node-list/node-list-ite
 export class HistoryPageComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
-  public loading: boolean = false;
+  public loadingStatus: LoadingNodeStatus = {loading: false};
   public sessions: PlaybackSession[] = [];
   public lastFetchHadItems: boolean = true;
 
@@ -27,6 +32,7 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
   public selector: string = '#content-scroll-container';
 
   constructor(private _historyRepository: HistoryRepositoryService,
+              private _loadingRepository: LoadingRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
@@ -37,16 +43,16 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
         this.sessions = sessions;
       });
 
-    this._historyRepository.loading$
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(loading => {
-        this.loading = loading;
-      });
-
     this._historyRepository.lastFetchHadItems$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(lastFetchHadItems => {
         this.lastFetchHadItems = lastFetchHadItems;
+      });
+
+    this._loadingRepository.status$()
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(status => {
+        this.loadingStatus = status;
       });
   }
 
@@ -55,12 +61,14 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: NodeListItemInterface) {
-    if (!(node instanceof FileExplorerFileNode)) {
+  public onNodeClick(event: NodeListItemChangedEvent) {
+    const session = this.sessions.find(f => f.currentNode.absolutePath === event.id)
+
+    if (!session) {
       return;
     }
 
-    this._playbackSessionRepository.setFile(node);
+    this._playbackSessionRepository.setFile(session.currentNode);
   }
 
   public onScrollDown() {

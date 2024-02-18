@@ -7,6 +7,12 @@ import {Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../services/repositories/current-playback-session-repository.service";
 import {FileExplorerFolder} from "./models/file-explorer-folder";
 import {NodeListItemInterface} from "../../components/nodes/node-list/node-list-item/node-list-item.interface";
+import {LoadingNodeStatus} from "../../services/repositories/models/loading-node-status";
+import {LoadingRepositoryService} from "../../services/repositories/loading-repository.service";
+import {
+  NodeListItemChangedEvent
+} from "../../components/nodes/node-list/node-list-item/enums/node-list-item-changed-event";
+import {FileExplorerNodeType} from "./enums/file-explorer-node-type";
 
 @Component({
   selector: 'app-file-explorer',
@@ -17,10 +23,10 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
   public currentFolder: FileExplorerFolder = FileExplorerFolder.Default;
-  public nodeRepositoryLoading: boolean = false;
-  public playbackSessionLoading: boolean = false;
+  public loadingStatus: LoadingNodeStatus = {loading: false};
 
-  constructor(private _nodeRepository: FileExplorerNodeRepositoryService,
+  constructor(private _loadingRepository: LoadingRepositoryService,
+              private _nodeRepository: FileExplorerNodeRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
@@ -31,17 +37,11 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
         this.currentFolder = currentFolder;
       });
 
-    this._nodeRepository.loading$
+    this._loadingRepository.status$()
       .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(loading => {
-        this.nodeRepositoryLoading = loading;
-      })
-
-    this._playbackSessionRepository.loading$
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(loading => {
-        this.playbackSessionLoading = loading;
-      })
+      .subscribe(status => {
+        this.loadingStatus = status;
+      });
   }
 
   public ngOnDestroy(): void {
@@ -49,13 +49,20 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: NodeListItemInterface): void {
-    if (node instanceof FileExplorerFolderNode) {
-      this.onFolderClick(node as FileExplorerFolderNode);
+  public onNodeClick(event: NodeListItemChangedEvent): void {
+    if (this.currentFolder.node.parent && event.id === this.currentFolder.node.parent.absolutePath) {
+      this.onFolderClick(this.currentFolder.node.parent);
+      return;
     }
 
-    if (node instanceof FileExplorerFileNode) {
-      this.onFileClick(node as FileExplorerFileNode);
+    const childNode = this.currentFolder.children.find(s => s.absolutePath === event.id);
+
+    if (childNode instanceof FileExplorerFolderNode) {
+      this.onFolderClick(childNode);
+    }
+
+    if (childNode instanceof FileExplorerFileNode) {
+      this.onFileClick(childNode);
     }
   }
   private onFolderClick(folder: FileExplorerFolderNode): void {

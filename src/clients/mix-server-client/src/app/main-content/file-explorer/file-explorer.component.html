@@ -1,17 +1,22 @@
 <div>
   <app-node-list-item
     *ngIf="currentFolder.node.parent"
-    [node]="currentFolder.node.parent"
-    nameOverride=".."
-    [loading]="nodeRepositoryLoading || playbackSessionLoading"
+    [id]="currentFolder.node.parent.absolutePath"
+    name=".."
+    [nodeType]="currentFolder.node.parent.type"
+    [defaultIcon]="currentFolder.node.parent.mdIcon"
+    [loadingStatus]="loadingStatus"
     [last]="currentFolder.children.length === 0"
     (click)="onNodeClick($event)"
   />
 
   <app-node-list-item
     *ngFor="let node of currentFolder.children; last as last"
-    [node]="node"
-    [loading]="nodeRepositoryLoading || playbackSessionLoading"
+    [id]="node.absolutePath"
+    [name]="node.name"
+    [nodeType]="node.type"
+    [defaultIcon]="node.mdIcon"
+    [loadingStatus]="loadingStatus"
     [last]="last"
     (click)="onNodeClick($event)"
     >

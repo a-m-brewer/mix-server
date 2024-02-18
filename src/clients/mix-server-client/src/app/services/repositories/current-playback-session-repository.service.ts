@@ -27,13 +27,12 @@ import {AudioPlayerStateService} from "../audio-player/audio-player-state.servic
   providedIn: 'root'
 })
 export class CurrentPlaybackSessionRepositoryService {
-  private _loading = new BehaviorSubject<boolean>(false);
+
   private _pauseRequested$ = new Subject<boolean>();
   private _playbackGranted$ = new Subject<PlaybackGranted>();
   private _currentSession$ = new BehaviorSubject<PlaybackSession | null>(null);
 
   constructor(audioElementRepository: AudioElementRepositoryService,
-              audioPlayerStateService: AudioPlayerStateService,
               private _playbackSessionConverter: PlaybackSessionConverterService,
               private _loadingRepository: LoadingRepositoryService,
               private _sessionClient: SessionClient,
@@ -95,10 +94,6 @@ export class CurrentPlaybackSessionRepositoryService {
       .pipe(map(m => m?.state.playing ?? false))
   }
 
-  public get loading$(): Observable<boolean> {
-    return this._loading.asObservable();
-  }
-
   public get currentState$(): Observable<PlaybackState> {
     return this._currentSession$
       .pipe(filter<PlaybackSession | null>(Boolean))
@@ -118,8 +113,7 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public setFile(file: FileExplorerFileNode): void  {
-    this.loading = true;
-    this._loadingRepository.loading = true;
+    this._loadingRepository.startLoadingItem(file.absolutePath);
 
     this._sessionClient.setCurrentSession(new SetCurrentSessionCommand({
       absoluteFolderPath: file.parent.absolutePath,
@@ -131,7 +125,7 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public async requestPlayback(deviceId?: string): Promise<void> {
-    this._loadingRepository.loading = true;
+    this._loadingRepository.startLoadingItem(deviceId)
 
     const requestedDeviceId = deviceId ?? this._authenticationService.deviceId;
 
@@ -144,12 +138,12 @@ export class CurrentPlaybackSessionRepositoryService {
       deviceId: requestedDeviceId
     }))).catch(err => {
       this._toastService.logServerError(err, 'Failed to request playback');
-      this._loadingRepository.loading = false;
+      this._loadingRepository.stopLoading();
     });
   }
 
   public requestPause(): void {
-    this._loadingRepository.loading = true;
+    this._loadingRepository.startLoading();
 
     this._sessionClient.requestPause()
       .subscribe({
@@ -258,8 +252,7 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   private nextSession(playbackSession: PlaybackSession | null): void {
-    this.loading = false;
-    this._loadingRepository.loading = false;
+    this._loadingRepository.startLoadingItem(playbackSession?.currentNode.absolutePath);
     this._currentSession$.next(playbackSession);
   }
 
@@ -272,13 +265,5 @@ export class CurrentPlaybackSessionRepositoryService {
     const session = PlaybackSession.copy(previousSession, state);
 
     this.nextSession(session);
-  }
-
-  private set loading(loading: boolean) {
-    if (loading === this._loading.getValue()){
-      return;
-    }
-
-    this._loading.next(loading);
   }
 }

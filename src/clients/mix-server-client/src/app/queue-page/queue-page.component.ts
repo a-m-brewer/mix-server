@@ -7,7 +7,11 @@ import {QueueSnapshotItemType} from "../generated-clients/mix-server-clients";
 import {EditQueueFormModel} from "../services/repositories/models/edit-queue-form-model";
 import {FileExplorerNode} from "../main-content/file-explorer/models/file-explorer-node";
 import {QueueEditFormRepositoryService} from "../services/repositories/queue-edit-form-repository.service";
-import {NodeListItemInterface} from "../components/nodes/node-list/node-list-item/node-list-item.interface";
+import {
+  NodeListItemChangedEvent
+} from "../components/nodes/node-list/node-list-item/enums/node-list-item-changed-event";
+import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
+import {LoadingNodeStatus} from "../services/repositories/models/loading-node-status";
 
 @Component({
   selector: 'app-queue-page',
@@ -21,8 +25,10 @@ export class QueuePageComponent implements OnInit, OnDestroy {
 
   public queue: Queue = new Queue(null, []);
   public editQueueForm: EditQueueFormModel = new EditQueueFormModel();
+  public loadingStatus: LoadingNodeStatus = {loading: false};
 
-  constructor(private _queueRepository: QueueRepositoryService,
+  constructor(private _loadingRepository: LoadingRepositoryService,
+              private _queueRepository: QueueRepositoryService,
               private _queueEditFormRepository: QueueEditFormRepositoryService) {
   }
 
@@ -30,26 +36,19 @@ export class QueuePageComponent implements OnInit, OnDestroy {
     this._queueRepository.queue$()
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(queue => {
-        this.queue.unsubscribeQueueSubscriptions();
         this.queue = queue;
-        this.queue.itemSelected$
-          .subscribe(i =>
-            this._queueEditFormRepository.updateEditForm(f => f.selectedItems[i.id] = i.file.state.selected))
       });
 
     this._queueEditFormRepository.editForm$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(form => {
         this.editQueueForm = form
+      });
 
-        this.queue.items.forEach(item => {
-          if (item.file.state.isPlayingOrPaused || item.itemType !== QueueSnapshotItemType.User) {
-            return;
-          }
-
-          item.file.state.selected = item.id in form.selectedItems && form.selectedItems[item.id];
-          item.file.state.editing = form.editing;
-        })
+    this._loadingRepository.status$()
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(status => {
+        this.loadingStatus = status;
       });
   }
 
@@ -58,9 +57,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: NodeListItemInterface): void {
-    if (node instanceof QueueItem) {
-      this._queueRepository.setQueuePosition(node.id);
-    }
+  public onNodeClick(event: NodeListItemChangedEvent): void {
+    this._queueRepository.setQueuePosition(event.id);
   }
 }

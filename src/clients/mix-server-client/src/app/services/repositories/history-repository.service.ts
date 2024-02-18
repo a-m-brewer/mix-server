@@ -12,7 +12,6 @@ import {PlaybackSessionConverterService} from "../converters/playback-session-co
 })
 export class HistoryRepositoryService {
   private _sessions$ = new BehaviorSubject<Array<PlaybackSession>>([]);
-  private _loading$ = new BehaviorSubject<boolean>(false);
   private _lastFetchHadItems$ = new BehaviorSubject<boolean>(true);
 
   constructor(authenticationService: AuthenticationService,
@@ -32,21 +31,16 @@ export class HistoryRepositoryService {
     return this._sessions$.asObservable();
   }
 
-  public get loading$(): Observable<boolean> {
-    return this._loading$.asObservable();
-  }
-
   public get lastFetchHadItems$(): Observable<boolean> {
     return this._lastFetchHadItems$.asObservable();
   }
 
   public async loadMoreItems(): Promise<void> {
-    if (this._loading$.value || !this._lastFetchHadItems$.value) {
+    if (this._loadingRepository.status.loading || !this._lastFetchHadItems$.value) {
       return;
     }
 
-    this._loading$.next(true);
-    this._loadingRepository.loading = true;
+    this._loadingRepository.startLoading();
 
     const previousSessionHistory = this._sessions$.value;
 
@@ -66,7 +60,6 @@ export class HistoryRepositoryService {
       this._sessions$.next(nextSessionHistory);
     }
 
-    this._loading$.next(false);
-    this._loadingRepository.loading = false;
+    this._loadingRepository.stopLoading();
   }
 }

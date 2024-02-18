@@ -13,15 +13,11 @@ import {FileExplorerNode} from "../../main-content/file-explorer/models/file-exp
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/file-explorer-folder-node";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
-import {FileExplorerNodeStateRepositoryService} from "../repositories/file-explorer-node-state-repository.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FileExplorerNodeConverterService {
-
-  constructor(private _stateRepository: FileExplorerNodeStateRepositoryService)
-  {}
 
   public fromFileExplorerFolder(dto: FileExplorerFolderResponse): FileExplorerFolder {
     return new FileExplorerFolder(
@@ -52,8 +48,7 @@ export class FileExplorerNodeConverterService {
       dto.creationTimeUtc,
       dto.mimeType,
       dto.playbackSupported,
-      this.fromFileExplorerFolderNode(dto.parent),
-      this._stateRepository.getState(dto.absolutePath)
+      this.fromFileExplorerFolderNode(dto.parent)
     );
   }
 
@@ -66,8 +61,7 @@ export class FileExplorerNodeConverterService {
       dto.creationTimeUtc,
       dto.belongsToRoot,
       dto.belongsToRootChild,
-      dto.parent ? this.fromFileExplorerFolderNode(dto.parent) : null,
-      this._stateRepository.getState(dto.absolutePath)
+      dto.parent ? this.fromFileExplorerFolderNode(dto.parent) : null
     );
   }
 

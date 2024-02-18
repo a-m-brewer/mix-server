@@ -1,9 +1,8 @@
 import {Component, ContentChildren, EventEmitter, Input, Output, QueryList} from '@angular/core';
 import {FileExplorerNodeType} from "../../../../main-content/file-explorer/enums/file-explorer-node-type";
 import {ContextMenuButton} from "./context-menu/context-menu-button";
-import {FileExplorerNode} from "../../../../main-content/file-explorer/models/file-explorer-node";
-import {NodeListItemInterface} from "./node-list-item.interface";
-
+import {LoadingNodeStatus} from "../../../../services/repositories/models/loading-node-status";
+import {NodeListItemChangedEvent} from "./enums/node-list-item-changed-event";
 @Component({
   selector: 'app-node-list-item',
   templateUrl: './node-list-item.component.html',
@@ -15,22 +14,25 @@ export class NodeListItemComponent {
   @ContentChildren(ContextMenuButton) contextMenuButtons: QueryList<ContextMenuButton> | null | undefined;
 
   @Input()
-  public node: NodeListItemInterface = undefined!;
+  public id: string = null!;
 
   @Input()
-  public nameOverride?: string | null;
+  public name: string = null!;
 
   @Input()
-  public loading: boolean = false;
+  public nodeType: FileExplorerNodeType = FileExplorerNodeType.Folder;
 
   @Input()
-  public editing: boolean = false;
+  public defaultIcon: string = 'folder';
+
+  @Input()
+  public loadingStatus: LoadingNodeStatus = {loading: false};
 
   @Input()
   public last: boolean = false;
 
   @Output()
-  public click = new EventEmitter<NodeListItemInterface>();
+  public click = new EventEmitter<NodeListItemChangedEvent>();
 
   public get allContextMenuButtonsDisabled(): boolean {
     return !this.contextMenuButtons ||
@@ -39,10 +41,10 @@ export class NodeListItemComponent {
   }
 
   public onContentClicked(): void {
-    if (this.node.disabled || this.node.state.editing || this.loading) {
+    if (this.loadingStatus.loading) {
       return;
     }
 
-    this.click.emit(this.node);
+    this.click.emit({id: this.id, nodeType: this.nodeType});
   }
 }

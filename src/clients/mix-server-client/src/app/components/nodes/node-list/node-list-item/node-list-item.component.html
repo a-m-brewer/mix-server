@@ -1,48 +1,44 @@
 <div
   [ngClass]="{
     'node-list-item-container': true,
-    'node-list-item-container-selectable': !node.disabled && !loading && !node.state.editing,
-    'node-list-item-container-disabled': (node.disabled || loading) && !node.state.isPlayingOrPaused,
-    'node-list-item-container-current-session': node.state.isPlayingOrPaused,
+    'node-list-item-container-selectable': !loadingStatus.loading,
+    'node-list-item-container-disabled': loadingStatus.loading,
+    'node-list-item-container-current-session': false,
   }"
   matRipple
   [matRippleTrigger]="rippleTrigger"
-  [matRippleDisabled]="node.disabled || loading || node.state.editing"
+  [matRippleDisabled]="loadingStatus.loading"
 >
   <div
     [ngClass]="{
       'node-list-item-content-container': true,
       'node-list-item': true,
-      'file-explorer-node-selectable': !node.disabled && !loading && !node.state.editing
+      'file-explorer-node-selectable': !loadingStatus.loading
     }"
     #rippleTrigger
     (click)="onContentClicked()"
   >
     <div class="node-list-item-content-icon-container node-list-item">
       <app-node-list-item-icon
-        [state]="node.state.folderState"
-        [defaultIcon]="node.mdIcon"
-        [(selected)]="node.state.selected"
+        [loading]="loadingStatus.loading && loadingStatus.id === id"
+        [disabled]="loadingStatus.loading"
+        [defaultIcon]="defaultIcon"
         class="node-list-item-content-icon"
       />
     </div>
 
     <div class="node-list-item-content-text node-list-item">
-      @if (nameOverride) {
-        {{ nameOverride }}
-      } @else {
-        {{ node.name }}
-      }
+      {{ name }}
     </div>
   </div>
 
   <div class="node-list-item-action-list-container node-list-item"
-       *ngIf="node.type === FileExplorerNodeType.File">
+       *ngIf="nodeType === FileExplorerNodeType.File">
     <ng-content select="[extra-action-list-content]"></ng-content>
     <button mat-icon-button
             class="node-list-item-action-list-context-menu"
             *ngIf="!allContextMenuButtonsDisabled"
-            [disabled]="loading || editing || allContextMenuButtonsDisabled"
+            [disabled]="loadingStatus.loading || allContextMenuButtonsDisabled"
             [matMenuTriggerFor]="contextMenu">
       <mat-icon>
         more_vert

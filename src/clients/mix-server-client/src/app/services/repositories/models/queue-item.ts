@@ -1,7 +1,6 @@
 import {FileExplorerFileNode} from "../../../main-content/file-explorer/models/file-explorer-file-node";
 import {QueueSnapshotItemType} from "../../../generated-clients/mix-server-clients";
 import {NodeListItemInterface} from "../../../components/nodes/node-list/node-list-item/node-list-item.interface";
-import {FileExplorerNodeStateInterface} from "../../../main-content/file-explorer/models/file-explorer-node-state";
 import { FileExplorerNodeType } from "src/app/main-content/file-explorer/enums/file-explorer-node-type";
 
 export class QueueItem implements NodeListItemInterface {
@@ -9,6 +8,10 @@ export class QueueItem implements NodeListItemInterface {
               public itemType: QueueSnapshotItemType,
               public file: FileExplorerFileNode,
               public isCurrentQueuePosition: boolean) {
+  }
+
+  public get editable(): boolean {
+    return this.itemType === QueueSnapshotItemType.User;
   }
 
   public get name(): string {
@@ -25,9 +28,5 @@ export class QueueItem implements NodeListItemInterface {
 
   public get disabled(): boolean {
     return this.file.disabled;
-  }
-
-  public get state(): FileExplorerNodeStateInterface {
-    return this.file.state;
   }
 }

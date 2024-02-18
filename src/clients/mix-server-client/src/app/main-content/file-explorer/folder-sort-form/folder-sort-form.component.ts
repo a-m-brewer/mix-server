@@ -4,6 +4,7 @@ import {FileExplorerFolderSortMode} from "../enums/file-explorer-folder-sort-mod
 import {FileExplorerNodeRepositoryService} from "../../../services/repositories/file-explorer-node-repository.service";
 import {Subject, takeUntil} from "rxjs";
 import {MatButtonToggleChange} from "@angular/material/button-toggle";
+import {LoadingRepositoryService} from "../../../services/repositories/loading-repository.service";
 
 interface IFolderSortForm {
   descending: FormControl<boolean>;
@@ -28,6 +29,7 @@ export class FolderSortFormComponent implements OnInit, OnDestroy {
   public form: FormGroup<IFolderSortForm>;
 
   constructor(private _formBuilder: FormBuilder,
+              private _loadingRepository: LoadingRepositoryService,
               private _nodeRepository: FileExplorerNodeRepositoryService) {
     this.form = this._formBuilder.nonNullable.group<IFolderSortForm>({
       descending: _formBuilder.nonNullable.control<boolean>(false),
@@ -45,10 +47,10 @@ export class FolderSortFormComponent implements OnInit, OnDestroy {
         this.form.get(this.sortModeKey)?.setValue(value.sort.sortMode);
       })
 
-    this._nodeRepository.loading$
+    this._loadingRepository.status$()
       .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(loading => {
-        this.disabled = loading;
+      .subscribe(status => {
+        this.disabled = status.loading;
       });
   }
 
