@@ -4,7 +4,6 @@ import {BehaviorSubject, filter, firstValueFrom, from, map, Observable, tap} fro
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {LoadingRepositoryService} from "./loading-repository.service";
 import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/file-explorer-folder-node";
-import {FileExplorerNodeState} from "../../main-content/file-explorer/enums/file-explorer-node-state.enum";
 import {ActivatedRoute, NavigationEnd, Router} from "@angular/router";
 import {FolderSortMode, SetFolderSortCommand} from "../../generated-clients/mix-server-clients";
 import {PageRoutes} from "../../page-routes.enum";
@@ -136,13 +135,13 @@ export class FileExplorerNodeRepositoryService {
     }
 
     if (node) {
-      node.state.folderState = FileExplorerNodeState.Loading
+      node.state.loading = true;
     }
 
     firstValueFrom(this.navigateToDirectory(node?.absolutePath))
       .finally(() => {
         if (node) {
-          node.state.folderState = FileExplorerNodeState.None;
+          node.state.loading = false;
         }
       });
   }

@@ -1,27 +1,20 @@
-import {AfterViewInit, Component, OnDestroy, OnInit} from '@angular/core';
-import {firstValueFrom, Subject} from "rxjs";
+import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Subject, takeUntil} from "rxjs";
 import {PlaybackSession} from "../services/repositories/models/playback-session";
-import {SessionClient} from "../generated-clients/mix-server-clients";
-import {PlaybackSessionConverterService} from "../services/converters/playback-session-converter.service";
-import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
 import {FileExplorerFileNode} from "../main-content/file-explorer/models/file-explorer-file-node";
-import {ToastService} from "../services/toasts/toast-service";
-import {GetUsersSessionsResponse} from "../generated-clients/mix-server-clients";
-import {AudioPlayerStateService} from "../services/audio-player/audio-player-state.service";
 import {
   CurrentPlaybackSessionRepositoryService
 } from "../services/repositories/current-playback-session-repository.service";
-import {AuthenticationService} from "../services/auth/authentication.service";
 import {FileExplorerNode} from "../main-content/file-explorer/models/file-explorer-node";
+import {HistoryRepositoryService} from "../services/repositories/history-repository.service";
 
 @Component({
   selector: 'app-history-page',
   templateUrl: './history-page.component.html',
   styleUrls: ['./history-page.component.scss']
 })
-export class HistoryPageComponent implements OnInit, AfterViewInit, OnDestroy {
+export class HistoryPageComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
-
 
   public loading: boolean = false;
   public sessions: PlaybackSession[] = [];
@@ -32,26 +25,28 @@ export class HistoryPageComponent implements OnInit, AfterViewInit, OnDestroy {
   public scrollUpDistance = 2;
   public selector: string = '#content-scroll-container';
 
-  constructor(private _authService: AuthenticationService,
-              private _audioPlayerState: AudioPlayerStateService,
-              private _loadingRepository: LoadingRepositoryService,
-              private _sessionClient: SessionClient,
-              private _converter: PlaybackSessionConverterService,
-              private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
-              private _toastService: ToastService) {
+  constructor(private _historyRepository: HistoryRepositoryService,
+              private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
   public ngOnInit(): void {
-    this._authService.connected$
-      .subscribe(connected => {
-        if (connected) {
-          this.sessions = [];
-          this.loadMoreItems().then();
-        }
-      })
-  }
+    this._historyRepository.sessions$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(sessions => {
+        this.sessions = sessions;
+      });
 
-  public ngAfterViewInit(): void {
+    this._historyRepository.loading$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(loading => {
+        this.loading = loading;
+      });
+
+    this._historyRepository.lastFetchHadItems$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(lastFetchHadItems => {
+        this.lastFetchHadItems = lastFetchHadItems;
+      });
   }
 
   public ngOnDestroy(): void {
@@ -68,30 +63,6 @@ export class HistoryPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public onScrollDown() {
-    this.loadMoreItems().then();
-  }
-
-  private async loadMoreItems(): Promise<void> {
-    if (this.loading || !this.lastFetchHadItems) {
-      return;
-    }
-
-    this.loading = true;
-    this._loadingRepository.loading = true;
-
-    const history = await firstValueFrom(this._sessionClient.history(this.sessions.length, 15))
-      .catch(err => {
-        this._toastService.logServerError(err, 'Failed to fetch history');
-        return new GetUsersSessionsResponse();
-      });
-
-    this.lastFetchHadItems = history.sessions.length > 0;
-
-    if (this.lastFetchHadItems) {
-      this.sessions.push(...history.sessions.map(m => this._converter.fromDto(m)));
-    }
-
-    this.loading = false;
-    this._loadingRepository.loading = false;
+    this._historyRepository.loadMoreItems().then();
   }
 }

@@ -8,6 +8,8 @@ export interface FileExplorerNodeStateInterface {
   isPlayingOrPaused: boolean;
   editing: boolean;
 
+  loading: boolean;
+
   selected: boolean;
   selected$: Observable<boolean>;
 }

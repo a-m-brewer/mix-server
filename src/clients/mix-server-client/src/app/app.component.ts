@@ -20,6 +20,7 @@ import {VisibilityRepositoryService} from "./services/repositories/visibility-re
 import {TitleService} from "./services/title/title.service";
 import {ToastService} from "./services/toasts/toast-service";
 import {FileExplorerFolder} from "./main-content/file-explorer/models/file-explorer-folder";
+import {ActiveFolderPathsMonitorService} from "./services/file-explorer/active-folder-paths-monitor.service";
 
 @Component({
   selector: 'app-root',
@@ -56,7 +57,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('bottomBar')
   public bottomBar?: ElementRef;
 
-  constructor(private _authenticationService: AuthenticationService,
+  constructor(private _activeFolderPathsMonitorService: ActiveFolderPathsMonitorService,
+              private _authenticationService: AuthenticationService,
               private _deviceRepository: DeviceRepositoryService,
               private _initializationRepository: InitializationRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
@@ -71,6 +73,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public ngOnInit(): void {
     this._titleService.initialize();
+    this._activeFolderPathsMonitorService.initialize();
 
     combineLatest([
       this._initializationRepository.initialized$,

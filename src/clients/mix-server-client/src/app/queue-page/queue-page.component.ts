@@ -48,8 +48,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
           }
 
           item.file.state.selected = item.id in form.selectedItems && form.selectedItems[item.id];
-
-          item.file.state.folderState = form.editing ? FileExplorerNodeState.Editing : FileExplorerNodeState.None;
+          item.file.state.editing = form.editing;
         })
       });
   }
