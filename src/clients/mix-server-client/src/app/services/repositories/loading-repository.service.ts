@@ -19,7 +19,7 @@ export class LoadingRepositoryService {
     return this._status$.asObservable();
   }
 
-  public startLoadingItem(id: string | null | undefined): void {
+  public startLoadingId(id: string | null | undefined): void {
     this.nextLoading(true, id);
   }
 

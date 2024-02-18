@@ -113,19 +113,18 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public setFile(file: FileExplorerFileNode): void  {
-    this._loadingRepository.startLoadingItem(file.absolutePath);
+    this._loadingRepository.startLoadingId(file.absolutePath);
 
-    this._sessionClient.setCurrentSession(new SetCurrentSessionCommand({
+    firstValueFrom(this._sessionClient.setCurrentSession(new SetCurrentSessionCommand({
       absoluteFolderPath: file.parent.absolutePath,
       fileName: file.name
-    })).subscribe({
-      next: _ => {},
-      error: err => this._toastService.logServerError(err, 'Failed to set current session')
-    });
+    })))
+      .catch(err => this._toastService.logServerError(err, 'Failed to set current session'))
+      .finally(() => this._loadingRepository.stopLoadingId(file.absolutePath));
   }
 
   public async requestPlayback(deviceId?: string): Promise<void> {
-    this._loadingRepository.startLoadingItem(deviceId)
+    this._loadingRepository.startLoadingId(deviceId)
 
     const requestedDeviceId = deviceId ?? this._authenticationService.deviceId;
 

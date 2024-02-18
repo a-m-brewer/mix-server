@@ -140,7 +140,7 @@ export class FileExplorerNodeRepositoryService {
   }
 
   private loadDirectory(absolutePath?: string | null): void {
-    this._loadingRepository.startLoadingItem(absolutePath);
+    this._loadingRepository.startLoadingId(absolutePath);
     firstValueFrom(this._client.getNode(absolutePath))
       .then(folderResponse => {
         const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(folderResponse);
@@ -175,7 +175,7 @@ export class FileExplorerNodeRepositoryService {
       return;
     }
 
-    this._loadingRepository.startLoadingItem(currentFolder)
+    this._loadingRepository.startLoadingId(currentFolder)
 
     this._client.setFolderSortMode(new SetFolderSortCommand({
       absoluteFolderPath: currentFolder,
