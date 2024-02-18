@@ -132,8 +132,6 @@ export class FileExplorerNodeRepositoryService {
       ? {dir: absolutePath}
       : {}
 
-    this._loadingRepository.startLoadingItem(absolutePath);
-
     return from(this._router.navigate(
       [PageRoutes.Files],
       {

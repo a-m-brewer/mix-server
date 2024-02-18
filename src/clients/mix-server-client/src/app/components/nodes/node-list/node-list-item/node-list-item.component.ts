@@ -37,7 +37,7 @@ export class NodeListItemComponent {
   public last: boolean = false;
 
   @Output()
-  public click = new EventEmitter<NodeListItemChangedEvent>();
+  public contentClick = new EventEmitter<NodeListItemChangedEvent>();
 
   public get allContextMenuButtonsDisabled(): boolean {
     return !this.contextMenuButtons ||
@@ -54,14 +54,16 @@ export class NodeListItemComponent {
   }
 
   public get isPlayingOrPaused(): boolean {
-    return this.playingState === FileExplorerPlayingState.Playing || this.playingState === FileExplorerPlayingState.Paused;
+    return this.playingState !== FileExplorerPlayingState.None;
   }
 
   public onContentClicked(): void {
-    if (this.loadingStatus.loading) {
+    if (this.loadingStatus.loading || this.isPlayingOrPaused) {
+      console.log('returning');
       return;
     }
 
-    this.click.emit({id: this.id, nodeType: this.nodeType});
+    console.log('emitting');
+    this.contentClick.emit({id: this.id, nodeType: this.nodeType});
   }
 }

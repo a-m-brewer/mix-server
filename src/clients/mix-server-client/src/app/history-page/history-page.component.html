@@ -16,7 +16,7 @@
     [loadingStatus]="loadingStatus"
     [audioPlayerState]="audioPlayerState"
     [last]="last"
-    (click)="onNodeClick($event)"
+    (contentClick)="onNodeClick($event)"
   >
     <app-add-to-queue-button
       [file]="session.currentNode"

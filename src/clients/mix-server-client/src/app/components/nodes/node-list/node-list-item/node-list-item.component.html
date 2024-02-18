@@ -1,19 +1,19 @@
 <div
   [ngClass]="{
     'node-list-item-container': true,
-    'node-list-item-container-selectable': !loadingStatus.loading,
+    'node-list-item-container-selectable': !loadingStatus.loading && !isPlayingOrPaused,
     'node-list-item-container-disabled': loadingStatus.loading,
     'node-list-item-container-current-session': isPlayingOrPaused,
   }"
   matRipple
   [matRippleTrigger]="rippleTrigger"
-  [matRippleDisabled]="loadingStatus.loading"
+  [matRippleDisabled]="loadingStatus.loading || isPlayingOrPaused"
 >
   <div
     [ngClass]="{
       'node-list-item-content-container': true,
       'node-list-item': true,
-      'file-explorer-node-selectable': !loadingStatus.loading
+      'file-explorer-node-selectable': !loadingStatus.loading && !isPlayingOrPaused
     }"
     #rippleTrigger
     (click)="onContentClicked()"
