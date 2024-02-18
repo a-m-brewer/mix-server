@@ -34,6 +34,9 @@ export class NodeListItemComponent {
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
 
   @Input()
+  public disabled: boolean = false;
+
+  @Input()
   public last: boolean = false;
 
   @Output()
@@ -58,12 +61,10 @@ export class NodeListItemComponent {
   }
 
   public onContentClicked(): void {
-    if (this.loadingStatus.loading || this.isPlayingOrPaused) {
-      console.log('returning');
+    if (this.loadingStatus.loading || this.isPlayingOrPaused || this.disabled) {
       return;
     }
 
-    console.log('emitting');
     this.contentClick.emit({id: this.id, nodeType: this.nodeType});
   }
 }

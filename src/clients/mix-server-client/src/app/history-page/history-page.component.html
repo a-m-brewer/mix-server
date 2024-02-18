@@ -15,6 +15,7 @@
     [defaultIcon]="session.currentNode.mdIcon"
     [loadingStatus]="loadingStatus"
     [audioPlayerState]="audioPlayerState"
+    [disabled]="session.currentNode.disabled"
     [last]="last"
     (contentClick)="onNodeClick($event)"
   >
