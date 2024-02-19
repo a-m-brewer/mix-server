@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {FileExplorerFolderResponse, NodeClient} from "../../generated-clients/mix-server-clients";
+import {NodeClient} from "../../generated-clients/mix-server-clients";
 import {BehaviorSubject, filter, firstValueFrom, from, map, Observable, tap} from "rxjs";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {LoadingRepositoryService} from "./loading-repository.service";
@@ -13,7 +13,6 @@ import {FolderSignalrClientService} from "../signalr/folder-signalr-client.servi
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
-import {LoadingNodeStatus} from "./models/loading-node-status";
 
 @Injectable({
   providedIn: 'root'

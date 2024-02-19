@@ -21,7 +21,6 @@ import {PlaybackState} from "./models/playback-state";
 import {PlaybackGranted} from "./models/playback-granted";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {AudioElementRepositoryService} from "../audio-player/audio-element-repository.service";
-import {AudioPlayerStateService} from "../audio-player/audio-player-state.service";
 
 @Injectable({
   providedIn: 'root'

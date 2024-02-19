@@ -1,13 +1,10 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subject, takeUntil} from "rxjs";
 import {PlaybackSession} from "../services/repositories/models/playback-session";
-import {FileExplorerFileNode} from "../main-content/file-explorer/models/file-explorer-file-node";
 import {
   CurrentPlaybackSessionRepositoryService
 } from "../services/repositories/current-playback-session-repository.service";
-import {FileExplorerNode} from "../main-content/file-explorer/models/file-explorer-node";
 import {HistoryRepositoryService} from "../services/repositories/history-repository.service";
-import {NodeListItemInterface} from "../components/nodes/node-list/node-list-item/node-list-item.interface";
 import {LoadingNodeStatus} from "../services/repositories/models/loading-node-status";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
 import {
