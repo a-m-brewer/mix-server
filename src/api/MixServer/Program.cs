@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.FileProviders;
 using MixServer;
 using MixServer.SignalR;
@@ -127,10 +128,16 @@ builder.Services
 builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
 
+// API Controllers
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options => { options.SerializerSettings.Converters.Add(new StringEnumConverter()); });
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddResponseCompression(options =>
+{
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes =
+        ResponseCompressionDefaults.MimeTypes.Concat(["text/plain", "application/json" ]);
+});
 
 // Configuration
 const string environmentVariablePrefix = "MIX_SERVER_";
@@ -258,6 +265,9 @@ builder.Services
 #region App
 
 var app = builder.Build();
+
+// Response Compression
+app.UseResponseCompression();
 
 // Proxy Settings
 app.UseForwardedHeaders();

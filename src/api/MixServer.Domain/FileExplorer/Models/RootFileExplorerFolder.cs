@@ -4,10 +4,16 @@ using MixServer.Domain.FileExplorer.Settings;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
-public class RootFileExplorerFolder(IOptions<RootFolderSettings> rootFolderSettings)
-    : FileExplorerFolder(new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true,
-        DateTime.MinValue, false, false, null)), IRootFileExplorerFolder
+public class RootFileExplorerFolder : FileExplorerFolder, IRootFileExplorerFolder
 {
+    private readonly IOptions<RootFolderSettings> _rootFolderSettings;
+
+    public RootFileExplorerFolder(IOptions<RootFolderSettings> rootFolderSettings) : base(new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true, DateTime.MinValue, false, false, null))
+    {
+        _rootFolderSettings = rootFolderSettings;
+        RefreshChildren();
+    }
+    
     public bool BelongsToRoot(string? absolutePath)
     {
         if (string.IsNullOrWhiteSpace(absolutePath))
@@ -35,7 +41,7 @@ public class RootFileExplorerFolder(IOptions<RootFolderSettings> rootFolderSetti
     {
         ChildNodes.Clear();
         
-        foreach (var folder in rootFolderSettings.Value.ChildrenSplit)
+        foreach (var folder in _rootFolderSettings.Value.ChildrenSplit)
         {
             var directoryInfo = new DirectoryInfo(folder);
             ChildNodes.Add(new FileExplorerFolderNode(directoryInfo.Name, directoryInfo.FullName,

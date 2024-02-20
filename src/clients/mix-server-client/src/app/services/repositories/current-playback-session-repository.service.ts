@@ -151,11 +151,11 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public clearSession(): void {
-    this._sessionClient.clearCurrentSession()
-      .subscribe({
-        next: _ => this.nextSession(null),
-        error: err => this._toastService.logServerError(err, 'Failed to clear current session')
-      })
+    this._loadingRepository.startLoading();
+    firstValueFrom(this._sessionClient.clearCurrentSession())
+      .then(_ => this.nextSession(null))
+      .catch(err => this._toastService.logServerError(err, 'Failed to clear current session'))
+      .finally(() => this._loadingRepository.stopLoading());
   }
 
   public back(): void {
@@ -184,10 +184,10 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   private setNextSession(command: SetNextSessionCommand): void {
-    this._sessionClient.setNextSession(command).subscribe({
-      next: _ => {},
-      error: err => this._toastService.logServerError(err, 'Failed to set next session')
-    });
+    this._loadingRepository.startLoading();
+    firstValueFrom(this._sessionClient.setNextSession(command))
+      .catch(err => this._toastService.logServerError(err, 'Failed to set next session'))
+      .finally(() => this._loadingRepository.stopLoading());
   }
 
   public updatePlaybackState(currentTime: number): void {
