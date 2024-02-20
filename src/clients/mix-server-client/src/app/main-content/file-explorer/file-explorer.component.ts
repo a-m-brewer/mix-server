@@ -9,7 +9,7 @@ import {LoadingNodeStatus} from "../../services/repositories/models/loading-node
 import {LoadingRepositoryService} from "../../services/repositories/loading-repository.service";
 import {
   NodeListItemChangedEvent
-} from "../../components/nodes/node-list/node-list-item/enums/node-list-item-changed-event";
+} from "../../components/nodes/node-list/node-list-item/interfaces/node-list-item-changed-event";
 import {AudioPlayerStateService} from "../../services/audio-player/audio-player-state.service";
 import {AudioPlayerStateModel} from "../../services/audio-player/models/audio-player-state-model";
 

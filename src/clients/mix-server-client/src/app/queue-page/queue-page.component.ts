@@ -7,11 +7,14 @@ import {EditQueueFormModel} from "../services/repositories/models/edit-queue-for
 import {QueueEditFormRepositoryService} from "../services/repositories/queue-edit-form-repository.service";
 import {
   NodeListItemChangedEvent
-} from "../components/nodes/node-list/node-list-item/enums/node-list-item-changed-event";
+} from "../components/nodes/node-list/node-list-item/interfaces/node-list-item-changed-event";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
 import {LoadingNodeStatus} from "../services/repositories/models/loading-node-status";
 import {AudioPlayerStateModel} from "../services/audio-player/models/audio-player-state-model";
 import {AudioPlayerStateService} from "../services/audio-player/audio-player-state.service";
+import {
+  NodeListItemSelectedEvent
+} from "../components/nodes/node-list/node-list-item/interfaces/node-list-item-selected-event";
 
 @Component({
   selector: 'app-queue-page',
@@ -68,4 +71,12 @@ export class QueuePageComponent implements OnInit, OnDestroy {
   public onNodeClick(event: NodeListItemChangedEvent): void {
     this._queueRepository.setQueuePosition(event.id);
   }
+
+  public onNodeSelectedChanged(e: NodeListItemSelectedEvent) {
+    this._queueEditFormRepository.updateEditForm(form => {
+      form.selectedItems[e.id] = e.selected;
+    })
+  }
+
+  protected readonly QueueSnapshotItemType = QueueSnapshotItemType;
 }

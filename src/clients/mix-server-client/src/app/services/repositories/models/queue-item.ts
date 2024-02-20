@@ -1,17 +1,12 @@
 import {FileExplorerFileNode} from "../../../main-content/file-explorer/models/file-explorer-file-node";
 import {QueueSnapshotItemType} from "../../../generated-clients/mix-server-clients";
-import {NodeListItemInterface} from "../../../components/nodes/node-list/node-list-item/node-list-item.interface";
 import { FileExplorerNodeType } from "src/app/main-content/file-explorer/enums/file-explorer-node-type";
 
-export class QueueItem implements NodeListItemInterface {
+export class QueueItem {
   constructor(public id: string,
               public itemType: QueueSnapshotItemType,
               public file: FileExplorerFileNode,
               public isCurrentQueuePosition: boolean) {
-  }
-
-  public get editable(): boolean {
-    return this.itemType === QueueSnapshotItemType.User;
   }
 
   public get name(): string {

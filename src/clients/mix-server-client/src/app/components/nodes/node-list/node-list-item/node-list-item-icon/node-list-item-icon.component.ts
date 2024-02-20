@@ -22,6 +22,9 @@ export class NodeListItemIcon {
   public playingState: FileExplorerPlayingState = FileExplorerPlayingState.None;
 
   @Input()
+  public editing: boolean = false;
+
+  @Input()
   public selected: boolean = false;
 
   @Output()

@@ -8,8 +8,10 @@
     [loadingStatus]="loadingStatus"
     [audioPlayerState]="audioPlayerState"
     [disabled]="queueItem.disabled"
+    [editing]="editQueueForm.editing && queueItem.itemType === QueueSnapshotItemType.User && !queueItem.isCurrentQueuePosition"
     [last]="last"
     (contentClick)="onNodeClick($event)"
+    (selectedChange)="onNodeSelectedChanged($event)"
   >
     <mat-icon
       *ngIf="queueItem.itemType === UserItemType"

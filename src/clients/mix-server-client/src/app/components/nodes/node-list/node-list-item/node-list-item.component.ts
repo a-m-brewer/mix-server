@@ -2,9 +2,10 @@ import {Component, ContentChildren, EventEmitter, Input, Output, QueryList} from
 import {FileExplorerNodeType} from "../../../../main-content/file-explorer/enums/file-explorer-node-type";
 import {ContextMenuButton} from "./context-menu/context-menu-button";
 import {LoadingNodeStatus} from "../../../../services/repositories/models/loading-node-status";
-import {NodeListItemChangedEvent} from "./enums/node-list-item-changed-event";
+import {NodeListItemChangedEvent} from "./interfaces/node-list-item-changed-event";
 import {AudioPlayerStateModel} from "../../../../services/audio-player/models/audio-player-state-model";
 import {FileExplorerPlayingState} from "../../../../main-content/file-explorer/enums/file-explorer-playing-state";
+import {NodeListItemSelectedEvent} from "./interfaces/node-list-item-selected-event";
 @Component({
   selector: 'app-node-list-item',
   templateUrl: './node-list-item.component.html',
@@ -34,6 +35,9 @@ export class NodeListItemComponent {
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
 
   @Input()
+  public editing: boolean = false;
+
+  @Input()
   public disabled: boolean = false;
 
   @Input()
@@ -41,6 +45,9 @@ export class NodeListItemComponent {
 
   @Output()
   public contentClick = new EventEmitter<NodeListItemChangedEvent>();
+
+  @Output()
+  public selectedChange = new EventEmitter<NodeListItemSelectedEvent>();
 
   public get allContextMenuButtonsDisabled(): boolean {
     return !this.contextMenuButtons ||
@@ -61,10 +68,14 @@ export class NodeListItemComponent {
   }
 
   public onContentClicked(): void {
-    if (this.loadingStatus.loading || this.isPlayingOrPaused || this.disabled) {
+    if (this.loadingStatus.loading || this.isPlayingOrPaused || this.disabled || this.editing) {
       return;
     }
 
     this.contentClick.emit({id: this.id, nodeType: this.nodeType});
+  }
+
+  public onSelectedChange(selected: boolean): void {
+    this.selectedChange.emit({id: this.id, selected});
   }
 }

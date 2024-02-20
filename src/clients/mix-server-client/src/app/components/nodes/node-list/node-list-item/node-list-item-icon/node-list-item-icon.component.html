@@ -3,6 +3,14 @@
 
   @if (loading) {
     <mat-spinner color="primary" *ngIf="loading" diameter="20"></mat-spinner>
+  } @else if (editing) {
+      <span class="edit-checkbox">
+        @if (selected) {
+          <span>check_box</span>
+        } @else {
+          <span>check_box_outline_blank</span>
+        }
+      </span>
   } @else if (playingState !== FileExplorerPlayingState.None) {
     @if (playingState === FileExplorerPlayingState.Playing) {
       <span>play_arrow</span>
@@ -12,9 +20,5 @@
   } @else {
     <span>{{ defaultIcon }}</span>
   }
-
-
-<!--  <span class="edit-checkbox" *ngIf="editing && selected">check_box</span>-->
-<!--  <span class="edit-checkbox" *ngIf="editing && !selected">check_box_outline_blank</span>-->
 
 </mat-icon>

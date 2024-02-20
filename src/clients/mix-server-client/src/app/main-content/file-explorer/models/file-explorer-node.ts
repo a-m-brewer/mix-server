@@ -1,10 +1,14 @@
 import {FileExplorerFolderNode} from "./file-explorer-folder-node";
-import {NodeListItemInterface} from "../../../components/nodes/node-list/node-list-item/node-list-item.interface";
+import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
 
-export interface FileExplorerNode extends NodeListItemInterface {
+export interface FileExplorerNode {
+  name: string;
   absolutePath: string;
-  exists: boolean;
+  type: FileExplorerNodeType;
   creationTimeUtc: Date;
+  exists: boolean;
+  disabled: boolean;
+  mdIcon: string;
   parent: FileExplorerFolderNode | null | undefined;
   isEqual(node: FileExplorerNode | null | undefined): boolean;
   copy(): FileExplorerNode;

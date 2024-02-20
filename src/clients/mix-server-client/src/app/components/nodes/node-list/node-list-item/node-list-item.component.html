@@ -1,19 +1,19 @@
 <div
   [ngClass]="{
     'node-list-item-container': true,
-    'node-list-item-container-selectable': !loadingStatus.loading && !isPlayingOrPaused,
+    'node-list-item-container-selectable': !loadingStatus.loading && !isPlayingOrPaused && !editing,
     'node-list-item-container-disabled': loadingStatus.loading || disabled,
     'node-list-item-container-current-session': isPlayingOrPaused,
   }"
   matRipple
   [matRippleTrigger]="rippleTrigger"
-  [matRippleDisabled]="loadingStatus.loading || isPlayingOrPaused || disabled"
+  [matRippleDisabled]="loadingStatus.loading || isPlayingOrPaused || disabled || editing"
 >
   <div
     [ngClass]="{
       'node-list-item-content-container': true,
       'node-list-item': true,
-      'file-explorer-node-selectable': !loadingStatus.loading && !isPlayingOrPaused && !disabled,
+      'file-explorer-node-selectable': !loadingStatus.loading && !editing && !isPlayingOrPaused && !disabled,
     }"
     #rippleTrigger
     (click)="onContentClicked()"
@@ -24,6 +24,8 @@
         [playingState]="playingState"
         [disabled]="loadingStatus.loading || disabled"
         [defaultIcon]="defaultIcon"
+        [editing]="editing"
+        (selectedChange)="onSelectedChange($event)"
         class="node-list-item-content-icon"
       />
     </div>
@@ -39,7 +41,7 @@
     <button mat-icon-button
             class="node-list-item-action-list-context-menu"
             *ngIf="!allContextMenuButtonsDisabled"
-            [disabled]="loadingStatus.loading || disabled || allContextMenuButtonsDisabled"
+            [disabled]="loadingStatus.loading || disabled || editing || allContextMenuButtonsDisabled"
             [matMenuTriggerFor]="contextMenu">
       <mat-icon>
         more_vert
