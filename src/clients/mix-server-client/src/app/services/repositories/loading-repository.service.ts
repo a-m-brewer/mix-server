@@ -23,12 +23,20 @@ export class LoadingRepositoryService {
     this.nextLoading(true, id);
   }
 
+  public startLoadingIds(ids: Array<string>): void {
+    ids.forEach(id => this.startLoadingId(id));
+  }
+
   public startLoading(): void {
     this.nextLoading(true)
   }
 
   public stopLoadingId(id: string | null | undefined): void {
     this.nextLoading(false, id);
+  }
+
+  public stopLoadingIds(ids: Array<string>): void {
+    ids.forEach(id => this.stopLoadingId(id));
   }
 
   public stopLoading(): void {

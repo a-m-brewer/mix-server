@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {QueueClient} from "../../generated-clients/mix-server-clients";
-import {BehaviorSubject, map, Observable} from "rxjs";
+import {BehaviorSubject, firstValueFrom, map, Observable} from "rxjs";
 import {Queue} from "./models/queue";
 import {QueueConverterService} from "../converters/queue-converter.service";
 import {
@@ -15,6 +15,7 @@ import {AuthenticationService} from "../auth/authentication.service";
 import {QueueItem} from "./models/queue-item";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {QueueEditFormRepositoryService} from "./queue-edit-form-repository.service";
+import {LoadingRepositoryService} from "./loading-repository.service";
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +24,8 @@ export class QueueRepositoryService {
   private _queueBehaviourSubject$ = new BehaviorSubject<Queue>(new Queue(null, []));
 
 
-  constructor(private _queueConverter: QueueConverterService,
+  constructor(private _loadingRepository: LoadingRepositoryService,
+              private _queueConverter: QueueConverterService,
               private _queueSignalRClient: QueueSignalrClientService,
               private _queueClient: QueueClient,
               private _toastService: ToastService,
@@ -32,19 +34,19 @@ export class QueueRepositoryService {
     this._authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
-          this._queueClient.queue()
-            .subscribe({
-              next: dto => {
-                const queue = this._queueConverter.fromDto(dto);
+          this._loadingRepository.startLoading();
+          firstValueFrom(this._queueClient.queue())
+            .then(dto => {
+              const queue = this._queueConverter.fromDto(dto);
 
-                this.nextQueue(queue);
-              },
-              error: err => {
-                if ((err as ProblemDetails)?.status !== 404) {
-                  this._toastService.logServerError(err, 'Failed to fetch current session');
-                }
+              this.nextQueue(queue);
+            })
+            .catch(err => {
+              if ((err as ProblemDetails)?.status !== 404) {
+                this._toastService.logServerError(err, 'Failed to fetch current session');
               }
-            });
+            })
+            .finally(() => this._loadingRepository.stopLoading());
         }
       });
 
@@ -94,12 +96,13 @@ export class QueueRepositoryService {
   }
 
   public addToQueue(file: FileExplorerFileNode): void {
-    this._queueClient.addToQueue(new AddToQueueCommand({
+    this._loadingRepository.startLoadingId(file.absolutePath);
+    firstValueFrom(this._queueClient.addToQueue(new AddToQueueCommand({
       absoluteFolderPath: file.parent.absolutePath ?? '',
       fileName: file.name
-    })).subscribe({
-      error: err => this._toastService.logServerError(err, 'Failed to add item to queue')
-    });
+    })))
+      .catch(err => this._toastService.logServerError(err, 'Failed to add item to queue'))
+      .finally(() => this._loadingRepository.stopLoadingId(file.absolutePath));
   }
 
   public removeFromQueue(item: QueueItem | null | undefined): void {
@@ -107,10 +110,10 @@ export class QueueRepositoryService {
       return;
     }
 
-    this._queueClient.removeFromQueue(item.id)
-      .subscribe({
-        error: err => this._toastService.logServerError(err, 'Failed to remove item from queue')
-      });
+    this._loadingRepository.startLoadingId(item.id);
+    firstValueFrom(this._queueClient.removeFromQueue(item.id))
+      .catch(err => this._toastService.logServerError(err, 'Failed to remove item from queue'))
+      .finally(() => this._loadingRepository.stopLoadingId(item.id));
   }
 
   public removeRangeFromQueue(queueItems: Array<string>) {
@@ -118,19 +121,21 @@ export class QueueRepositoryService {
       return;
     }
 
-    this._queueClient.removeFromQueue2(new RemoveFromQueueCommand({queueItems}))
-      .subscribe({
-        next: () => this._queueEditFormRepository.updateEditForm(f => f.selectedItems = {}),
-        error: err => this._toastService.logServerError(err, 'Failed to remove items from queue')
-      });
+    this._loadingRepository.startLoadingIds(queueItems);
+
+    firstValueFrom(this._queueClient.removeFromQueue2(new RemoveFromQueueCommand({queueItems})))
+      .then(() => this._queueEditFormRepository.updateEditForm(f => f.selectedItems = {}))
+      .catch(err => this._toastService.logServerError(err, 'Failed to remove items from queue'))
+      .then(() => this._loadingRepository.stopLoadingIds(queueItems));
   }
 
   public setQueuePosition(queueItemId: string): void {
-    this._queueClient.setQueuePosition(new SetQueuePositionCommand({
+    this._loadingRepository.startLoadingId(queueItemId);
+    firstValueFrom(this._queueClient.setQueuePosition(new SetQueuePositionCommand({
       queueItemId
-    })).subscribe({
-      error: err => this._toastService.logServerError(err, 'Failed to set queue position')
-    });
+    })))
+      .catch(err => this._toastService.logServerError(err, 'Failed to set queue position'))
+      .finally(() => this._loadingRepository.stopLoadingId(queueItemId));
   }
 
   private initializeSignalR(): void {
