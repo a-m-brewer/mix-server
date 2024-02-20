@@ -21,6 +21,12 @@
         >
           <mat-icon>arrow_back_ios</mat-icon>
         </button>
+        <button mat-button
+                class="file-explorer-toolbar-button"
+                [disabled]="loadingStatus.loading || !currentFolder"
+                (click)="onFolderRefreshButtonClicked()">
+          <mat-icon>refresh</mat-icon>
+        </button>
         <span *ngIf="currentFolder">
           @if (currentFolder) {
             {{ currentFolder.node.name  }}

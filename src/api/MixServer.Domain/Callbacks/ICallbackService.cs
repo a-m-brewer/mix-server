@@ -15,6 +15,7 @@ public interface ICallbackService
     Task DeviceUpdated(Device device);
     Task DeviceStateUpdated(IDeviceState deviceState);
     Task FolderSorted(string userId, IFileExplorerFolder folder);
+    Task FolderRefreshed(string userId, Guid deviceId, IFileExplorerFolder folder);
     Task DeviceDeleted(string userId, Guid deviceId);
     Task PlaybackStateUpdated(IPlaybackState playbackState, AudioPlayerStateUpdateType audioPlayerStateUpdateType);
     Task PlaybackGranted(IPlaybackState state, bool useDeviceCurrentTime);

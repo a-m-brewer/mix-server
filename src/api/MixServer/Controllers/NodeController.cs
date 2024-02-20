@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using MixServer.Application.FileExplorer.Commands.RefreshFolder;
 using MixServer.Application.FileExplorer.Commands.SetFolderSort;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Domain.Interfaces;
@@ -10,6 +11,7 @@ namespace MixServer.Controllers;
 [Route("api/[controller]")]
 public class NodeController(
     IQueryHandler<GetFolderNodeQuery, FileExplorerFolderResponse> getFolderNodeQueryHandler,
+    ICommandHandler<RefreshFolderCommand, FileExplorerFolderResponse> refreshFolderCommandHandler,
     ICommandHandler<SetFolderSortCommand> setFolderSortCommandHandler)
     : ControllerBase
 {
@@ -21,6 +23,15 @@ public class NodeController(
     {
         return Ok(await getFolderNodeQueryHandler.HandleAsync(query));
     }
+    
+    [HttpPost("refresh")]
+    [ProducesResponseType(typeof(FileExplorerFolderResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RefreshFolder([FromBody] RefreshFolderCommand command)
+    {
+        return Ok(await refreshFolderCommandHandler.HandleAsync(command));
+    }
+
 
     [HttpPost("sort")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

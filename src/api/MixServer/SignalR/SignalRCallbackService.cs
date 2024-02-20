@@ -101,6 +101,18 @@ public class SignalRCallbackService(
             .FolderSorted(dto);
     }
 
+    public async Task FolderRefreshed(string userId, Guid deviceId, IFileExplorerFolder folder)
+    {
+        // Current Device is notified via RefreshFolderCommandHandler
+        var (_, otherDevicesConnections) = GetDevicesConnectionWithOtherDevices(userId, deviceId);
+
+        var dto = fileExplorerResponseConverter.Convert(folder);
+
+        await context.Clients
+            .Clients(otherDevicesConnections)
+            .FolderRefreshed(dto);
+    }
+
     public async Task DeviceDeleted(string userId, Guid deviceId)
     {
         var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));

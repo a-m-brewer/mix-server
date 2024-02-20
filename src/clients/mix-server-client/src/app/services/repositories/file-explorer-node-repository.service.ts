@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {NodeClient} from "../../generated-clients/mix-server-clients";
+import {NodeClient, RefreshFolderCommand} from "../../generated-clients/mix-server-clients";
 import {BehaviorSubject, filter, firstValueFrom, from, map, Observable, tap} from "rxjs";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {LoadingRepositoryService} from "./loading-repository.service";
@@ -47,6 +47,16 @@ export class FileExplorerNodeRepositoryService {
         if (this._loggedIn) {
           this.loadDirectoryFromPathName(window.location.pathname);
         }
+      });
+
+    this._folderSignalRClient.folderRefreshed$()
+      .subscribe(updatedFolder => {
+        const currentFolder = this._currentFolder$.getValue();
+        if (currentFolder.node.absolutePath !== updatedFolder.node.absolutePath) {
+          return;
+        }
+
+        this._currentFolder$.next(updatedFolder);
       });
 
     this._folderSignalRClient.folderSorted$()
@@ -165,6 +175,23 @@ export class FileExplorerNodeRepositoryService {
       : null;
 
     this.loadDirectory(dir);
+  }
+
+  public refreshFolder(): void {
+    const currentFolder = this._currentFolder$.getValue().node.absolutePath ?? '';
+
+    this._loadingRepository.startLoadingId(currentFolder);
+
+    firstValueFrom(this._client.refreshFolder(new RefreshFolderCommand({
+      absolutePath: currentFolder
+    })))
+      .then(value => {
+        this._currentFolder$.next(this._fileExplorerNodeConverter.fromFileExplorerFolder(value));
+      })
+      .catch(err => {
+        this._toastService.logServerError(err, 'Failed to refresh folder');
+      })
+      .finally(() => this._loadingRepository.stopLoadingId(currentFolder));
   }
 
   public setFolderSort(sortMode: FileExplorerFolderSortMode, descending: boolean) {

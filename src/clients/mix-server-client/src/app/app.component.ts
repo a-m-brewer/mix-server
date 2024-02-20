@@ -194,6 +194,14 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this._nodeRepository.changeDirectory(parent);
   }
 
+  public onFolderRefreshButtonClicked(): void {
+    if (!this.currentFolder) {
+      return;
+    }
+
+    this._nodeRepository.refreshFolder();
+  }
+
   private calculateMainContentHeight(): void {
     const elements = this.getElements();
 

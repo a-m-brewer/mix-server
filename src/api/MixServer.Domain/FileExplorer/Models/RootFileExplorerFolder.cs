@@ -4,18 +4,10 @@ using MixServer.Domain.FileExplorer.Settings;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
-public class RootFileExplorerFolder : FileExplorerFolder, IRootFileExplorerFolder
+public class RootFileExplorerFolder(IOptions<RootFolderSettings> rootFolderSettings)
+    : FileExplorerFolder(new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true,
+        DateTime.MinValue, false, false, null)), IRootFileExplorerFolder
 {
-    public RootFileExplorerFolder(IOptions<RootFolderSettings> rootFolderSettings) : base(new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true, DateTime.MinValue, false, false, null))
-    {
-        foreach (var folder in rootFolderSettings.Value.ChildrenSplit)
-        {
-            var directoryInfo = new DirectoryInfo(folder);
-            ChildNodes.Add(new FileExplorerFolderNode(directoryInfo.Name, directoryInfo.FullName,
-                FileExplorerNodeType.Folder, directoryInfo.Exists, directoryInfo.CreationTimeUtc, true, false, Node));
-        }
-    }
-    
     public bool BelongsToRoot(string? absolutePath)
     {
         if (string.IsNullOrWhiteSpace(absolutePath))
@@ -37,5 +29,17 @@ public class RootFileExplorerFolder : FileExplorerFolder, IRootFileExplorerFolde
                 absolutePath.StartsWith(child.AbsolutePath));
 
         return isSubFolder;
+    }
+
+    public void RefreshChildren()
+    {
+        ChildNodes.Clear();
+        
+        foreach (var folder in rootFolderSettings.Value.ChildrenSplit)
+        {
+            var directoryInfo = new DirectoryInfo(folder);
+            ChildNodes.Add(new FileExplorerFolderNode(directoryInfo.Name, directoryInfo.FullName,
+                FileExplorerNodeType.Folder, directoryInfo.Exists, directoryInfo.CreationTimeUtc, true, false, Node));
+        }
     }
 }

@@ -20,6 +20,7 @@ public interface IFolderCacheService
     event EventHandler<FolderCacheServiceItemRemovedEventArgs> ItemRemoved;
 
     Task<ICacheFolder> GetOrAddAsync(string absolutePath);
+    void InvalidateFolder(string absolutePath);
 }
 
 public class FolderCacheService(
@@ -91,6 +92,14 @@ public class FolderCacheService(
                     semaphore.Release();
                 }
             }) ?? throw new NotFoundException(nameof(FolderCacheService), absolutePath);
+        });
+    }
+
+    public void InvalidateFolder(string absolutePath)
+    {
+        readWriteLock.ForWrite(() =>
+        {
+            _cache.Remove(absolutePath);
         });
     }
 

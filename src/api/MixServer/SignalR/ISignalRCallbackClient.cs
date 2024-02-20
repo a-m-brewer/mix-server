@@ -13,6 +13,7 @@ public interface ISignalRCallbackClient
     Task CurrentQueueUpdated(QueueSnapshotDto dto);
     Task DeviceUpdated(DeviceDto dto);
     Task DeviceStateUpdated(DeviceStateDto dto);
+    Task FolderRefreshed(FileExplorerFolderResponse dto);
     Task FolderSorted(FileExplorerFolderResponse dto);
     Task DeviceDeleted(DeviceDeletedDto dto);
     Task PlaybackStateUpdated(PlaybackStateDto dto);

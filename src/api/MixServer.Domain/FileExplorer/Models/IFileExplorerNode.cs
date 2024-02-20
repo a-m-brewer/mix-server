@@ -49,4 +49,5 @@ public interface IRootFileExplorerFolder : IFileExplorerFolder
     bool BelongsToRoot(string? absolutePath);
 
     bool BelongsToRootChild(string? absolutePath);
+    void RefreshChildren();
 }
