@@ -214,7 +214,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    elements.content.style.height = `calc(100vh - ${height}px`;
+    var availableHeight = window.innerHeight - height;
+
+    elements.content.style.height = availableHeight + 'px';
   }
 
   private toHtmlElement(ref?: ElementRef): HTMLElement {
