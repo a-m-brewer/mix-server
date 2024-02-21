@@ -9,6 +9,7 @@ public interface IPlaybackState
 {
     string UserId { get; }
     Guid? SessionId { get; }
+    Guid? LastPlaybackDeviceId { get; }
     Guid? DeviceId { get; }
     bool Playing { get; }
     TimeSpan CurrentTime { get; }
@@ -17,6 +18,7 @@ public interface IPlaybackState
 public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger) : IPlaybackState
 {
     private readonly ManualResetEventSlim _pauseSemaphore = new(true);
+    private Guid? _deviceId = session.DeviceId;
 
     public event EventHandler<AudioPlayerStateUpdateType>? AudioPlayerStateUpdated;
     
@@ -24,7 +26,20 @@ public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger
 
     public Guid? SessionId { get; private set; } = session.SessionId;
 
-    public Guid? DeviceId { get; set; } = session.DeviceId;
+    public Guid? LastPlaybackDeviceId { get; private set; } = session.LastPlaybackDeviceId;
+
+    public Guid? DeviceId
+    {
+        get => _deviceId;
+        set
+        {
+            _deviceId = value;
+            if (_deviceId.HasValue)
+            {
+                LastPlaybackDeviceId = _deviceId;
+            }
+        }
+    }
 
     public bool HasDevice => DeviceId.HasValue && DeviceId.Value != Guid.Empty;
     

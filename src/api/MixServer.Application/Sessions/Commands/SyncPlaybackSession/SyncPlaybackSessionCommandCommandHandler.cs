@@ -3,6 +3,7 @@ using MixServer.Application.Sessions.Responses;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Entities;
+using MixServer.Domain.Sessions.Models;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
@@ -40,9 +41,8 @@ public class SyncPlaybackSessionCommandCommandHandler(
         }
         
         if (ClientHasNoPlaybackSession(request) ||
-            ClientNotPlaying(request) ||
             CurrentPlaybackSessionsDiffer(request, serverSession) ||
-            PlayingOnAnotherDevice(request, serverSession))
+            CurrentlyPlayingOnAnotherDevice(serverSession))
         {
             return new SyncPlaybackSessionResponse
             {
@@ -51,14 +51,22 @@ public class SyncPlaybackSessionCommandCommandHandler(
             };
         }
         
-        deviceTrackingService.SetInteraction(
-            currentUserRepository.CurrentUserId,
-            currentDeviceRepository.DeviceId,
-            true);
+        if (request.Playing)
+        {
+            deviceTrackingService.SetInteraction(
+                currentUserRepository.CurrentUserId,
+                currentDeviceRepository.DeviceId,
+                true);
 
-        serverSession.DeviceId = currentDeviceRepository.DeviceId;
-        serverSession.CurrentTime = TimeSpan.FromSeconds(request.CurrentTime);
-        serverSession.Playing = true;
+            serverSession.DeviceId = currentDeviceRepository.DeviceId;
+        }
+
+        if (request.Playing || !PlayedOnAnotherDeviceSinceLastSync(serverSession))
+        {
+            serverSession.CurrentTime = TimeSpan.FromSeconds(request.CurrentTime);
+        }
+        
+        serverSession.Playing = request.Playing;
 
         playbackTrackingService.UpdateSessionStateIncludingPlaying(serverSession);
 
@@ -66,30 +74,20 @@ public class SyncPlaybackSessionCommandCommandHandler(
 
         return new SyncPlaybackSessionResponse
         {
-            UseClientState = true,
+            UseClientState = request.Playing,
             Session = converter.Convert(serverSession, true)
         };
     }
 
     private static bool ClientHasNoPlaybackSession(SyncPlaybackSessionCommand command) =>
         !command.PlaybackSessionId.HasValue;
-    
-    private static bool ClientNotPlaying(SyncPlaybackSessionCommand command) =>
-        !command.Playing;
 
     private static bool CurrentPlaybackSessionsDiffer(SyncPlaybackSessionCommand command, PlaybackSession serverSession) =>
         serverSession.Id != command.PlaybackSessionId;
 
-    private bool PlayingOnAnotherDevice(SyncPlaybackSessionCommand command, PlaybackSession serverSession)
-    {
-        if (!serverSession.SessionId.HasValue)
-        {
-            return false;
-        }
-        
-        var currentDeviceId = currentDeviceRepository.DeviceId;
+    private bool PlayedOnAnotherDeviceSinceLastSync(IPlaybackState serverSession) => 
+        serverSession.LastPlaybackDeviceId != currentDeviceRepository.DeviceId;
 
-        return currentDeviceId != serverSession.SessionId.Value &&
-               serverSession.Playing;
-    }
+    private bool CurrentlyPlayingOnAnotherDevice(PlaybackSession serverSession) =>
+        serverSession.DeviceId != currentDeviceRepository.DeviceId && serverSession.Playing;
 }
