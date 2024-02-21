@@ -179,13 +179,10 @@ export class AudioPlayerService {
         .createMetadata()
         .updatePositionState()
         .withPlayActionHandler(() => {
-          this.audio.play()
-            .then(() => {
-              this.setPlaying();
-            });
+          this.requestPlayback().then();
         })
         .withPauseActionHandler(() => {
-          this.pause();
+          this.requestPause();
         })
         .withSeekTo();
 
@@ -228,11 +225,6 @@ export class AudioPlayerService {
         this._toastService.error(`${this._playbackSessionRepository.currentPlaybackSession?.currentNode?.name}: ${dom.message}`, dom.name);
       }
     }
-  }
-
-  public pause(): void {
-    this.internalPause();
-    this.setDevicePlaying(false);
   }
 
   private internalPause(): void {
@@ -293,6 +285,7 @@ export class AudioPlayerService {
   }
 
   private handlePauseRequested(): void {
+    console.log('pause requested');
     this.internalPause();
 
     this._playbackSessionRepository.setDevicePlaying(this.currentTime, false);

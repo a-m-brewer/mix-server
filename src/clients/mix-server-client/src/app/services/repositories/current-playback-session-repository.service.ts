@@ -144,10 +144,9 @@ export class CurrentPlaybackSessionRepositoryService {
   public requestPause(): void {
     this._loadingRepository.startLoading();
 
-    this._sessionClient.requestPause()
-      .subscribe({
-        error: err => this._toastService.logServerError(err, 'Failed to request pause')
-      });
+    firstValueFrom(this._sessionClient.requestPause())
+      .catch(err => this._toastService.logServerError(err, 'Failed to request pause'))
+      .finally(() => this._loadingRepository.stopLoading());
   }
 
   public clearSession(): void {
