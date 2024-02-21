@@ -22,3 +22,29 @@
   padding-right: 16px;
 }
 
+.file-explorer-current-folder-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+  .file-explorer-toolbar-hidden-on-mobile {
+    display: none;
+  }
+
+  .file-explorer-current-folder-name {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .app-folder-sort-form {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+@media (min-width: 600px) {
+  .file-explorer-toolbar-hidden-on-desktop {
+    display: none;
+  }
+}
