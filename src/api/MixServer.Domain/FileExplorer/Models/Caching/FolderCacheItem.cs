@@ -63,10 +63,6 @@ public class FolderCacheItem : IFolderCacheItem
                            | NotifyFilters.CreationTime
                            | NotifyFilters.DirectoryName
                            | NotifyFilters.FileName
-                           | NotifyFilters.LastAccess
-                           | NotifyFilters.LastWrite
-                           | NotifyFilters.Security
-                           | NotifyFilters.Size
         };
 
         _watcher.Created += OnCreated;
@@ -85,32 +81,33 @@ public class FolderCacheItem : IFolderCacheItem
     public IFileExplorerFolder Folder => _folder;
 
     private void OnCreated(object sender, FileSystemEventArgs e) =>
-        UpdateCache(e.FullPath, ChangeType.Created);
+        UpdateCache(e.FullPath, ChangeType.Created, e.ChangeType);
 
     private void OnDeleted(object sender, FileSystemEventArgs e) =>
-        UpdateCache(e.FullPath, ChangeType.Deleted);
+        UpdateCache(e.FullPath, ChangeType.Deleted, e.ChangeType);
 
     private void OnChanged(object sender, FileSystemEventArgs e) =>
-        UpdateCache(e.FullPath, ChangeType.Changed);
+        UpdateCache(e.FullPath, ChangeType.Changed, e.ChangeType);
 
     private void OnRenamed(object sender, RenamedEventArgs e) =>
-        UpdateCache(e.FullPath, ChangeType.Renamed, e.OldFullPath);
+        UpdateCache(e.FullPath, ChangeType.Renamed, e.ChangeType, e.OldFullPath);
 
     private void WatcherOnError(object sender, ErrorEventArgs e)
     {
         _logger.LogError(e.GetException(), "Error occurred in FileSystemWatcher for {AbsolutePath}", _absolutePath);
     }
     
-    private async void UpdateCache(string fullName, ChangeType changeType, string oldFullName = "")
+    private async void UpdateCache(string fullName, ChangeType changeType, WatcherChangeTypes watcherChangeType, string oldFullName = "")
     {
         await _semaphore.WaitAsync();
 
         try
         {
-            _logger.LogInformation("[{FolderAbsolutePath}]: File: {FileAbsolutePath} Change: {ChangeType}",
+            _logger.LogInformation("[{FolderAbsolutePath}]: File: {FileAbsolutePath} Change: {ChangeType} Watcher Change: {WatcherChangeType}",
                 _absolutePath,
                 fullName,
-                changeType);
+                changeType,
+                watcherChangeType);
         
             var directoryExists = Directory.Exists(fullName);
             var fileExists = File.Exists(fullName);
