@@ -38,6 +38,9 @@ export class NodeListItemComponent {
   public editing: boolean = false;
 
   @Input()
+  public selectable: boolean = false;
+
+  @Input()
   public disabled: boolean = false;
 
   @Input()

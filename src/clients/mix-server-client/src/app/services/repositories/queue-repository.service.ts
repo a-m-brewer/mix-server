@@ -116,7 +116,7 @@ export class QueueRepositoryService {
       .finally(() => this._loadingRepository.stopLoadingId(item.id));
   }
 
-  public removeRangeFromQueue(queueItems: Array<string>) {
+  public removeRangeFromQueue(queueItems: Array<string>): void {
     if (queueItems.length === 0) {
       return;
     }

@@ -8,6 +8,7 @@ import {FileExplorerPlayingState} from "../../../../../main-content/file-explore
 })
 export class NodeListItemIcon {
   protected readonly FileExplorerPlayingState = FileExplorerPlayingState;
+  public selected: boolean = false;
 
   @Input()
   public defaultIcon: string = 'folder';
@@ -25,7 +26,7 @@ export class NodeListItemIcon {
   public editing: boolean = false;
 
   @Input()
-  public selected: boolean = false;
+  public selectable: boolean = false;
 
   @Output()
   public selectedChange = new EventEmitter<boolean>();

@@ -7,7 +7,7 @@
 
   @if (loading) {
     <mat-spinner color="primary" *ngIf="loading" diameter="20"></mat-spinner>
-  } @else if (editing) {
+  } @else if (editing && selectable) {
     <span class="edit-checkbox">
         @if (selected) {
           <span>check_box</span>

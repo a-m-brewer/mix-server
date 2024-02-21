@@ -78,5 +78,7 @@ export class QueueEditFormComponent implements OnInit, OnDestroy {
     }
 
     this._queueRepository.removeRangeFromQueue(selectedItems);
+
+    this.onEditModeChanged();
   }
 }
