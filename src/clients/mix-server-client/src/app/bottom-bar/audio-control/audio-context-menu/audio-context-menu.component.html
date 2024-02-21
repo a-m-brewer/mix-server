@@ -22,6 +22,24 @@
     <mat-icon>devices</mat-icon>
     <span>Switch Device</span>
   </button>
+
+  <button mat-menu-item
+          matTooltip="History"
+          [disabled]="disconnected"
+          (click)="openHistoryPage()"
+  >
+    <mat-icon>list</mat-icon>
+    <span>History</span>
+  </button>
+
+  <button mat-menu-item
+          matTooltip="Queue"
+          [disabled]="disconnected"
+          (click)="openQueuePage()"
+  >
+    <mat-icon>queue_music</mat-icon>
+    <span>Queue</span>
+  </button>
 </mat-menu>
 
 <mat-menu #switchDeviceContextMenu="matMenu">

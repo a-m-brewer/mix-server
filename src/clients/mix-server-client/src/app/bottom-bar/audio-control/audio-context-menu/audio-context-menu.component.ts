@@ -7,6 +7,8 @@ import {PlaybackSession} from "../../../services/repositories/models/playback-se
 import {DeviceRepositoryService} from "../../../services/repositories/device-repository.service";
 import {Device} from "../../../services/repositories/models/device";
 import {AuthenticationService} from "../../../services/auth/authentication.service";
+import {Router} from "@angular/router";
+import {PageRoutes} from "../../../page-routes.enum";
 
 @Component({
   selector: 'app-audio-context-menu',
@@ -23,6 +25,7 @@ export class AudioContextMenuComponent implements OnInit, OnDestroy{
   constructor(
     private _authService: AuthenticationService,
     private _devicesRepository: DeviceRepositoryService,
+    private _router: Router,
     private _sessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
@@ -57,5 +60,15 @@ export class AudioContextMenuComponent implements OnInit, OnDestroy{
 
   public requestPlayback(device: Device): void {
     this._sessionRepository.requestPlayback(device.id).then();
+  }
+
+  public openQueuePage(): void {
+    this._router.navigate([PageRoutes.Queue])
+      .then();
+  }
+
+  public openHistoryPage() {
+    this._router.navigate([PageRoutes.History])
+      .then();
   }
 }
