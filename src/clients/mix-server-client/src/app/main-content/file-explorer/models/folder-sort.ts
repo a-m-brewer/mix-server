@@ -8,4 +8,8 @@ export class FolderSort {
   public static get Default(): FolderSort {
     return new FolderSort(false, FileExplorerFolderSortMode.Name);
   }
+
+  public copy(): FolderSort {
+    return new FolderSort(this.descending, this.sortMode);
+  }
 }

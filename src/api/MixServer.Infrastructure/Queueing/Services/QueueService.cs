@@ -3,6 +3,7 @@ using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
+using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Enums;
 using MixServer.Domain.Queueing.Services;
@@ -13,66 +14,57 @@ using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Infrastructure.Queueing.Services;
 
-public class QueueService : IQueueService
+public class QueueService(
+    ICallbackService callbackService,
+    ICurrentUserRepository currentUserRepository,
+    IFileService fileService,
+    ILogger<QueueService> logger,
+    IQueueRepository queueRepository,
+    IUnitOfWork unitOfWork)
+    : IQueueService
 {
-    private readonly ICallbackService _callbackService;
-    private readonly ICurrentUserRepository _currentUserRepository;
-    private readonly IFileService _fileService;
-    private readonly ILogger<QueueService> _logger;
-    private readonly IQueueRepository _queueRepository;
-
-    public QueueService(
-        ICallbackService callbackService,
-        ICurrentUserRepository currentUserRepository,
-        IFileService fileService,
-        ILogger<QueueService> logger,
-        IQueueRepository queueRepository)
-    {
-        _callbackService = callbackService;
-        _currentUserRepository = currentUserRepository;
-        _fileService = fileService;
-        _logger = logger;
-        _queueRepository = queueRepository;
-    }
-
     public async Task LoadQueueStateAsync()
     {
-        if (_queueRepository.HasQueue(_currentUserRepository.CurrentUserId))
+        if (queueRepository.HasQueue(currentUserRepository.CurrentUserId))
         {
-            _logger.LogDebug("Skipping initializing queue for user as queue is already initialized");
+            logger.LogDebug("Skipping initializing queue for user as queue is already initialized");
             return;
         }
 
-        await _currentUserRepository.LoadCurrentPlaybackSessionAsync();
+        await currentUserRepository.LoadCurrentPlaybackSessionAsync();
 
-        if (_currentUserRepository.CurrentUser.CurrentPlaybackSession == null)
+        if (currentUserRepository.CurrentUser.CurrentPlaybackSession == null)
         {
-            _logger.LogDebug("Skipping initializing queue as user has no playback session");
+            logger.LogDebug("Skipping initializing queue as user has no playback session");
             return;
         }
 
-        await SetQueueFolderAsync(_currentUserRepository.CurrentUser.CurrentPlaybackSession);
+        await SetQueueFolderAsync(currentUserRepository.CurrentUser.CurrentPlaybackSession);
     }
 
     public async Task SetQueueFolderAsync(PlaybackSession nextSession)
     {
-        var queue = _queueRepository.GetOrAddQueue(_currentUserRepository.CurrentUserId);
+        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
 
         queue.CurrentFolderAbsolutePath = nextSession.GetParentFolderPathOrThrow();
         queue.ClearUserQueue();
-
+        
         var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderAbsolutePath);
+        if (files.All(a => a.AbsolutePath != nextSession.AbsolutePath))
+        {
+            files.Add(fileService.GetFile(nextSession.AbsolutePath));
+        }
 
         queue.RegenerateFolderQueueSortItems(files);
         queue.SetQueuePositionFromFolderItemOrThrow(nextSession.AbsolutePath);
 
         var queueSnapshot = GenerateQueueSnapshot(queue, files);
-        _callbackService.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(_currentUserRepository.CurrentUserId, queueSnapshot));
+        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot));
     }
 
     public async Task SetQueuePositionAsync(Guid queuePositionId)
     {
-        var queue = _queueRepository.GetOrAddQueue(_currentUserRepository.CurrentUserId);
+        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
         
         if (!queue.QueueItemExists(queuePositionId))
         {
@@ -82,7 +74,7 @@ public class QueueService : IQueueService
         queue.SetQueuePosition(queuePositionId);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
-        _callbackService.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(_currentUserRepository.CurrentUserId, queueSnapshot));
+        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot));
     }
 
     public async Task AddToQueueAsync(IFileExplorerFileNode file)
@@ -92,16 +84,16 @@ public class QueueService : IQueueService
             throw new InvalidRequestException(nameof(file.PlaybackSupported), "Playback not supported for this file");
         }
 
-        var queue = _queueRepository.GetOrAddQueue(_currentUserRepository.CurrentUserId);
+        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
         queue.AddToQueue(file);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
-        await _callbackService.CurrentQueueUpdated(_currentUserRepository.CurrentUserId, queueSnapshot);
+        await callbackService.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot);
     }
 
     public async Task RemoveUserQueueItemsAsync(List<Guid> ids)
     {
-        var queue = _queueRepository.GetOrAddQueue(_currentUserRepository.CurrentUserId);
+        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
 
         if (queue.CurrentQueuePositionId.HasValue && ids.Contains(queue.CurrentQueuePositionId.Value))
         {
@@ -116,12 +108,12 @@ public class QueueService : IQueueService
         queue.RemoveUserQueueItems(ids);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
-        await _callbackService.CurrentQueueUpdated(_currentUserRepository.CurrentUserId, queueSnapshot);
+        await callbackService.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot);
     }
 
     public async Task<(PlaylistIncrementResult Result, QueueSnapshot Snapshot)> IncrementQueuePositionAsync(int offset)
     {
-        var queue = _queueRepository.GetOrAddQueue(_currentUserRepository.CurrentUserId);
+        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
         var queueOrder = queue.QueueOrder;
         
         var currentQueueItemIndex = queueOrder.FindIndex(id => id == queue.CurrentQueuePositionId);
@@ -143,32 +135,32 @@ public class QueueService : IQueueService
         queue.SetQueuePosition(nextQueuePositionId);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
-        _callbackService.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(_currentUserRepository.CurrentUserId, queueSnapshot));
+        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot));
         
         return (PlaylistIncrementResult.Success, queueSnapshot);
     }
 
     public async Task ResortQueueAsync()
     {
-        var queue = _queueRepository.GetOrAddQueue(_currentUserRepository.CurrentUserId);
+        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
      
         var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderAbsolutePath);
 
         queue.Sort(files);
 
         var queueSnapshot = GenerateQueueSnapshot(queue, files);
-        _callbackService.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(_currentUserRepository.CurrentUserId, queueSnapshot));
+        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot));
     }
 
     public void ClearQueue()
     {
-        _queueRepository.Remove(_currentUserRepository.CurrentUserId);
-        _callbackService.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(_currentUserRepository.CurrentUserId, QueueSnapshot.Empty));
+        queueRepository.Remove(currentUserRepository.CurrentUserId);
+        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, QueueSnapshot.Empty));
     }
 
     public async Task<IFileExplorerFileNode> GetCurrentPositionFileOrThrowAsync()
     {
-        var queue = _queueRepository.GetOrAddQueue(_currentUserRepository.CurrentUserId);
+        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
 
         return queueSnapshot.Items.FirstOrDefault(f => f.Id == queue.CurrentQueuePositionId)?.File
@@ -178,12 +170,12 @@ public class QueueService : IQueueService
 
     public string? GetCurrentQueueFolderAbsolutePath()
     {
-        return _queueRepository.GetOrAddQueue(_currentUserRepository.CurrentUserId).CurrentFolderAbsolutePath;
+        return queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId).CurrentFolderAbsolutePath;
     }
 
     public async Task<QueueSnapshot> GenerateQueueSnapshotAsync()
     {
-        var queue = _queueRepository.GetOrAddQueue(_currentUserRepository.CurrentUserId);
+        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
 
         return await GenerateQueueSnapshotAsync(queue);
     }
@@ -195,7 +187,7 @@ public class QueueService : IQueueService
     
     private QueueSnapshot GenerateQueueSnapshot(UserQueue userQueue, IEnumerable<IFileExplorerFileNode> folderFiles)
     {
-        var userQueueFiles = _fileService.GetFiles(userQueue.UserQueueItemsAbsoluteFilePaths);
+        var userQueueFiles = fileService.GetFiles(userQueue.UserQueueItemsAbsoluteFilePaths);
 
         var allFiles = new List<IFileExplorerFileNode>(userQueueFiles);
         allFiles.AddRange(folderFiles);
@@ -215,8 +207,10 @@ public class QueueService : IQueueService
             return [];
         }
 
-        var folder = await _fileService.GetFilesInFolderAsync(absoluteFolderPath);
+        var folder = await fileService.GetFolderAsync(absoluteFolderPath);
 
-        return folder.ChildPlayableFiles;
+        return folder.GenerateSortedChildren<IFileExplorerFileNode>()
+            .Where(w => w.PlaybackSupported)
+            .ToList();
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Services;
+using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Repositories;
 using MixServer.Domain.Sessions.Requests;
@@ -13,45 +13,23 @@ using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Infrastructure.Sessions.Services;
 
-public class SessionService : ISessionService
+public class SessionService(
+    ICurrentDeviceRepository currentDeviceRepository,
+    ICurrentUserRepository currentUserRepository,
+    IDateTimeProvider dateTimeProvider,
+    IFileService fileService,
+    ILogger<SessionService> logger,
+    IPlaybackSessionRepository playbackSessionRepository,
+    IPlaybackTrackingService playbackTrackingService,
+    IUserRepository userRepository,
+    IUnitOfWork unitOfWork)
+    : ISessionService
 {
-    private readonly ICallbackService _callbackService;
-    private readonly ICurrentDeviceRepository _currentDeviceRepository;
-    private readonly ICurrentUserRepository _currentUserRepository;
-    private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly IFileService _fileService;
-    private readonly ILogger<SessionService> _logger;
-    private readonly IPlaybackSessionRepository _playbackSessionRepository;
-    private readonly IPlaybackTrackingService _playbackTrackingService;
-    private readonly IUserRepository _userRepository;
-
-    public SessionService(
-        ICallbackService callbackService,
-        ICurrentDeviceRepository currentDeviceRepository,
-        ICurrentUserRepository currentUserRepository,
-        IDateTimeProvider dateTimeProvider,
-        IFileService fileService,
-        ILogger<SessionService> logger,
-        IPlaybackSessionRepository playbackSessionRepository,
-        IPlaybackTrackingService playbackTrackingService,
-        IUserRepository userRepository)
-    {
-        _callbackService = callbackService;
-        _currentDeviceRepository = currentDeviceRepository;
-        _currentUserRepository = currentUserRepository;
-        _dateTimeProvider = dateTimeProvider;
-        _fileService = fileService;
-        _logger = logger;
-        _playbackSessionRepository = playbackSessionRepository;
-        _playbackTrackingService = playbackTrackingService;
-        _userRepository = userRepository;
-    }
-
     public async Task LoadPlaybackStateAsync()
     {
-        if (_playbackTrackingService.IsTracking(_currentUserRepository.CurrentUserId))
+        if (playbackTrackingService.IsTracking(currentUserRepository.CurrentUserId))
         {
-            _logger.LogDebug("Skipping loading playback state as it is already being tracked");
+            logger.LogDebug("Skipping loading playback state as it is already being tracked");
             return;
         }
 
@@ -59,17 +37,17 @@ public class SessionService : ISessionService
 
         if (session == null)
         {
-            _logger.LogDebug("Skipping loading playback state as there is currently no playback session to track");
+            logger.LogDebug("Skipping loading playback state as there is currently no playback session to track");
             return;
         }
 
-        _playbackTrackingService.UpdateSessionState(session);
+        playbackTrackingService.UpdateSessionState(session);
     }
 
     public async Task<PlaybackSession> AddOrUpdateSessionAsync(IAddOrUpdateSessionRequest request)
     {
-        await _currentUserRepository.LoadAllPlaybackSessionsAsync();
-        var user = _currentUserRepository.CurrentUser;
+        await currentUserRepository.LoadAllPlaybackSessionsAsync();
+        var user = currentUserRepository.CurrentUser;
         
         var session = user.PlaybackSessions.SingleOrDefault(s => s.AbsolutePath == request.AbsoluteFilePath);
 
@@ -79,52 +57,52 @@ public class SessionService : ISessionService
             {
                 Id = Guid.NewGuid(),
                 AbsolutePath = request.AbsoluteFilePath,
-                LastPlayed = _dateTimeProvider.UtcNow,
+                LastPlayed = dateTimeProvider.UtcNow,
                 UserId = user.Id,
                 CurrentTime = TimeSpan.Zero
             };
 
-            await _playbackSessionRepository.AddAsync(session);
+            await playbackSessionRepository.AddAsync(session);
             user.PlaybackSessions.Add(session);
         }
         else
         {
-            session.LastPlayed = _dateTimeProvider.UtcNow;
+            session.LastPlayed = dateTimeProvider.UtcNow;
         }
 
-        session.DeviceId = _playbackTrackingService.TryGet(user.Id, out var state) && state.HasDevice
-            ? state.DeviceIdOrThrow
-            : _currentDeviceRepository.DeviceId;
+        session.DeviceId = playbackTrackingService.TryGet(user.Id, out var state) && state.HasDevice
+            ? state.DeviceId
+            : currentDeviceRepository.DeviceId;
 
-        _playbackTrackingService.UpdateSessionState(session);
+        playbackTrackingService.UpdateSessionState(session);
         
         user.CurrentPlaybackSession = session;
 
         SetSessionNonMappedProperties(session);
         
-        _callbackService.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(session.UserId, session));
+        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(session.UserId, session));
         return session;
     }
 
     public void ClearUsersCurrentSession()
     {
-        var user = _currentUserRepository.CurrentUser;
+        var user = currentUserRepository.CurrentUser;
         
         if (user.CurrentPlaybackSession != null)
         {
-            _playbackTrackingService.ClearSession(user.Id);
+            playbackTrackingService.ClearSession(user.Id);
         }
         
         user.CurrentPlaybackSession = null;
         
-        _callbackService.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(user.Id, null));
+        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(user.Id, null));
     }
 
     public async Task<PlaybackSession> GetPlaybackSessionByIdAsync(Guid id, string username)
     {
-        var user = await _userRepository.GetUserAsync(username);
+        var user = await userRepository.GetUserAsync(username);
 
-        var session = await _playbackSessionRepository.GetAsync(id);
+        var session = await playbackSessionRepository.GetAsync(id);
 
         if (session.UserId != user.Id)
         {
@@ -159,8 +137,8 @@ public class SessionService : ISessionService
 
     public async Task<PlaybackSession?> GetCurrentPlaybackSessionOrDefaultAsync()
     {
-        await _currentUserRepository.LoadCurrentPlaybackSessionAsync();
-        var user = _currentUserRepository.CurrentUser;
+        await currentUserRepository.LoadCurrentPlaybackSessionAsync();
+        var user = currentUserRepository.CurrentUser;
 
         var session = user.CurrentPlaybackSession;
 
@@ -169,8 +147,8 @@ public class SessionService : ISessionService
 
     public async Task<List<PlaybackSession>> GetUsersPlaybackSessionHistoryAsync(int startIndex, int pageSize)
     {
-        await _currentUserRepository.LoadPagedPlaybackSessionsAsync(startIndex, pageSize);
-        var user = _currentUserRepository.CurrentUser;
+        await currentUserRepository.LoadPagedPlaybackSessionsAsync(startIndex, pageSize);
+        var user = currentUserRepository.CurrentUser;
 
         var sessions = user.PlaybackSessions;
 
@@ -185,12 +163,9 @@ public class SessionService : ISessionService
     private void SetSessionNonMappedProperties(
         IPlaybackSession session)
     {
-        var parentFolderPath = session.GetParentFolderPathOrThrow();
-        var parent = _fileService.GetUnpopulatedFolder(parentFolderPath);
+        var currentNode = fileService.GetFile(session.AbsolutePath);
 
-        var currentNode = _fileService.GetFile(session.AbsolutePath, parent);
-
-        _playbackTrackingService.Populate(session);
+        playbackTrackingService.Populate(session);
 
         session.File = currentNode;
     }

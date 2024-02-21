@@ -9,41 +9,27 @@ using MixServer.Domain.Sessions.Services;
 
 namespace MixServer.Application.Sessions.Commands.SetNextSession;
 
-public class SetNextSessionCommandHandler : ICommandHandler<SetNextSessionCommand>
+public class SetNextSessionCommandHandler(
+    IQueueService queueService,
+    IPlaybackTrackingService playbackTrackingService,
+    ISessionService sessionService,
+    IValidator<SetNextSessionCommand> validator,
+    IUnitOfWork unitOfWork)
+    : ICommandHandler<SetNextSessionCommand>
 {
-    private readonly IQueueService _queueService;
-    private readonly IPlaybackTrackingService _playbackTrackingService;
-    private readonly ISessionService _sessionService;
-    private readonly IValidator<SetNextSessionCommand> _validator;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public SetNextSessionCommandHandler(
-        IQueueService queueService,
-        IPlaybackTrackingService playbackTrackingService,
-        ISessionService sessionService,
-        IValidator<SetNextSessionCommand> validator,
-        IUnitOfWork unitOfWork)
-    {
-        _queueService = queueService;
-        _playbackTrackingService = playbackTrackingService;
-        _sessionService = sessionService;
-        _validator = validator;
-        _unitOfWork = unitOfWork;
-    }
-    
     public async Task HandleAsync(SetNextSessionCommand request)
     {
-        await _validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request);
         
-        var currentSession = await _sessionService.GetCurrentPlaybackSessionAsync();
+        var currentSession = await sessionService.GetCurrentPlaybackSessionAsync();
 
         if (request.ResetSessionState)
         {
             currentSession.CurrentTime = TimeSpan.Zero;
-            _playbackTrackingService.ClearSession(currentSession.UserId);
+            playbackTrackingService.ClearSession(currentSession.UserId);
         }
 
-        var (result, snapshot) = await _queueService.IncrementQueuePositionAsync(request.Offset);
+        var (result, snapshot) = await queueService.IncrementQueuePositionAsync(request.Offset);
 
         switch (result)
         {
@@ -53,7 +39,7 @@ public class SetNextSessionCommandHandler : ICommandHandler<SetNextSessionComman
                 var nextFile = snapshot.CurrentQueuePositionItem?.File;
                 if (nextFile != null)
                 {
-                    await _sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
+                    await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
                     {
                         ParentAbsoluteFilePath = nextFile.Parent.AbsolutePath,
                         FileName = nextFile.Name
@@ -61,12 +47,12 @@ public class SetNextSessionCommandHandler : ICommandHandler<SetNextSessionComman
                 }
                 break;
             case PlaylistIncrementResult.NextOutOfBounds:
-                _sessionService.ClearUsersCurrentSession();
+                sessionService.ClearUsersCurrentSession();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
         
-        await _unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync();
     }
 }

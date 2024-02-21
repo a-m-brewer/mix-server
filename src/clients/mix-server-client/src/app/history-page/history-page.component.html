@@ -9,21 +9,26 @@
 >
   <app-node-list-item
     *ngFor="let session of sessions; last as last"
-    [node]="session.currentNode"
-    [loading]="loading"
+    [id]="session.currentNode.absolutePath"
+    [name]="session.currentNode.name"
+    [nodeType]="session.currentNode.type"
+    [defaultIcon]="session.currentNode.mdIcon"
+    [loadingStatus]="loadingStatus"
+    [audioPlayerState]="audioPlayerState"
+    [disabled]="session.currentNode.disabled"
     [last]="last"
-    (click)="onNodeClick($event)"
+    (contentClick)="onNodeClick($event)"
   >
     <app-add-to-queue-button
       [file]="session.currentNode"
     />
 
     <app-open-location-button
-      [folder]="session.currentNode.parentFolder"
+      [folder]="session.currentNode.parent"
     />
   </app-node-list-item>
 
-  <div class="end-of-history-message-container" *ngIf="!lastFetchHadItems">
+  <div class="end-of-history-message-container" *ngIf="!moreItemsAvailable">
     <mat-divider [inset]="true"></mat-divider>
     <h3 class="end-of-history-message">
       End of History

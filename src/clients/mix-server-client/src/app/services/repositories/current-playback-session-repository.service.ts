@@ -21,19 +21,17 @@ import {PlaybackState} from "./models/playback-state";
 import {PlaybackGranted} from "./models/playback-granted";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {AudioElementRepositoryService} from "../audio-player/audio-element-repository.service";
-import {AudioPlayerStateService} from "../audio-player/audio-player-state.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class CurrentPlaybackSessionRepositoryService {
-  private _loading = new BehaviorSubject<boolean>(false);
+
   private _pauseRequested$ = new Subject<boolean>();
   private _playbackGranted$ = new Subject<PlaybackGranted>();
   private _currentSession$ = new BehaviorSubject<PlaybackSession | null>(null);
 
   constructor(audioElementRepository: AudioElementRepositoryService,
-              audioPlayerStateService: AudioPlayerStateService,
               private _playbackSessionConverter: PlaybackSessionConverterService,
               private _loadingRepository: LoadingRepositoryService,
               private _sessionClient: SessionClient,
@@ -44,30 +42,30 @@ export class CurrentPlaybackSessionRepositoryService {
       .subscribe(serverConnectionStatus => {
         if (serverConnectionStatus === ServerConnectionState.Connected) {
           const currentSession = this.currentPlaybackSession;
-          this._sessionClient.syncPlaybackSession(new SyncPlaybackSessionCommand({
+          this._loadingRepository.startLoading();
+          firstValueFrom(this._sessionClient.syncPlaybackSession(new SyncPlaybackSessionCommand({
             playbackSessionId: currentSession?.id,
             playing: audioElementRepository.audio.duration > 0 && !audioElementRepository.audio.paused,
             currentTime: audioElementRepository.audio.currentTime
-          }))
-            .subscribe({
-              next: value => {
-                if (value.useClientState) {
-                  return;
-                }
-
-                const nextSession =
-                  value.session
-                    ? this._playbackSessionConverter.fromDto(value.session)
-                    : null;
-
-                this.nextSession(nextSession);
-              },
-              error: err => {
-                if ((err as ProblemDetails)?.status !== 404) {
-                  this._toastService.logServerError(err, 'Failed to fetch current session');
-                }
+          })))
+            .then(value => {
+              if (value.useClientState) {
+                return;
               }
-            });
+
+              const nextSession =
+                value.session
+                  ? this._playbackSessionConverter.fromDto(value.session)
+                  : null;
+
+              this.nextSession(nextSession);
+            })
+            .catch(err => {
+              if ((err as ProblemDetails)?.status !== 404) {
+                this._toastService.logServerError(err, 'Failed to fetch current session');
+              }
+            })
+            .finally(() => this._loadingRepository.stopLoading());
         }
 
         if (serverConnectionStatus === ServerConnectionState.Unauthorized) {
@@ -95,10 +93,6 @@ export class CurrentPlaybackSessionRepositoryService {
       .pipe(map(m => m?.state.playing ?? false))
   }
 
-  public get loading$(): Observable<boolean> {
-    return this._loading.asObservable();
-  }
-
   public get currentState$(): Observable<PlaybackState> {
     return this._currentSession$
       .pipe(filter<PlaybackSession | null>(Boolean))
@@ -118,25 +112,24 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public setFile(file: FileExplorerFileNode): void  {
-    this.loading = true;
-    this._loadingRepository.loading = true;
+    this._loadingRepository.startLoadingId(file.absolutePath);
 
-    this._sessionClient.setCurrentSession(new SetCurrentSessionCommand({
-      absoluteFolderPath: file.parentFolder.absolutePath ?? '',
+    firstValueFrom(this._sessionClient.setCurrentSession(new SetCurrentSessionCommand({
+      absoluteFolderPath: file.parent.absolutePath,
       fileName: file.name
-    })).subscribe({
-      next: _ => {},
-      error: err => this._toastService.logServerError(err, 'Failed to set current session')
-    });
+    })))
+      .catch(err => this._toastService.logServerError(err, 'Failed to set current session'))
+      .finally(() => this._loadingRepository.stopLoadingId(file.absolutePath));
   }
 
   public async requestPlayback(deviceId?: string): Promise<void> {
-    this._loadingRepository.loading = true;
+    this._loadingRepository.startLoadingId(deviceId)
 
     const requestedDeviceId = deviceId ?? this._authenticationService.deviceId;
 
     if (!requestedDeviceId) {
       this._toastService.error('Missing current device id', 'Not Found');
+      this._loadingRepository.stopLoadingId(deviceId);
       return;
     }
 
@@ -144,25 +137,24 @@ export class CurrentPlaybackSessionRepositoryService {
       deviceId: requestedDeviceId
     }))).catch(err => {
       this._toastService.logServerError(err, 'Failed to request playback');
-      this._loadingRepository.loading = false;
-    });
+    })
+      .finally(() => this._loadingRepository.stopLoadingId(deviceId));
   }
 
   public requestPause(): void {
-    this._loadingRepository.loading = true;
+    this._loadingRepository.startLoading();
 
-    this._sessionClient.requestPause()
-      .subscribe({
-        error: err => this._toastService.logServerError(err, 'Failed to request pause')
-      });
+    firstValueFrom(this._sessionClient.requestPause())
+      .catch(err => this._toastService.logServerError(err, 'Failed to request pause'))
+      .finally(() => this._loadingRepository.stopLoading());
   }
 
   public clearSession(): void {
-    this._sessionClient.clearCurrentSession()
-      .subscribe({
-        next: _ => this.nextSession(null),
-        error: err => this._toastService.logServerError(err, 'Failed to clear current session')
-      })
+    this._loadingRepository.startLoading();
+    firstValueFrom(this._sessionClient.clearCurrentSession())
+      .then(_ => this.nextSession(null))
+      .catch(err => this._toastService.logServerError(err, 'Failed to clear current session'))
+      .finally(() => this._loadingRepository.stopLoading());
   }
 
   public back(): void {
@@ -191,10 +183,10 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   private setNextSession(command: SetNextSessionCommand): void {
-    this._sessionClient.setNextSession(command).subscribe({
-      next: _ => {},
-      error: err => this._toastService.logServerError(err, 'Failed to set next session')
-    });
+    this._loadingRepository.startLoading();
+    firstValueFrom(this._sessionClient.setNextSession(command))
+      .catch(err => this._toastService.logServerError(err, 'Failed to set next session'))
+      .finally(() => this._loadingRepository.stopLoading());
   }
 
   public updatePlaybackState(currentTime: number): void {
@@ -258,8 +250,6 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   private nextSession(playbackSession: PlaybackSession | null): void {
-    this.loading = false;
-    this._loadingRepository.loading = false;
     this._currentSession$.next(playbackSession);
   }
 
@@ -272,13 +262,5 @@ export class CurrentPlaybackSessionRepositoryService {
     const session = PlaybackSession.copy(previousSession, state);
 
     this.nextSession(session);
-  }
-
-  private set loading(loading: boolean) {
-    if (loading === this._loading.getValue()){
-      return;
-    }
-
-    this._loading.next(loading);
   }
 }

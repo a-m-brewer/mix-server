@@ -33,6 +33,9 @@ public class PlaybackSession : IPlaybackSession
     public Guid? SessionId => Id;
 
     [NotMapped]
+    public Guid? LastPlaybackDeviceId { get; set; }
+
+    [NotMapped]
     public Guid? DeviceId { get; set; }
 
     public string UserId { get; set; } = string.Empty;
@@ -52,6 +55,7 @@ public class PlaybackSession : IPlaybackSession
 
     public void PopulateState(IPlaybackState playingItem)
     {
+        LastPlaybackDeviceId = playingItem.LastPlaybackDeviceId;
         DeviceId = playingItem.DeviceId;
         CurrentTime = playingItem.CurrentTime;
     }

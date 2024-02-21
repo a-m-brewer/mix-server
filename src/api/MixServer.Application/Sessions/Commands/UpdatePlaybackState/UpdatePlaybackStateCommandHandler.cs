@@ -7,35 +7,23 @@ using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Application.Sessions.Commands.UpdatePlaybackState;
 
-public class UpdatePlaybackStateCommandHandler : ICommandHandler<UpdatePlaybackStateCommand>
+public class UpdatePlaybackStateCommandHandler(
+    ICurrentDeviceRepository currentDeviceRepository,
+    ICurrentUserRepository currentUserRepository,
+    ILogger<UpdatePlaybackStateCommandHandler> logger,
+    IPlaybackTrackingService playbackTrackingService,
+    IValidator<UpdatePlaybackStateCommand> validator)
+    : ICommandHandler<UpdatePlaybackStateCommand>
 {
-    private readonly ICurrentDeviceRepository _currentDeviceRepository;
-    private readonly ICurrentUserRepository _currentUserRepository;
-    private readonly ILogger<UpdatePlaybackStateCommandHandler> _logger;
-    private readonly IPlaybackTrackingService _playbackTrackingService;
-    private readonly IValidator<UpdatePlaybackStateCommand> _validator;
-
-    public UpdatePlaybackStateCommandHandler(
-        ICurrentDeviceRepository currentDeviceRepository,
-        ICurrentUserRepository currentUserRepository,
-        ILogger<UpdatePlaybackStateCommandHandler> logger,
-        IPlaybackTrackingService playbackTrackingService,
-        IValidator<UpdatePlaybackStateCommand> validator)
-    {
-        _currentDeviceRepository = currentDeviceRepository;
-        _currentUserRepository = currentUserRepository;
-        _logger = logger;
-        _playbackTrackingService = playbackTrackingService;
-        _validator = validator;
-    }
+    private readonly ILogger<UpdatePlaybackStateCommandHandler> _logger = logger;
 
     public async Task HandleAsync(UpdatePlaybackStateCommand request)
     {
-        await _validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request);
         
-        _playbackTrackingService.UpdatePlaybackState(
-            _currentUserRepository.CurrentUserId,
-            _currentDeviceRepository.DeviceId,
+        playbackTrackingService.UpdatePlaybackState(
+            currentUserRepository.CurrentUserId,
+            currentDeviceRepository.DeviceId,
             request.CurrentTime);
     }
 }

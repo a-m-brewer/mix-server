@@ -1,11 +1,17 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {FileExplorerNode} from "./models/file-explorer-node";
 import {FileExplorerFolderNode} from "./models/file-explorer-folder-node";
 import {FileExplorerFileNode} from "./models/file-explorer-file-node";
 import {FileExplorerNodeRepositoryService} from "../../services/repositories/file-explorer-node-repository.service";
 import {Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../services/repositories/current-playback-session-repository.service";
-import {NodeListItem} from "../../components/nodes/node-list/node-list-item/models/node-list-item";
+import {FileExplorerFolder} from "./models/file-explorer-folder";
+import {LoadingNodeStatus} from "../../services/repositories/models/loading-node-status";
+import {LoadingRepositoryService} from "../../services/repositories/loading-repository.service";
+import {
+  NodeListItemChangedEvent
+} from "../../components/nodes/node-list/node-list-item/interfaces/node-list-item-changed-event";
+import {AudioPlayerStateService} from "../../services/audio-player/audio-player-state.service";
+import {AudioPlayerStateModel} from "../../services/audio-player/models/audio-player-state-model";
 
 @Component({
   selector: 'app-file-explorer',
@@ -15,20 +21,21 @@ import {NodeListItem} from "../../components/nodes/node-list/node-list-item/mode
 export class FileExplorerComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
-  public nodes: FileExplorerNode[] = []
-  public currentFolder?: FileExplorerFolderNode | null;
-  public nodeRepositoryLoading: boolean = false;
-  public playbackSessionLoading: boolean = false;
+  public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
+  public currentFolder: FileExplorerFolder = FileExplorerFolder.Default;
+  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
 
-  constructor(private _nodeRepository: FileExplorerNodeRepositoryService,
+  constructor(private _audioPlayerStateService: AudioPlayerStateService,
+              private _loadingRepository: LoadingRepositoryService,
+              private _nodeRepository: FileExplorerNodeRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
   public ngOnInit(): void {
-    this._nodeRepository.getCurrentLevelNodes$()
+    this._audioPlayerStateService.state$
       .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(remoteNodes => {
-        this.nodes = [...remoteNodes];
+      .subscribe(state => {
+        this.audioPlayerState = state;
       });
 
     this._nodeRepository.currentFolder$
@@ -37,17 +44,11 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
         this.currentFolder = currentFolder;
       });
 
-    this._nodeRepository.loading$
+    this._loadingRepository.status$()
       .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(loading => {
-        this.nodeRepositoryLoading = loading;
-      })
-
-    this._playbackSessionRepository.loading$
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(loading => {
-        this.playbackSessionLoading = loading;
-      })
+      .subscribe(status => {
+        this.loadingStatus = status;
+      });
   }
 
   public ngOnDestroy(): void {
@@ -55,13 +56,20 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: NodeListItem): void {
-    if (node instanceof FileExplorerFolderNode) {
-      this.onFolderClick(node as FileExplorerFolderNode);
+  public onNodeClick(event: NodeListItemChangedEvent): void {
+    if (this.currentFolder.node.parent && event.id === this.currentFolder.node.parent.absolutePath) {
+      this.onFolderClick(this.currentFolder.node.parent);
+      return;
     }
 
-    if (node instanceof FileExplorerFileNode) {
-      this.onFileClick(node as FileExplorerFileNode);
+    const childNode = this.currentFolder.children.find(s => s.absolutePath === event.id);
+
+    if (childNode instanceof FileExplorerFolderNode) {
+      this.onFolderClick(childNode);
+    }
+
+    if (childNode instanceof FileExplorerFileNode) {
+      this.onFileClick(childNode);
     }
   }
   private onFolderClick(folder: FileExplorerFolderNode): void {

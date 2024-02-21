@@ -1,44 +1,48 @@
 <div
   [ngClass]="{
     'node-list-item-container': true,
-    'node-list-item-container-selectable': !node.disabled && !loading && !node.editing,
-    'node-list-item-container-disabled': (node.disabled || loading) && !node.isCurrentSession,
-    'node-list-item-container-current-session': node.isCurrentSession,
+    'node-list-item-container-selectable': !loadingStatus.loading && !isPlayingOrPaused && !editing,
+    'node-list-item-container-disabled': loadingStatus.loading || disabled,
+    'node-list-item-container-current-session': !loadingStatus.loading && !disabled && isPlayingOrPaused,
   }"
   matRipple
   [matRippleTrigger]="rippleTrigger"
-  [matRippleDisabled]="node.disabled || loading || node.editing"
+  [matRippleDisabled]="loadingStatus.loading || isPlayingOrPaused || disabled || editing"
 >
   <div
     [ngClass]="{
       'node-list-item-content-container': true,
       'node-list-item': true,
-      'file-explorer-node-selectable': !node.disabled && !loading && !node.editing
+      'file-explorer-node-selectable': !loadingStatus.loading && !editing && !isPlayingOrPaused && !disabled,
     }"
     #rippleTrigger
     (click)="onContentClicked()"
   >
     <div class="node-list-item-content-icon-container node-list-item">
       <app-node-list-item-icon
-        [state]="node.state"
-        [defaultIcon]="node.mdIcon"
-        [(selected)]="node.selected"
+        [loading]="loadingStatus.loading && loadingStatus.loadingIds.includes(id)"
+        [playingState]="playingState"
+        [disabled]="loadingStatus.loading || disabled"
+        [defaultIcon]="defaultIcon"
+        [editing]="editing"
+        [selectable]="selectable"
+        (selectedChange)="onSelectedChange($event)"
         class="node-list-item-content-icon"
       />
     </div>
 
     <div class="node-list-item-content-text node-list-item">
-      {{ node.name }}
+      {{ name }}
     </div>
   </div>
 
   <div class="node-list-item-action-list-container node-list-item"
-       *ngIf="node.type === FileExplorerNodeType.File">
+       *ngIf="nodeType === FileExplorerNodeType.File">
     <ng-content select="[extra-action-list-content]"></ng-content>
     <button mat-icon-button
             class="node-list-item-action-list-context-menu"
             *ngIf="!allContextMenuButtonsDisabled"
-            [disabled]="loading || editing || allContextMenuButtonsDisabled"
+            [disabled]="loadingStatus.loading || disabled || editing || allContextMenuButtonsDisabled"
             [matMenuTriggerFor]="contextMenu">
       <mat-icon>
         more_vert

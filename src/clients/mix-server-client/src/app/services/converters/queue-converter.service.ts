@@ -17,6 +17,6 @@ export class QueueConverterService {
   }
 
   public fromQueueItemDto(currentQueuePosition: string | null | undefined, dto: QueueSnapshotItemDto): QueueItem {
-    return new QueueItem(dto.id, dto.type, this._nodeConverter.fromFileResponse(dto.file),  dto.id === currentQueuePosition);
+    return new QueueItem(dto.id, dto.type, this._nodeConverter.fromFileExplorerFileNode(dto.file),  dto.id === currentQueuePosition);
   }
 }

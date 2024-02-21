@@ -6,23 +6,16 @@ using MixServer.Domain.Utilities;
 
 namespace MixServer.Infrastructure.Queueing.Models;
 
-public class UserQueue
+public class UserQueue(string userId, IReadWriteLock readWriteLock)
 {
-    private readonly IReadWriteLock _readWriteLock;
     private string? _currentFolderAbsolutePath;
 
-    public UserQueue(string userId, IReadWriteLock readWriteLock)
-    {
-        _readWriteLock = readWriteLock;
-        UserId = userId;
-    }
-
-    public string UserId { get; }
+    public string UserId { get; } = userId;
 
     public string? CurrentFolderAbsolutePath
     {
-        get => _readWriteLock.ForRead(() => _currentFolderAbsolutePath);
-        set => _readWriteLock.ForWrite(() => _currentFolderAbsolutePath = value);
+        get => readWriteLock.ForRead(() => _currentFolderAbsolutePath);
+        set => readWriteLock.ForWrite(() => _currentFolderAbsolutePath = value);
     }
 
     private Dictionary<string, FolderQueueSortItem> CurrentFolderSortItems { get; } = new();
@@ -34,7 +27,7 @@ public class UserQueue
         .OrderBy(o => o.Position)
         .ToList();
 
-    public IReadOnlyList<string> UserQueueItemsAbsoluteFilePaths => _readWriteLock.ForRead(() => UserQueueSortItems
+    public IReadOnlyList<string> UserQueueItemsAbsoluteFilePaths => readWriteLock.ForRead(() => UserQueueSortItems
         .Select(s => s.AbsoluteFilePath)
         .Distinct()
         .ToList());
@@ -56,7 +49,7 @@ public class UserQueue
             .Where(w => !string.IsNullOrWhiteSpace(w.AbsolutePath))
             .ToList();
 
-        _readWriteLock.ForWrite(() =>
+        readWriteLock.ForWrite(() =>
         {
             foreach (var (_, item) in CurrentFolderSortItems)
             {
@@ -73,7 +66,7 @@ public class UserQueue
 
     public void SetQueuePosition(Guid id)
     {
-        _readWriteLock.ForWrite(() =>
+        readWriteLock.ForWrite(() =>
         {
             var folderItem = CurrentFolderSortItems.Values.FirstOrDefault(f => f.Id == id);
             if (folderItem != null)
@@ -85,11 +78,11 @@ public class UserQueue
         });
     }
 
-    public void ClearUserQueue() => _readWriteLock.ForWrite(() => UserQueueSortItems.Clear());
+    public void ClearUserQueue() => readWriteLock.ForWrite(() => UserQueueSortItems.Clear());
     
     public void RegenerateFolderQueueSortItems(IEnumerable<IFileExplorerFileNode> files)
     {
-        _readWriteLock.ForWrite(() =>
+        readWriteLock.ForWrite(() =>
         {
             CurrentFolderSortItems.Clear();
 
@@ -107,14 +100,14 @@ public class UserQueue
     
     public void SetQueuePositionFromFolderItemOrThrow(string absoluteFilePath)
     {
-        _readWriteLock.ForUpgradeableRead(() =>
+        readWriteLock.ForUpgradeableRead(() =>
         {
             if (!CurrentFolderSortItems.TryGetValue(absoluteFilePath, out var queueItemId))
             {
                 throw new NotFoundException(nameof(CurrentFolderSortItems), absoluteFilePath);
             }
 
-            _readWriteLock.ForWrite(() =>
+            readWriteLock.ForWrite(() =>
             {
                 CurrentFolderQueueItemPositionId = queueItemId.Id;
                 CurrentQueuePositionId = queueItemId.Id;
@@ -124,28 +117,28 @@ public class UserQueue
 
     public void AddToQueue(IFileExplorerFileNode file)
     {
-        _readWriteLock.ForWrite(() =>
+        readWriteLock.ForWrite(() =>
             UserQueueSortItems.Add(new UserQueueSortItem(Guid.NewGuid(), file.AbsolutePath!, CurrentFolderQueueItemPositionId)));
     }
     
     public void RemoveUserQueueItems(List<Guid> ids)
     {
-        _readWriteLock.ForWrite(() => UserQueueSortItems.RemoveAll(r => ids.Contains(r.Id)));
+        readWriteLock.ForWrite(() => UserQueueSortItems.RemoveAll(r => ids.Contains(r.Id)));
     }
 
     public bool QueueItemExists(Guid queuePositionId)
     {
-        return _readWriteLock.ForRead(() => CurrentFolderSortItems.Values.Any(a => a.Id == queuePositionId) ||
+        return readWriteLock.ForRead(() => CurrentFolderSortItems.Values.Any(a => a.Id == queuePositionId) ||
                                             UserQueueSortItems.Any(a => a.Id == queuePositionId));
     }
 
     public bool AllIdsPresentInUserQueue(List<Guid> ids)
     {
-        return _readWriteLock.ForRead(() => ids.All(id => UserQueueSortItems.Any(a => a.Id == id)));
+        return readWriteLock.ForRead(() => ids.All(id => UserQueueSortItems.Any(a => a.Id == id)));
     }
 
     public QueueSnapshot GenerateQueueSnapshot(Dictionary<string, IFileExplorerFileNode> files) =>
-        _readWriteLock.ForRead(() =>
+        readWriteLock.ForRead(() =>
         {
             var finalQueue = GenerateQueueOrder()
                 .Select(i => GenerateSnapshotQueueItem(i, files))
@@ -154,7 +147,7 @@ public class UserQueue
             return new QueueSnapshot(CurrentQueuePositionId, finalQueue);
         });
 
-    public List<Guid> QueueOrder => _readWriteLock.ForRead(() => GenerateQueueOrder().Select(s => s.Id).ToList());
+    public List<Guid> QueueOrder => readWriteLock.ForRead(() => GenerateQueueOrder().Select(s => s.Id).ToList());
 
     private IEnumerable<QueueSortItem> GenerateQueueOrder()
     {

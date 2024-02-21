@@ -6,23 +6,17 @@ using MixServer.Domain.Sessions.Entities;
 
 namespace MixServer.Application.Sessions.Converters;
 
-public class PlaybackSessionDtoConverter : 
-    IConverter<IPlaybackSession, bool, PlaybackSessionDto>,
-    IConverter<IPlaybackSession, PlaybackSessionDto>
+public class PlaybackSessionDtoConverter(IConverter<IFileExplorerFileNode, FileExplorerFileNodeResponse> fileNodeConverter)
+    :
+        IConverter<IPlaybackSession, bool, PlaybackSessionDto>,
+        IConverter<IPlaybackSession, PlaybackSessionDto>
 {
-    private readonly IConverter<IFileExplorerFileNode, FileNodeResponse> _fileNodeConverter;
-
-    public PlaybackSessionDtoConverter(IConverter<IFileExplorerFileNode, FileNodeResponse> fileNodeConverter)
-    {
-        _fileNodeConverter = fileNodeConverter;
-    }
-    
     public PlaybackSessionDto Convert(IPlaybackSession value, bool value2)
     {
         return new PlaybackSessionDto
         {
             Id = value.Id,
-            File = _fileNodeConverter.Convert(value.File ?? throw new InvalidOperationException()),
+            File = fileNodeConverter.Convert(value.File ?? throw new InvalidOperationException()),
             LastPlayed = value.LastPlayed,
             AutoPlay = value2,
             Playing = value.Playing,

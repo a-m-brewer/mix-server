@@ -1,9 +1,8 @@
 ﻿namespace MixServer.SignalR;
 
-public struct SignalRConnectionId : IEquatable<SignalRConnectionId>
+public struct SignalRConnectionId(string connectionId) : IEquatable<SignalRConnectionId>
 {
-    private readonly string _id;
-    public SignalRConnectionId(string connectionId) : this() { _id = connectionId; }
+    private readonly string _id = connectionId;
 
     public static bool operator ==(SignalRConnectionId left, SignalRConnectionId right)
     {

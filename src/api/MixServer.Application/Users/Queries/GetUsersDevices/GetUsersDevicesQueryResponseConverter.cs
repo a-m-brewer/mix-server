@@ -4,22 +4,14 @@ using MixServer.Domain.Users.Entities;
 
 namespace MixServer.Application.Users.Queries.GetUsersDevices;
 
-public class GetUsersDevicesQueryResponseConverter
+public class GetUsersDevicesQueryResponseConverter(IConverter<IDevice, DeviceDto> deviceDtoConverter)
     : IConverter<List<IDevice>, GetUsersDevicesQueryResponse>
 {
-    private readonly IConverter<IDevice, DeviceDto> _deviceDtoConverter;
-
-    public GetUsersDevicesQueryResponseConverter(
-        IConverter<IDevice, DeviceDto> deviceDtoConverter)
-    {
-        _deviceDtoConverter = deviceDtoConverter;
-    }
-    
     public GetUsersDevicesQueryResponse Convert(List<IDevice> value)
     {
         return new GetUsersDevicesQueryResponse
         {
-            Devices = value.Select(_deviceDtoConverter.Convert).ToList()
+            Devices = value.Select(deviceDtoConverter.Convert).ToList()
         };
     }
 }

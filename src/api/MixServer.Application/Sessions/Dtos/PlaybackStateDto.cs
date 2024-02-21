@@ -3,19 +3,11 @@ using MixServer.Domain.Sessions.Models;
 
 namespace MixServer.Application.Sessions.Dtos;
 
-public class PlaybackStateDto
+public class PlaybackStateDto(IPlaybackState state, AudioPlayerStateUpdateType updateType)
 {
-    public PlaybackStateDto(IPlaybackState state, AudioPlayerStateUpdateType updateType)
-    {
-        UpdateType = updateType;
-        DeviceId = state.DeviceId;
-        Playing = state.Playing;
-        CurrentTime = state.CurrentTime.TotalSeconds;
-    }
+    public Guid? DeviceId { get; set; } = state.DeviceId;
+    public bool Playing { get; set; } = state.Playing;
+    public double CurrentTime { get; set; } = state.CurrentTime.TotalSeconds;
 
-    public Guid? DeviceId { get; set; }
-    public bool Playing { get; set; }
-    public double CurrentTime { get; set; }
-
-    public AudioPlayerStateUpdateType UpdateType { get; set; }
+    public AudioPlayerStateUpdateType UpdateType { get; set; } = updateType;
 }

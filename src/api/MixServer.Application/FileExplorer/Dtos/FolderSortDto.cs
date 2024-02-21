@@ -3,22 +3,14 @@ using MixServer.Domain.FileExplorer.Models;
 
 namespace MixServer.Application.FileExplorer.Dtos;
 
-public class FolderSortDto : IFolderSort
+public class FolderSortDto(bool descending, FolderSortMode sortMode) : IFolderSort
 {
-    public FolderSortDto(bool descending, FolderSortMode sortMode)
+    public FolderSortDto(IFolderSort folderSort) : this(folderSort.Descending, folderSort.SortMode)
     {
-        Descending = descending;
-        SortMode = sortMode;
-    }
-
-    public FolderSortDto(IFolderSort folderSort)
-    {
-        Descending = folderSort.Descending;
-        SortMode = folderSort.SortMode;
     }
     
-    public bool Descending { get; }
-    public FolderSortMode SortMode { get; }
+    public bool Descending { get; } = descending;
+    public FolderSortMode SortMode { get; } = sortMode;
 
     public static FolderSortDto Default => new FolderSortDto(FolderSortModel.Default);
 }

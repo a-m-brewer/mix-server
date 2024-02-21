@@ -1,6 +1,6 @@
 import {FileExplorerFileNode} from "../../../main-content/file-explorer/models/file-explorer-file-node";
 
-export class AudioPlayerState {
+export class AudioPlayerStateModel {
   constructor(public node?: FileExplorerFileNode | null,
               public queueItemId?: string | null | undefined,
               public playing: boolean = false) {
@@ -10,7 +10,7 @@ export class AudioPlayerState {
     return !this.playing && !this.queueItemId;
   }
 
-  public static copy(value: AudioPlayerState): AudioPlayerState {
-    return new AudioPlayerState(value.node, value.queueItemId, value.playing);
+  public static copy(value: AudioPlayerStateModel): AudioPlayerStateModel {
+    return new AudioPlayerStateModel(value.node, value.queueItemId, value.playing);
   }
 }

@@ -11,30 +11,23 @@ public interface IQueueRepository
     void Remove(string userId);
 }
 
-public class QueueRepository : IQueueRepository
+public class QueueRepository(IReadWriteLock readWriteLock, IServiceProvider serviceProvider)
+    : IQueueRepository
 {
-    private readonly IReadWriteLock _readWriteLock;
-    private readonly IServiceProvider _serviceProvider;
     private readonly Dictionary<string, UserQueue> _queues = new();
-    
-    public QueueRepository(IReadWriteLock readWriteLock, IServiceProvider serviceProvider)
-    {
-        _readWriteLock = readWriteLock;
-        _serviceProvider = serviceProvider;
-    }
-    
+
     public UserQueue GetOrAddQueue(string userId)
     {
-        return _readWriteLock.ForUpgradeableRead(() =>
+        return readWriteLock.ForUpgradeableRead(() =>
         {
             if (_queues.TryGetValue(userId, out var queue))
             {
                 return queue;
             }
 
-            return _readWriteLock.ForWrite(() =>
+            return readWriteLock.ForWrite(() =>
             {
-                var newQueue = new UserQueue(userId, _serviceProvider.GetRequiredService<IReadWriteLock>());
+                var newQueue = new UserQueue(userId, serviceProvider.GetRequiredService<IReadWriteLock>());
                 _queues[userId] = newQueue;
 
                 return newQueue;
@@ -44,11 +37,11 @@ public class QueueRepository : IQueueRepository
 
     public bool HasQueue(string userId)
     {
-        return _readWriteLock.ForRead(() => _queues.ContainsKey(userId));
+        return readWriteLock.ForRead(() => _queues.ContainsKey(userId));
     }
 
     public void Remove(string userId)
     {
-        _readWriteLock.ForWrite(() => _queues.Remove(userId));
+        readWriteLock.ForWrite(() => _queues.Remove(userId));
     }
 }

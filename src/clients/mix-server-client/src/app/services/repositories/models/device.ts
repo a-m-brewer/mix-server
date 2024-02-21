@@ -1,5 +1,4 @@
-import {ClientType, DeviceType, IDeviceDto} from "../../../generated-clients/mix-server-clients";
-import {FileExplorerNodeState} from "../../../main-content/file-explorer/enums/file-explorer-node-state.enum";
+import {ClientType, DeviceType} from "../../../generated-clients/mix-server-clients";
 
 export class Device {
   constructor(public id: string,

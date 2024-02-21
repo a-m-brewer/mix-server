@@ -1,14 +1,8 @@
 ﻿namespace MixServer.Infrastructure.Queueing.Models;
 
-public abstract class QueueSortItem
+public abstract class QueueSortItem(Guid id, string absoluteFilePath)
 {
-    protected QueueSortItem(Guid id, string absoluteFilePath)
-    {
-        Id = id;
-        AbsoluteFilePath = absoluteFilePath;
-    }
+    public Guid Id { get; } = id;
 
-    public Guid Id { get; }
-
-    public string AbsoluteFilePath { get; }
+    public string AbsoluteFilePath { get; } = absoluteFilePath;
 }

@@ -6,18 +6,13 @@ using MixServer.Domain.Queueing.Entities;
 
 namespace MixServer.Application.Queueing.Converters;
 
-public class QueueSnapshotDtoConverter : 
-    IConverter<QueueSnapshot, QueueSnapshotDto>,
-    IConverter<QueueSnapshotItem, QueueSnapshotItemDto>
+public class QueueSnapshotDtoConverter(
+    IConverter<IFileExplorerFileNode, FileExplorerFileNodeResponse> fileNodeResponseConverter)
+    :
+        IConverter<QueueSnapshot, QueueSnapshotDto>,
+        IConverter<QueueSnapshotItem, QueueSnapshotItemDto>
 
 {
-    private readonly IConverter<IFileExplorerFileNode, FileNodeResponse> _fileNodeResponseConverter;
-
-    public QueueSnapshotDtoConverter(IConverter<IFileExplorerFileNode, FileNodeResponse> fileNodeResponseConverter)
-    {
-        _fileNodeResponseConverter = fileNodeResponseConverter;
-    }
-    
     public QueueSnapshotDto Convert(QueueSnapshot value)
     {
         return new QueueSnapshotDto
@@ -33,7 +28,7 @@ public class QueueSnapshotDtoConverter :
         {
             Id = value.Id,
             Type = value.Type,
-            File = _fileNodeResponseConverter.Convert(value.File)
+            File = fileNodeResponseConverter.Convert(value.File)
         };
     }
 }

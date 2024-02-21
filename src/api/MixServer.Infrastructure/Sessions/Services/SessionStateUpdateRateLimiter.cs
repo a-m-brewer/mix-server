@@ -6,11 +6,8 @@ public interface ISaveSessionStateRateLimiter : IRateLimiter<Guid>
 {
 }
 
-public class SaveSessionStateRateLimiter : RateLimiterBase<Guid>, ISaveSessionStateRateLimiter
+public class SaveSessionStateRateLimiter(IReadWriteLock readWriteLock)
+    : RateLimiterBase<Guid>(readWriteLock), ISaveSessionStateRateLimiter
 {
-    public SaveSessionStateRateLimiter(IReadWriteLock readWriteLock) : base(readWriteLock)
-    {
-    }
-
     protected override TimeSpan Window => TimeSpan.FromSeconds(2);
 }

@@ -6,29 +6,19 @@ using MixServer.Domain.Users.Services;
 
 namespace MixServer.Application.Users.Commands.RefreshUser;
 
-public class RefreshUserCommandHandler : ICommandHandler<RefreshUserCommand, RefreshUserResponse>
+public class RefreshUserCommandHandler(
+    IUserAuthenticationService authenticationService,
+    IHttpContextAccessor httpContextAccessor,
+    IValidator<RefreshUserCommand> validator)
+    : ICommandHandler<RefreshUserCommand, RefreshUserResponse>
 {
-    private readonly IUserAuthenticationService _authenticationService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly IValidator<RefreshUserCommand> _validator;
-
-    public RefreshUserCommandHandler(
-        IUserAuthenticationService authenticationService,
-        IHttpContextAccessor httpContextAccessor,
-        IValidator<RefreshUserCommand> validator)
-    {
-        _authenticationService = authenticationService;
-        _httpContextAccessor = httpContextAccessor;
-        _validator = validator;
-    }
-    
     public async Task<RefreshUserResponse> HandleAsync(RefreshUserCommand request)
     {
-        await _validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request);
 
-        request.Audience = _httpContextAccessor.GetRequestAuthority();
+        request.Audience = httpContextAccessor.GetRequestAuthority();
         
-        var response = await _authenticationService.RefreshAsync(request);
+        var response = await authenticationService.RefreshAsync(request);
 
         return new RefreshUserResponse(response);
     }

@@ -15,21 +15,56 @@
 
       <mat-toolbar-row id="file-explorer-toolbar" *ngIf="showFileExplorerToolbar">
         <button mat-button
+                class="file-explorer-toolbar-button file-explorer-toolbar-hidden-on-mobile"
+                [disabled]="folderBackButtonDisabled"
+                (click)="onFolderBackButtonClicked()"
+        >
+          <mat-icon>arrow_back_ios</mat-icon>
+        </button>
+        <button mat-button
+                class="file-explorer-toolbar-button file-explorer-toolbar-hidden-on-mobile"
+                [disabled]="loadingStatus.loading || !currentFolder"
+                (click)="onFolderRefreshButtonClicked()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+
+        <span *ngIf="currentFolder" class="file-explorer-current-folder-name">
+          @if (currentFolder) {
+            {{ currentFolder.node.name  }}
+          }
+        </span>
+
+        <span class="nav-bar-spacer file-explorer-toolbar-hidden-on-mobile"></span>
+
+        <app-folder-sort-form
+          class="app-folder-sort-form file-explorer-toolbar-hidden-on-mobile">
+        </app-folder-sort-form>
+      </mat-toolbar-row>
+
+      <mat-toolbar-row
+        *ngIf="showFileExplorerToolbar"
+        id="file-explorer-toolbar-mobile"
+        class="file-explorer-toolbar-hidden-on-desktop">
+
+        <button mat-button
                 class="file-explorer-toolbar-button"
                 [disabled]="folderBackButtonDisabled"
                 (click)="onFolderBackButtonClicked()"
         >
           <mat-icon>arrow_back_ios</mat-icon>
         </button>
-        <span>
-          {{ currentFolder?.name ?? '' }}
-        </span>
-
-        <span class="nav-bar-spacer"></span>
 
         <app-folder-sort-form
           class="app-folder-sort-form">
         </app-folder-sort-form>
+
+        <button mat-button
+                class="file-explorer-toolbar-button"
+                [disabled]="loadingStatus.loading || !currentFolder"
+                (click)="onFolderRefreshButtonClicked()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+
       </mat-toolbar-row>
 
       <mat-toolbar-row id="queue-toolbar" *ngIf="showQueueToolbar">

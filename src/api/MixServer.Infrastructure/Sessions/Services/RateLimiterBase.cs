@@ -12,23 +12,18 @@ public interface IRateLimiter<in TKey> : IRateLimiter where TKey : notnull
     bool TryAcquire(TKey id);
 }
 
-public abstract class RateLimiterBase<TKey> : IRateLimiter<TKey> where TKey : notnull
+public abstract class RateLimiterBase<TKey>(IReadWriteLock readWriteLock) : IRateLimiter<TKey>
+    where TKey : notnull
 {
-    private readonly IReadWriteLock _readWriteLock;
     private readonly Dictionary<TKey, RateLimiter> _rateLimiters = new();
 
-    protected RateLimiterBase(IReadWriteLock readWriteLock)
-    {
-        _readWriteLock = readWriteLock;
-    }
-    
     public bool TryAcquire(TKey sessionId)
     {
-        return _readWriteLock.ForUpgradeableRead(() =>
+        return readWriteLock.ForUpgradeableRead(() =>
         {
             if (!_rateLimiters.TryGetValue(sessionId, out var limiter))
             {
-                _readWriteLock.ForWrite(() =>
+                readWriteLock.ForWrite(() =>
                 {
                     limiter = CreateRateLimiter();
                     _rateLimiters.Add(sessionId, limiter);

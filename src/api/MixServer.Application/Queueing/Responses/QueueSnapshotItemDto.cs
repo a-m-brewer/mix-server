@@ -8,5 +8,5 @@ public class QueueSnapshotItemDto
     public Guid Id { get; set; }
 
     public QueueSnapshotItemType Type { get; set; }
-    public FileNodeResponse File { get; set; } = null!;
+    public FileExplorerFileNodeResponse File { get; set; } = new();
 }

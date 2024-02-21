@@ -1,12 +1,20 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {QueueRepositoryService} from "../services/repositories/queue-repository.service";
-import {Subject, Subscription, takeUntil} from "rxjs";
+import {Subject, takeUntil} from "rxjs";
 import {Queue} from "../services/repositories/models/queue";
-import {NodeListItem} from "../components/nodes/node-list/node-list-item/models/node-list-item";
-import {QueueItem} from "../services/repositories/models/queue-item";
 import {QueueSnapshotItemType} from "../generated-clients/mix-server-clients";
 import {EditQueueFormModel} from "../services/repositories/models/edit-queue-form-model";
-import {FileExplorerNodeState} from "../main-content/file-explorer/enums/file-explorer-node-state.enum";
+import {QueueEditFormRepositoryService} from "../services/repositories/queue-edit-form-repository.service";
+import {
+  NodeListItemChangedEvent
+} from "../components/nodes/node-list/node-list-item/interfaces/node-list-item-changed-event";
+import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
+import {LoadingNodeStatus} from "../services/repositories/models/loading-node-status";
+import {AudioPlayerStateModel} from "../services/audio-player/models/audio-player-state-model";
+import {AudioPlayerStateService} from "../services/audio-player/audio-player-state.service";
+import {
+  NodeListItemSelectedEvent
+} from "../components/nodes/node-list/node-list-item/interfaces/node-list-item-selected-event";
 
 @Component({
   selector: 'app-queue-page',
@@ -14,42 +22,44 @@ import {FileExplorerNodeState} from "../main-content/file-explorer/enums/file-ex
   styleUrls: ['./queue-page.component.scss']
 })
 export class QueuePageComponent implements OnInit, OnDestroy {
-  private _subscriptions: Array<Subscription> = [];
   private _unsubscribe$ = new Subject();
 
   protected readonly UserItemType = QueueSnapshotItemType.User;
 
+  public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
   public queue: Queue = new Queue(null, []);
   public editQueueForm: EditQueueFormModel = new EditQueueFormModel();
+  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
 
-  constructor(private _queueRepository: QueueRepositoryService) {
+  constructor(private _audioPlayerStateService: AudioPlayerStateService,
+              private _loadingRepository: LoadingRepositoryService,
+              private _queueRepository: QueueRepositoryService,
+              private _queueEditFormRepository: QueueEditFormRepositoryService) {
   }
 
   public ngOnInit(): void {
+    this._audioPlayerStateService.state$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(state => {
+        this.audioPlayerState = state;
+      });
+
     this._queueRepository.queue$()
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(queue => {
-        this.queue.unsubscribeQueueSubscriptions();
         this.queue = queue;
-        this.queue.itemSelected$
-          .subscribe(i =>
-            this._queueRepository.updateEditForm(f => f.selectedItems[i.id] = i.selected))
       });
 
-    this._queueRepository.editForm$
+    this._queueEditFormRepository.editForm$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(form => {
         this.editQueueForm = form
+      });
 
-        this.queue.items.forEach(item => {
-          if (item.file.isCurrentSession || item.itemType !== QueueSnapshotItemType.User) {
-            return;
-          }
-
-          item.selected = item.id in form.selectedItems && form.selectedItems[item.id];
-
-          item.state = form.editing ? FileExplorerNodeState.Editing : FileExplorerNodeState.None;
-        })
+    this._loadingRepository.status$()
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(status => {
+        this.loadingStatus = status;
       });
   }
 
@@ -58,9 +68,15 @@ export class QueuePageComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onNodeClick(node: NodeListItem): void {
-    if (node instanceof QueueItem) {
-      this._queueRepository.setQueuePosition(node.id);
-    }
+  public onNodeClick(event: NodeListItemChangedEvent): void {
+    this._queueRepository.setQueuePosition(event.id);
   }
+
+  public onNodeSelectedChanged(e: NodeListItemSelectedEvent) {
+    this._queueEditFormRepository.updateEditForm(form => {
+      form.selectedItems[e.id] = e.selected;
+    })
+  }
+
+  protected readonly QueueSnapshotItemType = QueueSnapshotItemType;
 }

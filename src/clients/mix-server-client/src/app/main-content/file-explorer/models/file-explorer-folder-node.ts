@@ -1,37 +1,57 @@
-import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
 import {FileExplorerNode} from "./file-explorer-node";
-import {FolderSort} from "./folder-sort";
-import {FileExplorerFileNode} from "./file-explorer-file-node";
+import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
 
-export class FileExplorerFolderNode extends FileExplorerNode {
-  constructor(name: string,
-              nameIdentifier: string,
-              exists: boolean,
-              absolutePath: string | null | undefined,
-              public sort: FolderSort,
-              public parentDirectory: FileExplorerFolderNode | null | undefined) {
-    super(name, nameIdentifier, absolutePath, FileExplorerNodeType.Folder, exists, 'folder', undefined);
+export class FileExplorerFolderNode implements FileExplorerNode {
+  constructor(public name: string,
+              public absolutePath: string,
+              public type: FileExplorerNodeType,
+              public exists: boolean,
+              public creationTimeUtc: Date,
+              public belongsToRoot: boolean,
+              public belongsToRootChild: boolean,
+              public parent: FileExplorerFolderNode | undefined | null) {
+    this.disabled = !exists;
   }
 
-  public get disabled(): boolean {
-    return !!this.absolutePath && !this.exists;
-  }
+  public disabled: boolean = false;
 
-  public isEqual(other: FileExplorerNode): boolean {
-    if (!(other instanceof FileExplorerFolderNode)) {
-      return false
-    }
+  public mdIcon: string = 'folder';
 
-    const otherAsType = other as FileExplorerFolderNode;
-
-    if (!this.absolutePath || !otherAsType.absolutePath) {
+  public isEqual(node: FileExplorerNode | null | undefined): boolean {
+    if (!node) {
       return false;
     }
 
-    return this.absolutePath === otherAsType.absolutePath;
+    if (!(node instanceof FileExplorerFolderNode)) {
+      return false;
+    }
+
+    return this.absolutePath === node.absolutePath;
   }
 
   public static get Default(): FileExplorerFolderNode {
-    return new FileExplorerFolderNode('', '', false, null, FolderSort.Default, null);
+    return new FileExplorerFolderNode(
+      '',
+      '',
+      FileExplorerNodeType.Folder,
+      false,
+      new Date(),
+      false,
+      false,
+      null
+    );
+  }
+
+  public copy(): FileExplorerFolderNode {
+    return new FileExplorerFolderNode(
+      this.name,
+      this.absolutePath,
+      this.type,
+      this.exists,
+      this.creationTimeUtc,
+      this.belongsToRoot,
+      this.belongsToRootChild,
+      this.parent ? this.parent.copy() : null
+    );
   }
 }

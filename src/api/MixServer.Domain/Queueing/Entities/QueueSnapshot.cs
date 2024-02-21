@@ -1,20 +1,14 @@
 namespace MixServer.Domain.Queueing.Entities;
 
-public class QueueSnapshot : IEquatable<QueueSnapshot>
+public class QueueSnapshot(Guid? currentQueuePosition, List<QueueSnapshotItem> items) : IEquatable<QueueSnapshot>
 {
-    public QueueSnapshot(Guid? currentQueuePosition, List<QueueSnapshotItem> items)
-    {
-        CurrentQueuePosition = currentQueuePosition;
-        Items = items;
-    }
-
-    public Guid? CurrentQueuePosition { get; }
+    public Guid? CurrentQueuePosition { get; } = currentQueuePosition;
 
     public QueueSnapshotItem? CurrentQueuePositionItem => CurrentQueuePosition.HasValue
         ? Items.FirstOrDefault(f => f.Id == CurrentQueuePosition)
         : null;
 
-    public List<QueueSnapshotItem> Items { get; }
+    public List<QueueSnapshotItem> Items { get; } = items;
 
     public static QueueSnapshot Empty => new(null, []);
 

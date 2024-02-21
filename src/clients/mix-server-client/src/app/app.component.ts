@@ -8,7 +8,6 @@ import {AuthenticationService} from "./services/auth/authentication.service";
 import {InitializationRepositoryService} from "./services/repositories/initialization-repository.service";
 import {ScrollContainerRepositoryService} from "./services/repositories/scroll-container-repository.service";
 import {FileExplorerNodeRepositoryService} from "./services/repositories/file-explorer-node-repository.service";
-import {FileExplorerFolderNode} from "./main-content/file-explorer/models/file-explorer-folder-node";
 import {
   CurrentPlaybackSessionRepositoryService
 } from "./services/repositories/current-playback-session-repository.service";
@@ -19,6 +18,9 @@ import {ServerConnectionState} from "./services/auth/enums/ServerConnectionState
 import {VisibilityRepositoryService} from "./services/repositories/visibility-repository.service";
 import {TitleService} from "./services/title/title.service";
 import {ToastService} from "./services/toasts/toast-service";
+import {FileExplorerFolder} from "./main-content/file-explorer/models/file-explorer-folder";
+import {LoadingNodeStatus} from "./services/repositories/models/loading-node-status";
+import {LoadingRepositoryService} from "./services/repositories/loading-repository.service";
 
 @Component({
   selector: 'app-root',
@@ -37,11 +39,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   public disconnected: boolean = true;
   public disconnectedReason: string | null = 'Loading';
 
-  public currentFolder?: FileExplorerFolderNode | null;
+  public currentFolder: FileExplorerFolder | null = null;
   public showFileExplorerToolbar: boolean = false;
   public showQueueToolbar: boolean = false;
-  public nodeRepositoryLoading: boolean = false;
-  public playbackSessionLoading: boolean = false;
+  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
 
   @ViewChild('navBar')
   public navBar?: ElementRef;
@@ -58,7 +59,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(private _authenticationService: AuthenticationService,
               private _deviceRepository: DeviceRepositoryService,
               private _initializationRepository: InitializationRepositoryService,
-              private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
+              private _loadingRepository: LoadingRepositoryService,
               private _nodeRepository: FileExplorerNodeRepositoryService,
               private _router: Router,
               private _scrollContainerRepository: ScrollContainerRepositoryService,
@@ -127,16 +128,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         this.currentFolder = currentFolder;
       });
 
-    this._nodeRepository.loading$
+    this._loadingRepository.status$()
       .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(loading => {
-        this.nodeRepositoryLoading = loading;
-      });
-
-    this._playbackSessionRepository.loading$
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(loading => {
-        this.playbackSessionLoading = loading;
+      .subscribe(status => {
+        this.loadingStatus = status;
       });
 
     this._router.events
@@ -177,10 +172,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public get folderBackButtonDisabled(): boolean {
-    return this.nodeRepositoryLoading ||
-      this.playbackSessionLoading ||
-      (this.currentFolder?.parentDirectory?.disabled ?? true) ||
-      this.currentFolder?.absolutePath === '';
+    return this.loadingStatus.loading ||
+      (this.currentFolder?.node.parent?.disabled ?? true) ||
+      this.currentFolder?.node.absolutePath === '';
   }
 
   public logout(): void {
@@ -192,12 +186,20 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public onFolderBackButtonClicked(): void {
-    const parent = this.currentFolder?.parentDirectory;
+    const parent = this.currentFolder?.node.parent;
     if (!parent) {
       return;
     }
 
     this._nodeRepository.changeDirectory(parent);
+  }
+
+  public onFolderRefreshButtonClicked(): void {
+    if (!this.currentFolder) {
+      return;
+    }
+
+    this._nodeRepository.refreshFolder();
   }
 
   private calculateMainContentHeight(): void {

@@ -5,26 +5,18 @@ using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Application.Sessions.Commands.SetPlaying;
 
-public class SetPlayingCommandHandler : ICommandHandler<SetPlayingCommand>
+public class SetPlayingCommandHandler(
+    ICurrentUserRepository currentUserRepository,
+    ICurrentDeviceRepository currentDeviceRepository,
+    IPlaybackTrackingService playbackTrackingService)
+    : ICommandHandler<SetPlayingCommand>
 {
-    private readonly ICurrentUserRepository _currentUserRepository;
-    private readonly ICurrentDeviceRepository _currentDeviceRepository;
-    private readonly IPlaybackTrackingService _playbackTrackingService;
+    private readonly ICurrentDeviceRepository _currentDeviceRepository = currentDeviceRepository;
 
-    public SetPlayingCommandHandler(
-        ICurrentUserRepository currentUserRepository,
-        ICurrentDeviceRepository currentDeviceRepository,
-        IPlaybackTrackingService playbackTrackingService)
-    {
-        _currentUserRepository = currentUserRepository;
-        _currentDeviceRepository = currentDeviceRepository;
-        _playbackTrackingService = playbackTrackingService;
-    }
-    
     public Task HandleAsync(SetPlayingCommand request)
     {
-        _playbackTrackingService.SetPlaying(
-            _currentUserRepository.CurrentUserId, 
+        playbackTrackingService.SetPlaying(
+            currentUserRepository.CurrentUserId, 
             request.Playing,
             TimeSpan.FromSeconds(request.CurrentTime));
         

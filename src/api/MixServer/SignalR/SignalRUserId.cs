@@ -1,9 +1,8 @@
 ﻿namespace MixServer.SignalR;
 
-public struct SignalRUserId : IEquatable<SignalRUserId>
+public struct SignalRUserId(string userId) : IEquatable<SignalRUserId>
 {
-    public SignalRUserId(string userId) : this() { Id = userId; }
-    public string Id { get; }
+    public string Id { get; } = userId;
 
     public static implicit operator string(SignalRUserId c) => c.Id;
 

@@ -35,7 +35,7 @@ export class TitleService {
 
     this._nodeRepository.currentFolder$
       .subscribe(folder => {
-        this._currentFolderName = folder.name;
+        this._currentFolderName = folder.node.name;
         this.setTitle();
       });
 

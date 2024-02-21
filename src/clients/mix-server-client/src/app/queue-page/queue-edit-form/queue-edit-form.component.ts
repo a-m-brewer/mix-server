@@ -3,6 +3,7 @@ import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {Subject, takeUntil} from "rxjs";
 import {QueueRepositoryService} from "../../services/repositories/queue-repository.service";
 import {EditQueueFormModel} from "../../services/repositories/models/edit-queue-form-model";
+import {QueueEditFormRepositoryService} from "../../services/repositories/queue-edit-form-repository.service";
 
 interface IQueueEditForm {
   editMode: FormControl<boolean>;
@@ -24,7 +25,8 @@ export class QueueEditFormComponent implements OnInit, OnDestroy {
   public hasSelectedItems = false;
 
   constructor(_formBuilder: FormBuilder,
-              private _queueRepository: QueueRepositoryService) {
+              private _queueRepository: QueueRepositoryService,
+              private _queueEditFormRepository: QueueEditFormRepositoryService) {
     this.form = _formBuilder.nonNullable.group<IQueueEditForm>({
       editMode: _formBuilder.nonNullable.control<boolean>(false)
     });
@@ -34,7 +36,7 @@ export class QueueEditFormComponent implements OnInit, OnDestroy {
     this.form?.valueChanges
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(form => {
-        this._queueRepository.updateEditForm(f => {
+        this._queueEditFormRepository.updateEditForm(f => {
           f.editing = form.editMode ?? false;
           if (!f.editing) {
             f.selectedItems = {};
@@ -42,7 +44,7 @@ export class QueueEditFormComponent implements OnInit, OnDestroy {
         });
       });
 
-    this._queueRepository.editForm$
+    this._queueEditFormRepository.editForm$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(model => {
         this.model = model;
@@ -76,5 +78,7 @@ export class QueueEditFormComponent implements OnInit, OnDestroy {
     }
 
     this._queueRepository.removeRangeFromQueue(selectedItems);
+
+    this.onEditModeChanged();
   }
 }

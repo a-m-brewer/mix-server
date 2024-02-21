@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {QueueClient} from "../../generated-clients/mix-server-clients";
-import {BehaviorSubject, map, Observable} from "rxjs";
+import {BehaviorSubject, firstValueFrom, map, Observable} from "rxjs";
 import {Queue} from "./models/queue";
 import {QueueConverterService} from "../converters/queue-converter.service";
 import {
@@ -10,58 +10,45 @@ import {
   SetQueuePositionCommand
 } from "../../generated-clients/mix-server-clients";
 import {ToastService} from "../toasts/toast-service";
-import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {QueueSignalrClientService} from "../signalr/queue-signalr-client.service";
 import {AuthenticationService} from "../auth/authentication.service";
-import {AudioPlayerStateService} from "../audio-player/audio-player-state.service";
 import {QueueItem} from "./models/queue-item";
-import {EditQueueFormModel} from "./models/edit-queue-form-model";
+import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
+import {QueueEditFormRepositoryService} from "./queue-edit-form-repository.service";
+import {LoadingRepositoryService} from "./loading-repository.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class QueueRepositoryService {
   private _queueBehaviourSubject$ = new BehaviorSubject<Queue>(new Queue(null, []));
-  private _editQueueFormBehaviourSubject$ = new BehaviorSubject<EditQueueFormModel>(new EditQueueFormModel());
 
 
-  constructor(private _audioPlayerState: AudioPlayerStateService,
+  constructor(private _loadingRepository: LoadingRepositoryService,
               private _queueConverter: QueueConverterService,
               private _queueSignalRClient: QueueSignalrClientService,
               private _queueClient: QueueClient,
               private _toastService: ToastService,
-              private _authenticationService: AuthenticationService) {
+              private _authenticationService: AuthenticationService,
+              private _queueEditFormRepository: QueueEditFormRepositoryService) {
     this._authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
-          this._queueClient.queue()
-            .subscribe({
-              next: dto => {
-                const queue = this._queueConverter.fromDto(dto);
+          this._loadingRepository.startLoading();
+          firstValueFrom(this._queueClient.queue())
+            .then(dto => {
+              const queue = this._queueConverter.fromDto(dto);
 
-                queue.items.forEach(item => {
-                  item.updateState(this._audioPlayerState.state, this.editForm.editing);
-                })
-
-                this.nextQueue(queue);
-              },
-              error: err => {
-                if ((err as ProblemDetails)?.status !== 404) {
-                  this._toastService.logServerError(err, 'Failed to fetch current session');
-                }
+              this.nextQueue(queue);
+            })
+            .catch(err => {
+              if ((err as ProblemDetails)?.status !== 404) {
+                this._toastService.logServerError(err, 'Failed to fetch current session');
               }
-            });
+            })
+            .finally(() => this._loadingRepository.stopLoading());
         }
       });
-
-    this._audioPlayerState.state$
-      .subscribe(state => {
-        const nextQueue = this._queueBehaviourSubject$.getValue();
-        nextQueue.items.forEach(item => {
-          item.updateState(state, this.editForm.editing);
-        });
-        this.nextQueue(nextQueue);
-      })
 
     this.initializeSignalR();
   }
@@ -108,29 +95,14 @@ export class QueueRepositoryService {
       }));
   }
 
-  public get editForm$(): Observable<EditQueueFormModel> {
-    return this._editQueueFormBehaviourSubject$.asObservable();
-  }
-
-  public get editForm(): EditQueueFormModel {
-    return this._editQueueFormBehaviourSubject$.getValue();
-  }
-
-  public updateEditForm(update: (form: EditQueueFormModel) => void): void {
-    const form = EditQueueFormModel.copy(this.editForm);
-
-    update(form);
-
-    this._editQueueFormBehaviourSubject$.next(form);
-  }
-
   public addToQueue(file: FileExplorerFileNode): void {
-    this._queueClient.addToQueue(new AddToQueueCommand({
-      absoluteFolderPath: file.parentFolder.absolutePath ?? '',
+    this._loadingRepository.startLoadingId(file.absolutePath);
+    firstValueFrom(this._queueClient.addToQueue(new AddToQueueCommand({
+      absoluteFolderPath: file.parent.absolutePath ?? '',
       fileName: file.name
-    })).subscribe({
-      error: err => this._toastService.logServerError(err, 'Failed to add item to queue')
-    });
+    })))
+      .catch(err => this._toastService.logServerError(err, 'Failed to add item to queue'))
+      .finally(() => this._loadingRepository.stopLoadingId(file.absolutePath));
   }
 
   public removeFromQueue(item: QueueItem | null | undefined): void {
@@ -138,53 +110,44 @@ export class QueueRepositoryService {
       return;
     }
 
-    this._queueClient.removeFromQueue(item.id)
-      .subscribe({
-        error: err => this._toastService.logServerError(err, 'Failed to remove item from queue')
-      });
+    this._loadingRepository.startLoadingId(item.id);
+    firstValueFrom(this._queueClient.removeFromQueue(item.id))
+      .catch(err => this._toastService.logServerError(err, 'Failed to remove item from queue'))
+      .finally(() => this._loadingRepository.stopLoadingId(item.id));
   }
 
-  public removeRangeFromQueue(queueItems: Array<string>) {
+  public removeRangeFromQueue(queueItems: Array<string>): void {
     if (queueItems.length === 0) {
       return;
     }
 
-    this._queueClient.removeFromQueue2(new RemoveFromQueueCommand({queueItems}))
-      .subscribe({
-        next: () => this.updateEditForm(f => f.selectedItems = {}),
-        error: err => this._toastService.logServerError(err, 'Failed to remove items from queue')
-      });
+    this._loadingRepository.startLoadingIds(queueItems);
+
+    firstValueFrom(this._queueClient.removeFromQueue2(new RemoveFromQueueCommand({queueItems})))
+      .then(() => this._queueEditFormRepository.updateEditForm(f => f.selectedItems = {}))
+      .catch(err => this._toastService.logServerError(err, 'Failed to remove items from queue'))
+      .then(() => this._loadingRepository.stopLoadingIds(queueItems));
   }
 
   public setQueuePosition(queueItemId: string): void {
-    this._queueClient.setQueuePosition(new SetQueuePositionCommand({
+    this._loadingRepository.startLoadingId(queueItemId);
+    firstValueFrom(this._queueClient.setQueuePosition(new SetQueuePositionCommand({
       queueItemId
-    })).subscribe({
-      error: err => this._toastService.logServerError(err, 'Failed to set queue position')
-    });
+    })))
+      .catch(err => this._toastService.logServerError(err, 'Failed to set queue position'))
+      .finally(() => this._loadingRepository.stopLoadingId(queueItemId));
   }
 
   private initializeSignalR(): void {
     this._queueSignalRClient.queue$()
       .subscribe({
         next: updatedQueue => {
-          const previousQueue = this.queue;
-
-          updatedQueue.items.forEach(item => {
-            item.updateState(this._audioPlayerState.state, this.editForm.editing);
-            const previousItem = previousQueue.items.find(f => f.id === item.id);
-            if (previousItem) {
-              item.restoreState(previousItem);
-            }
-          })
-
           this.nextQueue(updatedQueue);
         }
       })
   }
 
   private nextQueue(queue: Queue): void {
-    this._queueBehaviourSubject$.getValue().unsubscribeQueueSubscriptions();
     this._queueBehaviourSubject$.next(queue);
   }
 }

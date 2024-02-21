@@ -3,12 +3,8 @@ using MixServer.Domain.Sessions.Models;
 
 namespace MixServer.Application.Sessions.Dtos;
 
-public class PlaybackGrantedDto : PlaybackStateDto
+public class PlaybackGrantedDto(IPlaybackState state, AudioPlayerStateUpdateType updateType, bool useDeviceCurrentTime)
+    : PlaybackStateDto(state, updateType)
 {
-    public PlaybackGrantedDto(IPlaybackState state, AudioPlayerStateUpdateType updateType, bool useDeviceCurrentTime) : base(state, updateType)
-    {
-        UseDeviceCurrentTime = useDeviceCurrentTime;
-    }
-    
-    public bool UseDeviceCurrentTime { get; set; }
+    public bool UseDeviceCurrentTime { get; set; } = useDeviceCurrentTime;
 }

@@ -10,15 +10,19 @@ namespace MixServer.SignalR;
 public interface ISignalRCallbackClient
 {
     Task CurrentSessionUpdated(CurrentSessionUpdatedEventDto dto);
-    Task CurrentQueueUpdated(QueueSnapshotDto snapshotDto);
+    Task CurrentQueueUpdated(QueueSnapshotDto dto);
     Task DeviceUpdated(DeviceDto dto);
     Task DeviceStateUpdated(DeviceStateDto dto);
-    Task FolderSorted(FolderNodeResponse dto);
+    Task FolderRefreshed(FileExplorerFolderResponse dto);
+    Task FolderSorted(FileExplorerFolderResponse dto);
     Task DeviceDeleted(DeviceDeletedDto dto);
     Task PlaybackStateUpdated(PlaybackStateDto dto);
     Task PlaybackGranted(PlaybackGrantedDto dto);
     Task PauseRequested();
     Task UserAdded(UserDto dto);
-    Task UserUpdated(UserDto convert);
+    Task UserUpdated(UserDto dto);
     Task UserDeleted(UserDeletedDto dto);
+    Task FileExplorerNodeAdded(FileExplorerNodeResponse dto);
+    Task FileExplorerNodeUpdated(FileExplorerNodeUpdatedDto dto);
+    Task FileExplorerNodeDeleted(FileExplorerNodeDeletedDto dto);
 }

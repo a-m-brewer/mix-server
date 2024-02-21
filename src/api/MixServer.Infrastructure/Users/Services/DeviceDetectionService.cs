@@ -6,16 +6,8 @@ using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Infrastructure.Users.Services;
 
-public class DeviceDetectionService : IDeviceDetectionService
+public class DeviceDetectionService(IDeviceCacheRepository deviceCacheRepository) : IDeviceDetectionService
 {
-    private readonly IDeviceCacheRepository _deviceCacheRepository;
-
-    public DeviceDetectionService(
-        IDeviceCacheRepository deviceCacheRepository)
-    {
-        _deviceCacheRepository = deviceCacheRepository;
-    }
-
     public IDeviceInfo GetCurrentUsersDevice(IDictionary<string, StringValues> headers)
     {
         var userAgent = headers["User-Agent"];
@@ -25,7 +17,7 @@ public class DeviceDetectionService : IDeviceDetectionService
 
         var dd = new DeviceDetectorWrapper(userAgent, clientHints);
         
-        dd.SetCache(_deviceCacheRepository.Cache);
+        dd.SetCache(deviceCacheRepository.Cache);
         
         dd.DiscardBotInformation();
         dd.SkipBotDetection();

@@ -1,18 +1,28 @@
 <div>
   <app-node-list-item
-    *ngIf="currentFolder && currentFolder.parentDirectory && currentFolder.absolutePath !== ''"
-    [node]="currentFolder.parentDirectory"
-    [loading]="nodeRepositoryLoading || playbackSessionLoading"
-    [last]="nodes.length === 0"
-    (click)="onNodeClick($event)"
+    *ngIf="currentFolder.node.parent"
+    [id]="currentFolder.node.parent.absolutePath"
+    name=".."
+    [nodeType]="currentFolder.node.parent.type"
+    [defaultIcon]="currentFolder.node.parent.mdIcon"
+    [loadingStatus]="loadingStatus"
+    [audioPlayerState]="audioPlayerState"
+    [disabled]="currentFolder.node.parent.disabled"
+    [last]="currentFolder.children.length === 0"
+    (contentClick)="onNodeClick($event)"
   />
 
   <app-node-list-item
-    *ngFor="let node of nodes; last as last"
-    [node]="node"
-    [loading]="nodeRepositoryLoading || playbackSessionLoading"
+    *ngFor="let node of currentFolder.children; last as last"
+    [id]="node.absolutePath"
+    [name]="node.name"
+    [nodeType]="node.type"
+    [defaultIcon]="node.mdIcon"
+    [loadingStatus]="loadingStatus"
+    [audioPlayerState]="audioPlayerState"
+    [disabled]="node.disabled"
     [last]="last"
-    (click)="onNodeClick($event)"
+    (contentClick)="onNodeClick($event)"
     >
     <app-add-to-queue-button
       [file]="node"

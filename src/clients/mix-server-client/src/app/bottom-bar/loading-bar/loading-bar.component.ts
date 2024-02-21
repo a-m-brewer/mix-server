@@ -15,10 +15,10 @@ export class LoadingBarComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this._loadingRepository.loading$()
+    this._loadingRepository.status$()
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(value => {
-        this.loading = value;
+        this.loading = value.loading;
       });
   }
 

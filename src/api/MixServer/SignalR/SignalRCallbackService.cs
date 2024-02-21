@@ -8,7 +8,6 @@ using MixServer.Application.Users.Responses;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Interfaces;
-using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
@@ -23,13 +22,12 @@ namespace MixServer.SignalR;
 public class SignalRCallbackService(
     IConverter<IDevice, DeviceDto> deviceDtoConverter,
     IConverter<IDeviceState, DeviceStateDto> deviceStateConverter,
-    IConverter<IFileExplorerFolderNode, FolderNodeResponse> folderNodeResponseConverter,
+    IFileExplorerResponseConverter fileExplorerResponseConverter,
     IConverter<IPlaybackSession, bool, PlaybackSessionDto> playbackSessionConverter,
     IPlaybackStateConverter playbackStateConverter,
     IHubContext<SignalRCallbackHub, ISignalRCallbackClient> context,
     IConverter<QueueSnapshot, QueueSnapshotDto> queueSnapshotDtoConverter,
     IConverter<IUser, UserDto> userDtoConverter,
-    IUnitOfWork unitOfWork,
     ISignalRUserManager userManager)
     : ICallbackService
 {
@@ -92,15 +90,27 @@ public class SignalRCallbackService(
             .DeviceStateUpdated(dto);
     }
 
-    public async Task FolderSorted(string userId, IFileExplorerFolderNode folder)
+    public async Task FolderSorted(string userId, IFileExplorerFolder folder)
     {
         var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
 
-        var dto = folderNodeResponseConverter.Convert(folder);
+        var dto = fileExplorerResponseConverter.Convert(folder);
 
         await context.Clients
             .Clients(clients)
             .FolderSorted(dto);
+    }
+
+    public async Task FolderRefreshed(string userId, Guid deviceId, IFileExplorerFolder folder)
+    {
+        // Current Device is notified via RefreshFolderCommandHandler
+        var (_, otherDevicesConnections) = GetDevicesConnectionWithOtherDevices(userId, deviceId);
+
+        var dto = fileExplorerResponseConverter.Convert(folder);
+
+        await context.Clients
+            .Clients(otherDevicesConnections)
+            .FolderRefreshed(dto);
     }
 
     public async Task DeviceDeleted(string userId, Guid deviceId)
@@ -181,6 +191,27 @@ public class SignalRCallbackService(
             .UserUpdated(userDtoConverter.Convert(user));
     }
 
+    public Task FileExplorerNodeAdded(IFileExplorerNode node)
+    {
+        return context.Clients
+            .All
+            .FileExplorerNodeAdded(fileExplorerResponseConverter.Convert(node));
+    }
+    
+    public Task FileExplorerNodeUpdated(IFileExplorerNode node, string oldAbsolutePath)
+    {
+        return context.Clients
+            .All
+            .FileExplorerNodeUpdated(new FileExplorerNodeUpdatedDto(fileExplorerResponseConverter.Convert(node), oldAbsolutePath));
+    }
+
+    public Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath)
+    {
+        return context.Clients
+            .All
+            .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto(fileExplorerResponseConverter.Convert(parentNode), absolutePath));
+    }
+
     public async Task UserDeleted(string userId)
     {
         var connections = userManager.GetConnectionsInGroups(
@@ -190,11 +221,6 @@ public class SignalRCallbackService(
         await context.Clients
             .Clients(connections)
             .UserDeleted(new UserDeletedDto { UserId = userId });
-    }
-    
-    public void InvokeCallbackOnSaved(Func<ICallbackService, Task> callback)
-    {
-        unitOfWork.OnSaved(() => callback.Invoke(this));
     }
 
     private 

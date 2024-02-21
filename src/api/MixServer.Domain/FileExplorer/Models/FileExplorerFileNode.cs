@@ -3,32 +3,28 @@ using MixServer.Domain.FileExplorer.Enums;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
-public interface IFileExplorerFileNode : IFileExplorerNode
+public partial class FileExplorerFileNode(
+    string name,
+    string absolutePath,
+    FileExplorerNodeType type,
+    bool exists,
+    DateTime creationTimeUtc,
+    string mimeType,
+    IFileExplorerFolderNode parent)
+    : IFileExplorerFileNode
 {
-    string? MimeType { get; }
-    bool PlaybackSupported { get; }
-    public IFileExplorerFolderNode Parent { get; }
-}
-
-public partial class FileExplorerFileNode(string name, string? mimeType, IFileExplorerFolderNode parent)
-    : FileExplorerNode(FileExplorerNodeType.File), IFileExplorerFileNode
-{
-    public override string Name { get; } = name;
-    public override bool Exists => File.Exists(AbsolutePath);
-
-    public override string AbsolutePath => string.IsNullOrWhiteSpace(Parent.AbsolutePath)
-        ? Name
-        : Path.Join(Parent.AbsolutePath, Name);
-
-    public string? MimeType { get; } = mimeType;
-
-    public bool PlaybackSupported => Parent.CanRead &&
+    public string Name { get; } = name;
+    public string AbsolutePath { get; } = absolutePath;
+    public FileExplorerNodeType Type { get; } = type;
+    public bool Exists { get; } = exists;
+    public DateTime CreationTimeUtc { get; } = creationTimeUtc;
+    public string MimeType { get; } = mimeType;
+    public bool PlaybackSupported => Parent.BelongsToRootChild &&
                                      Exists && 
                                      !string.IsNullOrWhiteSpace(MimeType) &&
                                      AudioVideoMimeTypeRegex().IsMatch(MimeType);
-
     public IFileExplorerFolderNode Parent { get; } = parent;
-
+    
     [GeneratedRegex(@"^(audio|video)\/(.*)")]
     private static partial Regex AudioVideoMimeTypeRegex();
 }

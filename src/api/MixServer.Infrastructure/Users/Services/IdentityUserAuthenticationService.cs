@@ -2,7 +2,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Enums;
@@ -24,7 +23,6 @@ public interface IIdentityUserAuthenticationService : IUserAuthenticationService
 }
 
 public class IdentityUserAuthenticationService(
-    ICallbackService callbackService,
     IDeviceService deviceService,
     IJwtService jwtService,
     IPasswordGeneratorService passwordGeneratorService,
@@ -42,7 +40,7 @@ public class IdentityUserAuthenticationService(
         
         await userRoleService.EnsureUserIsInRolesAsync(user.Id, roles);
         
-        callbackService.InvokeCallbackOnSaved(c => c.UserAdded(user));
+        unitOfWork.InvokeCallbackOnSaved(c => c.UserAdded(user));
 
         return temporaryPassword;
     }
@@ -51,7 +49,7 @@ public class IdentityUserAuthenticationService(
     {
         var user = await RegisterInternalAsync(username, temporaryPassword);
         
-        callbackService.InvokeCallbackOnSaved(c => c.UserAdded(user));
+        unitOfWork.InvokeCallbackOnSaved(c => c.UserAdded(user));
     }
 
     public async Task ResetPasswordAsync(
@@ -185,7 +183,7 @@ public class IdentityUserAuthenticationService(
     {
         await userManager.DeleteAsync(user);
         
-        callbackService.InvokeCallbackOnSaved(c => c.UserDeleted(user.Id));
+        unitOfWork.InvokeCallbackOnSaved(c => c.UserDeleted(user.Id));
     }
 
     private async Task<DbUser> GetUserOrThrowAsync(string username)

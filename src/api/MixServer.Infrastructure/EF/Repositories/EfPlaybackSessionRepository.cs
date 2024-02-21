@@ -5,23 +5,16 @@ using MixServer.Domain.Sessions.Repositories;
 
 namespace MixServer.Infrastructure.EF.Repositories;
 
-public class EfPlaybackSessionRepository : IPlaybackSessionRepository
+public class EfPlaybackSessionRepository(MixServerDbContext context) : IPlaybackSessionRepository
 {
-    private readonly MixServerDbContext _context;
-
-    public EfPlaybackSessionRepository(MixServerDbContext context)
-    {
-        _context = context;
-    }
-    
     public async Task<PlaybackSession> GetAsync(Guid id)
     {
-        return await _context.PlaybackSessions.SingleOrDefaultAsync(s => s.Id == id)
-               ?? throw new NotFoundException(nameof(_context.PlaybackSessions), id);
+        return await context.PlaybackSessions.SingleOrDefaultAsync(s => s.Id == id)
+               ?? throw new NotFoundException(nameof(context.PlaybackSessions), id);
     }
 
     public async Task AddAsync(PlaybackSession session)
     {
-        await _context.PlaybackSessions.AddAsync(session);
+        await context.PlaybackSessions.AddAsync(session);
     }
 }

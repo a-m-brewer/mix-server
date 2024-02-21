@@ -19,33 +19,23 @@ public interface IDeviceInfo
     string? OsVersion { get; }
 }
 
-public class DeviceInfo : IDeviceInfo
+public class DeviceInfo(
+    ClientType clientType,
+    DeviceType deviceType,
+    string? browserName,
+    string? model,
+    string? brand,
+    string? osName,
+    string? osVersion)
+    : IDeviceInfo
 {
-    public DeviceInfo(
-        ClientType clientType,
-        DeviceType deviceType,
-        string? browserName,
-        string? model,
-        string? brand,
-        string? osName,
-        string? osVersion)
-    {
-        ClientType = clientType;
-        DeviceType = deviceType;
-        BrowserName = browserName;
-        Model = model;
-        Brand = brand;
-        OsName = osName;
-        OsVersion = osVersion;
-    }
-
-    public ClientType ClientType { get; }
-    public DeviceType DeviceType { get; }
-    public string? BrowserName { get; }
-    public string? Model { get; }
-    public string? Brand { get; }
-    public string? OsName { get; }
-    public string? OsVersion { get; }
+    public ClientType ClientType { get; } = clientType;
+    public DeviceType DeviceType { get; } = deviceType;
+    public string? BrowserName { get; } = browserName;
+    public string? Model { get; } = model;
+    public string? Brand { get; } = brand;
+    public string? OsName { get; } = osName;
+    public string? OsVersion { get; } = osVersion;
 
     public static IDeviceInfo Default =>
         new DeviceInfo(

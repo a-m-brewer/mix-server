@@ -14,7 +14,7 @@ export class PlaybackSessionConverterService {
   public fromDto(dto: PlaybackSessionDto): PlaybackSession {
     return new PlaybackSession(
       dto.id,
-      this._fileExplorerNodeConverter.fromFileResponse(dto.file),
+      this._fileExplorerNodeConverter.fromFileExplorerFileNode(dto.file),
       dto.lastPlayed,
       this.stateFromSessionDto(dto),
       dto.autoPlay);

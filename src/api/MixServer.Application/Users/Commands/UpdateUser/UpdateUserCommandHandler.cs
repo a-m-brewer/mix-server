@@ -1,5 +1,4 @@
 using FluentValidation;
-using MixServer.Domain.Callbacks;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Validators;
@@ -9,7 +8,6 @@ using MixServer.Infrastructure.Users.Services;
 namespace MixServer.Application.Users.Commands.UpdateUser;
 
 public class UpdateUserCommandHandler(
-    ICallbackService callbackService,
     ICurrentUserRepository currentUserRepository,
     IIdentityUserAuthenticationService userAuthenticationService,
     IValidator<UpdateUserCommand> validator,
@@ -31,7 +29,7 @@ public class UpdateUserCommandHandler(
             otherUser.Roles = request.Roles;
         }
         
-        callbackService.InvokeCallbackOnSaved(c => c.UserUpdated(otherUser));
+        unitOfWork.InvokeCallbackOnSaved(c => c.UserUpdated(otherUser));
         
         await unitOfWork.SaveChangesAsync();
     }
