@@ -48,8 +48,12 @@ public class QueueService(
 
         queue.CurrentFolderAbsolutePath = nextSession.GetParentFolderPathOrThrow();
         queue.ClearUserQueue();
-
+        
         var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderAbsolutePath);
+        if (files.All(a => a.AbsolutePath != nextSession.AbsolutePath))
+        {
+            files.Add(fileService.GetFile(nextSession.AbsolutePath));
+        }
 
         queue.RegenerateFolderQueueSortItems(files);
         queue.SetQueuePositionFromFolderItemOrThrow(nextSession.AbsolutePath);

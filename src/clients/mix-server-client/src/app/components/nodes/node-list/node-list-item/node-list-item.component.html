@@ -3,7 +3,7 @@
     'node-list-item-container': true,
     'node-list-item-container-selectable': !loadingStatus.loading && !isPlayingOrPaused && !editing,
     'node-list-item-container-disabled': loadingStatus.loading || disabled,
-    'node-list-item-container-current-session': isPlayingOrPaused,
+    'node-list-item-container-current-session': !loadingStatus.loading && !disabled && isPlayingOrPaused,
   }"
   matRipple
   [matRippleTrigger]="rippleTrigger"

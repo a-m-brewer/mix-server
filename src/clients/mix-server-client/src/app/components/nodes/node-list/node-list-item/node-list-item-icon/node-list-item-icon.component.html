@@ -1,10 +1,14 @@
-<mat-icon [ngClass]="{ 'mat-list-item-icon': true, 'node-list-item-container-current-session ': playingState !== FileExplorerPlayingState.None }"
-          (click)="onEditCheckboxClicked()">
+<mat-icon
+  [ngClass]="{
+  'mat-list-item-icon': true,
+  'node-list-item-container-current-session ': !loading && !disabled && playingState !== FileExplorerPlayingState.None
+  }"
+  (click)="onEditCheckboxClicked()">
 
   @if (loading) {
     <mat-spinner color="primary" *ngIf="loading" diameter="20"></mat-spinner>
   } @else if (editing) {
-      <span class="edit-checkbox">
+    <span class="edit-checkbox">
         @if (selected) {
           <span>check_box</span>
         } @else {

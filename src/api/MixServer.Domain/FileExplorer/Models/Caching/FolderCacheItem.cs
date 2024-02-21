@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Converters;
 using DirectoryInfo = System.IO.DirectoryInfo;
 
@@ -27,7 +26,7 @@ public class FolderCacheItem : IFolderCacheItem
     private readonly ILogger<FolderCacheItem> _logger;
     private readonly IFileExplorerConverter _fileExplorerConverter;
 
-    private readonly FileSystemWatcher _watcher;
+    private readonly FileSystemWatcher? _watcher;
     private readonly FileExplorerFolder _folder;
 
     public FolderCacheItem(
@@ -43,6 +42,11 @@ public class FolderCacheItem : IFolderCacheItem
         
         _folder = new FileExplorerFolder(_fileExplorerConverter.Convert(directoryInfo));
 
+        if (!_folder.Node.Exists)
+        {
+            return;
+        }
+        
         foreach (var directory in directoryInfo.GetDirectories())
         {
             _folder.AddChild(fileExplorerConverter.Convert(directory));
@@ -189,6 +193,11 @@ public class FolderCacheItem : IFolderCacheItem
     public void Dispose()
     {
         GC.SuppressFinalize(this);
+
+        if (_watcher is null)
+        {
+            return;
+        }
 
         _watcher.Created -= OnCreated;
         _watcher.Deleted -= OnDeleted;

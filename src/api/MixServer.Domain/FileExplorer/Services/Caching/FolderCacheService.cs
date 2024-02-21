@@ -50,7 +50,6 @@ public class FolderCacheService(
             if (!Directory.Exists(absolutePath))
             {
                 readWriteLock.ForWrite(() => _cache.Remove(absolutePath));
-                throw new NotFoundException("Folder", absolutePath);
             }
             
             var maxDirectories = options.Value.MaxCachedDirectories;

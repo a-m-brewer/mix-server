@@ -18,8 +18,24 @@ public class CurrentUserMiddleware(
         
         if (currentUserRepository.CurrentUserLoaded)
         {
-            await sessionService.LoadPlaybackStateAsync();
-            await queueService.LoadQueueStateAsync();
+            try
+            {
+                await sessionService.LoadPlaybackStateAsync();
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Failed to Load Playback State");
+            }
+            
+            
+            try
+            {
+                await queueService.LoadQueueStateAsync();
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Failed to Load Queue State");
+            }
         }
         else
         {
