@@ -45,6 +45,8 @@ export class FolderSortFormComponent implements OnInit, OnDestroy {
 
         this.form.get(this.descendingKey)?.setValue(value.sort.descending);
         this.form.get(this.sortModeKey)?.setValue(value.sort.sortMode);
+
+        this._lastSortMode = value.sort.sortMode;
       })
 
     this._loadingRepository.status$()
