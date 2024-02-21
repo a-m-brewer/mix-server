@@ -64,7 +64,7 @@ public class FolderCacheService(
                 });
             }
             
-            return await _cache.GetOrCreateAsync<IFolderCacheItem>(absolutePath, async entry =>
+            var cacheItem =  await _cache.GetOrCreateAsync<IFolderCacheItem>(absolutePath, async entry =>
             {
                 var semaphore = GetOrAddCacheKeySemaphore(absolutePath);
 
@@ -91,6 +91,14 @@ public class FolderCacheService(
                     semaphore.Release();
                 }
             }) ?? throw new NotFoundException(nameof(FolderCacheService), absolutePath);
+
+            if (!cacheItem.Folder.Node.Exists)
+            {
+                // We don't want to keep missing folders in the cache.
+                readWriteLock.ForWrite(() => _cache.Remove(absolutePath));
+            }
+
+            return cacheItem;
         });
     }
 
