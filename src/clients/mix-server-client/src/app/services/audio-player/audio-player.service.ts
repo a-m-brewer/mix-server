@@ -285,7 +285,6 @@ export class AudioPlayerService {
   }
 
   private handlePauseRequested(): void {
-    console.log('pause requested');
     this.internalPause();
 
     this._playbackSessionRepository.setDevicePlaying(this.currentTime, false);

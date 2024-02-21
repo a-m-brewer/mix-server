@@ -70,12 +70,8 @@ public class SessionService(
             session.LastPlayed = dateTimeProvider.UtcNow;
         }
 
-        var hasState = playbackTrackingService.TryGet(user.Id, out var state);
-        session.DeviceId = hasState
-            ? state!.DeviceId
-            : currentDeviceRepository.DeviceId;
-        session.LastPlaybackDeviceId = hasState
-            ? state!.LastPlaybackDeviceId
+        session.DeviceId = playbackTrackingService.TryGet(user.Id, out var state) && state.HasDevice
+            ? state.DeviceId
             : currentDeviceRepository.DeviceId;
 
         playbackTrackingService.UpdateSessionState(session);

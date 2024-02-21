@@ -16,8 +16,6 @@ public class SetCurrentSessionCommandHandler(
     IValidator<SetCurrentSessionCommand> validator)
     : ICommandHandler<SetCurrentSessionCommand>
 {
-    private readonly ICallbackService _callbackService = callbackService;
-
     public async Task HandleAsync(SetCurrentSessionCommand request)
     {
         await validator.ValidateAndThrowAsync(request);
