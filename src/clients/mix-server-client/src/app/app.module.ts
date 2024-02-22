@@ -55,6 +55,7 @@ import { SpinnerOverlayComponent } from './components/spinner-overlay/spinner-ov
 import {UserAdminComponent} from "./admin-page/user-admin/user-admin.component";
 import {MatChipsModule} from "@angular/material/chips";
 import {NavBarComponent} from "./nav-bar/nav-bar.component";
+import {MatExpansionModule} from "@angular/material/expansion";
 
 @NgModule({
     declarations: [
@@ -84,36 +85,37 @@ import {NavBarComponent} from "./nav-bar/nav-bar.component";
         SpinnerOverlayComponent,
         UserAdminComponent
     ],
-    imports: [
-        BrowserModule,
-        CommonModule,
-        AppRoutingModule,
-        HttpClientModule,
-        BrowserAnimationsModule,
-        MatProgressBarModule,
-        MatIconModule,
-        MatButtonModule,
-        MatListModule,
-        MatToolbarModule,
-        MatSliderModule,
-        FormsModule,
-        ReactiveFormsModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatCardModule,
-        MatProgressSpinnerModule,
-        InfiniteScrollModule,
-        MatTooltipModule,
-        ToastrModule.forRoot(),
-        MatButtonToggleModule,
-        MatTabsModule,
-        MatDialogModule,
-        MatMenuModule,
-        MatRippleModule,
-        MatCheckboxModule,
-        MatChipsModule,
-        NavBarComponent
-    ],
+  imports: [
+    BrowserModule,
+    CommonModule,
+    AppRoutingModule,
+    HttpClientModule,
+    BrowserAnimationsModule,
+    MatProgressBarModule,
+    MatIconModule,
+    MatButtonModule,
+    MatListModule,
+    MatToolbarModule,
+    MatSliderModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCardModule,
+    MatProgressSpinnerModule,
+    InfiniteScrollModule,
+    MatTooltipModule,
+    ToastrModule.forRoot(),
+    MatButtonToggleModule,
+    MatTabsModule,
+    MatDialogModule,
+    MatMenuModule,
+    MatRippleModule,
+    MatCheckboxModule,
+    MatChipsModule,
+    NavBarComponent,
+    MatExpansionModule
+  ],
     providers: [
         {
             provide: MIXSERVER_BASE_URL,
