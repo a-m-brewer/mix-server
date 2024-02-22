@@ -8,9 +8,6 @@ import {AuthenticationService} from "./services/auth/authentication.service";
 import {InitializationRepositoryService} from "./services/repositories/initialization-repository.service";
 import {ScrollContainerRepositoryService} from "./services/repositories/scroll-container-repository.service";
 import {FileExplorerNodeRepositoryService} from "./services/repositories/file-explorer-node-repository.service";
-import {
-  CurrentPlaybackSessionRepositoryService
-} from "./services/repositories/current-playback-session-repository.service";
 import {NavigationEnd, Router} from "@angular/router";
 import {PageRoutes} from "./page-routes.enum";
 import {DeviceRepositoryService} from "./services/repositories/device-repository.service";

@@ -54,6 +54,7 @@ import {MatCheckboxModule} from "@angular/material/checkbox";
 import { SpinnerOverlayComponent } from './components/spinner-overlay/spinner-overlay.component';
 import {UserAdminComponent} from "./admin-page/user-admin/user-admin.component";
 import {MatChipsModule} from "@angular/material/chips";
+import {NavBarComponent} from "./nav-bar/nav-bar.component";
 
 @NgModule({
     declarations: [
@@ -83,35 +84,36 @@ import {MatChipsModule} from "@angular/material/chips";
         SpinnerOverlayComponent,
         UserAdminComponent
     ],
-  imports: [
-    BrowserModule,
-    CommonModule,
-    AppRoutingModule,
-    HttpClientModule,
-    BrowserAnimationsModule,
-    MatProgressBarModule,
-    MatIconModule,
-    MatButtonModule,
-    MatListModule,
-    MatToolbarModule,
-    MatSliderModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCardModule,
-    MatProgressSpinnerModule,
-    InfiniteScrollModule,
-    MatTooltipModule,
-    ToastrModule.forRoot(),
-    MatButtonToggleModule,
-    MatTabsModule,
-    MatDialogModule,
-    MatMenuModule,
-    MatRippleModule,
-    MatCheckboxModule,
-    MatChipsModule
-  ],
+    imports: [
+        BrowserModule,
+        CommonModule,
+        AppRoutingModule,
+        HttpClientModule,
+        BrowserAnimationsModule,
+        MatProgressBarModule,
+        MatIconModule,
+        MatButtonModule,
+        MatListModule,
+        MatToolbarModule,
+        MatSliderModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatCardModule,
+        MatProgressSpinnerModule,
+        InfiniteScrollModule,
+        MatTooltipModule,
+        ToastrModule.forRoot(),
+        MatButtonToggleModule,
+        MatTabsModule,
+        MatDialogModule,
+        MatMenuModule,
+        MatRippleModule,
+        MatCheckboxModule,
+        MatChipsModule,
+        NavBarComponent
+    ],
     providers: [
         {
             provide: MIXSERVER_BASE_URL,
