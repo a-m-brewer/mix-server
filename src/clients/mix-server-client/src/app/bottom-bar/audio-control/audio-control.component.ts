@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AudioPlayerService} from "../../services/audio-player/audio-player.service";
-import {Subject, takeUntil} from "rxjs";
+import {Observable, Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../services/repositories/current-playback-session-repository.service";
 import {IPlaybackSession} from "../../services/repositories/models/playback-session";
 import {QueueRepositoryService} from "../../services/repositories/queue-repository.service";
@@ -32,15 +32,14 @@ export class AudioControlComponent implements OnInit, OnDestroy {
   public disconnected: boolean = true;
 
   constructor(private _authService: AuthenticationService,
-              private _audioPlayer: AudioPlayerService,
+              public audioPlayer: AudioPlayerService,
               private _deviceRepository: DeviceRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _queueRepository: QueueRepositoryService) {
   }
 
   public ngOnInit(): void {
-    this._audioPlayer.initialize();
-    this._audioPlayer.currentTime$
+    this.audioPlayer.currentTime$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe((v: number) => {
         this._currentTime = v;
@@ -93,21 +92,12 @@ export class AudioControlComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(item => this.previousFile = item?.file);
 
-    this._volumeBeforeMute = this._audioPlayer.volume;
+    this._volumeBeforeMute = this.audioPlayer.volume;
   }
 
   public ngOnDestroy(): void {
-    this._audioPlayer.dispose();
     this._unsubscribe$.next(null);
     this._unsubscribe$.complete();
-  }
-
-  public get playing(): boolean {
-    if (this.isCurrentPlaybackDevice) {
-      return this._audioPlayer.playing;
-    }
-
-    return this.currentSessionPlaying;
   }
 
   public get currentTime(): number {
@@ -115,34 +105,34 @@ export class AudioControlComponent implements OnInit, OnDestroy {
   }
 
   public set currentTime(value: number) {
-    this._audioPlayer.currentTime = value;
+    this.audioPlayer.currentTime = value;
   }
 
   public get duration(): number {
-    return this._audioPlayer.duration;
+    return this.audioPlayer.duration;
   }
 
   public get volume(): number {
-    return this._audioPlayer.volume;
+    return this.audioPlayer.volume;
   }
 
   public set volume(value: number) {
-    this._audioPlayer.volume = value;
+    this.audioPlayer.volume = value;
     if (this.muted) {
-      this._audioPlayer.muted = false;
+      this.audioPlayer.muted = false;
     }
   }
 
   public get muted(): boolean {
-    return this._audioPlayer.muted;
+    return this.audioPlayer.muted;
   }
 
   public play(): void {
-    this._audioPlayer.requestPlayback(this.currentPlaybackDevice?.id).then();
+    this.audioPlayer.requestPlaybackOnCurrentPlaybackDevice().then();
   }
 
   public pause(): void {
-    this._audioPlayer.requestPause();
+    this.audioPlayer.requestPause();
   }
 
   public skipPrevious(): void {
@@ -162,26 +152,26 @@ export class AudioControlComponent implements OnInit, OnDestroy {
   }
 
   public backward(): void {
-    this._audioPlayer.seekOffset(-30);
+    this.audioPlayer.seekOffset(-30);
   }
 
   public forward(): void {
-    this._audioPlayer.seekOffset(30);
+    this.audioPlayer.seekOffset(30);
   }
 
   public toggleMute(): void {
-    this._audioPlayer.muted = !this._audioPlayer.muted;
-    if (this._audioPlayer.muted) {
+    this.audioPlayer.muted = !this.audioPlayer.muted;
+    if (this.audioPlayer.muted) {
       this._volumeBeforeMute = this.volume;
-      this._audioPlayer.volume = 0;
+      this.audioPlayer.volume = 0;
     }
     else {
-      this._audioPlayer.volume = this._volumeBeforeMute;
+      this.audioPlayer.volume = this._volumeBeforeMute;
     }
   }
 
   public sliderDragEnded(event: MatSliderDragEvent) {
-    this._audioPlayer.seek(event.value);
+    this.audioPlayer.seek(event.value);
   }
 
   private updateIsCurrentPlaybackDevice(): void {

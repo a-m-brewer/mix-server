@@ -1,0 +1,41 @@
+<app-expansion-panel
+  *ngIf="playbackSession"
+  (expanded)="onExpanded($event)"
+>
+  <div headerText class="audio-control-header-text">
+    <span class="session">
+      {{ playbackSession.currentNode.name }}
+    </span>
+  </div>
+
+  <div headerMeta class="audio-control-header-meta"
+    *ngIf="!expanded">
+    @if(audioPlayer.playing$ | async) {
+      <button mat-mini-fab color="primary"
+              class="audio-control-button"
+              [disabled]="audioPlayer.playbackDisabled$ | async"
+              (click)="pause()">
+        <mat-icon>pause</mat-icon>
+      </button>
+    } @else {
+      <button mat-mini-fab color="primary"
+              class="audio-control-button"
+              [disabled]="audioPlayer.playbackDisabled$ | async"
+              (click)="play()">
+        <mat-icon>play_arrow</mat-icon>
+      </button>
+    }
+  </div>
+
+  @if (!expanded) {
+    <mat-progress-bar
+      headerFooter
+      mode="determinate"
+      [value]="audioPlayer.currentTimePercentage$ | async">
+    </mat-progress-bar>
+  }
+
+  <div content>
+    content
+  </div>
+</app-expansion-panel>

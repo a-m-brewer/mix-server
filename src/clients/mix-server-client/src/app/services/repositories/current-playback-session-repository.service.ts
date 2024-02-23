@@ -122,7 +122,11 @@ export class CurrentPlaybackSessionRepositoryService {
       .finally(() => this._loadingRepository.stopLoadingId(file.absolutePath));
   }
 
-  public async requestPlayback(deviceId?: string): Promise<void> {
+  public async requestPlaybackOnCurrentPlaybackDevice(): Promise<void> {
+    return this.requestPlayback(this._currentSession$.value?.state.deviceId)
+  }
+
+  public async requestPlayback(deviceId?: string | null): Promise<void> {
     this._loadingRepository.startLoadingId(deviceId)
 
     const requestedDeviceId = deviceId ?? this._authenticationService.deviceId;

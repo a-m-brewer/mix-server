@@ -1,6 +1,17 @@
 import {Injectable} from '@angular/core';
 import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
-import {BehaviorSubject, filter, Observable, sampleTime, Subject, takeUntil, timer} from "rxjs";
+import {
+  BehaviorSubject,
+  combineLatestWith,
+  filter,
+  map,
+  mergeWith,
+  Observable,
+  sampleTime,
+  Subject,
+  takeUntil,
+  timer
+} from "rxjs";
 import {StreamUrlService} from "../converters/stream-url.service";
 import {AudioSessionService} from "./audio-session.service";
 import {AudioElementRepositoryService} from "./audio-element-repository.service";
@@ -12,14 +23,16 @@ import {AudioPlayerStateService} from "./audio-player-state.service";
 import {AuthenticationService} from "../auth/authentication.service";
 import {PlaybackGranted} from "../repositories/models/playback-granted";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
+import {DeviceRepositoryService} from "../repositories/device-repository.service";
+import {merge} from "rxjs/internal/operators/merge";
+import {combineLatest} from "rxjs/internal/operators/combineLatest";
+import {Device} from "../repositories/models/device";
 
 @Injectable({
   providedIn: 'root'
 })
 export class AudioPlayerService {
   private _timeChangedBehaviourSubject$ = new BehaviorSubject<number>(0);
-
-  private _unsubscribe$ = new Subject();
 
   private _playbackGranted: boolean = false;
 
@@ -30,6 +43,7 @@ export class AudioPlayerService {
               private _audioSession: AudioSessionService,
               private _audioPlayerState: AudioPlayerStateService,
               private _authenticationService: AuthenticationService,
+              private _deviceRepository: DeviceRepositoryService,
               private _loadingRepository: LoadingRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _queueRepository: QueueRepositoryService,
@@ -42,12 +56,9 @@ export class AudioPlayerService {
     this.audio.onended = () => {
       this.handleOnSessionEnded();
     }
-  }
 
-  public initialize(): void {
     this._playbackSessionRepository
       .currentSession$
-      .pipe(takeUntil(this._unsubscribe$))
       .subscribe(session => {
         if (session) {
           this.setCurrentSession(session);
@@ -59,28 +70,24 @@ export class AudioPlayerService {
 
     this._queueRepository
       .queuePosition$()
-      .pipe(takeUntil(this._unsubscribe$))
       .subscribe(item => {
         this._audioPlayerState.queueItemId = item?.id;
       });
 
     this._queueRepository
       .nextQueueItem$()
-      .pipe(takeUntil(this._unsubscribe$))
       .subscribe(item => {
         this._nextFile = item?.file;
       });
 
     this._queueRepository
       .previousQueueItem$()
-      .pipe(takeUntil(this._unsubscribe$))
       .subscribe(item => {
         this._previousFile = item?.file;
       })
 
     this._playbackSessionRepository
       .currentState$
-      .pipe(takeUntil(this._unsubscribe$))
       .subscribe(state => {
         this.currentTime = state.currentTime;
       });
@@ -98,19 +105,67 @@ export class AudioPlayerService {
       });
 
     this.sampleCurrentTime$(600)
-      .pipe(takeUntil(this._unsubscribe$))
       .subscribe(currentTime => {
         this.updatePlaybackState(currentTime);
       });
   }
 
-  public dispose(): void {
-    this._unsubscribe$.next(null);
-    this._unsubscribe$.complete();
-  }
-
   public get currentTime$(): Observable<number> {
     return this._timeChangedBehaviourSubject$.asObservable();
+  }
+
+  public get currentTimePercentage$(): Observable<number> {
+    return this._timeChangedBehaviourSubject$
+      .pipe(map(currentTime => {
+        if (this.duration === 0 || currentTime === 0) {
+          return 0;
+        }
+
+        return (currentTime / this.duration) * 100;
+      }));
+  }
+
+  public get currentPlaybackDevice$(): Observable<Device | null | undefined> {
+    return this._playbackSessionRepository.currentPlaybackDevice$
+      .pipe(combineLatestWith(this._deviceRepository.devices$))
+      .pipe(map(([currentPlaybackDeviceId, devices]) => {
+        return devices.find(d => d.id === currentPlaybackDeviceId);
+      }));
+  }
+
+  public get audioControlsDisabled$(): Observable<boolean> {
+    return this.currentPlaybackDevice$
+      .pipe(combineLatestWith(this._authenticationService.connected$))
+      .pipe(map(([device, connected]) => {
+        return !connected ||
+          (!!device && !device.interactedWith);
+      }));
+  }
+
+  public get playbackDisabled$(): Observable<boolean> {
+    return this.audioControlsDisabled$
+      .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
+      .pipe(map(([disabled, session]) => {
+        return disabled || !session || session.currentNode.playbackDisabled;
+      }));
+  }
+
+  public get isCurrentPlaybackDevice$(): Observable<boolean> {
+    return this._playbackSessionRepository.currentPlaybackDevice$
+      .pipe(combineLatestWith(this._deviceRepository.currentDevice$))
+      .pipe(map(([currentPlaybackDeviceId, device]) => {
+        return !!currentPlaybackDeviceId && !!device && currentPlaybackDeviceId === device.id;
+      }));
+  }
+
+  public get playing$(): Observable<boolean> {
+    return this.isCurrentPlaybackDevice$
+      .pipe(combineLatestWith(this._playbackSessionRepository.currentSessionPlaying$))
+      .pipe(map(([isCurrentPlaybackDevice, currentSessionPlaying]) => {
+        return isCurrentPlaybackDevice
+          ? this.playing
+          : currentSessionPlaying;
+      }));
   }
 
   public sampleCurrentTime$(ms: number): Observable<number> {
@@ -149,6 +204,10 @@ export class AudioPlayerService {
 
   public set muted(value: boolean) {
     this.audio.muted = value;
+  }
+
+  public async requestPlaybackOnCurrentPlaybackDevice(): Promise<void> {
+    await this._playbackSessionRepository.requestPlaybackOnCurrentPlaybackDevice();
   }
 
   public async requestPlayback(deviceId?: string): Promise<void> {

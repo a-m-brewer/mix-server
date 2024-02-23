@@ -1,0 +1,27 @@
+<div class="expansion-panel">
+  <div class="panel-header">
+
+    <div class="panel-header-content"
+         matRipple
+         [matRippleTrigger]="rippleTrigger">
+
+      <div
+        #rippleTrigger
+        class="panel-header-content-text panel-header-content-item"
+        (click)="togglePanel()">
+        <ng-content select="[headerText]"></ng-content>
+      </div>
+
+      <div class="panel-header-meta panel-header-content-item">
+        <ng-content select="[headerMeta]"></ng-content>
+      </div>
+    </div>
+
+    <div>
+      <ng-content select="[headerFooter]"></ng-content>
+    </div>
+  </div>
+  <div #expansionPanelContent class="panel-content">
+    <ng-content select="[content]"></ng-content>
+  </div>
+</div>

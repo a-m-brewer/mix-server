@@ -3,9 +3,14 @@ import {Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../../services/repositories/current-playback-session-repository.service";
 import {FileExplorerNodeRepositoryService} from "../../../services/repositories/file-explorer-node-repository.service";
 import {FileExplorerFolderNode} from "../../../main-content/file-explorer/models/file-explorer-folder-node";
+import {MatButtonModule} from "@angular/material/button";
 
 @Component({
   selector: 'app-session',
+  standalone: true,
+  imports: [
+    MatButtonModule
+  ],
   templateUrl: './session.component.html',
   styleUrls: ['./session.component.scss']
 })
@@ -14,8 +19,7 @@ export class SessionComponent implements OnInit, OnDestroy {
   public fileName: string | undefined;
   private _sessionCurrentDirectory: FileExplorerFolderNode | undefined;
 
-  constructor(public element: ElementRef,
-              private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
+  constructor(private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _nodeRepository: FileExplorerNodeRepositoryService){
   }
 

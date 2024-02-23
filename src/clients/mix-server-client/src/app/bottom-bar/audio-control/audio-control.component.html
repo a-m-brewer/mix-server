@@ -38,20 +38,23 @@
         >
           <mat-icon>skip_previous</mat-icon>
         </button>
-        <button mat-fab color="primary"
-                class="audio-control-button"
-                *ngIf="!playing"
-                [disabled]="disconnected || currentPlaybackSession?.currentNode?.playbackDisabled ?? true || (!!currentPlaybackDevice && !currentPlaybackDevice.interactedWith)"
-                (click)="play()">
-          <mat-icon>play_arrow</mat-icon>
-        </button>
-        <button mat-fab color="primary"
-                class="audio-control-button"
-                *ngIf="playing"
-                [disabled]="disconnected || currentPlaybackSession?.currentNode?.playbackDisabled ?? true || (!!currentPlaybackDevice && !currentPlaybackDevice.interactedWith)"
-                (click)="pause()">
-          <mat-icon>pause</mat-icon>
-        </button>
+
+        @if(audioPlayer.playing$ | async) {
+          <button mat-fab color="primary"
+                  class="audio-control-button"
+                  [disabled]="audioPlayer.playbackDisabled$ | async"
+                  (click)="pause()">
+            <mat-icon>pause</mat-icon>
+          </button>
+        } @else {
+          <button mat-fab color="primary"
+                  class="audio-control-button"
+                  [disabled]="audioPlayer.playbackDisabled$ | async"
+                  (click)="play()">
+            <mat-icon>play_arrow</mat-icon>
+          </button>
+        }
+
         <button mat-fab color="accent"
                 class="audio-control-button"
                 [disabled]="disconnected || nextFile?.disabled ?? true || (!!currentPlaybackDevice && !currentPlaybackDevice.interactedWith)"

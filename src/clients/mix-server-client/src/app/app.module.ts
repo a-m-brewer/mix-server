@@ -56,6 +56,7 @@ import {UserAdminComponent} from "./admin-page/user-admin/user-admin.component";
 import {MatChipsModule} from "@angular/material/chips";
 import {NavBarComponent} from "./nav-bar/nav-bar.component";
 import {MatExpansionModule} from "@angular/material/expansion";
+import {AudioControlMobileComponent} from "./bottom-bar/audio-control-mobile/audio-control-mobile.component";
 
 @NgModule({
     declarations: [
@@ -68,7 +69,6 @@ import {MatExpansionModule} from "@angular/material/expansion";
         LoginUserComponent,
         LoadingBarComponent,
         DurationDisplayComponent,
-        SessionComponent,
         HistoryPageComponent,
         QueuePageComponent,
         FolderSortFormComponent,
@@ -114,7 +114,9 @@ import {MatExpansionModule} from "@angular/material/expansion";
     MatCheckboxModule,
     MatChipsModule,
     NavBarComponent,
-    MatExpansionModule
+    MatExpansionModule,
+    AudioControlMobileComponent,
+    SessionComponent
   ],
     providers: [
         {
@@ -127,9 +129,9 @@ import {MatExpansionModule} from "@angular/material/expansion";
             multi: true
         }
     ],
-    exports: [
-        NodeListItemIcon
-    ],
+  exports: [
+    NodeListItemIcon
+  ],
     bootstrap: [AppComponent]
 })
 export class AppModule {
