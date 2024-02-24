@@ -1,0 +1,47 @@
+<button mat-mini-fab color="accent"
+        class="audio-control-button"
+        [disabled]="audioPlayer.playbackDisabled$ | async"
+        (click)="backward()"
+>
+  <mat-icon>replay_30</mat-icon>
+</button>
+<button mat-fab color="accent"
+        class="audio-control-button"
+        [disabled]="audioPlayer.previousItemDisabled$ | async"
+        (click)="skipPrevious()"
+>
+  <mat-icon>skip_previous</mat-icon>
+</button>
+
+@if(audioPlayer.playing$ | async) {
+  <button mat-fab color="primary"
+          class="audio-control-button"
+          [disabled]="audioPlayer.playbackDisabled$ | async"
+          (click)="pause()">
+    <mat-icon>pause</mat-icon>
+  </button>
+} @else {
+  <button mat-fab color="primary"
+          class="audio-control-button"
+          [disabled]="audioPlayer.playbackDisabled$ | async"
+          (click)="play()">
+    <mat-icon>play_arrow</mat-icon>
+  </button>
+}
+
+<button mat-fab color="accent"
+        class="audio-control-button"
+        [disabled]="audioPlayer.nextItemDisabled$ | async"
+        (click)="skipNext()"
+>
+  <mat-icon>skip_next</mat-icon>
+</button>
+<button mat-mini-fab color="accent"
+        class="audio-control-button"
+        [disabled]="audioPlayer.playbackDisabled$ | async"
+        (click)="forward()"
+>
+  <mat-icon>forward_30</mat-icon>
+</button>
+
+<app-audio-context-menu />

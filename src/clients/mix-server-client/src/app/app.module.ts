@@ -57,6 +57,12 @@ import {MatChipsModule} from "@angular/material/chips";
 import {NavBarComponent} from "./nav-bar/nav-bar.component";
 import {MatExpansionModule} from "@angular/material/expansion";
 import {AudioControlMobileComponent} from "./bottom-bar/audio-control-mobile/audio-control-mobile.component";
+import {
+  AudioProgressSliderComponent
+} from "./bottom-bar/audio-control/audio-progress-slider/audio-progress-slider.component";
+import {
+  AudioControlButtonsComponent
+} from "./bottom-bar/audio-control/audio-control-buttons/audio-control-buttons.component";
 
 @NgModule({
     declarations: [
@@ -68,7 +74,6 @@ import {AudioControlMobileComponent} from "./bottom-bar/audio-control-mobile/aud
         HomeComponent,
         LoginUserComponent,
         LoadingBarComponent,
-        DurationDisplayComponent,
         HistoryPageComponent,
         QueuePageComponent,
         FolderSortFormComponent,
@@ -76,7 +81,6 @@ import {AudioControlMobileComponent} from "./bottom-bar/audio-control-mobile/aud
         DeviceAdminComponent,
         DeleteDialogComponent,
         NodeListItemIcon,
-        AudioContextMenuComponent,
         NodeListItemComponent,
         OpenLocationButtonComponent,
         AddToQueueButtonComponent,
@@ -116,7 +120,9 @@ import {AudioControlMobileComponent} from "./bottom-bar/audio-control-mobile/aud
     NavBarComponent,
     MatExpansionModule,
     AudioControlMobileComponent,
-    SessionComponent
+    SessionComponent,
+    AudioProgressSliderComponent,
+    AudioControlButtonsComponent
   ],
     providers: [
         {

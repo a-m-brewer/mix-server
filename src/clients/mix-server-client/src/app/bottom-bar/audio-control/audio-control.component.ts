@@ -100,18 +100,6 @@ export class AudioControlComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public get currentTime(): number {
-    return this._currentTime;
-  }
-
-  public set currentTime(value: number) {
-    this.audioPlayer.currentTime = value;
-  }
-
-  public get duration(): number {
-    return this.audioPlayer.duration;
-  }
-
   public get volume(): number {
     return this.audioPlayer.volume;
   }
@@ -127,38 +115,6 @@ export class AudioControlComponent implements OnInit, OnDestroy {
     return this.audioPlayer.muted;
   }
 
-  public play(): void {
-    this.audioPlayer.requestPlaybackOnCurrentPlaybackDevice().then();
-  }
-
-  public pause(): void {
-    this.audioPlayer.requestPause();
-  }
-
-  public skipPrevious(): void {
-    if (!this.previousFile) {
-      return;
-    }
-
-    this._playbackSessionRepository.back();
-  }
-
-  public skipNext(): void {
-    if (!this.nextFile) {
-      return;
-    }
-
-    this._playbackSessionRepository.skip();
-  }
-
-  public backward(): void {
-    this.audioPlayer.seekOffset(-30);
-  }
-
-  public forward(): void {
-    this.audioPlayer.seekOffset(30);
-  }
-
   public toggleMute(): void {
     this.audioPlayer.muted = !this.audioPlayer.muted;
     if (this.audioPlayer.muted) {
@@ -168,10 +124,6 @@ export class AudioControlComponent implements OnInit, OnDestroy {
     else {
       this.audioPlayer.volume = this._volumeBeforeMute;
     }
-  }
-
-  public sliderDragEnded(event: MatSliderDragEvent) {
-    this.audioPlayer.seek(event.value);
   }
 
   private updateIsCurrentPlaybackDevice(): void {

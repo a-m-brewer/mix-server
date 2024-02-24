@@ -150,6 +150,22 @@ export class AudioPlayerService {
       }));
   }
 
+  public get previousItemDisabled$(): Observable<boolean> {
+    return this.audioControlsDisabled$
+      .pipe(combineLatestWith(this._queueRepository.previousQueueItem$()))
+      .pipe(map(([disabled, previousItem]) => {
+        return disabled || !previousItem || previousItem.disabled;
+      }));
+  }
+
+  public get nextItemDisabled$(): Observable<boolean> {
+    return this.audioControlsDisabled$
+      .pipe(combineLatestWith(this._queueRepository.nextQueueItem$()))
+      .pipe(map(([disabled, nextItem]) => {
+        return disabled || !nextItem || nextItem.disabled;
+      }));
+  }
+
   public get isCurrentPlaybackDevice$(): Observable<boolean> {
     return this._playbackSessionRepository.currentPlaybackDevice$
       .pipe(combineLatestWith(this._deviceRepository.currentDevice$))

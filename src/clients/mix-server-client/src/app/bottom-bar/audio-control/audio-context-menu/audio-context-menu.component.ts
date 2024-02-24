@@ -9,10 +9,23 @@ import {Device} from "../../../services/repositories/models/device";
 import {AuthenticationService} from "../../../services/auth/authentication.service";
 import {Router} from "@angular/router";
 import {PageRoutes} from "../../../page-routes.enum";
+import {MatButtonModule} from "@angular/material/button";
+import {MatMenuModule} from "@angular/material/menu";
+import {MatTooltipModule} from "@angular/material/tooltip";
+import {NgForOf} from "@angular/common";
+import {MatIconModule} from "@angular/material/icon";
 
 @Component({
   selector: 'app-audio-context-menu',
   templateUrl: './audio-context-menu.component.html',
+  standalone: true,
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+    MatTooltipModule,
+    NgForOf
+  ],
   styleUrls: ['./audio-context-menu.component.scss']
 })
 export class AudioContextMenuComponent implements OnInit, OnDestroy{

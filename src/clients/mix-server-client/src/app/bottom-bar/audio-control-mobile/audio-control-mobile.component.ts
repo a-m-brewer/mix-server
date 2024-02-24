@@ -12,6 +12,9 @@ import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
 import {AudioPlayerService} from "../../services/audio-player/audio-player.service";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
+import {AudioProgressSliderComponent} from "../audio-control/audio-progress-slider/audio-progress-slider.component";
+import {AudioControlButtonsComponent} from "../audio-control/audio-control-buttons/audio-control-buttons.component";
+import {FlexModule} from "@angular/flex-layout";
 
 @Component({
   selector: 'app-audio-control-mobile',
@@ -23,7 +26,10 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
     MatButtonModule,
     MatIconModule,
     AsyncPipe,
-    MatProgressBarModule
+    MatProgressBarModule,
+    AudioProgressSliderComponent,
+    AudioControlButtonsComponent,
+    FlexModule
   ],
   templateUrl: './audio-control-mobile.component.html',
   styleUrl: './audio-control-mobile.component.scss'
