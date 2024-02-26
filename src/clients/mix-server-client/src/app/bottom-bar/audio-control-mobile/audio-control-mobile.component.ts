@@ -16,6 +16,8 @@ import {AudioProgressSliderComponent} from "../audio-control/audio-progress-slid
 import {AudioControlButtonsComponent} from "../audio-control/audio-control-buttons/audio-control-buttons.component";
 import {FlexModule} from "@angular/flex-layout";
 import {SwitchDeviceMenuComponent} from "../audio-control/switch-device-menu/switch-device-menu.component";
+import {Device} from "../../services/repositories/models/device";
+import {DeviceRepositoryService} from "../../services/repositories/device-repository.service";
 
 @Component({
   selector: 'app-audio-control-mobile',
@@ -41,8 +43,11 @@ export class AudioControlMobileComponent implements OnInit, OnDestroy {
 
   public expanded: boolean = false;
   public playbackSession?: PlaybackSession | null;
+  public currentPlaybackDevice?: Device | null;
+  public currentDevice?: Device | null;
 
   constructor(public audioPlayer: AudioPlayerService,
+              private _deviceRepository: DeviceRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
@@ -51,6 +56,18 @@ export class AudioControlMobileComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(playbackSession => {
         this.playbackSession = playbackSession;
+      });
+
+    this.audioPlayer.currentPlaybackDevice$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(currentPlaybackDevice => {
+        this.currentPlaybackDevice = currentPlaybackDevice;
+      });
+
+    this._deviceRepository.currentDevice$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(currentDevice => {
+        this.currentDevice = currentDevice;
       });
   }
 

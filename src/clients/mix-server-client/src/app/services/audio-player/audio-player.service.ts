@@ -133,6 +133,18 @@ export class AudioPlayerService {
       }));
   }
 
+  public get otherValidPlaybackDevices$() : Observable<Array<Device>> {
+    return this._deviceRepository.onlineDevices$
+      .pipe(combineLatestWith(this._playbackSessionRepository.currentPlaybackDevice$))
+      .pipe(map(([devices, currentPlaybackDeviceId]) => {
+        if (!currentPlaybackDeviceId) {
+          return devices.filter(f => f.id !== this._authenticationService.deviceId);
+        }
+
+        return devices.filter(d => d.id !== currentPlaybackDeviceId);
+      }));
+  }
+
   public get audioControlsDisabled$(): Observable<boolean> {
     return this.currentPlaybackDevice$
       .pipe(combineLatestWith(this._authenticationService.connected$))

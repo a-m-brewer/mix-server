@@ -4,7 +4,7 @@ import {MatMenuModule} from "@angular/material/menu";
 import {AsyncPipe, NgForOf} from "@angular/common";
 import {MatButtonModule} from "@angular/material/button";
 import {AudioPlayerService} from "../../../services/audio-player/audio-player.service";
-import {Subject, takeUntil} from "rxjs";
+import {combineLatestWith, Subject, takeUntil} from "rxjs";
 import {Device} from "../../../services/repositories/models/device";
 import {
   CurrentPlaybackSessionRepositoryService
@@ -52,7 +52,6 @@ export class SwitchDeviceMenuComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(currentPlaybackDeviceId => {
         this.currentPlaybackDeviceId = currentPlaybackDeviceId;
-        console.log(`pb: ${currentPlaybackDeviceId} d: ${this.currentDevice?.id}`);
       });
 
     this._devicesRepository
@@ -60,14 +59,13 @@ export class SwitchDeviceMenuComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(currentDevice => {
         this.currentDevice = currentDevice;
-        console.log(`pb: ${this.currentPlaybackDeviceId} d: ${this.currentDevice?.id}`);
       });
 
-    this._devicesRepository
-      .onlineDevices$
+    this.audioPlayer
+      .otherValidPlaybackDevices$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(devices => {
-        this.devices = [...devices.filter(f => f.id !== this.session?.deviceId)];
+        this.devices = devices;
       });
   }
 

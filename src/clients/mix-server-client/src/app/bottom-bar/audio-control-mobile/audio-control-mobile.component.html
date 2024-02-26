@@ -6,8 +6,8 @@
     <div class="session">
       <strong>{{ playbackSession.currentNode.name }}</strong>
     </div>
-    <div *ngIf="!expanded">
-      Playing on....
+    <div *ngIf="currentPlaybackDevice && currentPlaybackDevice.id !== currentDevice?.id">
+      Playing on {{ currentPlaybackDevice.displayName }}
     </div>
   </div>
 
@@ -42,6 +42,7 @@
 
   <div content class="audio-control-mobile-content" fxLayout="column">
     <app-audio-progress-slider />
-    <app-audio-control-buttons class="audio-control-mobile-content-item" />
+    <div fxLayout="row" fxLayoutAlign="space-around center" app-audio-control-buttons>
+    </div>
   </div>
 </app-expansion-panel>

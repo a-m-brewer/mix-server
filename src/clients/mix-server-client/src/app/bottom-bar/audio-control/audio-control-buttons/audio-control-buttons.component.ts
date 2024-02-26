@@ -11,7 +11,7 @@ import {
 import {SwitchDeviceMenuComponent} from "../switch-device-menu/switch-device-menu.component";
 
 @Component({
-  selector: 'app-audio-control-buttons',
+  selector: 'app-audio-control-buttons, [app-audio-control-buttons]',
   standalone: true,
   imports: [
     AsyncPipe,
