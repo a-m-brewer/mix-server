@@ -1,7 +1,7 @@
 <div fxLayout="row">
   <app-duration-display
     class="audio-progress-slider-item"
-    [duration]="audioPlayer.currentTime">
+    [duration]="currentTime">
   </app-duration-display>
   <mat-slider fxFlex
               step="1"
@@ -10,7 +10,7 @@
               [max]="audioPlayer.duration"
               [disabled]="audioPlayer.playbackDisabled$ | async">
     <input matSliderThumb
-           [(ngModel)]="audioPlayer.currentTime"
+           [(ngModel)]="currentTime"
            (dragEnd)="sliderDragEnded($event)">
   </mat-slider>
   <app-duration-display

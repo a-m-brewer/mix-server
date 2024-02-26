@@ -83,7 +83,7 @@ export class CurrentPlaybackSessionRepositoryService {
 
   public get currentPlaybackDevice$(): Observable<string | null | undefined> {
     return this._currentSession$
-      .pipe(distinctUntilChanged((p, n) => p?.state.deviceId === n?.state.deviceId))
+      // .pipe(distinctUntilChanged((p, n) => p?.state.deviceId === n?.state.deviceId))
       .pipe(map(p => p?.state.deviceId));
   }
 

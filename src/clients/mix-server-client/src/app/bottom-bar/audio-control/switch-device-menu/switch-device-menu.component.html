@@ -1,0 +1,16 @@
+<button mat-icon-button [color]="currentPlaybackDeviceId === currentDevice?.id ? 'primary' : 'accent'"
+        [matMenuTriggerFor]="switchDeviceContextMenu"
+        [disabled]="!currentPlaybackDeviceId || !session || !devices || devices.length === 0">
+  <mat-icon>computer</mat-icon>
+</button>
+
+<mat-menu #switchDeviceContextMenu="matMenu">
+  <button mat-menu-item
+          *ngFor="let device of devices"
+          [disabled]="!currentPlaybackDeviceId || !session || !device.interactedWith || session.state.deviceId === device.id"
+          (click)="requestPlayback(device)"
+  >
+    <mat-icon [color]="device.id === currentPlaybackDeviceId ? 'accent' : 'primary'" >{{ device.icon }}</mat-icon>
+    <span>{{ device.displayName }}</span>
+  </button>
+</mat-menu>

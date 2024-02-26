@@ -14,6 +14,7 @@ import {MatMenuModule} from "@angular/material/menu";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {NgForOf} from "@angular/common";
 import {MatIconModule} from "@angular/material/icon";
+import {SwitchDeviceMenuComponent} from "../switch-device-menu/switch-device-menu.component";
 
 @Component({
   selector: 'app-audio-context-menu',
@@ -31,7 +32,6 @@ import {MatIconModule} from "@angular/material/icon";
 export class AudioContextMenuComponent implements OnInit, OnDestroy{
   private _unsubscribe$ = new Subject();
 
-  public devices: Device[] = [];
   public session: PlaybackSession | null = null;
   public disconnected: boolean = true;
 
@@ -53,13 +53,6 @@ export class AudioContextMenuComponent implements OnInit, OnDestroy{
       .subscribe(session => {
         this.session = session;
       });
-
-    this._devicesRepository
-      .onlineDevices$
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(devices => {
-        this.devices = [...devices.filter(f => f.id !== this.session?.deviceId)];
-      })
   }
 
   public ngOnDestroy(): void {
@@ -69,10 +62,6 @@ export class AudioContextMenuComponent implements OnInit, OnDestroy{
 
   public clearSession(): void {
     this._sessionRepository.clearSession();
-  }
-
-  public requestPlayback(device: Device): void {
-    this._sessionRepository.requestPlayback(device.id).then();
   }
 
   public openQueuePage(): void {

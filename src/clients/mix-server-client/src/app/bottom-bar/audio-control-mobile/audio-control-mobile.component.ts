@@ -15,6 +15,7 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
 import {AudioProgressSliderComponent} from "../audio-control/audio-progress-slider/audio-progress-slider.component";
 import {AudioControlButtonsComponent} from "../audio-control/audio-control-buttons/audio-control-buttons.component";
 import {FlexModule} from "@angular/flex-layout";
+import {SwitchDeviceMenuComponent} from "../audio-control/switch-device-menu/switch-device-menu.component";
 
 @Component({
   selector: 'app-audio-control-mobile',
@@ -29,7 +30,8 @@ import {FlexModule} from "@angular/flex-layout";
     MatProgressBarModule,
     AudioProgressSliderComponent,
     AudioControlButtonsComponent,
-    FlexModule
+    FlexModule,
+    SwitchDeviceMenuComponent
   ],
   templateUrl: './audio-control-mobile.component.html',
   styleUrl: './audio-control-mobile.component.scss'

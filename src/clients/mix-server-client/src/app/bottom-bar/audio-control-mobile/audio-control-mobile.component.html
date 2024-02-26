@@ -3,13 +3,18 @@
   (expanded)="onExpanded($event)"
 >
   <div headerText class="audio-control-header-text">
-    <span class="session">
-      {{ playbackSession.currentNode.name }}
-    </span>
+    <div class="session">
+      <strong>{{ playbackSession.currentNode.name }}</strong>
+    </div>
+    <div *ngIf="!expanded">
+      Playing on....
+    </div>
   </div>
 
   <div headerMeta class="audio-control-header-meta"
     *ngIf="!expanded">
+    <app-switch-device-menu />
+
     @if(audioPlayer.playing$ | async) {
       <button mat-mini-fab color="primary"
               class="audio-control-button"

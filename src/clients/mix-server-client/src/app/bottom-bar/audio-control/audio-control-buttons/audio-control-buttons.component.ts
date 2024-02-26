@@ -8,6 +8,7 @@ import {QueueRepositoryService} from "../../../services/repositories/queue-repos
 import {
   CurrentPlaybackSessionRepositoryService
 } from "../../../services/repositories/current-playback-session-repository.service";
+import {SwitchDeviceMenuComponent} from "../switch-device-menu/switch-device-menu.component";
 
 @Component({
   selector: 'app-audio-control-buttons',
@@ -16,7 +17,8 @@ import {
     AsyncPipe,
     MatButtonModule,
     MatIconModule,
-    AudioContextMenuComponent
+    AudioContextMenuComponent,
+    SwitchDeviceMenuComponent
   ],
   templateUrl: './audio-control-buttons.component.html',
   styleUrl: './audio-control-buttons.component.scss'

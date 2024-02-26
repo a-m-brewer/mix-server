@@ -18,6 +18,7 @@ import {ToastService} from "./services/toasts/toast-service";
 import {FileExplorerFolder} from "./main-content/file-explorer/models/file-explorer-folder";
 import {LoadingNodeStatus} from "./services/repositories/models/loading-node-status";
 import {LoadingRepositoryService} from "./services/repositories/loading-repository.service";
+import {WindowSizeRepositoryService} from "./services/repositories/window-size-repository.service";
 
 @Component({
   selector: 'app-root',
@@ -63,7 +64,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
               private _signalRConnectionService: MixServerSignalrConnectionServiceService,
               private _titleService: TitleService,
               private _toastService: ToastService,
-              private _visibilityRepository: VisibilityRepositoryService) {
+              private _visibilityRepository: VisibilityRepositoryService,
+              private _windowSizeRepository: WindowSizeRepositoryService) {
   }
 
   public ngOnInit(): void {
@@ -80,7 +82,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
           const elements = this.getElements();
 
           merge(
-            fromEvent(window, 'resize'),
+            this._windowSizeRepository.windowResized$,
             ...elements.otherElements.map(m => resizeObservable(m))
           )
             .pipe(takeUntil(this._unsubscribe$))
@@ -211,7 +213,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    var availableHeight = window.innerHeight - height;
+    const availableHeight = window.innerHeight - height;
 
     elements.content.style.height = availableHeight + 'px';
   }

@@ -18,7 +18,6 @@ import {AuthenticationService} from "../../services/auth/authentication.service"
 export class AudioControlComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
   private _volumeBeforeMute = 0;
-  private _currentTime = 0;
 
   public currentPlaybackSession: IPlaybackSession | null | undefined;
   public currentDevice: Device | null | undefined;
@@ -42,7 +41,6 @@ export class AudioControlComponent implements OnInit, OnDestroy {
     this.audioPlayer.currentTime$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe((v: number) => {
-        this._currentTime = v;
       });
 
     this._playbackSessionRepository
