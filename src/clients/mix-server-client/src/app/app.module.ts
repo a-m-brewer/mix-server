@@ -76,7 +76,6 @@ import {
         LoadingBarComponent,
         HistoryPageComponent,
         QueuePageComponent,
-        FolderSortFormComponent,
         AdminPageComponent,
         DeviceAdminComponent,
         DeleteDialogComponent,
@@ -85,7 +84,6 @@ import {
         OpenLocationButtonComponent,
         AddToQueueButtonComponent,
         RemoveFromQueueButtonComponent,
-        QueueEditFormComponent,
         SpinnerOverlayComponent,
         UserAdminComponent
     ],
@@ -135,9 +133,9 @@ import {
             multi: true
         }
     ],
-  exports: [
-    NodeListItemIcon
-  ],
+    exports: [
+        NodeListItemIcon
+    ],
     bootstrap: [AppComponent]
 })
 export class AppModule {

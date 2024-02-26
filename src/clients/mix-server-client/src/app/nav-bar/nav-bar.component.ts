@@ -17,6 +17,8 @@ import {AuthenticationService} from "../services/auth/authentication.service";
 import {ServerConnectionState} from "../services/auth/enums/ServerConnectionState";
 import {FileExplorerNodeRepositoryService} from "../services/repositories/file-explorer-node-repository.service";
 import {FileExplorerFolder} from "../main-content/file-explorer/models/file-explorer-folder";
+import {FolderSortFormComponent} from "../main-content/file-explorer/folder-sort-form/folder-sort-form.component";
+import {QueueEditFormComponent} from "../queue-page/queue-edit-form/queue-edit-form.component";
 
 @Component({
   selector: 'app-nav-bar',
@@ -33,7 +35,9 @@ import {FileExplorerFolder} from "../main-content/file-explorer/models/file-expl
     RouterLink,
     MatProgressSpinnerModule,
     NgIf,
-    AsyncPipe
+    AsyncPipe,
+    FolderSortFormComponent,
+    QueueEditFormComponent
   ],
   templateUrl: './nav-bar.component.html',
   styleUrl: './nav-bar.component.scss'

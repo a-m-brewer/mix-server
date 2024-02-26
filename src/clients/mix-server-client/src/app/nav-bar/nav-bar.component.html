@@ -61,4 +61,9 @@
       </mat-menu>
     </ng-container>
   </mat-toolbar-row>
+
+  <mat-toolbar-row fxLayout="row" fxLayoutAlign="space-around center">
+    <app-folder-sort-form *ngIf="currentPage === MenuLabel.Files" />
+    <app-queue-edit-form *ngIf="currentPage === MenuLabel.Queue" />
+  </mat-toolbar-row>
 </mat-toolbar>
