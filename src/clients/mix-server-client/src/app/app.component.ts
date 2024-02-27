@@ -8,9 +8,6 @@ import {AuthenticationService} from "./services/auth/authentication.service";
 import {InitializationRepositoryService} from "./services/repositories/initialization-repository.service";
 import {ScrollContainerRepositoryService} from "./services/repositories/scroll-container-repository.service";
 import {FileExplorerNodeRepositoryService} from "./services/repositories/file-explorer-node-repository.service";
-import {
-  CurrentPlaybackSessionRepositoryService
-} from "./services/repositories/current-playback-session-repository.service";
 import {NavigationEnd, Router} from "@angular/router";
 import {PageRoutes} from "./page-routes.enum";
 import {DeviceRepositoryService} from "./services/repositories/device-repository.service";
@@ -21,6 +18,7 @@ import {ToastService} from "./services/toasts/toast-service";
 import {FileExplorerFolder} from "./main-content/file-explorer/models/file-explorer-folder";
 import {LoadingNodeStatus} from "./services/repositories/models/loading-node-status";
 import {LoadingRepositoryService} from "./services/repositories/loading-repository.service";
+import {WindowSizeRepositoryService} from "./services/repositories/window-size-repository.service";
 
 @Component({
   selector: 'app-root',
@@ -66,7 +64,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
               private _signalRConnectionService: MixServerSignalrConnectionServiceService,
               private _titleService: TitleService,
               private _toastService: ToastService,
-              private _visibilityRepository: VisibilityRepositoryService) {
+              private _visibilityRepository: VisibilityRepositoryService,
+              private _windowSizeRepository: WindowSizeRepositoryService) {
   }
 
   public ngOnInit(): void {
@@ -83,7 +82,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
           const elements = this.getElements();
 
           merge(
-            fromEvent(window, 'resize'),
+            this._windowSizeRepository.windowResized$,
             ...elements.otherElements.map(m => resizeObservable(m))
           )
             .pipe(takeUntil(this._unsubscribe$))
@@ -214,7 +213,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    elements.content.style.height = `calc(100vh - ${height}px`;
+    const availableHeight = window.innerHeight - height;
+
+    elements.content.style.height = availableHeight + 'px';
   }
 
   private toHtmlElement(ref?: ElementRef): HTMLElement {

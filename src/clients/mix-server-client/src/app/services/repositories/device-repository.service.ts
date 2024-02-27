@@ -74,7 +74,8 @@ export class DeviceRepositoryService {
 
   public get onlineDevices$(): Observable<Device[]> {
     return this._devicesBehaviourSubject$
-      .pipe(map(m => m.filter(f => f.interactedWith)));
+      // Require the device is interacted with unless its this device because to do anything they would have to interact anyway
+      .pipe(map(m => m.filter(f => f.interactedWith || f.id === this._authenticationService.deviceId)));
   }
 
   public get currentDevice$(): Observable<Device | null | undefined> {

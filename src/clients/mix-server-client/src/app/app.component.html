@@ -1,77 +1,7 @@
 <div>
   <div #navBar>
-    <mat-toolbar id="nav-toolbar" *ngIf="initialized">
-      <mat-toolbar-row>
-        <a [disabled]="!connected" mat-button routerLink="/">Mix Server</a>
-        <span class="nav-bar-spacer"></span>
-
-        <a *ngIf="connected" mat-button routerLink="/queue">Queue</a>
-        <a *ngIf="connected" mat-button routerLink="/history">History</a>
-        <a *ngIf="connected" mat-button routerLink="/admin">Admin</a>
-
-        <a *ngIf="unauthorized" mat-button routerLink="/auth/user/login">Login</a>
-        <button *ngIf="!unauthorized" mat-button color="warn" (click)="logout()">Logout</button>
-      </mat-toolbar-row>
-
-      <mat-toolbar-row id="file-explorer-toolbar" *ngIf="showFileExplorerToolbar">
-        <button mat-button
-                class="file-explorer-toolbar-button file-explorer-toolbar-hidden-on-mobile"
-                [disabled]="folderBackButtonDisabled"
-                (click)="onFolderBackButtonClicked()"
-        >
-          <mat-icon>arrow_back_ios</mat-icon>
-        </button>
-        <button mat-button
-                class="file-explorer-toolbar-button file-explorer-toolbar-hidden-on-mobile"
-                [disabled]="loadingStatus.loading || !currentFolder"
-                (click)="onFolderRefreshButtonClicked()">
-          <mat-icon>refresh</mat-icon>
-        </button>
-
-        <span *ngIf="currentFolder" class="file-explorer-current-folder-name">
-          @if (currentFolder) {
-            {{ currentFolder.node.name  }}
-          }
-        </span>
-
-        <span class="nav-bar-spacer file-explorer-toolbar-hidden-on-mobile"></span>
-
-        <app-folder-sort-form
-          class="app-folder-sort-form file-explorer-toolbar-hidden-on-mobile">
-        </app-folder-sort-form>
-      </mat-toolbar-row>
-
-      <mat-toolbar-row
-        *ngIf="showFileExplorerToolbar"
-        id="file-explorer-toolbar-mobile"
-        class="file-explorer-toolbar-hidden-on-desktop">
-
-        <button mat-button
-                class="file-explorer-toolbar-button"
-                [disabled]="folderBackButtonDisabled"
-                (click)="onFolderBackButtonClicked()"
-        >
-          <mat-icon>arrow_back_ios</mat-icon>
-        </button>
-
-        <app-folder-sort-form
-          class="app-folder-sort-form">
-        </app-folder-sort-form>
-
-        <button mat-button
-                class="file-explorer-toolbar-button"
-                [disabled]="loadingStatus.loading || !currentFolder"
-                (click)="onFolderRefreshButtonClicked()">
-          <mat-icon>refresh</mat-icon>
-        </button>
-
-      </mat-toolbar-row>
-
-      <mat-toolbar-row id="queue-toolbar" *ngIf="showQueueToolbar">
-        <span class="nav-bar-spacer"></span>
-        <app-queue-edit-form />
-      </mat-toolbar-row>
-    </mat-toolbar>
+    <app-nav-bar *ngIf="initialized">
+    </app-nav-bar>
   </div>
 
   <div id="content-container" #mainContent>

@@ -1,1 +1,11 @@
+@media (max-width: 600px) {
+  #audio-control-component {
+    display: none;
+  }
+}
 
+@media (min-width: 600px) {
+  #audio-control-mobile-component {
+    display: none;
+  }
+}

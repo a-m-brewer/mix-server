@@ -34,3 +34,6 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
+.no-expansion-panel-padding .mat-expansion-panel-content .mat-expansion-panel-body{
+  padding: 0 !important;
+}

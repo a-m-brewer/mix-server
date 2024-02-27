@@ -1,0 +1,48 @@
+<app-expansion-panel
+  *ngIf="playbackSession"
+  (expanded)="onExpanded($event)"
+>
+  <div headerText class="audio-control-header-text">
+    <div class="session">
+      <strong>{{ playbackSession.currentNode.name }}</strong>
+    </div>
+    <div *ngIf="currentPlaybackDevice && currentPlaybackDevice.id !== currentDevice?.id">
+      Playing on {{ currentPlaybackDevice.displayName }}
+    </div>
+  </div>
+
+  <div headerMeta class="audio-control-header-meta"
+    *ngIf="!expanded">
+    <app-switch-device-menu />
+
+    @if(audioPlayer.playing$ | async) {
+      <button mat-mini-fab color="primary"
+              class="audio-control-button"
+              [disabled]="audioPlayer.playbackDisabled$ | async"
+              (click)="pause()">
+        <mat-icon>pause</mat-icon>
+      </button>
+    } @else {
+      <button mat-mini-fab color="primary"
+              class="audio-control-button"
+              [disabled]="audioPlayer.playbackDisabled$ | async"
+              (click)="play()">
+        <mat-icon>play_arrow</mat-icon>
+      </button>
+    }
+  </div>
+
+  @if (!expanded) {
+    <mat-progress-bar
+      headerFooter
+      mode="determinate"
+      [value]="audioPlayer.currentTimePercentage$ | async">
+    </mat-progress-bar>
+  }
+
+  <div content class="audio-control-mobile-content" fxLayout="column">
+    <app-audio-progress-slider />
+    <div fxLayout="row" fxLayoutAlign="space-around center" app-audio-control-buttons>
+    </div>
+  </div>
+</app-expansion-panel>

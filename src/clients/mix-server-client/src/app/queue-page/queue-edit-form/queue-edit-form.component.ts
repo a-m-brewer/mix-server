@@ -1,9 +1,11 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
+import {FormBuilder, FormControl, FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {Subject, takeUntil} from "rxjs";
 import {QueueRepositoryService} from "../../services/repositories/queue-repository.service";
 import {EditQueueFormModel} from "../../services/repositories/models/edit-queue-form-model";
 import {QueueEditFormRepositoryService} from "../../services/repositories/queue-edit-form-repository.service";
+import {MatButtonModule} from "@angular/material/button";
+import {NgIf} from "@angular/common";
 
 interface IQueueEditForm {
   editMode: FormControl<boolean>;
@@ -11,7 +13,13 @@ interface IQueueEditForm {
 
 @Component({
   selector: 'app-queue-edit-form',
+  standalone: true,
   templateUrl: './queue-edit-form.component.html',
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule,
+    NgIf
+  ],
   styleUrls: ['./queue-edit-form.component.scss']
 })
 export class QueueEditFormComponent implements OnInit, OnDestroy {

@@ -4,6 +4,7 @@ import {ComponentChanges} from "../../../utils/component-changes";
 @Component({
   selector: 'app-duration-display',
   templateUrl: './duration-display.component.html',
+  standalone: true,
   styleUrls: ['./duration-display.component.scss']
 })
 export class DurationDisplayComponent implements OnChanges {

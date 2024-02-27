@@ -127,7 +127,7 @@ export class FileExplorerNodeRepositoryService {
     return this._currentFolder$.asObservable();
   }
 
-  public changeDirectory(node?: FileExplorerFolderNode): void {
+  public changeDirectory(node?: FileExplorerFolderNode | null): void {
     if (this._loadingRepository.status.loading) {
       return;
     }

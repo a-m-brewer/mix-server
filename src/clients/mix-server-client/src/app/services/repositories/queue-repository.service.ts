@@ -68,31 +68,43 @@ export class QueueRepositoryService {
 
   public previousQueueItem$(): Observable<QueueItem | null | undefined> {
     return this._queueBehaviourSubject$
-      .pipe(map(q => {
-        const currentItemIndex = q.items.findIndex(f => f.id === q.currentQueuePosition);
+      .pipe(map(q => this.getPreviousQueueItem(q)));
+  }
 
-        return currentItemIndex == -1 || currentItemIndex <= 0
-          ? null
-          : q.items[currentItemIndex - 1];
-      }))
+  public get previousQueueItem(): QueueItem | null | undefined {
+    return this.getPreviousQueueItem(this.queue);
+  }
+
+  private getPreviousQueueItem(queue: Queue) : QueueItem | null | undefined {
+    const currentItemIndex = queue.items.findIndex(f => f.id === queue.currentQueuePosition);
+
+    return currentItemIndex == -1 || currentItemIndex <= 0
+      ? null
+      : queue.items[currentItemIndex - 1];
   }
 
   public nextQueueItem$(): Observable<QueueItem | null | undefined> {
     return this._queueBehaviourSubject$
-      .pipe(map(q => {
-        const currentItemIndex = q.items.findIndex(f => f.id === q.currentQueuePosition);
+      .pipe(map(q => this.getNextQueueItem(q)));
+  }
 
-        if (currentItemIndex == -1) {
-          return null
-        }
+  public get nextQueueItem(): QueueItem | null | undefined {
+    return this.getNextQueueItem(this.queue);
+  }
 
-        const nextIndex = currentItemIndex + 1;
-        if (nextIndex >= q.items.length) {
-          return null;
-        }
+  private getNextQueueItem(queue: Queue) : QueueItem | null | undefined {
+    const currentItemIndex = queue.items.findIndex(f => f.id === queue.currentQueuePosition);
 
-        return q.items[currentItemIndex + 1];
-      }));
+    if (currentItemIndex == -1) {
+      return null
+    }
+
+    const nextIndex = currentItemIndex + 1;
+    if (nextIndex >= queue.items.length) {
+      return null;
+    }
+
+    return queue.items[currentItemIndex + 1];
   }
 
   public addToQueue(file: FileExplorerFileNode): void {

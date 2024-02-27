@@ -16,21 +16,21 @@
   </button>
 
   <button mat-menu-item
-          [matMenuTriggerFor]="switchDeviceContextMenu"
-          [disabled]="!session || !devices || devices.length === 0"
+          matTooltip="History"
+          [disabled]="disconnected"
+          (click)="openHistoryPage()"
   >
-    <mat-icon>devices</mat-icon>
-    <span>Switch Device</span>
+    <mat-icon>list</mat-icon>
+    <span>History</span>
+  </button>
+
+  <button mat-menu-item
+          matTooltip="Queue"
+          [disabled]="disconnected"
+          (click)="openQueuePage()"
+  >
+    <mat-icon>queue_music</mat-icon>
+    <span>Queue</span>
   </button>
 </mat-menu>
 
-<mat-menu #switchDeviceContextMenu="matMenu">
-  <button mat-menu-item
-          *ngFor="let device of devices"
-          [disabled]="!session || !device.interactedWith || session.state.deviceId === device.id"
-          (click)="requestPlayback(device)"
-  >
-    <mat-icon>{{ device.icon }}</mat-icon>
-    <span>{{ device.displayName }}</span>
-  </button>
-</mat-menu>

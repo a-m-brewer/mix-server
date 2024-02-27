@@ -54,6 +54,15 @@ import {MatCheckboxModule} from "@angular/material/checkbox";
 import { SpinnerOverlayComponent } from './components/spinner-overlay/spinner-overlay.component';
 import {UserAdminComponent} from "./admin-page/user-admin/user-admin.component";
 import {MatChipsModule} from "@angular/material/chips";
+import {NavBarComponent} from "./nav-bar/nav-bar.component";
+import {MatExpansionModule} from "@angular/material/expansion";
+import {AudioControlMobileComponent} from "./bottom-bar/audio-control-mobile/audio-control-mobile.component";
+import {
+  AudioProgressSliderComponent
+} from "./bottom-bar/audio-control/audio-progress-slider/audio-progress-slider.component";
+import {
+  AudioControlButtonsComponent
+} from "./bottom-bar/audio-control/audio-control-buttons/audio-control-buttons.component";
 
 @NgModule({
     declarations: [
@@ -65,21 +74,16 @@ import {MatChipsModule} from "@angular/material/chips";
         HomeComponent,
         LoginUserComponent,
         LoadingBarComponent,
-        DurationDisplayComponent,
-        SessionComponent,
         HistoryPageComponent,
         QueuePageComponent,
-        FolderSortFormComponent,
         AdminPageComponent,
         DeviceAdminComponent,
         DeleteDialogComponent,
         NodeListItemIcon,
-        AudioContextMenuComponent,
         NodeListItemComponent,
         OpenLocationButtonComponent,
         AddToQueueButtonComponent,
         RemoveFromQueueButtonComponent,
-        QueueEditFormComponent,
         SpinnerOverlayComponent,
         UserAdminComponent
     ],
@@ -110,7 +114,13 @@ import {MatChipsModule} from "@angular/material/chips";
     MatMenuModule,
     MatRippleModule,
     MatCheckboxModule,
-    MatChipsModule
+    MatChipsModule,
+    NavBarComponent,
+    MatExpansionModule,
+    AudioControlMobileComponent,
+    SessionComponent,
+    AudioProgressSliderComponent,
+    AudioControlButtonsComponent
   ],
     providers: [
         {
