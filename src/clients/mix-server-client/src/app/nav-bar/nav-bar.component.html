@@ -3,14 +3,13 @@
     <button mat-icon-button
             (click)="filesClicked()">
       <mat-icon class="home-icon">
-        @if(currentFolder && currentFolder.node.belongsToRootChild) {
-          arrow_back_ios
+        @if (currentFolder && currentFolder.node.belongsToRootChild) {
+          arrow_back_ios_new
         } @else {
           album
         }
       </mat-icon>
     </button>
-
     <div fxFlex
          class="page-title">
       @if (currentPage === MenuLabel.Files && currentFolder && currentFolder.node.belongsToRootChild) {
@@ -55,15 +54,27 @@
               <mat-icon class="mr">{{ item.icon }}</mat-icon>
               <span>{{ item.label }}</span>
             </button>
-            <mat-divider [inset]="true" *ngIf="!last" ></mat-divider>
+            <mat-divider [inset]="true" *ngIf="!last"></mat-divider>
           </div>
         </ng-container>
       </mat-menu>
     </ng-container>
   </mat-toolbar-row>
 
-  <mat-toolbar-row fxLayout="row" fxLayoutAlign="space-around center">
-    <app-folder-sort-form *ngIf="currentPage === MenuLabel.Files" />
-    <app-queue-edit-form *ngIf="currentPage === MenuLabel.Queue" />
+  <mat-toolbar-row id="file-explorer-toolbar"
+                   *ngIf="currentPage === MenuLabel.Files">
+    <div fxFlex>
+      <button mat-icon-button
+              *ngIf="currentFolder">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+    <app-folder-sort-form />
+    <div *ngIf="windowType === WindowType.Mobile" fxFlex></div>
+  </mat-toolbar-row>
+
+  <mat-toolbar-row *ngIf="currentPage === MenuLabel.Queue"
+                   fxLayout="row" fxLayoutAlign="end center">
+    <app-queue-edit-form/>
   </mat-toolbar-row>
 </mat-toolbar>

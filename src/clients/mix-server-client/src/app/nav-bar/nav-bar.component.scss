@@ -8,3 +8,8 @@
     text-align: center;
   }
 }
+
+#file-explorer-toolbar {
+  display: inline-grid;
+  grid-template-columns: 48px auto 48px
+}

@@ -19,6 +19,8 @@ import {FileExplorerNodeRepositoryService} from "../services/repositories/file-e
 import {FileExplorerFolder} from "../main-content/file-explorer/models/file-explorer-folder";
 import {FolderSortFormComponent} from "../main-content/file-explorer/folder-sort-form/folder-sort-form.component";
 import {QueueEditFormComponent} from "../queue-page/queue-edit-form/queue-edit-form.component";
+import { WindowSizeRepositoryService } from "../services/repositories/window-size-repository.service";
+import {WindowType} from "../services/repositories/enums/window-type";
 
 @Component({
   selector: 'app-nav-bar',
@@ -97,11 +99,13 @@ export class NavBarComponent implements OnInit, OnDestroy {
 
   public currentPage?: MenuLabel;
   public currentFolder?: FileExplorerFolder | null;
+  public windowType: WindowType = WindowType.Unknown;
 
   constructor(private _authenticationService: AuthenticationService,
               private _loadingRepository: LoadingRepositoryService,
               private _nodeRepository: FileExplorerNodeRepositoryService,
-              private _router: Router) {
+              private _router: Router,
+              private _windowSizeRepository: WindowSizeRepositoryService) {
   }
 
   public ngOnInit(): void {
@@ -149,6 +153,12 @@ export class NavBarComponent implements OnInit, OnDestroy {
           }
         });
       });
+
+    this._windowSizeRepository.windowType$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(windowType => {
+        this.windowType = windowType;
+      })
   }
 
   public get menuItems$(): Observable<Array<MenuItem>> {
@@ -218,4 +228,5 @@ export class NavBarComponent implements OnInit, OnDestroy {
   }
 
   protected readonly MenuLabel = MenuLabel;
+  protected readonly WindowType = WindowType;
 }
