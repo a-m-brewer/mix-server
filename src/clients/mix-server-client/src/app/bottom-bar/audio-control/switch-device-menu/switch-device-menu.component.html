@@ -1,5 +1,5 @@
 <button mat-icon-button [color]="currentPlaybackDeviceId === currentDevice?.id ? 'primary' : 'accent'"
-        [disabled]="devices.length === 0"
+        [disabled]="devices.length === 0 || !currentDevice || !currentDevice.interactedWith"
         [matMenuTriggerFor]="switchDeviceContextMenu">
   <mat-icon>computer</mat-icon>
 </button>
