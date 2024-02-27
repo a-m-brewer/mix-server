@@ -139,7 +139,7 @@ export class NavBarComponent implements OnInit, OnDestroy {
       .pipe(map(() => {
         return this.pathname;
       }))
-      .subscribe(pathname => {
+      .subscribe(() => {
         this.setCurrentPage();
       });
 
@@ -192,6 +192,11 @@ export class NavBarComponent implements OnInit, OnDestroy {
         this._loadingRepository.stopLoadingId(item.label);
       }
     }
+  }
+
+
+  public refreshFolder(): void {
+    this._nodeRepository.refreshFolder();
   }
 
   private get pathname(): string {

@@ -65,7 +65,10 @@
                    *ngIf="currentPage === MenuLabel.Files">
     <div fxFlex>
       <button mat-icon-button
-              *ngIf="currentFolder">
+              *ngIf="currentFolder"
+              [disabled]="loadingStatus.loading"
+              (click)="refreshFolder()"
+      >
         <mat-icon>refresh</mat-icon>
       </button>
     </div>
