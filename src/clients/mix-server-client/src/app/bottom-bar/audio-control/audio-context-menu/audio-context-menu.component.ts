@@ -15,6 +15,7 @@ import {MatTooltipModule} from "@angular/material/tooltip";
 import {NgForOf} from "@angular/common";
 import {MatIconModule} from "@angular/material/icon";
 import {SwitchDeviceMenuComponent} from "../switch-device-menu/switch-device-menu.component";
+import {SessionService} from "../../../services/sessions/session.service";
 
 @Component({
   selector: 'app-audio-context-menu',
@@ -37,9 +38,9 @@ export class AudioContextMenuComponent implements OnInit, OnDestroy{
 
   constructor(
     private _authService: AuthenticationService,
-    private _devicesRepository: DeviceRepositoryService,
     private _router: Router,
-    private _sessionRepository: CurrentPlaybackSessionRepositoryService) {
+    private _sessionRepository: CurrentPlaybackSessionRepositoryService,
+    private _sessionService: SessionService) {
   }
 
   public ngOnInit(): void {
@@ -61,7 +62,7 @@ export class AudioContextMenuComponent implements OnInit, OnDestroy{
   }
 
   public clearSession(): void {
-    this._sessionRepository.clearSession();
+    this._sessionService.clearSession();
   }
 
   public openQueuePage(): void {

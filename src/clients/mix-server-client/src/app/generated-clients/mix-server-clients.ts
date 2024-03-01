@@ -545,9 +545,9 @@ export class QueueClient implements IQueueClient {
 
 export interface ISessionClient {
     syncPlaybackSession(command: SyncPlaybackSessionCommand): Observable<SyncPlaybackSessionResponse>;
-    setCurrentSession(command: SetCurrentSessionCommand): Observable<void>;
-    clearCurrentSession(): Observable<void>;
-    setNextSession(command: SetNextSessionCommand): Observable<void>;
+    setCurrentSession(command: SetCurrentSessionCommand): Observable<CurrentSessionUpdatedDto>;
+    clearCurrentSession(): Observable<CurrentSessionUpdatedDto>;
+    setNextSession(command: SetNextSessionCommand): Observable<CurrentSessionUpdatedDto>;
     history(startIndex?: number | undefined, pageSize?: number | undefined): Observable<GetUsersSessionsResponse>;
     requestPlayback(command: RequestPlaybackCommand): Observable<void>;
     requestPause(): Observable<void>;
@@ -627,7 +627,7 @@ export class SessionClient implements ISessionClient {
         return _observableOf(null as any);
     }
 
-    setCurrentSession(command: SetCurrentSessionCommand): Observable<void> {
+    setCurrentSession(command: SetCurrentSessionCommand): Observable<CurrentSessionUpdatedDto> {
         let url_ = this.baseUrl + "/api/session";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -639,6 +639,7 @@ export class SessionClient implements ISessionClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -649,23 +650,26 @@ export class SessionClient implements ISessionClient {
                 try {
                     return this.processSetCurrentSession(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<CurrentSessionUpdatedDto>;
         }));
     }
 
-    protected processSetCurrentSession(response: HttpResponseBase): Observable<void> {
+    protected processSetCurrentSession(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 202) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CurrentSessionUpdatedDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -689,7 +693,7 @@ export class SessionClient implements ISessionClient {
         return _observableOf(null as any);
     }
 
-    clearCurrentSession(): Observable<void> {
+    clearCurrentSession(): Observable<CurrentSessionUpdatedDto> {
         let url_ = this.baseUrl + "/api/session";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -697,6 +701,7 @@ export class SessionClient implements ISessionClient {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
+                "Accept": "application/json"
             })
         };
 
@@ -707,23 +712,26 @@ export class SessionClient implements ISessionClient {
                 try {
                     return this.processClearCurrentSession(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<CurrentSessionUpdatedDto>;
         }));
     }
 
-    protected processClearCurrentSession(response: HttpResponseBase): Observable<void> {
+    protected processClearCurrentSession(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 204) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CurrentSessionUpdatedDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -733,7 +741,7 @@ export class SessionClient implements ISessionClient {
         return _observableOf(null as any);
     }
 
-    setNextSession(command: SetNextSessionCommand): Observable<void> {
+    setNextSession(command: SetNextSessionCommand): Observable<CurrentSessionUpdatedDto> {
         let url_ = this.baseUrl + "/api/session/next";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -745,6 +753,7 @@ export class SessionClient implements ISessionClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -755,23 +764,26 @@ export class SessionClient implements ISessionClient {
                 try {
                     return this.processSetNextSession(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<CurrentSessionUpdatedDto>;
         }));
     }
 
-    protected processSetNextSession(response: HttpResponseBase): Observable<void> {
+    protected processSetNextSession(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 202) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CurrentSessionUpdatedDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -2325,7 +2337,7 @@ export interface IValidationProblemDetails extends IHttpValidationProblemDetails
 }
 
 export class RefreshFolderCommand implements IRefreshFolderCommand {
-    absolutePath!: string;
+    absolutePath?: string | undefined;
 
     constructor(data?: IRefreshFolderCommand) {
         if (data) {
@@ -2357,7 +2369,7 @@ export class RefreshFolderCommand implements IRefreshFolderCommand {
 }
 
 export interface IRefreshFolderCommand {
-    absolutePath: string;
+    absolutePath?: string | undefined;
 }
 
 export class SetFolderSortCommand implements ISetFolderSortCommand {
@@ -2779,6 +2791,49 @@ export interface ISyncPlaybackSessionCommand {
     playbackSessionId?: string | undefined;
     playing: boolean;
     currentTime: number;
+}
+
+export class CurrentSessionUpdatedDto implements ICurrentSessionUpdatedDto {
+    session?: PlaybackSessionDto | undefined;
+    queue!: QueueSnapshotDto;
+
+    constructor(data?: ICurrentSessionUpdatedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.queue = new QueueSnapshotDto();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.session = _data["session"] ? PlaybackSessionDto.fromJS(_data["session"]) : <any>undefined;
+            this.queue = _data["queue"] ? QueueSnapshotDto.fromJS(_data["queue"]) : new QueueSnapshotDto();
+        }
+    }
+
+    static fromJS(data: any): CurrentSessionUpdatedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CurrentSessionUpdatedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["session"] = this.session ? this.session.toJSON() : <any>undefined;
+        data["queue"] = this.queue ? this.queue.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface ICurrentSessionUpdatedDto {
+    session?: PlaybackSessionDto | undefined;
+    queue: QueueSnapshotDto;
 }
 
 export class SetCurrentSessionCommand implements ISetCurrentSessionCommand {

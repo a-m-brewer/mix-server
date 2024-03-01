@@ -1,14 +1,14 @@
 import {Injectable} from '@angular/core';
-import {QueueClient} from "../../generated-clients/mix-server-clients";
-import {BehaviorSubject, firstValueFrom, map, Observable} from "rxjs";
-import {Queue} from "./models/queue";
-import {QueueConverterService} from "../converters/queue-converter.service";
 import {
   AddToQueueCommand,
   ProblemDetails,
+  QueueClient,
   RemoveFromQueueCommand,
   SetQueuePositionCommand
 } from "../../generated-clients/mix-server-clients";
+import {BehaviorSubject, firstValueFrom, map, Observable} from "rxjs";
+import {Queue} from "./models/queue";
+import {QueueConverterService} from "../converters/queue-converter.service";
 import {ToastService} from "../toasts/toast-service";
 import {QueueSignalrClientService} from "../signalr/queue-signalr-client.service";
 import {AuthenticationService} from "../auth/authentication.service";
@@ -37,9 +37,7 @@ export class QueueRepositoryService {
           this._loadingRepository.startLoading();
           firstValueFrom(this._queueClient.queue())
             .then(dto => {
-              const queue = this._queueConverter.fromDto(dto);
-
-              this.nextQueue(queue);
+              this.queue = this._queueConverter.fromDto(dto);
             })
             .catch(err => {
               if ((err as ProblemDetails)?.status !== 404) {
@@ -53,12 +51,16 @@ export class QueueRepositoryService {
     this.initializeSignalR();
   }
 
-  public queue$(): Observable<Queue> {
-    return this._queueBehaviourSubject$.asObservable();
-  }
-
   public get queue(): Queue {
     return this._queueBehaviourSubject$.getValue();
+  }
+
+  public set queue(value: Queue) {
+    this._queueBehaviourSubject$.next(value);
+  }
+
+  public queue$(): Observable<Queue> {
+    return this._queueBehaviourSubject$.asObservable();
   }
 
   public queuePosition$(): Observable<QueueItem | null | undefined> {
@@ -154,12 +156,8 @@ export class QueueRepositoryService {
     this._queueSignalRClient.queue$()
       .subscribe({
         next: updatedQueue => {
-          this.nextQueue(updatedQueue);
+          this.queue = updatedQueue;
         }
       })
-  }
-
-  private nextQueue(queue: Queue): void {
-    this._queueBehaviourSubject$.next(queue);
   }
 }

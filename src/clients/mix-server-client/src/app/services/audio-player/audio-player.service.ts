@@ -27,6 +27,7 @@ import {DeviceRepositoryService} from "../repositories/device-repository.service
 import {merge} from "rxjs/internal/operators/merge";
 import {combineLatest} from "rxjs/internal/operators/combineLatest";
 import {Device} from "../repositories/models/device";
+import {SessionService} from "../sessions/session.service";
 
 @Injectable({
   providedIn: 'root'
@@ -47,6 +48,7 @@ export class AudioPlayerService {
               private _loadingRepository: LoadingRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _queueRepository: QueueRepositoryService,
+              private _sessionService: SessionService,
               private _streamUrlService: StreamUrlService,
               private _toastService: ToastService) {
     this.audio.ontimeupdate = () => {
@@ -280,7 +282,7 @@ export class AudioPlayerService {
               return
             }
 
-            this._playbackSessionRepository.skip();
+            this._sessionService.skip();
           })
       } else {
         this._audioSession
@@ -294,7 +296,7 @@ export class AudioPlayerService {
               return
             }
 
-            this._playbackSessionRepository.back();
+            this._sessionService.back();
           })
       } else {
         this._audioSession
@@ -305,11 +307,11 @@ export class AudioPlayerService {
     } catch (err) {
       const dom = err as DOMException;
       if (dom.name === 'NotSupportedError') {
-        this._toastService.error(`${this._playbackSessionRepository.currentPlaybackSession?.currentNode?.name} unsupported`, 'Not Supported');
-        this._playbackSessionRepository.clearSession();
+        this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name} unsupported`, 'Not Supported');
+        this._sessionService.clearSession();
       } else {
         console.error(dom);
-        this._toastService.error(`${this._playbackSessionRepository.currentPlaybackSession?.currentNode?.name}: ${dom.message}`, dom.name);
+        this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name}: ${dom.message}`, dom.name);
       }
     }
   }
@@ -364,7 +366,7 @@ export class AudioPlayerService {
   }
 
   private handleOnSessionEnded(): void {
-    this._playbackSessionRepository.setSessionEnded();
+    this._sessionService.setSessionEnded();
   }
 
   private updateTimeChangedBehaviourSubject() {

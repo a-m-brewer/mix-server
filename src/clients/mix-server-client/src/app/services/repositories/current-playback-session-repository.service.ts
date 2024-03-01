@@ -1,13 +1,11 @@
 import {Injectable} from '@angular/core';
 import {BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, Observable, Subject} from "rxjs";
 import {PlaybackSession} from "./models/playback-session";
-import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
-import {SessionClient} from "../../generated-clients/mix-server-clients";
 import {
   ProblemDetails,
   RequestPlaybackCommand,
   SeekRequest,
-  SetCurrentSessionCommand,
+  SessionClient,
   SetNextSessionCommand,
   SetPlayingCommand,
   SyncPlaybackSessionCommand
@@ -41,7 +39,7 @@ export class CurrentPlaybackSessionRepositoryService {
     this._authenticationService.serverConnectionStatus$
       .subscribe(serverConnectionStatus => {
         if (serverConnectionStatus === ServerConnectionState.Connected) {
-          const currentSession = this.currentPlaybackSession;
+          const currentSession = this.currentSession;
           this._loadingRepository.startLoading();
           firstValueFrom(this._sessionClient.syncPlaybackSession(new SyncPlaybackSessionCommand({
             playbackSessionId: currentSession?.id,
@@ -53,12 +51,9 @@ export class CurrentPlaybackSessionRepositoryService {
                 return;
               }
 
-              const nextSession =
-                value.session
-                  ? this._playbackSessionConverter.fromDto(value.session)
-                  : null;
-
-              this.nextSession(nextSession);
+              this.currentSession = value.session
+                ? this._playbackSessionConverter.fromDto(value.session)
+                : null;
             })
             .catch(err => {
               if ((err as ProblemDetails)?.status !== 404) {
@@ -69,11 +64,19 @@ export class CurrentPlaybackSessionRepositoryService {
         }
 
         if (serverConnectionStatus === ServerConnectionState.Unauthorized) {
-          this.nextSession(null);
+          this.currentSession = null;
         }
       });
 
     this.initializeSignalR();
+  }
+
+  public get currentSession(): PlaybackSession | null {
+    return this._currentSession$.getValue();
+  }
+
+  public set currentSession(value: PlaybackSession | null) {
+    this._currentSession$.next(value);
   }
 
   public get currentSession$(): Observable<PlaybackSession | null> {
@@ -107,21 +110,6 @@ export class CurrentPlaybackSessionRepositoryService {
     return this._playbackGranted$.asObservable();
   }
 
-  public get currentPlaybackSession(): PlaybackSession | null {
-    return this._currentSession$.getValue();
-  }
-
-  public setFile(file: FileExplorerFileNode): void  {
-    this._loadingRepository.startLoadingId(file.absolutePath);
-
-    firstValueFrom(this._sessionClient.setCurrentSession(new SetCurrentSessionCommand({
-      absoluteFolderPath: file.parent.absolutePath,
-      fileName: file.name
-    })))
-      .catch(err => this._toastService.logServerError(err, 'Failed to set current session'))
-      .finally(() => this._loadingRepository.stopLoadingId(file.absolutePath));
-  }
-
   public async requestPlaybackOnCurrentPlaybackDevice(): Promise<void> {
     return this.requestPlayback(this._currentSession$.value?.state.deviceId)
   }
@@ -150,46 +138,6 @@ export class CurrentPlaybackSessionRepositoryService {
 
     firstValueFrom(this._sessionClient.requestPause())
       .catch(err => this._toastService.logServerError(err, 'Failed to request pause'))
-      .finally(() => this._loadingRepository.stopLoading());
-  }
-
-  public clearSession(): void {
-    this._loadingRepository.startLoading();
-    firstValueFrom(this._sessionClient.clearCurrentSession())
-      .then(_ => this.nextSession(null))
-      .catch(err => this._toastService.logServerError(err, 'Failed to clear current session'))
-      .finally(() => this._loadingRepository.stopLoading());
-  }
-
-  public back(): void {
-    this.setNextSession(new SetNextSessionCommand({
-      offset: -1,
-      resetSessionState: false
-    }))
-  }
-
-  public skip(): void {
-    this.setNextSession(new SetNextSessionCommand({
-      offset: 1,
-      resetSessionState: false
-    }))
-  }
-
-  public setSessionEnded(): void {
-    if (!this.currentPlaybackSession || this.currentPlaybackSession.state.deviceId !== this._authenticationService.deviceId) {
-      return;
-    }
-
-    this.setNextSession(new SetNextSessionCommand({
-      offset: 1,
-      resetSessionState: true
-    }));
-  }
-
-  private setNextSession(command: SetNextSessionCommand): void {
-    this._loadingRepository.startLoading();
-    firstValueFrom(this._sessionClient.setNextSession(command))
-      .catch(err => this._toastService.logServerError(err, 'Failed to set next session'))
       .finally(() => this._loadingRepository.stopLoading());
   }
 
@@ -223,7 +171,7 @@ export class CurrentPlaybackSessionRepositoryService {
     this._sessionSignalRClient.currentPlaybackSessionUpdated$()
       .subscribe({
         next: playbackSession => {
-          this.nextSession(playbackSession);
+          this.currentSession = playbackSession;
         }
       });
 
@@ -253,18 +201,12 @@ export class CurrentPlaybackSessionRepositoryService {
       })
   }
 
-  private nextSession(playbackSession: PlaybackSession | null): void {
-    this._currentSession$.next(playbackSession);
-  }
-
   private nextState(state: PlaybackState) {
-    const previousSession = this.currentPlaybackSession;
+    const previousSession = this.currentSession;
     if (!previousSession) {
       return;
     }
 
-    const session = PlaybackSession.copy(previousSession, state);
-
-    this.nextSession(session);
+    this.currentSession = PlaybackSession.copy(previousSession, state);
   }
 }
