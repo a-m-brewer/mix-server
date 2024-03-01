@@ -3,7 +3,7 @@ import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-p
 import {
   BehaviorSubject,
   combineLatestWith,
-  filter,
+  filter, firstValueFrom,
   map,
   mergeWith,
   Observable,
@@ -246,7 +246,16 @@ export class AudioPlayerService {
 
   public requestPause(): void {
     this._playbackGranted = false;
-    this._playbackSessionRepository.requestPause();
+
+    firstValueFrom(this.isCurrentPlaybackDevice$)
+      .then(isCurrentPlaybackDevice => {
+        if (isCurrentPlaybackDevice) {
+          this.handlePauseRequested();
+        }
+        else {
+          this._playbackSessionRepository.requestPause();
+        }
+      });
   }
 
   public seek(time: number): void {
