@@ -11,7 +11,7 @@ public class SetPlayingCommandHandler(
     IPlaybackTrackingService playbackTrackingService)
     : ICommandHandler<SetPlayingCommand>
 {
-    private readonly ICurrentDeviceRepository _currentDeviceRepository = currentDeviceRepository;
+    public ICurrentDeviceRepository CurrentDeviceRepository { get; } = currentDeviceRepository;
 
     public Task HandleAsync(SetPlayingCommand request)
     {
