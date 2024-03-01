@@ -28,6 +28,7 @@ import {merge} from "rxjs/internal/operators/merge";
 import {combineLatest} from "rxjs/internal/operators/combineLatest";
 import {Device} from "../repositories/models/device";
 import {SessionService} from "../sessions/session.service";
+import {LoggingService} from "../logging.service";
 
 @Injectable({
   providedIn: 'root'
@@ -50,7 +51,8 @@ export class AudioPlayerService {
               private _queueRepository: QueueRepositoryService,
               private _sessionService: SessionService,
               private _streamUrlService: StreamUrlService,
-              private _toastService: ToastService) {
+              private _toastService: ToastService,
+              private _loggingService: LoggingService) {
     this.audio.ontimeupdate = () => {
       this.updateTimeChangedBehaviourSubject();
     }
@@ -270,9 +272,13 @@ export class AudioPlayerService {
 
   private async play(): Promise<void> {
     try {
+      this._loggingService.info(`Starting Playback of: ${this._playbackSessionRepository.currentSession?.currentNode.name}`);
       await this.audio.play();
+      this._loggingService.info(`Audio element playing: ${this._playbackSessionRepository.currentSession?.currentNode.name}`);
       this.setDevicePlaying(true);
+      this._loggingService.info(`Finished set playing: ${this._playbackSessionRepository.currentSession?.currentNode.name}`);
       this._playbackGranted = true;
+      this._loggingService.info(`Playback granted: ${this._playbackSessionRepository.currentSession?.currentNode.name}`);
       this._audioSession
         .createMetadata()
         .updatePositionState()
@@ -283,6 +289,7 @@ export class AudioPlayerService {
           this.requestPause();
         })
         .withSeekTo();
+      this._loggingService.info(`Created Session metadata: ${this._playbackSessionRepository.currentSession?.currentNode.name}`);
 
       if (this._nextFile) {
         this._audioSession
@@ -313,14 +320,22 @@ export class AudioPlayerService {
       }
 
       this.setPlaying();
+      this._loggingService.info(`setPlaying: ${this._playbackSessionRepository.currentSession?.currentNode.name}`);
+
+      this._loggingService.info(`Current Time: ${this.audio.currentTime} Duration: ${this.audio.duration} Playing: ${!this.audio.paused}`);
     } catch (err) {
-      const dom = err as DOMException;
-      if (dom.name === 'NotSupportedError') {
-        this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name} unsupported`, 'Not Supported');
-        this._sessionService.clearSession();
-      } else {
-        console.error(dom);
-        this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name}: ${dom.message}`, dom.name);
+      if (err instanceof DOMException) {
+        if (err.name === 'NotSupportedError') {
+          this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name} unsupported`, 'Not Supported');
+          this._sessionService.clearSession();
+        } else {
+          console.error(err);
+          this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name}: ${err.message}`, err.name);
+        }
+      } else if (err instanceof Error) {
+        console.error(err);
+        this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name}: ${err.message}`, err.name);
+        this._loggingService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name}: ${err.message}`);
       }
     }
   }
@@ -335,17 +350,18 @@ export class AudioPlayerService {
   }
 
   private setCurrentSession(session: PlaybackSession): void {
+    this._loggingService.info(`Received Session: ${session.id}`);
+
     this.audio.src = this._streamUrlService.getStreamUrl(session.id);
     this.audio.load();
     this.audio.currentTime = session.state.currentTime;
 
     this._audioPlayerState.node = session.currentNode;
 
+    this._loggingService.info(`Session Device: ${session.deviceId} Authentication Device: ${this._authenticationService.deviceId}`);
     if (session.deviceId === this._authenticationService.deviceId) {
+      this._loggingService.info(`Setting Playing: ${session.currentNode.name}`);
       this.play().then();
-    }
-    else {
-      this.setPaused();
     }
   }
 
@@ -355,11 +371,13 @@ export class AudioPlayerService {
   }
 
   private setPaused(): void {
+    this._loggingService.info(`Pausing: ${this._playbackSessionRepository.currentSession?.currentNode.name}`);
     this._audioSession.setPaused();
     this._audioPlayerState.playing = false;
   }
 
   private clearSession(): void {
+    this._loggingService.info(`Clearing Session`);
     this.audio.src = '';
     this.audio.load();
     this.updateTimeChangedBehaviourSubject();
