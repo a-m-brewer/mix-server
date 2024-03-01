@@ -11,7 +11,6 @@ namespace MixServer.SignalR;
 public class SignalRCallbackHub(
     ICommandHandler<UpdatePlaybackStateCommand> updatePlaybackStateCommandHandler,
     ICommandHandler<SetDeviceDisconnectedCommand> setDeviceDisconnectedCommandHandler,
-    ICommandHandler<SetDeviceInteractionCommand> setDeviceInteractionCommandHandler,
     ILogger<SignalRCallbackHub> logger,
     ISignalRUserManager signalRUserManager)
     : Hub<ISignalRCallbackClient>
@@ -70,26 +69,6 @@ public class SignalRCallbackHub(
         catch (Exception e)
         {
             logger.LogError(e, "Un-expected Exception");
-        }
-    }
-
-    public async Task SetDeviceInteraction()
-    {
-        await SetDeviceInteraction(true);
-    }
-
-    private async Task SetDeviceInteraction(bool interacted)
-    {
-        try
-        {
-            await setDeviceInteractionCommandHandler.HandleAsync(new SetDeviceInteractionCommand
-            {
-                Interacted = interacted
-            });
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "Unexpected Exception");
         }
     }
 }

@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import {BehaviorSubject, filter, map, Observable} from "rxjs";
+import {BehaviorSubject, filter, firstValueFrom, map, Observable} from "rxjs";
 import {Device} from "./models/device";
 import {AuthenticationService} from "../auth/authentication.service";
-import {UserClient} from "../../generated-clients/mix-server-clients";
+import {DeviceClient, UserClient} from "../../generated-clients/mix-server-clients";
 import {ToastService} from "../toasts/toast-service";
 import {DeviceConverterService} from "../converters/device-converter.service";
 import {DevicesSignalrClientService} from "../signalr/devices-signalr-client.service";
@@ -15,13 +15,13 @@ export class DeviceRepositoryService {
 
   constructor(private _authenticationService: AuthenticationService,
               _deviceConverter: DeviceConverterService,
+              private  _deviceClient: DeviceClient,
               private _deviceSignalRClient: DevicesSignalrClientService,
-              private _toastService: ToastService,
-              private _userClient: UserClient) {
+              private _toastService: ToastService) {
     _authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
-          this._userClient.devices()
+          this._deviceClient.devices()
             .subscribe({
               next: dto => {
                 const devices = _deviceConverter.fromDtoList(dto.devices);
@@ -90,7 +90,7 @@ export class DeviceRepositoryService {
   }
 
   public delete(device: Device): void {
-    this._userClient.deleteDevice(device.id)
+    this._deviceClient.deleteDevice(device.id)
       .subscribe({
         error: err => this._toastService.logServerError(err, `Failed to delete device: ${device.displayName}`)
       })
@@ -104,7 +104,8 @@ export class DeviceRepositoryService {
       return;
     }
 
-    this._deviceSignalRClient.setUserInteractedWithPage();
+    firstValueFrom(this._deviceClient.setDeviceInteracted())
+      .catch(err => this._toastService.logServerError(err, 'Failed to set device interacted'));
   }
 
   private next(devices: Device[]): void {

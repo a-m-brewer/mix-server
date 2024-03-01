@@ -50,10 +50,6 @@ export class DevicesSignalrClientService extends SignalrClientBase implements IS
     )
   }
 
-  public setUserInteractedWithPage(): void {
-    this.send('SetDeviceInteraction');
-  }
-
   private handleDeviceUpdated(dto: DeviceDto): void {
     const converted = this._deviceConverter.fromDto(dto);
 

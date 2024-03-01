@@ -15,6 +15,186 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 
 export const MIXSERVER_BASE_URL = new InjectionToken<string>('MIXSERVER_BASE_URL');
 
+export interface IDeviceClient {
+    devices(): Observable<GetUsersDevicesQueryResponse>;
+    deleteDevice(deviceId: string): Observable<void>;
+    setDeviceInteracted(): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class DeviceClient implements IDeviceClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(MIXSERVER_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    devices(): Observable<GetUsersDevicesQueryResponse> {
+        let url_ = this.baseUrl + "/api/device";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processDevices(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processDevices(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<GetUsersDevicesQueryResponse>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<GetUsersDevicesQueryResponse>;
+        }));
+    }
+
+    protected processDevices(response: HttpResponseBase): Observable<GetUsersDevicesQueryResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = GetUsersDevicesQueryResponse.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    deleteDevice(deviceId: string): Observable<void> {
+        let url_ = this.baseUrl + "/api/device/{deviceId}";
+        if (deviceId === undefined || deviceId === null)
+            throw new Error("The parameter 'deviceId' must be defined.");
+        url_ = url_.replace("{deviceId}", encodeURIComponent("" + deviceId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+            })
+        };
+
+        return this.http.request("delete", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processDeleteDevice(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processDeleteDevice(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processDeleteDevice(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    setDeviceInteracted(): Observable<void> {
+        let url_ = this.baseUrl + "/api/device/interacted";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processSetDeviceInteracted(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processSetDeviceInteracted(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processSetDeviceInteracted(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+}
+
 export interface INodeClient {
     getNode(absolutePath?: string | null | undefined): Observable<FileExplorerFolderResponse>;
     refreshFolder(command: RefreshFolderCommand): Observable<FileExplorerFolderResponse>;
@@ -1237,8 +1417,6 @@ export interface IUserClient {
     login(command: LoginUserCommand): Observable<LoginCommandResponse>;
     resetPassword(command: ResetPasswordCommand): Observable<void>;
     refresh(command: RefreshUserCommand): Observable<RefreshUserResponse>;
-    devices(): Observable<GetUsersDevicesQueryResponse>;
-    deleteDevice(deviceId: string): Observable<void>;
 }
 
 @Injectable({
@@ -1729,115 +1907,236 @@ export class UserClient implements IUserClient {
         }
         return _observableOf(null as any);
     }
+}
 
-    devices(): Observable<GetUsersDevicesQueryResponse> {
-        let url_ = this.baseUrl + "/api/user/device";
-        url_ = url_.replace(/[?&]$/, "");
+export class GetUsersDevicesQueryResponse implements IGetUsersDevicesQueryResponse {
+    devices!: DeviceDto[];
 
-        let options_ : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processDevices(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
-                try {
-                    return this.processDevices(response_ as any);
-                } catch (e) {
-                    return _observableThrow(e) as any as Observable<GetUsersDevicesQueryResponse>;
-                }
-            } else
-                return _observableThrow(response_) as any as Observable<GetUsersDevicesQueryResponse>;
-        }));
-    }
-
-    protected processDevices(response: HttpResponseBase): Observable<GetUsersDevicesQueryResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = GetUsersDevicesQueryResponse.fromJS(resultData200);
-            return _observableOf(result200);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            }));
+    constructor(data?: IGetUsersDevicesQueryResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
         }
-        return _observableOf(null as any);
-    }
-
-    deleteDevice(deviceId: string): Observable<void> {
-        let url_ = this.baseUrl + "/api/user/device/{deviceId}";
-        if (deviceId === undefined || deviceId === null)
-            throw new Error("The parameter 'deviceId' must be defined.");
-        url_ = url_.replace("{deviceId}", encodeURIComponent("" + deviceId));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_ : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-            })
-        };
-
-        return this.http.request("delete", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processDeleteDevice(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
-                try {
-                    return this.processDeleteDevice(response_ as any);
-                } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
-                }
-            } else
-                return _observableThrow(response_) as any as Observable<void>;
-        }));
-    }
-
-    protected processDeleteDevice(response: HttpResponseBase): Observable<void> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            }));
+        if (!data) {
+            this.devices = [];
         }
-        return _observableOf(null as any);
     }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["devices"])) {
+                this.devices = [] as any;
+                for (let item of _data["devices"])
+                    this.devices!.push(DeviceDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): GetUsersDevicesQueryResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetUsersDevicesQueryResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.devices)) {
+            data["devices"] = [];
+            for (let item of this.devices)
+                data["devices"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IGetUsersDevicesQueryResponse {
+    devices: DeviceDto[];
+}
+
+export class DeviceDto implements IDeviceDto {
+    id!: string;
+    lastSeen!: Date;
+    clientType!: ClientType;
+    deviceType!: DeviceType;
+    interactedWith!: boolean;
+    browserName?: string | undefined;
+    model?: string | undefined;
+    brand?: string | undefined;
+    osName?: string | undefined;
+    osVersion?: string | undefined;
+
+    constructor(data?: IDeviceDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.lastSeen = _data["lastSeen"] ? new Date(_data["lastSeen"].toString()) : <any>undefined;
+            this.clientType = _data["clientType"];
+            this.deviceType = _data["deviceType"];
+            this.interactedWith = _data["interactedWith"];
+            this.browserName = _data["browserName"];
+            this.model = _data["model"];
+            this.brand = _data["brand"];
+            this.osName = _data["osName"];
+            this.osVersion = _data["osVersion"];
+        }
+    }
+
+    static fromJS(data: any): DeviceDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeviceDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["lastSeen"] = this.lastSeen ? this.lastSeen.toISOString() : <any>undefined;
+        data["clientType"] = this.clientType;
+        data["deviceType"] = this.deviceType;
+        data["interactedWith"] = this.interactedWith;
+        data["browserName"] = this.browserName;
+        data["model"] = this.model;
+        data["brand"] = this.brand;
+        data["osName"] = this.osName;
+        data["osVersion"] = this.osVersion;
+        return data;
+    }
+}
+
+export interface IDeviceDto {
+    id: string;
+    lastSeen: Date;
+    clientType: ClientType;
+    deviceType: DeviceType;
+    interactedWith: boolean;
+    browserName?: string | undefined;
+    model?: string | undefined;
+    brand?: string | undefined;
+    osName?: string | undefined;
+    osVersion?: string | undefined;
+}
+
+export enum ClientType {
+    Unknown = "Unknown",
+    Browser = "Browser",
+    FeedReader = "FeedReader",
+    MediaPlayer = "MediaPlayer",
+    MobileApp = "MobileApp",
+    Library = "Library",
+    Pim = "Pim",
+}
+
+export enum DeviceType {
+    Desktop = "Desktop",
+    Smartphone = "Smartphone",
+    Tablet = "Tablet",
+    FeaturePhone = "FeaturePhone",
+    Console = "Console",
+    Tv = "Tv",
+    CarBrowser = "CarBrowser",
+    SmartDisplay = "SmartDisplay",
+    Camera = "Camera",
+    PortableMediaPlayer = "PortableMediaPlayer",
+    Phablet = "Phablet",
+    SmartSpeaker = "SmartSpeaker",
+    Wearable = "Wearable",
+    Peripheral = "Peripheral",
+    Unknown = "Unknown",
+}
+
+export class ProblemDetails implements IProblemDetails {
+    type?: string | undefined;
+    title?: string | undefined;
+    status?: number | undefined;
+    detail?: string | undefined;
+    instance?: string | undefined;
+    extensions!: { [key: string]: any; };
+
+    [key: string]: any;
+
+    constructor(data?: IProblemDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.extensions = {};
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            for (var property in _data) {
+                if (_data.hasOwnProperty(property))
+                    this[property] = _data[property];
+            }
+            this.type = _data["type"];
+            this.title = _data["title"];
+            this.status = _data["status"];
+            this.detail = _data["detail"];
+            this.instance = _data["instance"];
+            if (_data["extensions"]) {
+                this.extensions = {} as any;
+                for (let key in _data["extensions"]) {
+                    if (_data["extensions"].hasOwnProperty(key))
+                        (<any>this.extensions)![key] = _data["extensions"][key];
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): ProblemDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new ProblemDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        for (var property in this) {
+            if (this.hasOwnProperty(property))
+                data[property] = this[property];
+        }
+        data["type"] = this.type;
+        data["title"] = this.title;
+        data["status"] = this.status;
+        data["detail"] = this.detail;
+        data["instance"] = this.instance;
+        if (this.extensions) {
+            data["extensions"] = {};
+            for (let key in this.extensions) {
+                if (this.extensions.hasOwnProperty(key))
+                    (<any>data["extensions"])[key] = (<any>this.extensions)[key];
+            }
+        }
+        return data;
+    }
+}
+
+export interface IProblemDetails {
+    type?: string | undefined;
+    title?: string | undefined;
+    status?: number | undefined;
+    detail?: string | undefined;
+    instance?: string | undefined;
+    extensions: { [key: string]: any; };
+
+    [key: string]: any;
 }
 
 export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
@@ -2135,89 +2434,6 @@ export class RootFileExplorerFolderResponse extends FileExplorerFolderResponse i
 }
 
 export interface IRootFileExplorerFolderResponse extends IFileExplorerFolderResponse {
-}
-
-export class ProblemDetails implements IProblemDetails {
-    type?: string | undefined;
-    title?: string | undefined;
-    status?: number | undefined;
-    detail?: string | undefined;
-    instance?: string | undefined;
-    extensions!: { [key: string]: any; };
-
-    [key: string]: any;
-
-    constructor(data?: IProblemDetails) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.extensions = {};
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            for (var property in _data) {
-                if (_data.hasOwnProperty(property))
-                    this[property] = _data[property];
-            }
-            this.type = _data["type"];
-            this.title = _data["title"];
-            this.status = _data["status"];
-            this.detail = _data["detail"];
-            this.instance = _data["instance"];
-            if (_data["extensions"]) {
-                this.extensions = {} as any;
-                for (let key in _data["extensions"]) {
-                    if (_data["extensions"].hasOwnProperty(key))
-                        (<any>this.extensions)![key] = _data["extensions"][key];
-                }
-            }
-        }
-    }
-
-    static fromJS(data: any): ProblemDetails {
-        data = typeof data === 'object' ? data : {};
-        let result = new ProblemDetails();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        for (var property in this) {
-            if (this.hasOwnProperty(property))
-                data[property] = this[property];
-        }
-        data["type"] = this.type;
-        data["title"] = this.title;
-        data["status"] = this.status;
-        data["detail"] = this.detail;
-        data["instance"] = this.instance;
-        if (this.extensions) {
-            data["extensions"] = {};
-            for (let key in this.extensions) {
-                if (this.extensions.hasOwnProperty(key))
-                    (<any>data["extensions"])[key] = (<any>this.extensions)[key];
-            }
-        }
-        return data;
-    }
-}
-
-export interface IProblemDetails {
-    type?: string | undefined;
-    title?: string | undefined;
-    status?: number | undefined;
-    detail?: string | undefined;
-    instance?: string | undefined;
-    extensions: { [key: string]: any; };
-
-    [key: string]: any;
 }
 
 export class HttpValidationProblemDetails extends ProblemDetails implements IHttpValidationProblemDetails {
@@ -3685,153 +3901,6 @@ export interface IRefreshUserCommand extends ITokenCommand {
     accessToken: string;
     refreshToken: string;
     deviceId: string;
-}
-
-export class GetUsersDevicesQueryResponse implements IGetUsersDevicesQueryResponse {
-    devices!: DeviceDto[];
-
-    constructor(data?: IGetUsersDevicesQueryResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.devices = [];
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            if (Array.isArray(_data["devices"])) {
-                this.devices = [] as any;
-                for (let item of _data["devices"])
-                    this.devices!.push(DeviceDto.fromJS(item));
-            }
-        }
-    }
-
-    static fromJS(data: any): GetUsersDevicesQueryResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new GetUsersDevicesQueryResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        if (Array.isArray(this.devices)) {
-            data["devices"] = [];
-            for (let item of this.devices)
-                data["devices"].push(item.toJSON());
-        }
-        return data;
-    }
-}
-
-export interface IGetUsersDevicesQueryResponse {
-    devices: DeviceDto[];
-}
-
-export class DeviceDto implements IDeviceDto {
-    id!: string;
-    lastSeen!: Date;
-    clientType!: ClientType;
-    deviceType!: DeviceType;
-    interactedWith!: boolean;
-    browserName?: string | undefined;
-    model?: string | undefined;
-    brand?: string | undefined;
-    osName?: string | undefined;
-    osVersion?: string | undefined;
-
-    constructor(data?: IDeviceDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.lastSeen = _data["lastSeen"] ? new Date(_data["lastSeen"].toString()) : <any>undefined;
-            this.clientType = _data["clientType"];
-            this.deviceType = _data["deviceType"];
-            this.interactedWith = _data["interactedWith"];
-            this.browserName = _data["browserName"];
-            this.model = _data["model"];
-            this.brand = _data["brand"];
-            this.osName = _data["osName"];
-            this.osVersion = _data["osVersion"];
-        }
-    }
-
-    static fromJS(data: any): DeviceDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new DeviceDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["lastSeen"] = this.lastSeen ? this.lastSeen.toISOString() : <any>undefined;
-        data["clientType"] = this.clientType;
-        data["deviceType"] = this.deviceType;
-        data["interactedWith"] = this.interactedWith;
-        data["browserName"] = this.browserName;
-        data["model"] = this.model;
-        data["brand"] = this.brand;
-        data["osName"] = this.osName;
-        data["osVersion"] = this.osVersion;
-        return data;
-    }
-}
-
-export interface IDeviceDto {
-    id: string;
-    lastSeen: Date;
-    clientType: ClientType;
-    deviceType: DeviceType;
-    interactedWith: boolean;
-    browserName?: string | undefined;
-    model?: string | undefined;
-    brand?: string | undefined;
-    osName?: string | undefined;
-    osVersion?: string | undefined;
-}
-
-export enum ClientType {
-    Unknown = "Unknown",
-    Browser = "Browser",
-    FeedReader = "FeedReader",
-    MediaPlayer = "MediaPlayer",
-    MobileApp = "MobileApp",
-    Library = "Library",
-    Pim = "Pim",
-}
-
-export enum DeviceType {
-    Desktop = "Desktop",
-    Smartphone = "Smartphone",
-    Tablet = "Tablet",
-    FeaturePhone = "FeaturePhone",
-    Console = "Console",
-    Tv = "Tv",
-    CarBrowser = "CarBrowser",
-    SmartDisplay = "SmartDisplay",
-    Camera = "Camera",
-    PortableMediaPlayer = "PortableMediaPlayer",
-    Phablet = "Phablet",
-    SmartSpeaker = "SmartSpeaker",
-    Wearable = "Wearable",
-    Peripheral = "Peripheral",
-    Unknown = "Unknown",
 }
 
 export class CurrentSessionUpdatedEventDto implements ICurrentSessionUpdatedEventDto {
