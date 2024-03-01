@@ -9,6 +9,7 @@ import {DevicesSignalrClientService} from "./devices-signalr-client.service";
 import {AuthenticationService} from "../auth/authentication.service";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {UserSignalrClientService} from "./user-signalr-client.service";
+import {LogSignalrClientService} from "./log-signalr-client.service";
 
 @Injectable({
   providedIn: 'root'
@@ -21,6 +22,7 @@ export class MixServerSignalrConnectionServiceService {
               private _signalRConnectionFactory: SignalrConnectionFactoryService,
               private _deviceClient: DevicesSignalrClientService,
               private _folderClient: FolderSignalrClientService,
+              private _logClient: LogSignalrClientService,
               private _queueClient: QueueSignalrClientService,
               private _sessionClient: SessionSignalrClientService,
               private _userClient: UserSignalrClientService,
@@ -59,6 +61,7 @@ export class MixServerSignalrConnectionServiceService {
 
     this._deviceClient.registerMethods(this._connection);
     this._folderClient.registerMethods(this._connection);
+    this._logClient.registerMethods(this._connection);
     this._queueClient.registerMethods(this._connection);
     this._sessionClient.registerMethods(this._connection);
     this._userClient.registerMethods(this._connection);

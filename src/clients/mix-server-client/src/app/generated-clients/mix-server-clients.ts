@@ -4249,6 +4249,56 @@ export interface ISignalRUpdatePlaybackStateCommand {
     currentTime: number;
 }
 
+export class DebugMessageDto implements IDebugMessageDto {
+    level!: LogLevel;
+    message!: string;
+
+    constructor(data?: IDebugMessageDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.level = _data["level"];
+            this.message = _data["message"];
+        }
+    }
+
+    static fromJS(data: any): DebugMessageDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DebugMessageDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["level"] = this.level;
+        data["message"] = this.message;
+        return data;
+    }
+}
+
+export interface IDebugMessageDto {
+    level: LogLevel;
+    message: string;
+}
+
+export enum LogLevel {
+    Trace = "Trace",
+    Debug = "Debug",
+    Information = "Information",
+    Warning = "Warning",
+    Error = "Error",
+    Critical = "Critical",
+    None = "None",
+}
+
 export interface FileResponse {
     data: Blob;
     status: number;

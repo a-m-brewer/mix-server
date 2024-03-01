@@ -4,11 +4,16 @@ using MixServer.Application.Devices.Commands.SetDeviceInteraction;
 using MixServer.Application.Devices.Commands.SetDeviceOnline;
 using MixServer.Application.Sessions.Commands.UpdatePlaybackState;
 using MixServer.Domain.Interfaces;
+using MixServer.Domain.Users.Repositories;
+using MixServer.Infrastructure.Users.Repository;
 using MixServer.SignalR.Commands;
+using MixServer.SignalR.Events;
 
 namespace MixServer.SignalR;
 
 public class SignalRCallbackHub(
+    ICurrentDeviceRepository currentDeviceRepository,
+    ICurrentUserRepository currentUserRepository,
     ICommandHandler<UpdatePlaybackStateCommand> updatePlaybackStateCommandHandler,
     ICommandHandler<SetDeviceOnlineCommand> setDeviceOnlineCommandHandler,
     ICommandHandler<SetDeviceInteractionCommand> setDeviceInteractionCommandHandler,
@@ -73,6 +78,14 @@ public class SignalRCallbackHub(
         {
             Interacted = false
         });
+    }
+
+    public void Log(DebugMessageDto message)
+    {
+        logger.Log(message.Level, "[User: {UserId} Device: {DeviceId}]: {Message}",
+            currentUserRepository.CurrentUserId,
+            currentDeviceRepository.DeviceId,
+            message.Message);
     }
 
     private async Task SetDeviceOnline(bool online)
