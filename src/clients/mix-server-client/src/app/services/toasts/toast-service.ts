@@ -1,7 +1,6 @@
 import {Injectable} from "@angular/core";
 import {ToastrService} from "ngx-toastr";
 import {ApiException, ProblemDetails} from "../../generated-clients/mix-server-clients";
-import {LoggingService} from "../logging.service";
 
 @Injectable({
   providedIn: 'root'

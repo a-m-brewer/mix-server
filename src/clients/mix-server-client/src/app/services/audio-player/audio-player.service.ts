@@ -5,12 +5,8 @@ import {
   combineLatestWith,
   filter, firstValueFrom,
   map,
-  mergeWith,
   Observable,
-  sampleTime,
-  Subject,
-  takeUntil,
-  timer
+  sampleTime
 } from "rxjs";
 import {StreamUrlService} from "../converters/stream-url.service";
 import {AudioSessionService} from "./audio-session.service";
@@ -24,11 +20,8 @@ import {AuthenticationService} from "../auth/authentication.service";
 import {PlaybackGranted} from "../repositories/models/playback-granted";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {DeviceRepositoryService} from "../repositories/device-repository.service";
-import {merge} from "rxjs/internal/operators/merge";
-import {combineLatest} from "rxjs/internal/operators/combineLatest";
 import {Device} from "../repositories/models/device";
 import {SessionService} from "../sessions/session.service";
-import {LoggingService} from "../logging.service";
 
 @Injectable({
   providedIn: 'root'
