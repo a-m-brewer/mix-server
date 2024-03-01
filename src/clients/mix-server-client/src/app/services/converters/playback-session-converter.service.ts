@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import {PlaybackSessionDto, PlaybackStateDto} from "../../generated-clients/mix-server-clients";
+import {PlaybackGrantedDto, PlaybackSessionDto, PlaybackStateDto} from "../../generated-clients/mix-server-clients";
 import {PlaybackSession} from "../repositories/models/playback-session";
 import {FileExplorerNodeConverterService} from "./file-explorer-node-converter.service";
 import {PlaybackState} from "../repositories/models/playback-state";
+import {PlaybackGranted} from "../repositories/models/playback-granted";
 
 @Injectable({
   providedIn: 'root'
@@ -26,5 +27,9 @@ export class PlaybackSessionConverterService {
 
   public fromStateDto(dto: PlaybackStateDto): PlaybackState {
     return new PlaybackState(dto.currentTime, dto.deviceId, dto.playing);
+  }
+
+  public fromPlaybackGrantedDto(dto: PlaybackGrantedDto): PlaybackGranted {
+    return new PlaybackGranted(dto.currentTime, dto.deviceId, dto.playing, dto.useDeviceCurrentTime);
   }
 }

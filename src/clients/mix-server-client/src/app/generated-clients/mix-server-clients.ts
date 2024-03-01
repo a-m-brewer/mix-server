@@ -549,7 +549,7 @@ export interface ISessionClient {
     clearCurrentSession(): Observable<CurrentSessionUpdatedDto>;
     setNextSession(command: SetNextSessionCommand): Observable<CurrentSessionUpdatedDto>;
     history(startIndex?: number | undefined, pageSize?: number | undefined): Observable<GetUsersSessionsResponse>;
-    requestPlayback(command: RequestPlaybackCommand): Observable<void>;
+    requestPlayback(command: RequestPlaybackCommand): Observable<PlaybackGrantedDto>;
     requestPause(): Observable<void>;
     setPlaying(command: SetPlayingCommand): Observable<void>;
     seek(command: SeekRequest): Observable<void>;
@@ -877,7 +877,7 @@ export class SessionClient implements ISessionClient {
         return _observableOf(null as any);
     }
 
-    requestPlayback(command: RequestPlaybackCommand): Observable<void> {
+    requestPlayback(command: RequestPlaybackCommand): Observable<PlaybackGrantedDto> {
         let url_ = this.baseUrl + "/api/session/request-playback";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -889,6 +889,7 @@ export class SessionClient implements ISessionClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -899,23 +900,26 @@ export class SessionClient implements ISessionClient {
                 try {
                     return this.processRequestPlayback(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<PlaybackGrantedDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<PlaybackGrantedDto>;
         }));
     }
 
-    protected processRequestPlayback(response: HttpResponseBase): Observable<void> {
+    protected processRequestPlayback(response: HttpResponseBase): Observable<PlaybackGrantedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 204) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PlaybackGrantedDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -2963,6 +2967,94 @@ export interface IGetUsersSessionsResponse {
     sessions: PlaybackSessionDto[];
 }
 
+export class PlaybackStateDto implements IPlaybackStateDto {
+    deviceId?: string | undefined;
+    playing!: boolean;
+    currentTime!: number;
+    updateType!: AudioPlayerStateUpdateType;
+
+    constructor(data?: IPlaybackStateDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.deviceId = _data["deviceId"];
+            this.playing = _data["playing"];
+            this.currentTime = _data["currentTime"];
+            this.updateType = _data["updateType"];
+        }
+    }
+
+    static fromJS(data: any): PlaybackStateDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PlaybackStateDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["deviceId"] = this.deviceId;
+        data["playing"] = this.playing;
+        data["currentTime"] = this.currentTime;
+        data["updateType"] = this.updateType;
+        return data;
+    }
+}
+
+export interface IPlaybackStateDto {
+    deviceId?: string | undefined;
+    playing: boolean;
+    currentTime: number;
+    updateType: AudioPlayerStateUpdateType;
+}
+
+export class PlaybackGrantedDto extends PlaybackStateDto implements IPlaybackGrantedDto {
+    useDeviceCurrentTime!: boolean;
+
+    constructor(data?: IPlaybackGrantedDto) {
+        super(data);
+    }
+
+    override init(_data?: any) {
+        super.init(_data);
+        if (_data) {
+            this.useDeviceCurrentTime = _data["useDeviceCurrentTime"];
+        }
+    }
+
+    static override fromJS(data: any): PlaybackGrantedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PlaybackGrantedDto();
+        result.init(data);
+        return result;
+    }
+
+    override toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["useDeviceCurrentTime"] = this.useDeviceCurrentTime;
+        super.toJSON(data);
+        return data;
+    }
+}
+
+export interface IPlaybackGrantedDto extends IPlaybackStateDto {
+    useDeviceCurrentTime: boolean;
+}
+
+export enum AudioPlayerStateUpdateType {
+    CurrentTime = "CurrentTime",
+    Seek = "Seek",
+    PlaybackGranted = "PlaybackGranted",
+    Playing = "Playing",
+}
+
 export class RequestPlaybackCommand implements IRequestPlaybackCommand {
     deviceId!: string;
 
@@ -3856,94 +3948,6 @@ export class DeviceDeletedDto implements IDeviceDeletedDto {
 
 export interface IDeviceDeletedDto {
     deviceId: string;
-}
-
-export class PlaybackStateDto implements IPlaybackStateDto {
-    deviceId?: string | undefined;
-    playing!: boolean;
-    currentTime!: number;
-    updateType!: AudioPlayerStateUpdateType;
-
-    constructor(data?: IPlaybackStateDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.deviceId = _data["deviceId"];
-            this.playing = _data["playing"];
-            this.currentTime = _data["currentTime"];
-            this.updateType = _data["updateType"];
-        }
-    }
-
-    static fromJS(data: any): PlaybackStateDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new PlaybackStateDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["deviceId"] = this.deviceId;
-        data["playing"] = this.playing;
-        data["currentTime"] = this.currentTime;
-        data["updateType"] = this.updateType;
-        return data;
-    }
-}
-
-export interface IPlaybackStateDto {
-    deviceId?: string | undefined;
-    playing: boolean;
-    currentTime: number;
-    updateType: AudioPlayerStateUpdateType;
-}
-
-export enum AudioPlayerStateUpdateType {
-    CurrentTime = "CurrentTime",
-    Seek = "Seek",
-    PlaybackGranted = "PlaybackGranted",
-    Playing = "Playing",
-}
-
-export class PlaybackGrantedDto extends PlaybackStateDto implements IPlaybackGrantedDto {
-    useDeviceCurrentTime!: boolean;
-
-    constructor(data?: IPlaybackGrantedDto) {
-        super(data);
-    }
-
-    override init(_data?: any) {
-        super.init(_data);
-        if (_data) {
-            this.useDeviceCurrentTime = _data["useDeviceCurrentTime"];
-        }
-    }
-
-    static override fromJS(data: any): PlaybackGrantedDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new PlaybackGrantedDto();
-        result.init(data);
-        return result;
-    }
-
-    override toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["useDeviceCurrentTime"] = this.useDeviceCurrentTime;
-        super.toJSON(data);
-        return data;
-    }
-}
-
-export interface IPlaybackGrantedDto extends IPlaybackStateDto {
-    useDeviceCurrentTime: boolean;
 }
 
 export class UserDeletedDto implements IUserDeletedDto {

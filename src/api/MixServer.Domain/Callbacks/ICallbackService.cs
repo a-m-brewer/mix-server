@@ -20,6 +20,7 @@ public interface ICallbackService
     Task FolderRefreshed(string userId, Guid deviceId, IFileExplorerFolder folder);
     Task DeviceDeleted(string userId, Guid deviceId);
     Task PlaybackStateUpdated(IPlaybackState playbackState, AudioPlayerStateUpdateType audioPlayerStateUpdateType);
+    Task PlaybackStateUpdated(IPlaybackState state, Guid currentDeviceId, bool useDeviceCurrentTime);
     Task PlaybackGranted(IPlaybackState state, bool useDeviceCurrentTime);
     Task PauseRequested(Guid deviceId);
     Task UserDeleted(string userId);

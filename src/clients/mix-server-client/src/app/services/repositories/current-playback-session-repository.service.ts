@@ -127,9 +127,12 @@ export class CurrentPlaybackSessionRepositoryService {
 
     await firstValueFrom(this._sessionClient.requestPlayback(new RequestPlaybackCommand({
       deviceId: requestedDeviceId
-    }))).catch(err => {
-      this._toastService.logServerError(err, 'Failed to request playback');
-    })
+    })))
+      .then(dto => {
+        const playbackGranted = this._playbackSessionConverter.fromPlaybackGrantedDto(dto);
+        this.handlePlaybackGranted(playbackGranted);
+      })
+      .catch(err => this._toastService.logServerError(err, 'Failed to request playback'))
       .finally(() => this._loadingRepository.stopLoadingId(deviceId));
   }
 
@@ -184,13 +187,7 @@ export class CurrentPlaybackSessionRepositoryService {
 
     this._sessionSignalRClient.playbackGranted$
       .subscribe({
-        next: playbackGranted => {
-          this.nextState(playbackGranted);
-
-          if (playbackGranted.deviceId === this._authenticationService.deviceId) {
-            this._playbackGranted$.next(playbackGranted);
-          }
-        }
+        next: playbackGranted => this.handlePlaybackGranted(playbackGranted)
       })
 
     this._sessionSignalRClient.pauseRequested$
@@ -208,5 +205,13 @@ export class CurrentPlaybackSessionRepositoryService {
     }
 
     this.currentSession = PlaybackSession.copy(previousSession, state);
+  }
+
+  private handlePlaybackGranted(playbackGranted: PlaybackGranted): void {
+    this.nextState(playbackGranted);
+
+    if (playbackGranted.deviceId === this._authenticationService.deviceId) {
+      this._playbackGranted$.next(playbackGranted);
+    }
   }
 }

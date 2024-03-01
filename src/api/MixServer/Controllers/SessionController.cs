@@ -21,7 +21,7 @@ public class SessionController(
     ICommandHandler<ClearCurrentSessionCommand, CurrentSessionUpdatedDto> clearCurrentSessionCommandHandler,
     IQueryHandler<GetUsersSessionsQuery, GetUsersSessionsResponse> getUsersSessionsQueryHandler,
     ICommandHandler<RequestPauseCommand> requestPauseCommandHandler,
-    ICommandHandler<RequestPlaybackCommand> requestPlaybackCommandHandler,
+    ICommandHandler<RequestPlaybackCommand, PlaybackGrantedDto> requestPlaybackCommandHandler,
     ICommandHandler<SeekCommand> seekCommandHandler,
     ICommandHandler<SetCurrentSessionCommand, CurrentSessionUpdatedDto> setCurrentSessionCommandHandler,
     ICommandHandler<SetPlayingCommand> setPlayingCommandHandler,
@@ -72,15 +72,13 @@ public class SessionController(
     }
 
     [HttpPost("request-playback")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(PlaybackGrantedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RequestPlayback([FromBody] RequestPlaybackCommand command)
     {
-        await requestPlaybackCommandHandler.HandleAsync(command);
-            
-        return NoContent();
+        return Ok(await requestPlaybackCommandHandler.HandleAsync(command));
     }
     
     [HttpPost("request-pause")]
