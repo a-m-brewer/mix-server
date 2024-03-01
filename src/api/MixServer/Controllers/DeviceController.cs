@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using MixServer.Application.Users.Commands.DeleteDevice;
-using MixServer.Application.Users.Commands.SetDeviceInteraction;
-using MixServer.Application.Users.Queries.GetUsersDevices;
+using MixServer.Application.Devices.Commands.DeleteDevice;
+using MixServer.Application.Devices.Commands.SetDeviceInteraction;
+using MixServer.Application.Devices.Queries.GetUsersDevices;
 using MixServer.Domain.Interfaces;
 
 namespace MixServer.Controllers;
@@ -39,12 +39,9 @@ public class DeviceController(
     [HttpPost("interacted")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SetDeviceInteracted()
+    public async Task<IActionResult> SetDeviceInteracted([FromBody] SetDeviceInteractionCommand command)
     {
-        await setDeviceInteractionCommandHandler.HandleAsync(new SetDeviceInteractionCommand
-        {
-            Interacted = true
-        });
+        await setDeviceInteractionCommandHandler.HandleAsync(command);
         
         return NoContent();
     }

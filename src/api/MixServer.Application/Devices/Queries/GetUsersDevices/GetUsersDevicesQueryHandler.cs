@@ -2,7 +2,7 @@ using MixServer.Domain.Interfaces;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Services;
 
-namespace MixServer.Application.Users.Queries.GetUsersDevices;
+namespace MixServer.Application.Devices.Queries.GetUsersDevices;
 
 public class GetUsersDevicesQueryHandler(
     IDeviceService deviceService,

@@ -3,7 +3,7 @@ using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.Users.Repository;
 
-namespace MixServer.Application.Users.Commands.SetDeviceInteraction;
+namespace MixServer.Application.Devices.Commands.SetDeviceInteraction;
 
 public class SetDeviceInteractionCommandHandler(
     ICurrentDeviceRepository currentDeviceRepository,

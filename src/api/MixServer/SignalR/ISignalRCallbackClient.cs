@@ -1,8 +1,8 @@
+using MixServer.Application.Devices.Responses;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Application.Users.Dtos;
-using MixServer.Application.Users.Responses;
 using MixServer.SignalR.Events;
 
 namespace MixServer.SignalR;

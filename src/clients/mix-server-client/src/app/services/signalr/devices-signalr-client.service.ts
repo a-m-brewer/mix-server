@@ -65,4 +65,8 @@ export class DevicesSignalrClientService extends SignalrClientBase implements IS
 
     this._deviceStateUpdatedSubject$.next(converted);
   }
+
+  public pageClosed(): void {
+    this.send('PageClosed');
+  }
 }

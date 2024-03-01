@@ -15,6 +15,7 @@ import {AudioPlayerStateService} from "../services/audio-player/audio-player-sta
 import {
   NodeListItemSelectedEvent
 } from "../components/nodes/node-list/node-list-item/interfaces/node-list-item-selected-event";
+import {SessionService} from "../services/sessions/session.service";
 
 @Component({
   selector: 'app-queue-page',
@@ -33,6 +34,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
 
   constructor(private _audioPlayerStateService: AudioPlayerStateService,
               private _loadingRepository: LoadingRepositoryService,
+              private _sessionService: SessionService,
               private _queueRepository: QueueRepositoryService,
               private _queueEditFormRepository: QueueEditFormRepositoryService) {
   }
@@ -69,7 +71,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
   }
 
   public onNodeClick(event: NodeListItemChangedEvent): void {
-    this._queueRepository.setQueuePosition(event.id);
+    this._sessionService.setQueuePosition(event.id);
   }
 
   public onNodeSelectedChanged(e: NodeListItemSelectedEvent) {

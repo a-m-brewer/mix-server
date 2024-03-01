@@ -55,6 +55,7 @@ public class PlaybackSession : IPlaybackSession
 
     public void PopulateState(IPlaybackState playingItem)
     {
+        Playing = playingItem.Playing;
         LastPlaybackDeviceId = playingItem.LastPlaybackDeviceId;
         DeviceId = playingItem.DeviceId;
         CurrentTime = playingItem.CurrentTime;

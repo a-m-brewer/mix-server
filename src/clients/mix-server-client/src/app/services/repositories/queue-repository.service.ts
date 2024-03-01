@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {
   AddToQueueCommand,
   ProblemDetails,
-  QueueClient,
+  QueueClient, QueueSnapshotDto,
   RemoveFromQueueCommand,
   SetQueuePositionCommand
 } from "../../generated-clients/mix-server-clients";
@@ -37,7 +37,7 @@ export class QueueRepositoryService {
           this._loadingRepository.startLoading();
           firstValueFrom(this._queueClient.queue())
             .then(dto => {
-              this.queue = this._queueConverter.fromDto(dto);
+              this.nextQueue(dto);
             })
             .catch(err => {
               if ((err as ProblemDetails)?.status !== 404) {
@@ -115,6 +115,7 @@ export class QueueRepositoryService {
       absoluteFolderPath: file.parent.absolutePath ?? '',
       fileName: file.name
     })))
+      .then(dto => this.nextQueue(dto))
       .catch(err => this._toastService.logServerError(err, 'Failed to add item to queue'))
       .finally(() => this._loadingRepository.stopLoadingId(file.absolutePath));
   }
@@ -126,6 +127,7 @@ export class QueueRepositoryService {
 
     this._loadingRepository.startLoadingId(item.id);
     firstValueFrom(this._queueClient.removeFromQueue(item.id))
+      .then(dto => this.nextQueue(dto))
       .catch(err => this._toastService.logServerError(err, 'Failed to remove item from queue'))
       .finally(() => this._loadingRepository.stopLoadingId(item.id));
   }
@@ -138,18 +140,12 @@ export class QueueRepositoryService {
     this._loadingRepository.startLoadingIds(queueItems);
 
     firstValueFrom(this._queueClient.removeFromQueue2(new RemoveFromQueueCommand({queueItems})))
-      .then(() => this._queueEditFormRepository.updateEditForm(f => f.selectedItems = {}))
+      .then(value => {
+        this.nextQueue(value);
+        this._queueEditFormRepository.updateEditForm(f => f.selectedItems = {});
+      })
       .catch(err => this._toastService.logServerError(err, 'Failed to remove items from queue'))
-      .then(() => this._loadingRepository.stopLoadingIds(queueItems));
-  }
-
-  public setQueuePosition(queueItemId: string): void {
-    this._loadingRepository.startLoadingId(queueItemId);
-    firstValueFrom(this._queueClient.setQueuePosition(new SetQueuePositionCommand({
-      queueItemId
-    })))
-      .catch(err => this._toastService.logServerError(err, 'Failed to set queue position'))
-      .finally(() => this._loadingRepository.stopLoadingId(queueItemId));
+      .finally(() => this._loadingRepository.stopLoadingIds(queueItems));
   }
 
   private initializeSignalR(): void {
@@ -159,5 +155,9 @@ export class QueueRepositoryService {
           this.queue = updatedQueue;
         }
       })
+  }
+
+  private nextQueue(dto: QueueSnapshotDto): void {
+    this.queue = this._queueConverter.fromDto(dto);
   }
 }

@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {firstValueFrom} from "rxjs";
 import {
-  CurrentSessionUpdatedDto,
+  CurrentSessionUpdatedDto, QueueClient,
   SessionClient,
   SetCurrentSessionCommand,
-  SetNextSessionCommand
+  SetNextSessionCommand, SetQueuePositionCommand
 } from "../../generated-clients/mix-server-clients";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {PlaybackSessionConverterService} from "../converters/playback-session-converter.service";
@@ -27,6 +27,7 @@ export class SessionService {
     private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
     private _sessionClient: SessionClient,
     private _toastService: ToastService,
+    private _queueClient: QueueClient,
     private _queueConverter: QueueConverterService,
     private _queueRepository: QueueRepositoryService) { }
 
@@ -40,6 +41,16 @@ export class SessionService {
       .then(dto => this.next(dto))
       .catch(err => this._toastService.logServerError(err, 'Failed to set current session'))
       .finally(() => this._loadingRepository.stopLoadingId(file.absolutePath));
+  }
+
+  public setQueuePosition(queueItemId: string): void {
+    this._loadingRepository.startLoadingId(queueItemId);
+    firstValueFrom(this._queueClient.setQueuePosition(new SetQueuePositionCommand({
+      queueItemId
+    })))
+      .then(dto => this.next(dto))
+      .catch(err => this._toastService.logServerError(err, 'Failed to set queue position'))
+      .finally(() => this._loadingRepository.stopLoadingId(queueItemId));
   }
 
   public clearSession(): void {

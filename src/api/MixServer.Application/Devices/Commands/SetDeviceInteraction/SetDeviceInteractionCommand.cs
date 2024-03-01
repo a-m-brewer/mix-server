@@ -1,4 +1,4 @@
-namespace MixServer.Application.Users.Commands.SetDeviceInteraction;
+namespace MixServer.Application.Devices.Commands.SetDeviceInteraction;
 
 public class SetDeviceInteractionCommand
 {

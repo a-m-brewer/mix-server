@@ -1,9 +1,9 @@
-using MixServer.Application.Users.Responses;
+using MixServer.Application.Devices.Responses;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Models;
 
-namespace MixServer.Application.Users.Converters;
+namespace MixServer.Application.Devices.Converters;
 
 public class DeviceDtoConverter : 
     IConverter<IDevice, DeviceDto>,
@@ -16,6 +16,7 @@ public class DeviceDtoConverter :
             Id = value.Id,
             LastSeen = value.LastSeen,
             InteractedWith = value.InteractedWith,
+            Online = value.Online,
             ClientType = value.ClientType,
             DeviceType = value.DeviceType,
             BrowserName = value.BrowserName,
@@ -32,7 +33,8 @@ public class DeviceDtoConverter :
         {
             DeviceId = value.DeviceId,
             LastInteractedWith = value.LastInteractedWith,
-            InteractedWith = value.InteractedWith
+            InteractedWith = value.InteractedWith,
+            Online = value.Online
         };
     }
 }

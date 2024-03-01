@@ -7,7 +7,7 @@
       <form [formGroup]="form">
         <mat-form-field class="form-field-block">
           <mat-label>Username</mat-label>
-          <input type="text" autocorrect="off" autocomplete="off" matInput [formControlName]="usernameKey">
+          <input type="text" spellcheck="false" autocorrect="off" autocomplete="off" matInput [formControlName]="usernameKey">
           <mat-error *ngIf="form.get(usernameKey)?.hasError('required')">
             A username is required
           </mat-error>

@@ -150,6 +150,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public ngOnDestroy(): void {
+    this._deviceRepository.setUserInteractedWithPage(false);
     this._unsubscribe$.next(null);
     this._unsubscribe$.complete();
   }
@@ -157,7 +158,12 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   @HostListener('document:click')
   @HostListener('document:touchstart')
   public onDocumentInteraction(): void {
-    this._deviceRepository.setUserInteractedWithPage();
+    this._deviceRepository.setUserInteractedWithPage(true);
+  }
+
+  @HostListener('window:beforeunload')
+  public unloadNotification(): void {
+    this._deviceRepository.setUserInteractedWithPage(false);
   }
 
   @HostListener('document:visibilitychange')

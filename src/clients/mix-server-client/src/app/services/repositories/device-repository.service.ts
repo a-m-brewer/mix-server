@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import {BehaviorSubject, filter, firstValueFrom, map, Observable} from "rxjs";
 import {Device} from "./models/device";
 import {AuthenticationService} from "../auth/authentication.service";
-import {DeviceClient, UserClient} from "../../generated-clients/mix-server-clients";
+import {DeviceClient, SetDeviceInteractionCommand, UserClient} from "../../generated-clients/mix-server-clients";
 import {ToastService} from "../toasts/toast-service";
 import {DeviceConverterService} from "../converters/device-converter.service";
 import {DevicesSignalrClientService} from "../signalr/devices-signalr-client.service";
@@ -51,6 +51,7 @@ export class DeviceRepositoryService {
           return;
         }
 
+        devices[deviceIndex].online = state.online && _authenticationService.accessToken?.userId === state.lastInteractedWith;
         devices[deviceIndex].interactedWith = state.interactedWith && _authenticationService.accessToken?.userId === state.lastInteractedWith;
 
         this.next(devices);
@@ -75,7 +76,7 @@ export class DeviceRepositoryService {
   public get onlineDevices$(): Observable<Device[]> {
     return this._devicesBehaviourSubject$
       // Require the device is interacted with unless its this device because to do anything they would have to interact anyway
-      .pipe(map(m => m.filter(f => f.interactedWith || f.id === this._authenticationService.deviceId)));
+      .pipe(map(m => m.filter(f => (f.online && f.interactedWith) || f.id === this._authenticationService.deviceId)));
   }
 
   public get currentDevice$(): Observable<Device | null | undefined> {
@@ -96,16 +97,27 @@ export class DeviceRepositoryService {
       })
   }
 
-  public setUserInteractedWithPage(): void {
+  public setUserInteractedWithPage(interacted: boolean): void {
     const device = this._devicesBehaviourSubject$.getValue()
       .find(f => f.id === this._authenticationService.deviceId);
 
-    if (!device || device.interactedWith) {
+    if (!device) {
       return;
     }
 
-    firstValueFrom(this._deviceClient.setDeviceInteracted())
-      .catch(err => this._toastService.logServerError(err, 'Failed to set device interacted'));
+    if (device.interactedWith === interacted) {
+      return;
+    }
+
+    if (interacted) {
+      firstValueFrom(this._deviceClient.setDeviceInteracted(new SetDeviceInteractionCommand({
+        interacted
+      })))
+        .catch(err => this._toastService.logServerError(err, 'Failed to set device interacted'));
+    }
+    else {
+      this._deviceSignalRClient.pageClosed();
+    }
   }
 
   private next(devices: Device[]): void {

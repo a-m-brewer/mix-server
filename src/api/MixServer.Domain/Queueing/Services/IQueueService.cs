@@ -9,9 +9,9 @@ public interface IQueueService
 {
     Task LoadQueueStateAsync();
     Task<QueueSnapshot> SetQueueFolderAsync(PlaybackSession nextSession);
-    Task SetQueuePositionAsync(Guid queuePositionId);
-    Task AddToQueueAsync(IFileExplorerFileNode file);
-    Task RemoveUserQueueItemsAsync(List<Guid> ids);
+    Task<QueueSnapshot> SetQueuePositionAsync(Guid queuePositionId);
+    Task<QueueSnapshot> AddToQueueAsync(IFileExplorerFileNode file);
+    Task<QueueSnapshot> RemoveUserQueueItemsAsync(List<Guid> ids);
     Task<(PlaylistIncrementResult Result, QueueSnapshot Snapshot)> IncrementQueuePositionAsync(int offset);
     Task ResortQueueAsync();
     void ClearQueue();

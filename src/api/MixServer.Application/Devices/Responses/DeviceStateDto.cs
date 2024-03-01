@@ -1,4 +1,4 @@
-namespace MixServer.Application.Users.Responses;
+namespace MixServer.Application.Devices.Responses;
 
 public class DeviceStateDto
 {
@@ -7,4 +7,6 @@ public class DeviceStateDto
     public string LastInteractedWith { get; set; } = string.Empty;
 
     public bool InteractedWith { get; set; }
+    
+    public bool Online { get; set; }
 }

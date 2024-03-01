@@ -6,6 +6,7 @@ export class Device {
               public deviceType: DeviceType,
               public lastSeen: Date,
               public interactedWith: boolean,
+              public online: boolean,
               public brand: string | undefined,
               public browserName: string | undefined,
               public model: string | undefined,

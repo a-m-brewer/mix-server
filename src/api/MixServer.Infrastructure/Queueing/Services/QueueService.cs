@@ -68,7 +68,7 @@ public class QueueService(
         return queueSnapshot;
     }
 
-    public async Task SetQueuePositionAsync(Guid queuePositionId)
+    public async Task<QueueSnapshot> SetQueuePositionAsync(Guid queuePositionId)
     {
         var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
         
@@ -80,10 +80,13 @@ public class QueueService(
         queue.SetQueuePosition(queuePositionId);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
-        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot));
+        unitOfWork.InvokeCallbackOnSaved(c =>
+            c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
+
+        return queueSnapshot;
     }
 
-    public async Task AddToQueueAsync(IFileExplorerFileNode file)
+    public async Task<QueueSnapshot> AddToQueueAsync(IFileExplorerFileNode file)
     {
         if (!file.PlaybackSupported)
         {
@@ -94,10 +97,12 @@ public class QueueService(
         queue.AddToQueue(file);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
-        await callbackService.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot);
+        await callbackService.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot);
+
+        return queueSnapshot;
     }
 
-    public async Task RemoveUserQueueItemsAsync(List<Guid> ids)
+    public async Task<QueueSnapshot> RemoveUserQueueItemsAsync(List<Guid> ids)
     {
         var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
 
@@ -114,7 +119,9 @@ public class QueueService(
         queue.RemoveUserQueueItems(ids);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
-        await callbackService.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot);
+        await callbackService.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot);
+
+        return queueSnapshot;
     }
 
     public async Task<(PlaylistIncrementResult Result, QueueSnapshot Snapshot)> IncrementQueuePositionAsync(int offset)

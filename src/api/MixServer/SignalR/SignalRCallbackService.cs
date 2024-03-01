@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using MixServer.Application.Devices.Responses;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Responses;
 using MixServer.Application.Users.Dtos;
-using MixServer.Application.Users.Responses;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Interfaces;
@@ -31,24 +31,14 @@ public class SignalRCallbackService(
     ISignalRUserManager userManager)
     : ICallbackService
 {
-    public async Task CurrentSessionUpdated(string userId, PlaybackSession? session)
-    {
-        await CurrentSessionUpdated(userManager.GetConnectionsInGroups(new SignalRGroup(userId)), session);
-    }
-
     public async Task CurrentSessionUpdated(string userId, Guid deviceId, PlaybackSession? session)
-    {
-        await CurrentSessionUpdated(GetDeviceConnectionsExcept(userId, deviceId), session);
-    }
-    
-    private async Task CurrentSessionUpdated(IReadOnlyList<SignalRConnectionId> clients, PlaybackSession? session)
     {
         var currentSessionDto = session == null
             ? null
             : playbackSessionConverter.Convert(session, true);
         
         await context.Clients
-            .Clients(clients)
+            .Clients(GetDeviceConnectionsExcept(userId, deviceId))
             .CurrentSessionUpdated(new CurrentSessionUpdatedEventDto
             {
                 CurrentPlaybackSession = currentSessionDto

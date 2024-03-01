@@ -18,7 +18,7 @@ export const MIXSERVER_BASE_URL = new InjectionToken<string>('MIXSERVER_BASE_URL
 export interface IDeviceClient {
     devices(): Observable<GetUsersDevicesQueryResponse>;
     deleteDevice(deviceId: string): Observable<void>;
-    setDeviceInteracted(): Observable<void>;
+    setDeviceInteracted(command: SetDeviceInteractionCommand): Observable<void>;
 }
 
 @Injectable({
@@ -143,14 +143,18 @@ export class DeviceClient implements IDeviceClient {
         return _observableOf(null as any);
     }
 
-    setDeviceInteracted(): Observable<void> {
+    setDeviceInteracted(command: SetDeviceInteractionCommand): Observable<void> {
         let url_ = this.baseUrl + "/api/device/interacted";
         url_ = url_.replace(/[?&]$/, "");
 
+        const content_ = JSON.stringify(command);
+
         let options_ : any = {
+            body: content_,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
+                "Content-Type": "application/json",
             })
         };
 
@@ -402,10 +406,10 @@ export class NodeClient implements INodeClient {
 
 export interface IQueueClient {
     queue(): Observable<QueueSnapshotDto>;
-    addToQueue(command: AddToQueueCommand): Observable<void>;
-    removeFromQueue(queueItemId: string): Observable<void>;
-    removeFromQueue2(command: RemoveFromQueueCommand): Observable<void>;
-    setQueuePosition(command: SetQueuePositionCommand): Observable<void>;
+    addToQueue(command: AddToQueueCommand): Observable<QueueSnapshotDto>;
+    removeFromQueue(queueItemId: string): Observable<QueueSnapshotDto>;
+    removeFromQueue2(command: RemoveFromQueueCommand): Observable<QueueSnapshotDto>;
+    setQueuePosition(command: SetQueuePositionCommand): Observable<CurrentSessionUpdatedDto>;
 }
 
 @Injectable({
@@ -483,7 +487,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    addToQueue(command: AddToQueueCommand): Observable<void> {
+    addToQueue(command: AddToQueueCommand): Observable<QueueSnapshotDto> {
         let url_ = this.baseUrl + "/api/queue";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -495,6 +499,7 @@ export class QueueClient implements IQueueClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -505,23 +510,26 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processAddToQueue(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<QueueSnapshotDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<QueueSnapshotDto>;
         }));
     }
 
-    protected processAddToQueue(response: HttpResponseBase): Observable<void> {
+    protected processAddToQueue(response: HttpResponseBase): Observable<QueueSnapshotDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 204) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = QueueSnapshotDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -545,7 +553,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    removeFromQueue(queueItemId: string): Observable<void> {
+    removeFromQueue(queueItemId: string): Observable<QueueSnapshotDto> {
         let url_ = this.baseUrl + "/api/queue/item/{queueItemId}";
         if (queueItemId === undefined || queueItemId === null)
             throw new Error("The parameter 'queueItemId' must be defined.");
@@ -556,6 +564,7 @@ export class QueueClient implements IQueueClient {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
+                "Accept": "application/json"
             })
         };
 
@@ -566,21 +575,28 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processRemoveFromQueue(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<QueueSnapshotDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<QueueSnapshotDto>;
         }));
     }
 
-    protected processRemoveFromQueue(response: HttpResponseBase): Observable<void> {
+    protected processRemoveFromQueue(response: HttpResponseBase): Observable<QueueSnapshotDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 404) {
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = QueueSnapshotDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result404: any = null;
             let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
@@ -602,7 +618,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    removeFromQueue2(command: RemoveFromQueueCommand): Observable<void> {
+    removeFromQueue2(command: RemoveFromQueueCommand): Observable<QueueSnapshotDto> {
         let url_ = this.baseUrl + "/api/queue/item";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -614,6 +630,7 @@ export class QueueClient implements IQueueClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -624,21 +641,28 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processRemoveFromQueue2(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<QueueSnapshotDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<QueueSnapshotDto>;
         }));
     }
 
-    protected processRemoveFromQueue2(response: HttpResponseBase): Observable<void> {
+    protected processRemoveFromQueue2(response: HttpResponseBase): Observable<QueueSnapshotDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 404) {
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = QueueSnapshotDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result404: any = null;
             let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
@@ -660,7 +684,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    setQueuePosition(command: SetQueuePositionCommand): Observable<void> {
+    setQueuePosition(command: SetQueuePositionCommand): Observable<CurrentSessionUpdatedDto> {
         let url_ = this.baseUrl + "/api/queue/position";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -672,6 +696,7 @@ export class QueueClient implements IQueueClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -682,23 +707,26 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processSetQueuePosition(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<CurrentSessionUpdatedDto>;
         }));
     }
 
-    protected processSetQueuePosition(response: HttpResponseBase): Observable<void> {
+    protected processSetQueuePosition(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 204) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CurrentSessionUpdatedDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -1962,6 +1990,7 @@ export class DeviceDto implements IDeviceDto {
     clientType!: ClientType;
     deviceType!: DeviceType;
     interactedWith!: boolean;
+    online!: boolean;
     browserName?: string | undefined;
     model?: string | undefined;
     brand?: string | undefined;
@@ -1984,6 +2013,7 @@ export class DeviceDto implements IDeviceDto {
             this.clientType = _data["clientType"];
             this.deviceType = _data["deviceType"];
             this.interactedWith = _data["interactedWith"];
+            this.online = _data["online"];
             this.browserName = _data["browserName"];
             this.model = _data["model"];
             this.brand = _data["brand"];
@@ -2006,6 +2036,7 @@ export class DeviceDto implements IDeviceDto {
         data["clientType"] = this.clientType;
         data["deviceType"] = this.deviceType;
         data["interactedWith"] = this.interactedWith;
+        data["online"] = this.online;
         data["browserName"] = this.browserName;
         data["model"] = this.model;
         data["brand"] = this.brand;
@@ -2021,6 +2052,7 @@ export interface IDeviceDto {
     clientType: ClientType;
     deviceType: DeviceType;
     interactedWith: boolean;
+    online: boolean;
     browserName?: string | undefined;
     model?: string | undefined;
     brand?: string | undefined;
@@ -2137,6 +2169,42 @@ export interface IProblemDetails {
     extensions: { [key: string]: any; };
 
     [key: string]: any;
+}
+
+export class SetDeviceInteractionCommand implements ISetDeviceInteractionCommand {
+    interacted!: boolean;
+
+    constructor(data?: ISetDeviceInteractionCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.interacted = _data["interacted"];
+        }
+    }
+
+    static fromJS(data: any): SetDeviceInteractionCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetDeviceInteractionCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["interacted"] = this.interacted;
+        return data;
+    }
+}
+
+export interface ISetDeviceInteractionCommand {
+    interacted: boolean;
 }
 
 export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
@@ -2826,6 +2894,116 @@ export interface IRemoveFromQueueCommand {
     queueItems: string[];
 }
 
+export class CurrentSessionUpdatedDto implements ICurrentSessionUpdatedDto {
+    session?: PlaybackSessionDto | undefined;
+    queue!: QueueSnapshotDto;
+
+    constructor(data?: ICurrentSessionUpdatedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.queue = new QueueSnapshotDto();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.session = _data["session"] ? PlaybackSessionDto.fromJS(_data["session"]) : <any>undefined;
+            this.queue = _data["queue"] ? QueueSnapshotDto.fromJS(_data["queue"]) : new QueueSnapshotDto();
+        }
+    }
+
+    static fromJS(data: any): CurrentSessionUpdatedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CurrentSessionUpdatedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["session"] = this.session ? this.session.toJSON() : <any>undefined;
+        data["queue"] = this.queue ? this.queue.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface ICurrentSessionUpdatedDto {
+    session?: PlaybackSessionDto | undefined;
+    queue: QueueSnapshotDto;
+}
+
+export class PlaybackSessionDto implements IPlaybackSessionDto {
+    id!: string;
+    fileDirectory!: string;
+    file!: FileExplorerFileNodeResponse;
+    lastPlayed!: Date;
+    playing!: boolean;
+    currentTime!: number;
+    deviceId?: string | undefined;
+    autoPlay!: boolean;
+
+    constructor(data?: IPlaybackSessionDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.file = new FileExplorerFileNodeResponse();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.fileDirectory = _data["fileDirectory"];
+            this.file = _data["file"] ? FileExplorerFileNodeResponse.fromJS(_data["file"]) : new FileExplorerFileNodeResponse();
+            this.lastPlayed = _data["lastPlayed"] ? new Date(_data["lastPlayed"].toString()) : <any>undefined;
+            this.playing = _data["playing"];
+            this.currentTime = _data["currentTime"];
+            this.deviceId = _data["deviceId"];
+            this.autoPlay = _data["autoPlay"];
+        }
+    }
+
+    static fromJS(data: any): PlaybackSessionDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PlaybackSessionDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["fileDirectory"] = this.fileDirectory;
+        data["file"] = this.file ? this.file.toJSON() : <any>undefined;
+        data["lastPlayed"] = this.lastPlayed ? this.lastPlayed.toISOString() : <any>undefined;
+        data["playing"] = this.playing;
+        data["currentTime"] = this.currentTime;
+        data["deviceId"] = this.deviceId;
+        data["autoPlay"] = this.autoPlay;
+        return data;
+    }
+}
+
+export interface IPlaybackSessionDto {
+    id: string;
+    fileDirectory: string;
+    file: FileExplorerFileNodeResponse;
+    lastPlayed: Date;
+    playing: boolean;
+    currentTime: number;
+    deviceId?: string | undefined;
+    autoPlay: boolean;
+}
+
 export class SetQueuePositionCommand implements ISetQueuePositionCommand {
     queueItemId!: string;
 
@@ -2902,73 +3080,6 @@ export interface ISyncPlaybackSessionResponse {
     session?: PlaybackSessionDto | undefined;
 }
 
-export class PlaybackSessionDto implements IPlaybackSessionDto {
-    id!: string;
-    fileDirectory!: string;
-    file!: FileExplorerFileNodeResponse;
-    lastPlayed!: Date;
-    playing!: boolean;
-    currentTime!: number;
-    deviceId?: string | undefined;
-    autoPlay!: boolean;
-
-    constructor(data?: IPlaybackSessionDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.file = new FileExplorerFileNodeResponse();
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.fileDirectory = _data["fileDirectory"];
-            this.file = _data["file"] ? FileExplorerFileNodeResponse.fromJS(_data["file"]) : new FileExplorerFileNodeResponse();
-            this.lastPlayed = _data["lastPlayed"] ? new Date(_data["lastPlayed"].toString()) : <any>undefined;
-            this.playing = _data["playing"];
-            this.currentTime = _data["currentTime"];
-            this.deviceId = _data["deviceId"];
-            this.autoPlay = _data["autoPlay"];
-        }
-    }
-
-    static fromJS(data: any): PlaybackSessionDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new PlaybackSessionDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["fileDirectory"] = this.fileDirectory;
-        data["file"] = this.file ? this.file.toJSON() : <any>undefined;
-        data["lastPlayed"] = this.lastPlayed ? this.lastPlayed.toISOString() : <any>undefined;
-        data["playing"] = this.playing;
-        data["currentTime"] = this.currentTime;
-        data["deviceId"] = this.deviceId;
-        data["autoPlay"] = this.autoPlay;
-        return data;
-    }
-}
-
-export interface IPlaybackSessionDto {
-    id: string;
-    fileDirectory: string;
-    file: FileExplorerFileNodeResponse;
-    lastPlayed: Date;
-    playing: boolean;
-    currentTime: number;
-    deviceId?: string | undefined;
-    autoPlay: boolean;
-}
-
 export class SyncPlaybackSessionCommand implements ISyncPlaybackSessionCommand {
     playbackSessionId?: string | undefined;
     playing!: boolean;
@@ -3011,49 +3122,6 @@ export interface ISyncPlaybackSessionCommand {
     playbackSessionId?: string | undefined;
     playing: boolean;
     currentTime: number;
-}
-
-export class CurrentSessionUpdatedDto implements ICurrentSessionUpdatedDto {
-    session?: PlaybackSessionDto | undefined;
-    queue!: QueueSnapshotDto;
-
-    constructor(data?: ICurrentSessionUpdatedDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.queue = new QueueSnapshotDto();
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.session = _data["session"] ? PlaybackSessionDto.fromJS(_data["session"]) : <any>undefined;
-            this.queue = _data["queue"] ? QueueSnapshotDto.fromJS(_data["queue"]) : new QueueSnapshotDto();
-        }
-    }
-
-    static fromJS(data: any): CurrentSessionUpdatedDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new CurrentSessionUpdatedDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["session"] = this.session ? this.session.toJSON() : <any>undefined;
-        data["queue"] = this.queue ? this.queue.toJSON() : <any>undefined;
-        return data;
-    }
-}
-
-export interface ICurrentSessionUpdatedDto {
-    session?: PlaybackSessionDto | undefined;
-    queue: QueueSnapshotDto;
 }
 
 export class SetCurrentSessionCommand implements ISetCurrentSessionCommand {
@@ -3943,6 +4011,7 @@ export class DeviceStateDto implements IDeviceStateDto {
     deviceId!: string;
     lastInteractedWith!: string;
     interactedWith!: boolean;
+    online!: boolean;
 
     constructor(data?: IDeviceStateDto) {
         if (data) {
@@ -3958,6 +4027,7 @@ export class DeviceStateDto implements IDeviceStateDto {
             this.deviceId = _data["deviceId"];
             this.lastInteractedWith = _data["lastInteractedWith"];
             this.interactedWith = _data["interactedWith"];
+            this.online = _data["online"];
         }
     }
 
@@ -3973,6 +4043,7 @@ export class DeviceStateDto implements IDeviceStateDto {
         data["deviceId"] = this.deviceId;
         data["lastInteractedWith"] = this.lastInteractedWith;
         data["interactedWith"] = this.interactedWith;
+        data["online"] = this.online;
         return data;
     }
 }
@@ -3981,6 +4052,7 @@ export interface IDeviceStateDto {
     deviceId: string;
     lastInteractedWith: string;
     interactedWith: boolean;
+    online: boolean;
 }
 
 export class DeviceDeletedDto implements IDeviceDeletedDto {

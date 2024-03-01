@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace MixServer.Application.Users.Commands.DeleteDevice;
+namespace MixServer.Application.Devices.Commands.DeleteDevice;
 
 public class DeleteDeviceCommandValidator : AbstractValidator<DeleteDeviceCommand>
 {

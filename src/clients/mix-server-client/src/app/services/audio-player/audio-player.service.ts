@@ -341,7 +341,7 @@ export class AudioPlayerService {
 
     this._audioPlayerState.node = session.currentNode;
 
-    if (session.autoPlay && session.deviceId === this._authenticationService.deviceId) {
+    if (session.deviceId === this._authenticationService.deviceId) {
       this.play().then();
     }
     else {

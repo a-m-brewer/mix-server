@@ -10,7 +10,6 @@ namespace MixServer.Domain.Callbacks;
 
 public interface ICallbackService
 {
-    Task CurrentSessionUpdated(string userId, PlaybackSession? session);
     Task CurrentSessionUpdated(string userId, Guid deviceId, PlaybackSession? session);
     Task CurrentQueueUpdated(string userId, QueueSnapshot queueSnapshot);
     Task CurrentQueueUpdated(string userId, Guid deviceId, QueueSnapshot queueSnapshot);

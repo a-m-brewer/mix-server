@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.SignalR;
+using MixServer.Application.Devices.Commands.SetDeviceInteraction;
+using MixServer.Application.Devices.Commands.SetDeviceOnline;
 using MixServer.Application.Sessions.Commands.UpdatePlaybackState;
-using MixServer.Application.Users.Commands.SetDeviceDisconnected;
-using MixServer.Application.Users.Commands.SetDeviceInteraction;
 using MixServer.Domain.Interfaces;
 using MixServer.SignalR.Commands;
 
@@ -10,7 +10,8 @@ namespace MixServer.SignalR;
 
 public class SignalRCallbackHub(
     ICommandHandler<UpdatePlaybackStateCommand> updatePlaybackStateCommandHandler,
-    ICommandHandler<SetDeviceDisconnectedCommand> setDeviceDisconnectedCommandHandler,
+    ICommandHandler<SetDeviceOnlineCommand> setDeviceOnlineCommandHandler,
+    ICommandHandler<SetDeviceInteractionCommand> setDeviceInteractionCommandHandler,
     ILogger<SignalRCallbackHub> logger,
     ISignalRUserManager signalRUserManager)
     : Hub<ISignalRCallbackClient>
@@ -28,6 +29,7 @@ public class SignalRCallbackHub(
                     Context.User,
                     new SignalRConnectionId(Context.ConnectionId),
                     accessToken);
+                await SetDeviceOnline(true);
             }
         }
         
@@ -42,14 +44,7 @@ public class SignalRCallbackHub(
             return;
         }
 
-        try
-        {
-            await setDeviceDisconnectedCommandHandler.HandleAsync(new SetDeviceDisconnectedCommand());
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "Failed to set device disconnected");
-        }
+        await SetDeviceOnline(false);
 
         var connectionId = new SignalRConnectionId(Context.ConnectionId);
         signalRUserManager.UserDisconnected(Context.User, connectionId);
@@ -69,6 +64,26 @@ public class SignalRCallbackHub(
         catch (Exception e)
         {
             logger.LogError(e, "Un-expected Exception");
+        }
+    }
+
+    public async Task PageClosed()
+    {
+        await setDeviceInteractionCommandHandler.HandleAsync(new SetDeviceInteractionCommand
+        {
+            Interacted = false
+        });
+    }
+
+    private async Task SetDeviceOnline(bool online)
+    {
+        try
+        {
+            await setDeviceOnlineCommandHandler.HandleAsync(new SetDeviceOnlineCommand(online));
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to set device online status to: {Online}", online);
         }
     }
 }
