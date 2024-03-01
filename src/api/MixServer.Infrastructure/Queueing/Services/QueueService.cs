@@ -8,6 +8,7 @@ using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Enums;
 using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Entities;
+using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Queueing.Models;
 using MixServer.Infrastructure.Queueing.Repositories;
 using MixServer.Infrastructure.Users.Repository;
@@ -16,6 +17,7 @@ namespace MixServer.Infrastructure.Queueing.Services;
 
 public class QueueService(
     ICallbackService callbackService,
+    ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
     IFileService fileService,
     ILogger<QueueService> logger,
@@ -42,7 +44,7 @@ public class QueueService(
         await SetQueueFolderAsync(currentUserRepository.CurrentUser.CurrentPlaybackSession);
     }
 
-    public async Task SetQueueFolderAsync(PlaybackSession nextSession)
+    public async Task<QueueSnapshot> SetQueueFolderAsync(PlaybackSession nextSession)
     {
         var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
 
@@ -59,7 +61,11 @@ public class QueueService(
         queue.SetQueuePositionFromFolderItemOrThrow(nextSession.AbsolutePath);
 
         var queueSnapshot = GenerateQueueSnapshot(queue, files);
-        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot));
+
+        unitOfWork.InvokeCallbackOnSaved(c =>
+            c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
+
+        return queueSnapshot;
     }
 
     public async Task SetQueuePositionAsync(Guid queuePositionId)
@@ -135,7 +141,8 @@ public class QueueService(
         queue.SetQueuePosition(nextQueuePositionId);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
-        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot));
+        unitOfWork.InvokeCallbackOnSaved(c =>
+            c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
         
         return (PlaylistIncrementResult.Success, queueSnapshot);
     }
@@ -155,7 +162,8 @@ public class QueueService(
     public void ClearQueue()
     {
         queueRepository.Remove(currentUserRepository.CurrentUserId);
-        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, QueueSnapshot.Empty));
+        unitOfWork.InvokeCallbackOnSaved(c =>
+            c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, QueueSnapshot.Empty));
     }
 
     public async Task<IFileExplorerFileNode> GetCurrentPositionFileOrThrowAsync()

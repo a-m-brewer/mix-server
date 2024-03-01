@@ -11,7 +11,9 @@ namespace MixServer.Domain.Callbacks;
 public interface ICallbackService
 {
     Task CurrentSessionUpdated(string userId, PlaybackSession? session);
+    Task CurrentSessionUpdated(string userId, Guid deviceId, PlaybackSession? session);
     Task CurrentQueueUpdated(string userId, QueueSnapshot queueSnapshot);
+    Task CurrentQueueUpdated(string userId, Guid deviceId, QueueSnapshot queueSnapshot);
     Task DeviceUpdated(Device device);
     Task DeviceStateUpdated(IDeviceState deviceState);
     Task FolderSorted(string userId, IFileExplorerFolder folder);

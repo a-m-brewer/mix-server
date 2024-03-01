@@ -33,11 +33,19 @@ public class SignalRCallbackService(
 {
     public async Task CurrentSessionUpdated(string userId, PlaybackSession? session)
     {
+        await CurrentSessionUpdated(userManager.GetConnectionsInGroups(new SignalRGroup(userId)), session);
+    }
+
+    public async Task CurrentSessionUpdated(string userId, Guid deviceId, PlaybackSession? session)
+    {
+        await CurrentSessionUpdated(GetConnectionsOnOtherDevices(userId, deviceId), session);
+    }
+    
+    private async Task CurrentSessionUpdated(IReadOnlyList<SignalRConnectionId> clients, PlaybackSession? session)
+    {
         var currentSessionDto = session == null
             ? null
             : playbackSessionConverter.Convert(session, true);
-
-        var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
         
         await context.Clients
             .Clients(clients)
@@ -49,8 +57,16 @@ public class SignalRCallbackService(
 
     public async Task CurrentQueueUpdated(string userId, QueueSnapshot queueSnapshot)
     {
-        var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
+        await CurrentQueueUpdated(userManager.GetConnectionsInGroups(new SignalRGroup(userId)), queueSnapshot);
+    }
 
+    public Task CurrentQueueUpdated(string userId, Guid deviceId, QueueSnapshot queueSnapshot)
+    {
+        return CurrentQueueUpdated(GetConnectionsOnOtherDevices(userId, deviceId), queueSnapshot);
+    }
+    
+    private async Task CurrentQueueUpdated(IReadOnlyList<SignalRConnectionId> clients, QueueSnapshot queueSnapshot)
+    {
         var dto = queueSnapshotDtoConverter.Convert(queueSnapshot);
 
         await context.Clients
@@ -223,6 +239,13 @@ public class SignalRCallbackService(
             .UserDeleted(new UserDeletedDto { UserId = userId });
     }
 
+    private IReadOnlyList<SignalRConnectionId> GetConnectionsOnOtherDevices(string userId, Guid? deviceId)
+    {
+        var (_, otherConnections) = GetDevicesConnectionWithOtherDevices(userId, deviceId);
+
+        return otherConnections;
+    }
+    
     private 
         (IReadOnlyList<SignalRConnectionId> CurrentDeviceConnections, IReadOnlyList<SignalRConnectionId> OtherDevicesConnections)
         GetDevicesConnectionWithOtherDevices(string userId, Guid? deviceId)

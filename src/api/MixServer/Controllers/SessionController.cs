@@ -7,8 +7,8 @@ using MixServer.Application.Sessions.Commands.SetCurrentSession;
 using MixServer.Application.Sessions.Commands.SetNextSession;
 using MixServer.Application.Sessions.Commands.SetPlaying;
 using MixServer.Application.Sessions.Commands.SyncPlaybackSession;
+using MixServer.Application.Sessions.Dtos;
 using MixServer.Application.Sessions.Queries.GetUsersSessions;
-using MixServer.Application.Sessions.Responses;
 using MixServer.Domain.Interfaces;
 using MixServer.Requests;
 
@@ -18,14 +18,14 @@ namespace MixServer.Controllers;
 [Produces("application/json")]
 [Route("api/[controller]")]
 public class SessionController(
-    ICommandHandler<ClearCurrentSessionCommand> clearCurrentSessionCommandHandler,
+    ICommandHandler<ClearCurrentSessionCommand, CurrentSessionUpdatedDto> clearCurrentSessionCommandHandler,
     IQueryHandler<GetUsersSessionsQuery, GetUsersSessionsResponse> getUsersSessionsQueryHandler,
     ICommandHandler<RequestPauseCommand> requestPauseCommandHandler,
     ICommandHandler<RequestPlaybackCommand> requestPlaybackCommandHandler,
     ICommandHandler<SeekCommand> seekCommandHandler,
-    ICommandHandler<SetCurrentSessionCommand> setCurrentSessionCommandHandler,
+    ICommandHandler<SetCurrentSessionCommand, CurrentSessionUpdatedDto> setCurrentSessionCommandHandler,
     ICommandHandler<SetPlayingCommand> setPlayingCommandHandler,
-    ICommandHandler<SetNextSessionCommand> setNextSessionCommandHandler,
+    ICommandHandler<SetNextSessionCommand, CurrentSessionUpdatedDto> setNextSessionCommandHandler,
     ICommandHandler<SyncPlaybackSessionCommand, SyncPlaybackSessionResponse> syncPlaybackSessionCommandHandler)
     : ControllerBase
 {
@@ -38,34 +38,28 @@ public class SessionController(
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> SetCurrentSession([FromBody] SetCurrentSessionCommand command)
     {
-        await setCurrentSessionCommandHandler.HandleAsync(command);
-
-        return Accepted();
+        return Ok(await setCurrentSessionCommandHandler.HandleAsync(command));
     }
 
     [HttpPost("next")]
-    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> SetNextSession([FromBody] SetNextSessionCommand command)
-    {
-        await setNextSessionCommandHandler.HandleAsync(command);
-        
-        return Accepted();
+    { 
+        return Ok(await setNextSessionCommandHandler.HandleAsync(command));
     }
 
     [HttpDelete]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ClearCurrentSession()
     {
-        await clearCurrentSessionCommandHandler.HandleAsync(new ClearCurrentSessionCommand());
-
-        return NoContent();
+        return Ok(await clearCurrentSessionCommandHandler.HandleAsync(new ClearCurrentSessionCommand()));
     }
 
     [HttpGet("history")]
