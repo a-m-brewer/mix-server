@@ -26,7 +26,6 @@ import {SessionService} from "../../../services/sessions/session.service";
 })
 export class AudioControlButtonsComponent {
   constructor(public audioPlayer: AudioPlayerService,
-              private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _sessionService: SessionService,
               private _queueRepository: QueueRepositoryService) {
   }
