@@ -13,7 +13,7 @@ export class AudioSessionService {
 
   public createMetadata(): AudioSessionService {
     this.metadata = new MediaMetadata({
-      title: this._playbackSessionRepository.currentPlaybackSession?.currentNode?.name ?? ''
+      title: this._playbackSessionRepository.currentSession?.currentNode?.name ?? ''
     });
 
     return this;

@@ -3,6 +3,7 @@ using MixServer.Application.Queueing.Commands.AddToQueue;
 using MixServer.Application.Queueing.Commands.RemoveFromQueue;
 using MixServer.Application.Queueing.Commands.SetQueuePosition;
 using MixServer.Application.Queueing.Responses;
+using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Interfaces;
 
 namespace MixServer.Controllers;
@@ -11,10 +12,10 @@ namespace MixServer.Controllers;
 [Produces("application/json")]
 [Route("api/[controller]")]
 public class QueueController(
-    ICommandHandler<AddToQueueCommand> addToQueueCommandHandler,
+    ICommandHandler<AddToQueueCommand, QueueSnapshotDto> addToQueueCommandHandler,
     IQueryHandler<QueueSnapshotDto> getCurrentQueueQueryHandler,
-    ICommandHandler<RemoveFromQueueCommand> removeFromQueueCommandHandler,
-    ICommandHandler<SetQueuePositionCommand> setQueuePositionCommandHandler)
+    ICommandHandler<RemoveFromQueueCommand, QueueSnapshotDto> removeFromQueueCommandHandler,
+    ICommandHandler<SetQueuePositionCommand, CurrentSessionUpdatedDto> setQueuePositionCommandHandler)
     : ControllerBase
 {
     [HttpGet]
@@ -27,44 +28,38 @@ public class QueueController(
     }
     
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(QueueSnapshotDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> AddToQueue([FromBody] AddToQueueCommand command)
     {
-        await addToQueueCommandHandler.HandleAsync(command);
-
-        return NoContent();
+        return Ok(await addToQueueCommandHandler.HandleAsync(command));
     }
 
     [HttpDelete("item/{queueItemId:guid}")]
+    [ProducesResponseType(typeof(QueueSnapshotDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RemoveFromQueue([FromRoute] Guid queueItemId)
     {
-        await removeFromQueueCommandHandler.HandleAsync(new RemoveFromQueueCommand { QueueItems = [queueItemId] });
-
-        return NoContent();
+        return Ok(await removeFromQueueCommandHandler.HandleAsync(new RemoveFromQueueCommand { QueueItems = [queueItemId] }));
     }
 
     [HttpDelete("item")]
+    [ProducesResponseType(typeof(QueueSnapshotDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RemoveFromQueue([FromBody] RemoveFromQueueCommand command)
     {
-        await removeFromQueueCommandHandler.HandleAsync(command);
-
-        return NoContent();
+        return Ok(await removeFromQueueCommandHandler.HandleAsync(command));
     }
 
     [HttpPost("position")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(CurrentSessionUpdatedDto),StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> SetQueuePosition([FromBody] SetQueuePositionCommand command)
     {
-        await setQueuePositionCommandHandler.HandleAsync(command);
-
-        return NoContent();
+        return Ok(await setQueuePositionCommandHandler.HandleAsync(command));
     }
 }

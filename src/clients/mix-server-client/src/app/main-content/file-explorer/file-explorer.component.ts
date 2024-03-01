@@ -12,6 +12,7 @@ import {
 } from "../../components/nodes/node-list/node-list-item/interfaces/node-list-item-changed-event";
 import {AudioPlayerStateService} from "../../services/audio-player/audio-player-state.service";
 import {AudioPlayerStateModel} from "../../services/audio-player/models/audio-player-state-model";
+import {SessionService} from "../../services/sessions/session.service";
 
 @Component({
   selector: 'app-file-explorer',
@@ -28,7 +29,7 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   constructor(private _audioPlayerStateService: AudioPlayerStateService,
               private _loadingRepository: LoadingRepositoryService,
               private _nodeRepository: FileExplorerNodeRepositoryService,
-              private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
+              private _sessionService: SessionService) {
   }
 
   public ngOnInit(): void {
@@ -77,6 +78,6 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   }
 
   private onFileClick(file: FileExplorerFileNode): void {
-    this._playbackSessionRepository.setFile(file);
+    this._sessionService.setFile(file);
   }
 }

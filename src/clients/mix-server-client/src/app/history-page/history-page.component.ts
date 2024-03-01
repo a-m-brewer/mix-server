@@ -12,6 +12,7 @@ import {
 } from "../components/nodes/node-list/node-list-item/interfaces/node-list-item-changed-event";
 import {AudioPlayerStateService} from "../services/audio-player/audio-player-state.service";
 import {AudioPlayerStateModel} from "../services/audio-player/models/audio-player-state-model";
+import {SessionService} from "../services/sessions/session.service";
 
 @Component({
   selector: 'app-history-page',
@@ -34,7 +35,7 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
   constructor(private _audioPlayerStateService: AudioPlayerStateService,
               private _historyRepository: HistoryRepositoryService,
               private _loadingRepository: LoadingRepositoryService,
-              private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
+              private _sessionService: SessionService) {
   }
 
   public ngOnInit(): void {
@@ -77,7 +78,7 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this._playbackSessionRepository.setFile(session.currentNode);
+    this._sessionService.setFile(session.currentNode);
   }
 
   public onScrollDown() {

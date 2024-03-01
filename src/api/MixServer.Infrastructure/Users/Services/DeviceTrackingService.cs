@@ -21,24 +21,45 @@ public class DeviceTrackingService(
         return readWriteLock.ForRead(() => _states.TryGetValue(deviceId, out var state) && state.InteractedWith);
     }
 
+    public void SetOnline(string userId, Guid deviceId, bool online)
+    {
+        GetOrAdd(userId, deviceId, state =>
+        {
+            logger.LogInformation("User: {UserId} device: {DeviceId} online: {Online}",
+                userId,
+                deviceId,
+                online);
+            state.SetOnline(online);
+        });
+    }
+
     public void SetInteraction(string userId, Guid deviceId, bool interactedWith)
     {
-        readWriteLock.ForWrite(() =>
+        GetOrAdd(userId, deviceId, state =>
         {
             logger.LogInformation("User: {UserId} device: {DeviceId} interacted with: {InteractedWith}",
                 userId,
                 deviceId,
                 interactedWith);
+            state.UpdateInteractionState(interactedWith);
+        });
+    }
+
+    private void GetOrAdd(string userId, Guid deviceId, Action<DeviceState>? action)
+    {
+        readWriteLock.ForWrite(() =>
+        {
             if (_states.TryGetValue(deviceId, out var state))
             {
-                state.UpdateInteractionState(userId, interactedWith);
+                action?.Invoke(state);
             }
             else
             {
                 var deviceState = new DeviceState(deviceId);
                 deviceState.StateChanged += OnDeviceStateChanged;
 
-                deviceState.UpdateInteractionState(userId, interactedWith);
+                deviceState.LastInteractedWith = userId;
+                action?.Invoke(deviceState);
                 
                 _states[deviceId] = deviceState;
             }
@@ -58,7 +79,7 @@ public class DeviceTrackingService(
             {
                 if (_states.TryGetValue(device.Id, out var deviceState))
                 {
-                    device.UpdateInteractionState(deviceState.LastInteractedWith, deviceState.InteractedWith);
+                    device.Populate(deviceState);
                 }
             }
         });
@@ -74,8 +95,9 @@ public class DeviceTrackingService(
         using var scope = serviceProvider.CreateScope();
         var callbackService = scope.ServiceProvider.GetRequiredService<ICallbackService>();
         
-        logger.LogInformation("Device: {DeviceId} interaction state: {InteractedWith}",
+        logger.LogInformation("Device: {DeviceId} online: {Online} interaction state: {InteractedWith}",
             deviceState.DeviceId,
+            deviceState.Online,
             deviceState.InteractedWith);
         await callbackService.DeviceStateUpdated(deviceState);
     }

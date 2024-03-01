@@ -3,14 +3,10 @@ import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-p
 import {
   BehaviorSubject,
   combineLatestWith,
-  filter,
+  filter, firstValueFrom,
   map,
-  mergeWith,
   Observable,
-  sampleTime,
-  Subject,
-  takeUntil,
-  timer
+  sampleTime
 } from "rxjs";
 import {StreamUrlService} from "../converters/stream-url.service";
 import {AudioSessionService} from "./audio-session.service";
@@ -24,9 +20,8 @@ import {AuthenticationService} from "../auth/authentication.service";
 import {PlaybackGranted} from "../repositories/models/playback-granted";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {DeviceRepositoryService} from "../repositories/device-repository.service";
-import {merge} from "rxjs/internal/operators/merge";
-import {combineLatest} from "rxjs/internal/operators/combineLatest";
 import {Device} from "../repositories/models/device";
+import {SessionService} from "../sessions/session.service";
 
 @Injectable({
   providedIn: 'root'
@@ -47,6 +42,7 @@ export class AudioPlayerService {
               private _loadingRepository: LoadingRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _queueRepository: QueueRepositoryService,
+              private _sessionService: SessionService,
               private _streamUrlService: StreamUrlService,
               private _toastService: ToastService) {
     this.audio.ontimeupdate = () => {
@@ -244,7 +240,16 @@ export class AudioPlayerService {
 
   public requestPause(): void {
     this._playbackGranted = false;
-    this._playbackSessionRepository.requestPause();
+
+    firstValueFrom(this.isCurrentPlaybackDevice$)
+      .then(isCurrentPlaybackDevice => {
+        if (isCurrentPlaybackDevice) {
+          this.handlePauseRequested();
+        }
+        else {
+          this._playbackSessionRepository.requestPause();
+        }
+      });
   }
 
   public seek(time: number): void {
@@ -280,7 +285,7 @@ export class AudioPlayerService {
               return
             }
 
-            this._playbackSessionRepository.skip();
+            this._sessionService.skip();
           })
       } else {
         this._audioSession
@@ -294,7 +299,7 @@ export class AudioPlayerService {
               return
             }
 
-            this._playbackSessionRepository.back();
+            this._sessionService.back();
           })
       } else {
         this._audioSession
@@ -303,13 +308,17 @@ export class AudioPlayerService {
 
       this.setPlaying();
     } catch (err) {
-      const dom = err as DOMException;
-      if (dom.name === 'NotSupportedError') {
-        this._toastService.error(`${this._playbackSessionRepository.currentPlaybackSession?.currentNode?.name} unsupported`, 'Not Supported');
-        this._playbackSessionRepository.clearSession();
-      } else {
-        console.error(dom);
-        this._toastService.error(`${this._playbackSessionRepository.currentPlaybackSession?.currentNode?.name}: ${dom.message}`, dom.name);
+      if (err instanceof DOMException) {
+        if (err.name === 'NotSupportedError') {
+          this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name} unsupported`, 'Not Supported');
+          this._sessionService.clearSession();
+        } else {
+          console.error(err);
+          this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name}: ${err.message}`, err.name);
+        }
+      } else if (err instanceof Error) {
+        console.error(err);
+        this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name}: ${err.message}`, err.name);
       }
     }
   }
@@ -330,11 +339,8 @@ export class AudioPlayerService {
 
     this._audioPlayerState.node = session.currentNode;
 
-    if (session.autoPlay && session.deviceId === this._authenticationService.deviceId) {
+    if (session.deviceId === this._authenticationService.deviceId) {
       this.play().then();
-    }
-    else {
-      this.setPaused();
     }
   }
 
@@ -364,7 +370,7 @@ export class AudioPlayerService {
   }
 
   private handleOnSessionEnded(): void {
-    this._playbackSessionRepository.setSessionEnded();
+    this._sessionService.setSessionEnded();
   }
 
   private updateTimeChangedBehaviourSubject() {

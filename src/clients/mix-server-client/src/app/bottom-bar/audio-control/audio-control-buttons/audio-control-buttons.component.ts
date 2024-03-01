@@ -9,6 +9,7 @@ import {
   CurrentPlaybackSessionRepositoryService
 } from "../../../services/repositories/current-playback-session-repository.service";
 import {SwitchDeviceMenuComponent} from "../switch-device-menu/switch-device-menu.component";
+import {SessionService} from "../../../services/sessions/session.service";
 
 @Component({
   selector: 'app-audio-control-buttons, [app-audio-control-buttons]',
@@ -25,7 +26,7 @@ import {SwitchDeviceMenuComponent} from "../switch-device-menu/switch-device-men
 })
 export class AudioControlButtonsComponent {
   constructor(public audioPlayer: AudioPlayerService,
-              private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
+              private _sessionService: SessionService,
               private _queueRepository: QueueRepositoryService) {
   }
 
@@ -42,7 +43,7 @@ export class AudioControlButtonsComponent {
       return;
     }
 
-    this._playbackSessionRepository.back();
+    this._sessionService.back();
   }
 
   public skipNext(): void {
@@ -50,7 +51,7 @@ export class AudioControlButtonsComponent {
       return;
     }
 
-    this._playbackSessionRepository.skip();
+    this._sessionService.skip();
   }
 
   public backward(): void {

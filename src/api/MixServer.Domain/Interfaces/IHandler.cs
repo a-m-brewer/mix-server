@@ -23,8 +23,3 @@ public interface IQueryHandler<TResponse> : IHandler
 {
     Task<TResponse> HandleAsync();
 }
-
-public interface ISyncCommandHandler<in TRequest> : IHandler
-{
-    void Handle(TRequest request);
-}

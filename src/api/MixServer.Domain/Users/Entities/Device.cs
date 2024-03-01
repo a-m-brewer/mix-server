@@ -26,10 +26,14 @@ public class Device : IDevice
     [NotMapped]
     public bool InteractedWith { get; private set; }
 
-    public void UpdateInteractionState(string userId, bool interactedWith)
+    [NotMapped]
+    public bool Online { get; set; }
+
+    public void Populate(IDeviceState state)
     {
-        LastInteractedWith = userId;
-        InteractedWith = interactedWith;
+        Online = state.Online;
+        LastInteractedWith = state.LastInteractedWith;
+        InteractedWith = state.InteractedWith;
     }
 
     #region DeviceInfo

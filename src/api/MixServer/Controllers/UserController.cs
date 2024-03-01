@@ -1,14 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MixServer.Application.Users.Commands.AddUser;
-using MixServer.Application.Users.Commands.DeleteDevice;
 using MixServer.Application.Users.Commands.DeleteUser;
 using MixServer.Application.Users.Commands.LoginUser;
 using MixServer.Application.Users.Commands.RefreshUser;
 using MixServer.Application.Users.Commands.ResetPassword;
 using MixServer.Application.Users.Commands.UpdateUser;
 using MixServer.Application.Users.Queries.GetAllUsers;
-using MixServer.Application.Users.Queries.GetUsersDevices;
 using MixServer.Auth;
 using MixServer.Domain.Interfaces;
 
@@ -19,10 +17,8 @@ namespace MixServer.Controllers;
 [Route("api/[controller]")]
 public class UserController(
     ICommandHandler<AddUserCommand, AddUserCommandResponse> addUserCommandHandler,
-    ICommandHandler<DeleteDeviceCommand> deleteDeviceCommandHandler,
     ICommandHandler<DeleteUserCommand> deleteUserCommandHandler,
     IQueryHandler<GetAllUsersResponse> getAllUsersQueryHandler,
-    IQueryHandler<GetUsersDevicesQueryResponse> getUsersDevicesQueryHandler,
     ICommandHandler<LoginUserCommand, LoginCommandResponse> loginUserCommandHandler,
     ICommandHandler<ResetPasswordCommand> resetPasswordCommandHandler,
     ICommandHandler<RefreshUserCommand, RefreshUserResponse> refreshUserCommandHandler,
@@ -112,26 +108,5 @@ public class UserController(
     public async Task<IActionResult> Refresh([FromBody] RefreshUserCommand command)
     {
         return Ok(await refreshUserCommandHandler.HandleAsync(command));
-    }
-
-    [HttpGet("device")]
-    [ProducesResponseType(typeof(GetUsersDevicesQueryResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Devices()
-    {
-        return Ok(await getUsersDevicesQueryHandler.HandleAsync());
-    }
-
-    [HttpDelete("device/{deviceId:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteDevice([FromRoute] Guid deviceId)
-    {
-        await deleteDeviceCommandHandler.HandleAsync(new DeleteDeviceCommand
-        {
-            DeviceId = deviceId
-        });
-        
-        return NoContent();
     }
 }

@@ -8,10 +8,10 @@ namespace MixServer.Domain.Queueing.Services;
 public interface IQueueService
 {
     Task LoadQueueStateAsync();
-    Task SetQueueFolderAsync(PlaybackSession nextSession);
-    Task SetQueuePositionAsync(Guid queuePositionId);
-    Task AddToQueueAsync(IFileExplorerFileNode file);
-    Task RemoveUserQueueItemsAsync(List<Guid> ids);
+    Task<QueueSnapshot> SetQueueFolderAsync(PlaybackSession nextSession);
+    Task<QueueSnapshot> SetQueuePositionAsync(Guid queuePositionId);
+    Task<QueueSnapshot> AddToQueueAsync(IFileExplorerFileNode file);
+    Task<QueueSnapshot> RemoveUserQueueItemsAsync(List<Guid> ids);
     Task<(PlaylistIncrementResult Result, QueueSnapshot Snapshot)> IncrementQueuePositionAsync(int offset);
     Task ResortQueueAsync();
     void ClearQueue();

@@ -1,16 +1,21 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.SignalR;
+using MixServer.Application.Devices.Commands.SetDeviceInteraction;
+using MixServer.Application.Devices.Commands.SetDeviceOnline;
 using MixServer.Application.Sessions.Commands.UpdatePlaybackState;
-using MixServer.Application.Users.Commands.SetDeviceDisconnected;
-using MixServer.Application.Users.Commands.SetDeviceInteraction;
 using MixServer.Domain.Interfaces;
+using MixServer.Domain.Users.Repositories;
+using MixServer.Infrastructure.Users.Repository;
 using MixServer.SignalR.Commands;
+using MixServer.SignalR.Events;
 
 namespace MixServer.SignalR;
 
 public class SignalRCallbackHub(
+    ICurrentDeviceRepository currentDeviceRepository,
+    ICurrentUserRepository currentUserRepository,
     ICommandHandler<UpdatePlaybackStateCommand> updatePlaybackStateCommandHandler,
-    ICommandHandler<SetDeviceDisconnectedCommand> setDeviceDisconnectedCommandHandler,
+    ICommandHandler<SetDeviceOnlineCommand> setDeviceOnlineCommandHandler,
     ICommandHandler<SetDeviceInteractionCommand> setDeviceInteractionCommandHandler,
     ILogger<SignalRCallbackHub> logger,
     ISignalRUserManager signalRUserManager)
@@ -29,6 +34,7 @@ public class SignalRCallbackHub(
                     Context.User,
                     new SignalRConnectionId(Context.ConnectionId),
                     accessToken);
+                await SetDeviceOnline(true);
             }
         }
         
@@ -43,14 +49,7 @@ public class SignalRCallbackHub(
             return;
         }
 
-        try
-        {
-            await setDeviceDisconnectedCommandHandler.HandleAsync(new SetDeviceDisconnectedCommand());
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "Failed to set device disconnected");
-        }
+        await SetDeviceOnline(false);
 
         var connectionId = new SignalRConnectionId(Context.ConnectionId);
         signalRUserManager.UserDisconnected(Context.User, connectionId);
@@ -73,23 +72,31 @@ public class SignalRCallbackHub(
         }
     }
 
-    public async Task SetDeviceInteraction()
+    public async Task PageClosed()
     {
-        await SetDeviceInteraction(true);
+        await setDeviceInteractionCommandHandler.HandleAsync(new SetDeviceInteractionCommand
+        {
+            Interacted = false
+        });
     }
 
-    private async Task SetDeviceInteraction(bool interacted)
+    public void Log(DebugMessageDto message)
+    {
+        logger.Log(message.Level, "[User: {UserId} Device: {DeviceId}]: {Message}",
+            currentUserRepository.CurrentUserId,
+            currentDeviceRepository.DeviceId,
+            message.Message);
+    }
+
+    private async Task SetDeviceOnline(bool online)
     {
         try
         {
-            await setDeviceInteractionCommandHandler.HandleAsync(new SetDeviceInteractionCommand
-            {
-                Interacted = interacted
-            });
+            await setDeviceOnlineCommandHandler.HandleAsync(new SetDeviceOnlineCommand(online));
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Unexpected Exception");
+            logger.LogError(e, "Failed to set device online status to: {Online}", online);
         }
     }
 }

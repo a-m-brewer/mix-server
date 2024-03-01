@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import {BehaviorSubject, filter, map, Observable} from "rxjs";
+import {BehaviorSubject, filter, firstValueFrom, map, Observable} from "rxjs";
 import {Device} from "./models/device";
 import {AuthenticationService} from "../auth/authentication.service";
-import {UserClient} from "../../generated-clients/mix-server-clients";
+import {DeviceClient, SetDeviceInteractionCommand, UserClient} from "../../generated-clients/mix-server-clients";
 import {ToastService} from "../toasts/toast-service";
 import {DeviceConverterService} from "../converters/device-converter.service";
 import {DevicesSignalrClientService} from "../signalr/devices-signalr-client.service";
@@ -15,13 +15,13 @@ export class DeviceRepositoryService {
 
   constructor(private _authenticationService: AuthenticationService,
               _deviceConverter: DeviceConverterService,
+              private  _deviceClient: DeviceClient,
               private _deviceSignalRClient: DevicesSignalrClientService,
-              private _toastService: ToastService,
-              private _userClient: UserClient) {
+              private _toastService: ToastService) {
     _authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
-          this._userClient.devices()
+          this._deviceClient.devices()
             .subscribe({
               next: dto => {
                 const devices = _deviceConverter.fromDtoList(dto.devices);
@@ -51,6 +51,7 @@ export class DeviceRepositoryService {
           return;
         }
 
+        devices[deviceIndex].online = state.online && _authenticationService.accessToken?.userId === state.lastInteractedWith;
         devices[deviceIndex].interactedWith = state.interactedWith && _authenticationService.accessToken?.userId === state.lastInteractedWith;
 
         this.next(devices);
@@ -75,7 +76,7 @@ export class DeviceRepositoryService {
   public get onlineDevices$(): Observable<Device[]> {
     return this._devicesBehaviourSubject$
       // Require the device is interacted with unless its this device because to do anything they would have to interact anyway
-      .pipe(map(m => m.filter(f => f.interactedWith || f.id === this._authenticationService.deviceId)));
+      .pipe(map(m => m.filter(f => (f.online && f.interactedWith) || f.id === this._authenticationService.deviceId)));
   }
 
   public get currentDevice$(): Observable<Device | null | undefined> {
@@ -90,21 +91,33 @@ export class DeviceRepositoryService {
   }
 
   public delete(device: Device): void {
-    this._userClient.deleteDevice(device.id)
+    this._deviceClient.deleteDevice(device.id)
       .subscribe({
         error: err => this._toastService.logServerError(err, `Failed to delete device: ${device.displayName}`)
       })
   }
 
-  public setUserInteractedWithPage(): void {
+  public setUserInteractedWithPage(interacted: boolean): void {
     const device = this._devicesBehaviourSubject$.getValue()
       .find(f => f.id === this._authenticationService.deviceId);
 
-    if (!device || device.interactedWith) {
+    if (!device) {
       return;
     }
 
-    this._deviceSignalRClient.setUserInteractedWithPage();
+    if (device.interactedWith === interacted) {
+      return;
+    }
+
+    if (interacted) {
+      firstValueFrom(this._deviceClient.setDeviceInteracted(new SetDeviceInteractionCommand({
+        interacted
+      })))
+        .catch(err => this._toastService.logServerError(err, 'Failed to set device interacted'));
+    }
+    else {
+      this._deviceSignalRClient.pageClosed();
+    }
   }
 
   private next(devices: Device[]): void {

@@ -80,7 +80,7 @@ public class SessionService(
 
         SetSessionNonMappedProperties(session);
         
-        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(session.UserId, session));
+        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(session.UserId, currentDeviceRepository.DeviceId, session));
         return session;
     }
 
@@ -95,7 +95,7 @@ public class SessionService(
         
         user.CurrentPlaybackSession = null;
         
-        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(user.Id, null));
+        unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(user.Id, currentDeviceRepository.DeviceId, null));
     }
 
     public async Task<PlaybackSession> GetPlaybackSessionByIdAsync(Guid id, string username)

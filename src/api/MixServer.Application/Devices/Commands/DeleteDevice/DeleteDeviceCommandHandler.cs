@@ -3,7 +3,7 @@ using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Services;
 
-namespace MixServer.Application.Users.Commands.DeleteDevice;
+namespace MixServer.Application.Devices.Commands.DeleteDevice;
 
 public class DeleteDeviceCommandHandler(
     IDeviceService deviceService,

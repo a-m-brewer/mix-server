@@ -1,6 +1,6 @@
 using MixServer.Domain.Users.Enums;
 
-namespace MixServer.Application.Users.Responses;
+namespace MixServer.Application.Devices.Responses;
 
 public class DeviceDto
 {
@@ -9,6 +9,7 @@ public class DeviceDto
     public ClientType ClientType { get; set; }
     public DeviceType DeviceType { get; set; }
     public bool InteractedWith { get; set; }
+    public bool Online { get; set; }
     public string? BrowserName { get; set; }
     public string? Model { get; set; }
     public string? Brand { get; set; }

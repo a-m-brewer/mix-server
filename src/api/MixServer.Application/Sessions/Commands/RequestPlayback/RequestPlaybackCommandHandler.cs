@@ -1,40 +1,43 @@
 using Microsoft.Extensions.Logging;
+using MixServer.Application.Sessions.Converters;
+using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Models;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Application.Sessions.Commands.RequestPlayback;
 
 public class RequestPlaybackCommandHandler(
+    IPlaybackStateConverter converter,
     ICallbackService callbackService,
     IConnectionManager connectionManager,
+    ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
     IDeviceTrackingService deviceTrackingService,
     ILogger<RequestPlaybackCommandHandler> logger,
     IPlaybackTrackingService playbackTrackingService)
-    : ICommandHandler<RequestPlaybackCommand>
+    : ICommandHandler<RequestPlaybackCommand, PlaybackGrantedDto>
 {
-    public async Task HandleAsync(RequestPlaybackCommand request)
+    public async Task<PlaybackGrantedDto> HandleAsync(RequestPlaybackCommand request)
     {
         var playbackState = playbackTrackingService.GetOrThrow(currentUserRepository.CurrentUserId);
 
         if (!playbackState.HasDevice)
         {
             logger.LogInformation("Current session is not currently playing on any device. Granting Playback to: {DeviceId}", request.DeviceId);
-            await UpdatePlaybackDeviceAsync(null, request.DeviceId);
-            return;
+            return await UpdatePlaybackDeviceAsync(null, request.DeviceId);
         }
 
         if (playbackState.DeviceId == request.DeviceId)
         {
             logger.LogInformation("Requesting playback device: {DeviceId} is current playback device. Starting Playback",
                 playbackState.DeviceId);
-            await SendPlaybackGrantedAsync(playbackState, true);
-            return;
+            return await SendPlaybackGrantedAsync(playbackState, true);
         }
 
         if (!deviceTrackingService.DeviceInteractedWith(request.DeviceId))
@@ -45,8 +48,7 @@ public class RequestPlaybackCommandHandler(
 
         if (!connectionManager.DeviceConnected(playbackState.DeviceIdOrThrow))
         {
-            await UpdatePlaybackDeviceAsync(playbackState.DeviceIdOrThrow, request.DeviceId);
-            return;
+            return await UpdatePlaybackDeviceAsync(playbackState.DeviceIdOrThrow, request.DeviceId);
         }
 
         playbackTrackingService.SetWaitingForPause(currentUserRepository.CurrentUserId);
@@ -58,10 +60,10 @@ public class RequestPlaybackCommandHandler(
         
         playbackState = playbackTrackingService.GetOrThrow(currentUserRepository.CurrentUserId);
 
-        await UpdatePlaybackDeviceAsync(playbackState.DeviceIdOrThrow, request.DeviceId);
+        return await UpdatePlaybackDeviceAsync(playbackState.DeviceIdOrThrow, request.DeviceId);
     }
 
-    private async Task UpdatePlaybackDeviceAsync(Guid? currentDeviceId, Guid requestedPlaybackDevice)
+    private async Task<PlaybackGrantedDto> UpdatePlaybackDeviceAsync(Guid? currentDeviceId, Guid requestedPlaybackDevice)
     {
         logger.LogInformation("Current playback device: {CurrentPlaybackDevice} transferring playback to: {NextPlaybackDevice}",
             currentDeviceId,
@@ -71,11 +73,22 @@ public class RequestPlaybackCommandHandler(
 
         var newPlaybackState = playbackTrackingService.GetOrThrow(currentUserRepository.CurrentUserId);
 
-        await SendPlaybackGrantedAsync(newPlaybackState, false);
+        return await SendPlaybackGrantedAsync(newPlaybackState, false);
     }
 
-    private async Task SendPlaybackGrantedAsync(IPlaybackState state, bool useDeviceCurrentTime)
+    private async Task<PlaybackGrantedDto> SendPlaybackGrantedAsync(IPlaybackState state, bool useDeviceCurrentTime)
     {
-        await callbackService.PlaybackGranted(state, useDeviceCurrentTime);
+        var currentDeviceId = currentDeviceRepository.DeviceId;
+        
+        // update other devices that are not the currentDevice or the new playback device
+        await callbackService.PlaybackStateUpdated(state, currentDeviceId, useDeviceCurrentTime);
+        
+        // If the requester is not the one getting playback permission we need to send the playback granted event to that device
+        if (currentDeviceId != state.DeviceId)
+        {
+            await callbackService.PlaybackGranted(state, useDeviceCurrentTime);
+        }
+
+        return converter.Convert(state, useDeviceCurrentTime);
     }
 }

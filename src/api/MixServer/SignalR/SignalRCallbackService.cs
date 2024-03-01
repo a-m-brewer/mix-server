@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using MixServer.Application.Devices.Responses;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Responses;
 using MixServer.Application.Users.Dtos;
-using MixServer.Application.Users.Responses;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Interfaces;
@@ -31,16 +31,14 @@ public class SignalRCallbackService(
     ISignalRUserManager userManager)
     : ICallbackService
 {
-    public async Task CurrentSessionUpdated(string userId, PlaybackSession? session)
+    public async Task CurrentSessionUpdated(string userId, Guid deviceId, PlaybackSession? session)
     {
         var currentSessionDto = session == null
             ? null
             : playbackSessionConverter.Convert(session, true);
-
-        var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
         
         await context.Clients
-            .Clients(clients)
+            .Clients(GetDeviceConnectionsExcept(userId, deviceId))
             .CurrentSessionUpdated(new CurrentSessionUpdatedEventDto
             {
                 CurrentPlaybackSession = currentSessionDto
@@ -49,8 +47,16 @@ public class SignalRCallbackService(
 
     public async Task CurrentQueueUpdated(string userId, QueueSnapshot queueSnapshot)
     {
-        var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
+        await CurrentQueueUpdated(userManager.GetConnectionsInGroups(new SignalRGroup(userId)), queueSnapshot);
+    }
 
+    public Task CurrentQueueUpdated(string userId, Guid deviceId, QueueSnapshot queueSnapshot)
+    {
+        return CurrentQueueUpdated(GetDeviceConnectionsExcept(userId, deviceId), queueSnapshot);
+    }
+    
+    private async Task CurrentQueueUpdated(IReadOnlyList<SignalRConnectionId> clients, QueueSnapshot queueSnapshot)
+    {
         var dto = queueSnapshotDtoConverter.Convert(queueSnapshot);
 
         await context.Clients
@@ -144,16 +150,18 @@ public class SignalRCallbackService(
             .PlaybackStateUpdated(dto);
     }
 
+    public async Task PlaybackStateUpdated(IPlaybackState state, Guid currentDeviceId, bool useDeviceCurrentTime)
+    {
+        await context.Clients
+            .Clients(GetDeviceConnectionsExcept(state.UserId, state.DeviceId, currentDeviceId))
+            .PlaybackStateUpdated(playbackStateConverter.Convert(state, useDeviceCurrentTime));
+    }
+
     public async Task PlaybackGranted(IPlaybackState state, bool useDeviceCurrentTime)
     {
-        var (deviceConnections, otherDevicesConnections) =
-            GetDevicesConnectionWithOtherDevices(state.UserId, state.DeviceId);
+        var deviceConnections = GetDeviceConnections(state.DeviceId);
         
         var dto = playbackStateConverter.Convert(state, useDeviceCurrentTime);
-
-        await context.Clients
-            .Clients(otherDevicesConnections)
-            .PlaybackStateUpdated(dto);
         
         await context.Clients
             .Clients(deviceConnections)
@@ -222,20 +230,36 @@ public class SignalRCallbackService(
             .Clients(connections)
             .UserDeleted(new UserDeletedDto { UserId = userId });
     }
-
+    
     private 
         (IReadOnlyList<SignalRConnectionId> CurrentDeviceConnections, IReadOnlyList<SignalRConnectionId> OtherDevicesConnections)
         GetDevicesConnectionWithOtherDevices(string userId, Guid? deviceId)
     {
-        var userConnections = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
-        var deviceConnections = deviceId.HasValue && deviceId.Value != Guid.Empty
-            ? userManager.GetConnectionsInGroups(new SignalRGroup(deviceId.Value.ToString()))
-            : new List<SignalRConnectionId>();
-
-        var otherDevices = userConnections
-            .Where(connection => !deviceConnections.Contains(connection))
-            .ToList();
+        var deviceConnections = GetDeviceConnections(deviceId);
+        var otherDevices = GetDeviceConnectionsExcept(userId, deviceId);
 
         return (deviceConnections, otherDevices);
+    }
+
+    private IReadOnlyList<SignalRConnectionId> GetDeviceConnectionsExcept(string userId, params Guid?[] deviceIds)
+    {
+        var userConnections = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
+        var deviceConnections = GetDeviceConnections(deviceIds);
+
+        return userConnections
+            .Where(connection => !deviceConnections.Contains(connection))
+            .ToList();
+    }
+
+    private IReadOnlyList<SignalRConnectionId> GetDeviceConnections(IEnumerable<Guid?> deviceIds)
+    {
+        return deviceIds.Distinct().SelectMany(GetDeviceConnections).ToList();
+    }
+    
+    private IReadOnlyList<SignalRConnectionId> GetDeviceConnections(Guid? deviceId)
+    {
+        return deviceId.HasValue && deviceId.Value != Guid.Empty
+            ? userManager.GetConnectionsInGroups(new SignalRGroup(deviceId.Value.ToString()))
+            : new List<SignalRConnectionId>();
     }
 }

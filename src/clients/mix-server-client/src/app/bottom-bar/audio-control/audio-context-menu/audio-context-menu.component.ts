@@ -12,9 +12,11 @@ import {PageRoutes} from "../../../page-routes.enum";
 import {MatButtonModule} from "@angular/material/button";
 import {MatMenuModule} from "@angular/material/menu";
 import {MatTooltipModule} from "@angular/material/tooltip";
-import {NgForOf} from "@angular/common";
+import {NgForOf, NgIf} from "@angular/common";
 import {MatIconModule} from "@angular/material/icon";
 import {SwitchDeviceMenuComponent} from "../switch-device-menu/switch-device-menu.component";
+import {SessionService} from "../../../services/sessions/session.service";
+import {FileExplorerNodeRepositoryService} from "../../../services/repositories/file-explorer-node-repository.service";
 
 @Component({
   selector: 'app-audio-context-menu',
@@ -25,7 +27,8 @@ import {SwitchDeviceMenuComponent} from "../switch-device-menu/switch-device-men
     MatIconModule,
     MatMenuModule,
     MatTooltipModule,
-    NgForOf
+    NgForOf,
+    NgIf
   ],
   styleUrls: ['./audio-context-menu.component.scss']
 })
@@ -37,9 +40,10 @@ export class AudioContextMenuComponent implements OnInit, OnDestroy{
 
   constructor(
     private _authService: AuthenticationService,
-    private _devicesRepository: DeviceRepositoryService,
     private _router: Router,
-    private _sessionRepository: CurrentPlaybackSessionRepositoryService) {
+    private _sessionRepository: CurrentPlaybackSessionRepositoryService,
+    private _sessionService: SessionService,
+    private _nodeRepository: FileExplorerNodeRepositoryService) {
   }
 
   public ngOnInit(): void {
@@ -61,7 +65,7 @@ export class AudioContextMenuComponent implements OnInit, OnDestroy{
   }
 
   public clearSession(): void {
-    this._sessionRepository.clearSession();
+    this._sessionService.clearSession();
   }
 
   public openQueuePage(): void {
@@ -72,5 +76,9 @@ export class AudioContextMenuComponent implements OnInit, OnDestroy{
   public openHistoryPage() {
     this._router.navigate([PageRoutes.History])
       .then();
+  }
+
+  public goToLocation(): void {
+    this._nodeRepository.changeDirectory(this.session?.currentNode.parent);
   }
 }

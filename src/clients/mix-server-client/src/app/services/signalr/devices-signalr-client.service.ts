@@ -50,10 +50,6 @@ export class DevicesSignalrClientService extends SignalrClientBase implements IS
     )
   }
 
-  public setUserInteractedWithPage(): void {
-    this.send('SetDeviceInteraction');
-  }
-
   private handleDeviceUpdated(dto: DeviceDto): void {
     const converted = this._deviceConverter.fromDto(dto);
 
@@ -68,5 +64,9 @@ export class DevicesSignalrClientService extends SignalrClientBase implements IS
     const converted = this._deviceConverter.fromStateDto(dto);
 
     this._deviceStateUpdatedSubject$.next(converted);
+  }
+
+  public pageClosed(): void {
+    this.send('PageClosed');
   }
 }

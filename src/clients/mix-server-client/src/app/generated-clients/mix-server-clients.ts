@@ -15,6 +15,190 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 
 export const MIXSERVER_BASE_URL = new InjectionToken<string>('MIXSERVER_BASE_URL');
 
+export interface IDeviceClient {
+    devices(): Observable<GetUsersDevicesQueryResponse>;
+    deleteDevice(deviceId: string): Observable<void>;
+    setDeviceInteracted(command: SetDeviceInteractionCommand): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class DeviceClient implements IDeviceClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(MIXSERVER_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    devices(): Observable<GetUsersDevicesQueryResponse> {
+        let url_ = this.baseUrl + "/api/device";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processDevices(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processDevices(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<GetUsersDevicesQueryResponse>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<GetUsersDevicesQueryResponse>;
+        }));
+    }
+
+    protected processDevices(response: HttpResponseBase): Observable<GetUsersDevicesQueryResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = GetUsersDevicesQueryResponse.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    deleteDevice(deviceId: string): Observable<void> {
+        let url_ = this.baseUrl + "/api/device/{deviceId}";
+        if (deviceId === undefined || deviceId === null)
+            throw new Error("The parameter 'deviceId' must be defined.");
+        url_ = url_.replace("{deviceId}", encodeURIComponent("" + deviceId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+            })
+        };
+
+        return this.http.request("delete", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processDeleteDevice(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processDeleteDevice(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processDeleteDevice(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    setDeviceInteracted(command: SetDeviceInteractionCommand): Observable<void> {
+        let url_ = this.baseUrl + "/api/device/interacted";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(command);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processSetDeviceInteracted(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processSetDeviceInteracted(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processSetDeviceInteracted(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+}
+
 export interface INodeClient {
     getNode(absolutePath?: string | null | undefined): Observable<FileExplorerFolderResponse>;
     refreshFolder(command: RefreshFolderCommand): Observable<FileExplorerFolderResponse>;
@@ -222,10 +406,10 @@ export class NodeClient implements INodeClient {
 
 export interface IQueueClient {
     queue(): Observable<QueueSnapshotDto>;
-    addToQueue(command: AddToQueueCommand): Observable<void>;
-    removeFromQueue(queueItemId: string): Observable<void>;
-    removeFromQueue2(command: RemoveFromQueueCommand): Observable<void>;
-    setQueuePosition(command: SetQueuePositionCommand): Observable<void>;
+    addToQueue(command: AddToQueueCommand): Observable<QueueSnapshotDto>;
+    removeFromQueue(queueItemId: string): Observable<QueueSnapshotDto>;
+    removeFromQueue2(command: RemoveFromQueueCommand): Observable<QueueSnapshotDto>;
+    setQueuePosition(command: SetQueuePositionCommand): Observable<CurrentSessionUpdatedDto>;
 }
 
 @Injectable({
@@ -303,7 +487,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    addToQueue(command: AddToQueueCommand): Observable<void> {
+    addToQueue(command: AddToQueueCommand): Observable<QueueSnapshotDto> {
         let url_ = this.baseUrl + "/api/queue";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -315,6 +499,7 @@ export class QueueClient implements IQueueClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -325,23 +510,26 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processAddToQueue(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<QueueSnapshotDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<QueueSnapshotDto>;
         }));
     }
 
-    protected processAddToQueue(response: HttpResponseBase): Observable<void> {
+    protected processAddToQueue(response: HttpResponseBase): Observable<QueueSnapshotDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 204) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = QueueSnapshotDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -365,7 +553,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    removeFromQueue(queueItemId: string): Observable<void> {
+    removeFromQueue(queueItemId: string): Observable<QueueSnapshotDto> {
         let url_ = this.baseUrl + "/api/queue/item/{queueItemId}";
         if (queueItemId === undefined || queueItemId === null)
             throw new Error("The parameter 'queueItemId' must be defined.");
@@ -376,6 +564,7 @@ export class QueueClient implements IQueueClient {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
+                "Accept": "application/json"
             })
         };
 
@@ -386,21 +575,28 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processRemoveFromQueue(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<QueueSnapshotDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<QueueSnapshotDto>;
         }));
     }
 
-    protected processRemoveFromQueue(response: HttpResponseBase): Observable<void> {
+    protected processRemoveFromQueue(response: HttpResponseBase): Observable<QueueSnapshotDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 404) {
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = QueueSnapshotDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result404: any = null;
             let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
@@ -422,7 +618,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    removeFromQueue2(command: RemoveFromQueueCommand): Observable<void> {
+    removeFromQueue2(command: RemoveFromQueueCommand): Observable<QueueSnapshotDto> {
         let url_ = this.baseUrl + "/api/queue/item";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -434,6 +630,7 @@ export class QueueClient implements IQueueClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -444,21 +641,28 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processRemoveFromQueue2(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<QueueSnapshotDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<QueueSnapshotDto>;
         }));
     }
 
-    protected processRemoveFromQueue2(response: HttpResponseBase): Observable<void> {
+    protected processRemoveFromQueue2(response: HttpResponseBase): Observable<QueueSnapshotDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 404) {
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = QueueSnapshotDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result404: any = null;
             let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
@@ -480,7 +684,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    setQueuePosition(command: SetQueuePositionCommand): Observable<void> {
+    setQueuePosition(command: SetQueuePositionCommand): Observable<CurrentSessionUpdatedDto> {
         let url_ = this.baseUrl + "/api/queue/position";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -492,6 +696,7 @@ export class QueueClient implements IQueueClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -502,23 +707,26 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processSetQueuePosition(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<CurrentSessionUpdatedDto>;
         }));
     }
 
-    protected processSetQueuePosition(response: HttpResponseBase): Observable<void> {
+    protected processSetQueuePosition(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 204) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CurrentSessionUpdatedDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -545,11 +753,11 @@ export class QueueClient implements IQueueClient {
 
 export interface ISessionClient {
     syncPlaybackSession(command: SyncPlaybackSessionCommand): Observable<SyncPlaybackSessionResponse>;
-    setCurrentSession(command: SetCurrentSessionCommand): Observable<void>;
-    clearCurrentSession(): Observable<void>;
-    setNextSession(command: SetNextSessionCommand): Observable<void>;
+    setCurrentSession(command: SetCurrentSessionCommand): Observable<CurrentSessionUpdatedDto>;
+    clearCurrentSession(): Observable<CurrentSessionUpdatedDto>;
+    setNextSession(command: SetNextSessionCommand): Observable<CurrentSessionUpdatedDto>;
     history(startIndex?: number | undefined, pageSize?: number | undefined): Observable<GetUsersSessionsResponse>;
-    requestPlayback(command: RequestPlaybackCommand): Observable<void>;
+    requestPlayback(command: RequestPlaybackCommand): Observable<PlaybackGrantedDto>;
     requestPause(): Observable<void>;
     setPlaying(command: SetPlayingCommand): Observable<void>;
     seek(command: SeekRequest): Observable<void>;
@@ -627,7 +835,7 @@ export class SessionClient implements ISessionClient {
         return _observableOf(null as any);
     }
 
-    setCurrentSession(command: SetCurrentSessionCommand): Observable<void> {
+    setCurrentSession(command: SetCurrentSessionCommand): Observable<CurrentSessionUpdatedDto> {
         let url_ = this.baseUrl + "/api/session";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -639,6 +847,7 @@ export class SessionClient implements ISessionClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -649,23 +858,26 @@ export class SessionClient implements ISessionClient {
                 try {
                     return this.processSetCurrentSession(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<CurrentSessionUpdatedDto>;
         }));
     }
 
-    protected processSetCurrentSession(response: HttpResponseBase): Observable<void> {
+    protected processSetCurrentSession(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 202) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CurrentSessionUpdatedDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -689,7 +901,7 @@ export class SessionClient implements ISessionClient {
         return _observableOf(null as any);
     }
 
-    clearCurrentSession(): Observable<void> {
+    clearCurrentSession(): Observable<CurrentSessionUpdatedDto> {
         let url_ = this.baseUrl + "/api/session";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -697,6 +909,7 @@ export class SessionClient implements ISessionClient {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
+                "Accept": "application/json"
             })
         };
 
@@ -707,23 +920,26 @@ export class SessionClient implements ISessionClient {
                 try {
                     return this.processClearCurrentSession(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<CurrentSessionUpdatedDto>;
         }));
     }
 
-    protected processClearCurrentSession(response: HttpResponseBase): Observable<void> {
+    protected processClearCurrentSession(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 204) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CurrentSessionUpdatedDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -733,7 +949,7 @@ export class SessionClient implements ISessionClient {
         return _observableOf(null as any);
     }
 
-    setNextSession(command: SetNextSessionCommand): Observable<void> {
+    setNextSession(command: SetNextSessionCommand): Observable<CurrentSessionUpdatedDto> {
         let url_ = this.baseUrl + "/api/session/next";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -745,6 +961,7 @@ export class SessionClient implements ISessionClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -755,23 +972,26 @@ export class SessionClient implements ISessionClient {
                 try {
                     return this.processSetNextSession(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<CurrentSessionUpdatedDto>;
         }));
     }
 
-    protected processSetNextSession(response: HttpResponseBase): Observable<void> {
+    protected processSetNextSession(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 202) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CurrentSessionUpdatedDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -865,7 +1085,7 @@ export class SessionClient implements ISessionClient {
         return _observableOf(null as any);
     }
 
-    requestPlayback(command: RequestPlaybackCommand): Observable<void> {
+    requestPlayback(command: RequestPlaybackCommand): Observable<PlaybackGrantedDto> {
         let url_ = this.baseUrl + "/api/session/request-playback";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -877,6 +1097,7 @@ export class SessionClient implements ISessionClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -887,23 +1108,26 @@ export class SessionClient implements ISessionClient {
                 try {
                     return this.processRequestPlayback(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return _observableThrow(e) as any as Observable<PlaybackGrantedDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return _observableThrow(response_) as any as Observable<PlaybackGrantedDto>;
         }));
     }
 
-    protected processRequestPlayback(response: HttpResponseBase): Observable<void> {
+    protected processRequestPlayback(response: HttpResponseBase): Observable<PlaybackGrantedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 204) {
+        if (status === 200) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PlaybackGrantedDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -1221,8 +1445,6 @@ export interface IUserClient {
     login(command: LoginUserCommand): Observable<LoginCommandResponse>;
     resetPassword(command: ResetPasswordCommand): Observable<void>;
     refresh(command: RefreshUserCommand): Observable<RefreshUserResponse>;
-    devices(): Observable<GetUsersDevicesQueryResponse>;
-    deleteDevice(deviceId: string): Observable<void>;
 }
 
 @Injectable({
@@ -1713,115 +1935,276 @@ export class UserClient implements IUserClient {
         }
         return _observableOf(null as any);
     }
+}
 
-    devices(): Observable<GetUsersDevicesQueryResponse> {
-        let url_ = this.baseUrl + "/api/user/device";
-        url_ = url_.replace(/[?&]$/, "");
+export class GetUsersDevicesQueryResponse implements IGetUsersDevicesQueryResponse {
+    devices!: DeviceDto[];
 
-        let options_ : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processDevices(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
-                try {
-                    return this.processDevices(response_ as any);
-                } catch (e) {
-                    return _observableThrow(e) as any as Observable<GetUsersDevicesQueryResponse>;
-                }
-            } else
-                return _observableThrow(response_) as any as Observable<GetUsersDevicesQueryResponse>;
-        }));
-    }
-
-    protected processDevices(response: HttpResponseBase): Observable<GetUsersDevicesQueryResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = GetUsersDevicesQueryResponse.fromJS(resultData200);
-            return _observableOf(result200);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            }));
+    constructor(data?: IGetUsersDevicesQueryResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
         }
-        return _observableOf(null as any);
-    }
-
-    deleteDevice(deviceId: string): Observable<void> {
-        let url_ = this.baseUrl + "/api/user/device/{deviceId}";
-        if (deviceId === undefined || deviceId === null)
-            throw new Error("The parameter 'deviceId' must be defined.");
-        url_ = url_.replace("{deviceId}", encodeURIComponent("" + deviceId));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_ : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-            })
-        };
-
-        return this.http.request("delete", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processDeleteDevice(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
-                try {
-                    return this.processDeleteDevice(response_ as any);
-                } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
-                }
-            } else
-                return _observableThrow(response_) as any as Observable<void>;
-        }));
-    }
-
-    protected processDeleteDevice(response: HttpResponseBase): Observable<void> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            }));
+        if (!data) {
+            this.devices = [];
         }
-        return _observableOf(null as any);
     }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["devices"])) {
+                this.devices = [] as any;
+                for (let item of _data["devices"])
+                    this.devices!.push(DeviceDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): GetUsersDevicesQueryResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetUsersDevicesQueryResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.devices)) {
+            data["devices"] = [];
+            for (let item of this.devices)
+                data["devices"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IGetUsersDevicesQueryResponse {
+    devices: DeviceDto[];
+}
+
+export class DeviceDto implements IDeviceDto {
+    id!: string;
+    lastSeen!: Date;
+    clientType!: ClientType;
+    deviceType!: DeviceType;
+    interactedWith!: boolean;
+    online!: boolean;
+    browserName?: string | undefined;
+    model?: string | undefined;
+    brand?: string | undefined;
+    osName?: string | undefined;
+    osVersion?: string | undefined;
+
+    constructor(data?: IDeviceDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.lastSeen = _data["lastSeen"] ? new Date(_data["lastSeen"].toString()) : <any>undefined;
+            this.clientType = _data["clientType"];
+            this.deviceType = _data["deviceType"];
+            this.interactedWith = _data["interactedWith"];
+            this.online = _data["online"];
+            this.browserName = _data["browserName"];
+            this.model = _data["model"];
+            this.brand = _data["brand"];
+            this.osName = _data["osName"];
+            this.osVersion = _data["osVersion"];
+        }
+    }
+
+    static fromJS(data: any): DeviceDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeviceDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["lastSeen"] = this.lastSeen ? this.lastSeen.toISOString() : <any>undefined;
+        data["clientType"] = this.clientType;
+        data["deviceType"] = this.deviceType;
+        data["interactedWith"] = this.interactedWith;
+        data["online"] = this.online;
+        data["browserName"] = this.browserName;
+        data["model"] = this.model;
+        data["brand"] = this.brand;
+        data["osName"] = this.osName;
+        data["osVersion"] = this.osVersion;
+        return data;
+    }
+}
+
+export interface IDeviceDto {
+    id: string;
+    lastSeen: Date;
+    clientType: ClientType;
+    deviceType: DeviceType;
+    interactedWith: boolean;
+    online: boolean;
+    browserName?: string | undefined;
+    model?: string | undefined;
+    brand?: string | undefined;
+    osName?: string | undefined;
+    osVersion?: string | undefined;
+}
+
+export enum ClientType {
+    Unknown = "Unknown",
+    Browser = "Browser",
+    FeedReader = "FeedReader",
+    MediaPlayer = "MediaPlayer",
+    MobileApp = "MobileApp",
+    Library = "Library",
+    Pim = "Pim",
+}
+
+export enum DeviceType {
+    Desktop = "Desktop",
+    Smartphone = "Smartphone",
+    Tablet = "Tablet",
+    FeaturePhone = "FeaturePhone",
+    Console = "Console",
+    Tv = "Tv",
+    CarBrowser = "CarBrowser",
+    SmartDisplay = "SmartDisplay",
+    Camera = "Camera",
+    PortableMediaPlayer = "PortableMediaPlayer",
+    Phablet = "Phablet",
+    SmartSpeaker = "SmartSpeaker",
+    Wearable = "Wearable",
+    Peripheral = "Peripheral",
+    Unknown = "Unknown",
+}
+
+export class ProblemDetails implements IProblemDetails {
+    type?: string | undefined;
+    title?: string | undefined;
+    status?: number | undefined;
+    detail?: string | undefined;
+    instance?: string | undefined;
+    extensions!: { [key: string]: any; };
+
+    [key: string]: any;
+
+    constructor(data?: IProblemDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.extensions = {};
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            for (var property in _data) {
+                if (_data.hasOwnProperty(property))
+                    this[property] = _data[property];
+            }
+            this.type = _data["type"];
+            this.title = _data["title"];
+            this.status = _data["status"];
+            this.detail = _data["detail"];
+            this.instance = _data["instance"];
+            if (_data["extensions"]) {
+                this.extensions = {} as any;
+                for (let key in _data["extensions"]) {
+                    if (_data["extensions"].hasOwnProperty(key))
+                        (<any>this.extensions)![key] = _data["extensions"][key];
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): ProblemDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new ProblemDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        for (var property in this) {
+            if (this.hasOwnProperty(property))
+                data[property] = this[property];
+        }
+        data["type"] = this.type;
+        data["title"] = this.title;
+        data["status"] = this.status;
+        data["detail"] = this.detail;
+        data["instance"] = this.instance;
+        if (this.extensions) {
+            data["extensions"] = {};
+            for (let key in this.extensions) {
+                if (this.extensions.hasOwnProperty(key))
+                    (<any>data["extensions"])[key] = (<any>this.extensions)[key];
+            }
+        }
+        return data;
+    }
+}
+
+export interface IProblemDetails {
+    type?: string | undefined;
+    title?: string | undefined;
+    status?: number | undefined;
+    detail?: string | undefined;
+    instance?: string | undefined;
+    extensions: { [key: string]: any; };
+
+    [key: string]: any;
+}
+
+export class SetDeviceInteractionCommand implements ISetDeviceInteractionCommand {
+    interacted!: boolean;
+
+    constructor(data?: ISetDeviceInteractionCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.interacted = _data["interacted"];
+        }
+    }
+
+    static fromJS(data: any): SetDeviceInteractionCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetDeviceInteractionCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["interacted"] = this.interacted;
+        return data;
+    }
+}
+
+export interface ISetDeviceInteractionCommand {
+    interacted: boolean;
 }
 
 export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
@@ -2121,89 +2504,6 @@ export class RootFileExplorerFolderResponse extends FileExplorerFolderResponse i
 export interface IRootFileExplorerFolderResponse extends IFileExplorerFolderResponse {
 }
 
-export class ProblemDetails implements IProblemDetails {
-    type?: string | undefined;
-    title?: string | undefined;
-    status?: number | undefined;
-    detail?: string | undefined;
-    instance?: string | undefined;
-    extensions!: { [key: string]: any; };
-
-    [key: string]: any;
-
-    constructor(data?: IProblemDetails) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.extensions = {};
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            for (var property in _data) {
-                if (_data.hasOwnProperty(property))
-                    this[property] = _data[property];
-            }
-            this.type = _data["type"];
-            this.title = _data["title"];
-            this.status = _data["status"];
-            this.detail = _data["detail"];
-            this.instance = _data["instance"];
-            if (_data["extensions"]) {
-                this.extensions = {} as any;
-                for (let key in _data["extensions"]) {
-                    if (_data["extensions"].hasOwnProperty(key))
-                        (<any>this.extensions)![key] = _data["extensions"][key];
-                }
-            }
-        }
-    }
-
-    static fromJS(data: any): ProblemDetails {
-        data = typeof data === 'object' ? data : {};
-        let result = new ProblemDetails();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        for (var property in this) {
-            if (this.hasOwnProperty(property))
-                data[property] = this[property];
-        }
-        data["type"] = this.type;
-        data["title"] = this.title;
-        data["status"] = this.status;
-        data["detail"] = this.detail;
-        data["instance"] = this.instance;
-        if (this.extensions) {
-            data["extensions"] = {};
-            for (let key in this.extensions) {
-                if (this.extensions.hasOwnProperty(key))
-                    (<any>data["extensions"])[key] = (<any>this.extensions)[key];
-            }
-        }
-        return data;
-    }
-}
-
-export interface IProblemDetails {
-    type?: string | undefined;
-    title?: string | undefined;
-    status?: number | undefined;
-    detail?: string | undefined;
-    instance?: string | undefined;
-    extensions: { [key: string]: any; };
-
-    [key: string]: any;
-}
-
 export class HttpValidationProblemDetails extends ProblemDetails implements IHttpValidationProblemDetails {
     errors!: { [key: string]: string[]; };
 
@@ -2325,7 +2625,7 @@ export interface IValidationProblemDetails extends IHttpValidationProblemDetails
 }
 
 export class RefreshFolderCommand implements IRefreshFolderCommand {
-    absolutePath!: string;
+    absolutePath?: string | undefined;
 
     constructor(data?: IRefreshFolderCommand) {
         if (data) {
@@ -2357,7 +2657,7 @@ export class RefreshFolderCommand implements IRefreshFolderCommand {
 }
 
 export interface IRefreshFolderCommand {
-    absolutePath: string;
+    absolutePath?: string | undefined;
 }
 
 export class SetFolderSortCommand implements ISetFolderSortCommand {
@@ -2594,6 +2894,116 @@ export interface IRemoveFromQueueCommand {
     queueItems: string[];
 }
 
+export class CurrentSessionUpdatedDto implements ICurrentSessionUpdatedDto {
+    session?: PlaybackSessionDto | undefined;
+    queue!: QueueSnapshotDto;
+
+    constructor(data?: ICurrentSessionUpdatedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.queue = new QueueSnapshotDto();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.session = _data["session"] ? PlaybackSessionDto.fromJS(_data["session"]) : <any>undefined;
+            this.queue = _data["queue"] ? QueueSnapshotDto.fromJS(_data["queue"]) : new QueueSnapshotDto();
+        }
+    }
+
+    static fromJS(data: any): CurrentSessionUpdatedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CurrentSessionUpdatedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["session"] = this.session ? this.session.toJSON() : <any>undefined;
+        data["queue"] = this.queue ? this.queue.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface ICurrentSessionUpdatedDto {
+    session?: PlaybackSessionDto | undefined;
+    queue: QueueSnapshotDto;
+}
+
+export class PlaybackSessionDto implements IPlaybackSessionDto {
+    id!: string;
+    fileDirectory!: string;
+    file!: FileExplorerFileNodeResponse;
+    lastPlayed!: Date;
+    playing!: boolean;
+    currentTime!: number;
+    deviceId?: string | undefined;
+    autoPlay!: boolean;
+
+    constructor(data?: IPlaybackSessionDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.file = new FileExplorerFileNodeResponse();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.fileDirectory = _data["fileDirectory"];
+            this.file = _data["file"] ? FileExplorerFileNodeResponse.fromJS(_data["file"]) : new FileExplorerFileNodeResponse();
+            this.lastPlayed = _data["lastPlayed"] ? new Date(_data["lastPlayed"].toString()) : <any>undefined;
+            this.playing = _data["playing"];
+            this.currentTime = _data["currentTime"];
+            this.deviceId = _data["deviceId"];
+            this.autoPlay = _data["autoPlay"];
+        }
+    }
+
+    static fromJS(data: any): PlaybackSessionDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PlaybackSessionDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["fileDirectory"] = this.fileDirectory;
+        data["file"] = this.file ? this.file.toJSON() : <any>undefined;
+        data["lastPlayed"] = this.lastPlayed ? this.lastPlayed.toISOString() : <any>undefined;
+        data["playing"] = this.playing;
+        data["currentTime"] = this.currentTime;
+        data["deviceId"] = this.deviceId;
+        data["autoPlay"] = this.autoPlay;
+        return data;
+    }
+}
+
+export interface IPlaybackSessionDto {
+    id: string;
+    fileDirectory: string;
+    file: FileExplorerFileNodeResponse;
+    lastPlayed: Date;
+    playing: boolean;
+    currentTime: number;
+    deviceId?: string | undefined;
+    autoPlay: boolean;
+}
+
 export class SetQueuePositionCommand implements ISetQueuePositionCommand {
     queueItemId!: string;
 
@@ -2668,73 +3078,6 @@ export class SyncPlaybackSessionResponse implements ISyncPlaybackSessionResponse
 export interface ISyncPlaybackSessionResponse {
     useClientState: boolean;
     session?: PlaybackSessionDto | undefined;
-}
-
-export class PlaybackSessionDto implements IPlaybackSessionDto {
-    id!: string;
-    fileDirectory!: string;
-    file!: FileExplorerFileNodeResponse;
-    lastPlayed!: Date;
-    playing!: boolean;
-    currentTime!: number;
-    deviceId?: string | undefined;
-    autoPlay!: boolean;
-
-    constructor(data?: IPlaybackSessionDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.file = new FileExplorerFileNodeResponse();
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.fileDirectory = _data["fileDirectory"];
-            this.file = _data["file"] ? FileExplorerFileNodeResponse.fromJS(_data["file"]) : new FileExplorerFileNodeResponse();
-            this.lastPlayed = _data["lastPlayed"] ? new Date(_data["lastPlayed"].toString()) : <any>undefined;
-            this.playing = _data["playing"];
-            this.currentTime = _data["currentTime"];
-            this.deviceId = _data["deviceId"];
-            this.autoPlay = _data["autoPlay"];
-        }
-    }
-
-    static fromJS(data: any): PlaybackSessionDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new PlaybackSessionDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["fileDirectory"] = this.fileDirectory;
-        data["file"] = this.file ? this.file.toJSON() : <any>undefined;
-        data["lastPlayed"] = this.lastPlayed ? this.lastPlayed.toISOString() : <any>undefined;
-        data["playing"] = this.playing;
-        data["currentTime"] = this.currentTime;
-        data["deviceId"] = this.deviceId;
-        data["autoPlay"] = this.autoPlay;
-        return data;
-    }
-}
-
-export interface IPlaybackSessionDto {
-    id: string;
-    fileDirectory: string;
-    file: FileExplorerFileNodeResponse;
-    lastPlayed: Date;
-    playing: boolean;
-    currentTime: number;
-    deviceId?: string | undefined;
-    autoPlay: boolean;
 }
 
 export class SyncPlaybackSessionCommand implements ISyncPlaybackSessionCommand {
@@ -2906,6 +3249,94 @@ export class GetUsersSessionsResponse implements IGetUsersSessionsResponse {
 
 export interface IGetUsersSessionsResponse {
     sessions: PlaybackSessionDto[];
+}
+
+export class PlaybackStateDto implements IPlaybackStateDto {
+    deviceId?: string | undefined;
+    playing!: boolean;
+    currentTime!: number;
+    updateType!: AudioPlayerStateUpdateType;
+
+    constructor(data?: IPlaybackStateDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.deviceId = _data["deviceId"];
+            this.playing = _data["playing"];
+            this.currentTime = _data["currentTime"];
+            this.updateType = _data["updateType"];
+        }
+    }
+
+    static fromJS(data: any): PlaybackStateDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PlaybackStateDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["deviceId"] = this.deviceId;
+        data["playing"] = this.playing;
+        data["currentTime"] = this.currentTime;
+        data["updateType"] = this.updateType;
+        return data;
+    }
+}
+
+export interface IPlaybackStateDto {
+    deviceId?: string | undefined;
+    playing: boolean;
+    currentTime: number;
+    updateType: AudioPlayerStateUpdateType;
+}
+
+export class PlaybackGrantedDto extends PlaybackStateDto implements IPlaybackGrantedDto {
+    useDeviceCurrentTime!: boolean;
+
+    constructor(data?: IPlaybackGrantedDto) {
+        super(data);
+    }
+
+    override init(_data?: any) {
+        super.init(_data);
+        if (_data) {
+            this.useDeviceCurrentTime = _data["useDeviceCurrentTime"];
+        }
+    }
+
+    static override fromJS(data: any): PlaybackGrantedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PlaybackGrantedDto();
+        result.init(data);
+        return result;
+    }
+
+    override toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["useDeviceCurrentTime"] = this.useDeviceCurrentTime;
+        super.toJSON(data);
+        return data;
+    }
+}
+
+export interface IPlaybackGrantedDto extends IPlaybackStateDto {
+    useDeviceCurrentTime: boolean;
+}
+
+export enum AudioPlayerStateUpdateType {
+    CurrentTime = "CurrentTime",
+    Seek = "Seek",
+    PlaybackGranted = "PlaybackGranted",
+    Playing = "Playing",
 }
 
 export class RequestPlaybackCommand implements IRequestPlaybackCommand {
@@ -3540,153 +3971,6 @@ export interface IRefreshUserCommand extends ITokenCommand {
     deviceId: string;
 }
 
-export class GetUsersDevicesQueryResponse implements IGetUsersDevicesQueryResponse {
-    devices!: DeviceDto[];
-
-    constructor(data?: IGetUsersDevicesQueryResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.devices = [];
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            if (Array.isArray(_data["devices"])) {
-                this.devices = [] as any;
-                for (let item of _data["devices"])
-                    this.devices!.push(DeviceDto.fromJS(item));
-            }
-        }
-    }
-
-    static fromJS(data: any): GetUsersDevicesQueryResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new GetUsersDevicesQueryResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        if (Array.isArray(this.devices)) {
-            data["devices"] = [];
-            for (let item of this.devices)
-                data["devices"].push(item.toJSON());
-        }
-        return data;
-    }
-}
-
-export interface IGetUsersDevicesQueryResponse {
-    devices: DeviceDto[];
-}
-
-export class DeviceDto implements IDeviceDto {
-    id!: string;
-    lastSeen!: Date;
-    clientType!: ClientType;
-    deviceType!: DeviceType;
-    interactedWith!: boolean;
-    browserName?: string | undefined;
-    model?: string | undefined;
-    brand?: string | undefined;
-    osName?: string | undefined;
-    osVersion?: string | undefined;
-
-    constructor(data?: IDeviceDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.lastSeen = _data["lastSeen"] ? new Date(_data["lastSeen"].toString()) : <any>undefined;
-            this.clientType = _data["clientType"];
-            this.deviceType = _data["deviceType"];
-            this.interactedWith = _data["interactedWith"];
-            this.browserName = _data["browserName"];
-            this.model = _data["model"];
-            this.brand = _data["brand"];
-            this.osName = _data["osName"];
-            this.osVersion = _data["osVersion"];
-        }
-    }
-
-    static fromJS(data: any): DeviceDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new DeviceDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["lastSeen"] = this.lastSeen ? this.lastSeen.toISOString() : <any>undefined;
-        data["clientType"] = this.clientType;
-        data["deviceType"] = this.deviceType;
-        data["interactedWith"] = this.interactedWith;
-        data["browserName"] = this.browserName;
-        data["model"] = this.model;
-        data["brand"] = this.brand;
-        data["osName"] = this.osName;
-        data["osVersion"] = this.osVersion;
-        return data;
-    }
-}
-
-export interface IDeviceDto {
-    id: string;
-    lastSeen: Date;
-    clientType: ClientType;
-    deviceType: DeviceType;
-    interactedWith: boolean;
-    browserName?: string | undefined;
-    model?: string | undefined;
-    brand?: string | undefined;
-    osName?: string | undefined;
-    osVersion?: string | undefined;
-}
-
-export enum ClientType {
-    Unknown = "Unknown",
-    Browser = "Browser",
-    FeedReader = "FeedReader",
-    MediaPlayer = "MediaPlayer",
-    MobileApp = "MobileApp",
-    Library = "Library",
-    Pim = "Pim",
-}
-
-export enum DeviceType {
-    Desktop = "Desktop",
-    Smartphone = "Smartphone",
-    Tablet = "Tablet",
-    FeaturePhone = "FeaturePhone",
-    Console = "Console",
-    Tv = "Tv",
-    CarBrowser = "CarBrowser",
-    SmartDisplay = "SmartDisplay",
-    Camera = "Camera",
-    PortableMediaPlayer = "PortableMediaPlayer",
-    Phablet = "Phablet",
-    SmartSpeaker = "SmartSpeaker",
-    Wearable = "Wearable",
-    Peripheral = "Peripheral",
-    Unknown = "Unknown",
-}
-
 export class CurrentSessionUpdatedEventDto implements ICurrentSessionUpdatedEventDto {
     currentPlaybackSession?: PlaybackSessionDto | undefined;
 
@@ -3727,6 +4011,7 @@ export class DeviceStateDto implements IDeviceStateDto {
     deviceId!: string;
     lastInteractedWith!: string;
     interactedWith!: boolean;
+    online!: boolean;
 
     constructor(data?: IDeviceStateDto) {
         if (data) {
@@ -3742,6 +4027,7 @@ export class DeviceStateDto implements IDeviceStateDto {
             this.deviceId = _data["deviceId"];
             this.lastInteractedWith = _data["lastInteractedWith"];
             this.interactedWith = _data["interactedWith"];
+            this.online = _data["online"];
         }
     }
 
@@ -3757,6 +4043,7 @@ export class DeviceStateDto implements IDeviceStateDto {
         data["deviceId"] = this.deviceId;
         data["lastInteractedWith"] = this.lastInteractedWith;
         data["interactedWith"] = this.interactedWith;
+        data["online"] = this.online;
         return data;
     }
 }
@@ -3765,6 +4052,7 @@ export interface IDeviceStateDto {
     deviceId: string;
     lastInteractedWith: string;
     interactedWith: boolean;
+    online: boolean;
 }
 
 export class DeviceDeletedDto implements IDeviceDeletedDto {
@@ -3801,94 +4089,6 @@ export class DeviceDeletedDto implements IDeviceDeletedDto {
 
 export interface IDeviceDeletedDto {
     deviceId: string;
-}
-
-export class PlaybackStateDto implements IPlaybackStateDto {
-    deviceId?: string | undefined;
-    playing!: boolean;
-    currentTime!: number;
-    updateType!: AudioPlayerStateUpdateType;
-
-    constructor(data?: IPlaybackStateDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.deviceId = _data["deviceId"];
-            this.playing = _data["playing"];
-            this.currentTime = _data["currentTime"];
-            this.updateType = _data["updateType"];
-        }
-    }
-
-    static fromJS(data: any): PlaybackStateDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new PlaybackStateDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["deviceId"] = this.deviceId;
-        data["playing"] = this.playing;
-        data["currentTime"] = this.currentTime;
-        data["updateType"] = this.updateType;
-        return data;
-    }
-}
-
-export interface IPlaybackStateDto {
-    deviceId?: string | undefined;
-    playing: boolean;
-    currentTime: number;
-    updateType: AudioPlayerStateUpdateType;
-}
-
-export enum AudioPlayerStateUpdateType {
-    CurrentTime = "CurrentTime",
-    Seek = "Seek",
-    PlaybackGranted = "PlaybackGranted",
-    Playing = "Playing",
-}
-
-export class PlaybackGrantedDto extends PlaybackStateDto implements IPlaybackGrantedDto {
-    useDeviceCurrentTime!: boolean;
-
-    constructor(data?: IPlaybackGrantedDto) {
-        super(data);
-    }
-
-    override init(_data?: any) {
-        super.init(_data);
-        if (_data) {
-            this.useDeviceCurrentTime = _data["useDeviceCurrentTime"];
-        }
-    }
-
-    static override fromJS(data: any): PlaybackGrantedDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new PlaybackGrantedDto();
-        result.init(data);
-        return result;
-    }
-
-    override toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["useDeviceCurrentTime"] = this.useDeviceCurrentTime;
-        super.toJSON(data);
-        return data;
-    }
-}
-
-export interface IPlaybackGrantedDto extends IPlaybackStateDto {
-    useDeviceCurrentTime: boolean;
 }
 
 export class UserDeletedDto implements IUserDeletedDto {
@@ -4047,6 +4247,56 @@ export class SignalRUpdatePlaybackStateCommand implements ISignalRUpdatePlayback
 
 export interface ISignalRUpdatePlaybackStateCommand {
     currentTime: number;
+}
+
+export class DebugMessageDto implements IDebugMessageDto {
+    level!: LogLevel;
+    message!: string;
+
+    constructor(data?: IDebugMessageDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.level = _data["level"];
+            this.message = _data["message"];
+        }
+    }
+
+    static fromJS(data: any): DebugMessageDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DebugMessageDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["level"] = this.level;
+        data["message"] = this.message;
+        return data;
+    }
+}
+
+export interface IDebugMessageDto {
+    level: LogLevel;
+    message: string;
+}
+
+export enum LogLevel {
+    Trace = "Trace",
+    Debug = "Debug",
+    Information = "Information",
+    Warning = "Warning",
+    Error = "Error",
+    Critical = "Critical",
+    None = "None",
 }
 
 export interface FileResponse {

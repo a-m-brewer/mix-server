@@ -81,7 +81,7 @@ export class SessionSignalrClientService extends SignalrClientBase implements IS
   }
 
   private handlePlaybackGranted(dto: PlaybackGrantedDto): void {
-    this._playbackGranted$.next(new PlaybackGranted(dto.currentTime, dto.deviceId, dto.playing, dto.useDeviceCurrentTime));
+    this._playbackGranted$.next(this._playbackSessionConverter.fromPlaybackGrantedDto(dto));
   }
 
   public updatePlaybackState(currentTime: number): void {

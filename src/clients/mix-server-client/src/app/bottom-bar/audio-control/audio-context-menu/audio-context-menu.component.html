@@ -32,5 +32,14 @@
     <mat-icon>queue_music</mat-icon>
     <span>Queue</span>
   </button>
+
+  <button mat-menu-item
+          matTooltip="Go to location"
+          *ngIf="session"
+          [disabled]="disconnected"
+          (click)="goToLocation()">
+    <mat-icon>folder</mat-icon>
+    <span>Go to Location</span>
+  </button>
 </mat-menu>
 
