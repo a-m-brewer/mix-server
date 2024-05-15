@@ -31,8 +31,8 @@ export class AudioPlayerService {
 
   private _playbackGranted: boolean = false;
 
-  private _previousFile:  FileExplorerFileNode | null | undefined;
-  private _nextFile:  FileExplorerFileNode | null | undefined;
+  private _previousFile: FileExplorerFileNode | null | undefined;
+  private _nextFile: FileExplorerFileNode | null | undefined;
 
   constructor(private _audioElementRepository: AudioElementRepositoryService,
               private _audioSession: AudioSessionService,
@@ -58,8 +58,7 @@ export class AudioPlayerService {
       .subscribe(session => {
         if (session) {
           this.setCurrentSession(session);
-        }
-        else {
+        } else {
           this.clearSession();
         }
       });
@@ -129,7 +128,7 @@ export class AudioPlayerService {
       }));
   }
 
-  public get otherValidPlaybackDevices$() : Observable<Array<Device>> {
+  public get otherValidPlaybackDevices$(): Observable<Array<Device>> {
     return this._deviceRepository.onlineDevices$
       .pipe(combineLatestWith(this._playbackSessionRepository.currentPlaybackDevice$))
       .pipe(map(([devices, currentPlaybackDeviceId]) => {
@@ -192,10 +191,12 @@ export class AudioPlayerService {
       }));
   }
 
-  public sampleCurrentTime$(ms: number): Observable<number> {
-    return this._timeChangedBehaviourSubject$
-      .pipe(filter((_, __) => this.playing))
-      .pipe(sampleTime(ms));
+  public sampleCurrentTime$(ms: number, onlyPlaying = true): Observable<number> {
+    const behaviour = onlyPlaying
+      ? this._timeChangedBehaviourSubject$.pipe(filter((_, __) => this.playing))
+      : this._timeChangedBehaviourSubject$;
+
+    return behaviour.pipe(sampleTime(ms));
   }
 
   public get playing(): boolean {
@@ -203,10 +204,11 @@ export class AudioPlayerService {
   }
 
   public get currentTime(): number {
-    return this.audio.currentTime;
+    return this._timeChangedBehaviourSubject$.value;
   }
 
   public set currentTime(value: number) {
+    this._timeChangedBehaviourSubject$.next(value);
     this.audio.currentTime = value;
   }
 
@@ -245,8 +247,7 @@ export class AudioPlayerService {
       .then(isCurrentPlaybackDevice => {
         if (isCurrentPlaybackDevice) {
           this.handlePauseRequested();
-        }
-        else {
+        } else {
           this._playbackSessionRepository.requestPause();
         }
       });
@@ -264,7 +265,7 @@ export class AudioPlayerService {
 
   private async play(): Promise<void> {
     try {
-      await this.audio.play();
+      await this._audioElementRepository.playFromTime(this.currentTime);
       this.setDevicePlaying(true);
       this._playbackGranted = true;
       this._audioSession
@@ -334,8 +335,8 @@ export class AudioPlayerService {
 
   private setCurrentSession(session: PlaybackSession): void {
     this.audio.src = this._streamUrlService.getStreamUrl(session.id);
-    this.audio.load();
-    this.audio.currentTime = session.state.currentTime;
+
+    this._timeChangedBehaviourSubject$.next(session.state.currentTime);
 
     this._audioPlayerState.node = session.currentNode;
 
@@ -374,7 +375,7 @@ export class AudioPlayerService {
   }
 
   private updateTimeChangedBehaviourSubject() {
-    this._timeChangedBehaviourSubject$.next(this.currentTime);
+    this._timeChangedBehaviourSubject$.next(this.audio.currentTime);
   }
 
   private handlePauseRequested(): void {

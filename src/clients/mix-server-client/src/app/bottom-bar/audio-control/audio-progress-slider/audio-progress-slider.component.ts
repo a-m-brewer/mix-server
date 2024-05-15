@@ -30,7 +30,7 @@ export class AudioProgressSliderComponent implements OnInit, OnDestroy {
   public ngOnInit(): void {
     // This is very important to avoid NG0100: Expression has changed after it was checked
     // The audio.currentTime can not be binded directly to the slider value as it changes outside of Angulars change detection
-    this.audioPlayer.currentTime$
+    this.audioPlayer.sampleCurrentTime$(500, false)
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(currentTime => {
         this._currentTime = currentTime;
