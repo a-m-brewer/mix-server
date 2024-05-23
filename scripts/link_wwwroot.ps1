@@ -1,7 +1,7 @@
 $dotnetVersion = "net8.0"
 $rootProj = Join-Path -Path "$PSScriptRoot" -ChildPath ".."
 
-$mixServerDist = Join-Path -Path $rootProj  -ChildPath "src" -AdditionalChildPath "clients", "mix-server-client", "dist", "mix-server-client"
+$mixServerDist = Join-Path -Path $rootProj  -ChildPath "src" -AdditionalChildPath "clients", "mix-server-client", "dist", "mix-server-client", "browser"
 
 if (-Not (Test-Path $mixServerDist)) {
     New-Item -Force -ItemType Directory -Path $mixServerDist

@@ -43,5 +43,5 @@ RUN npx ng build --configuration production
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-COPY --from=build_client /usr/local/app/dist/mix-server-client ./wwwroot
+COPY --from=build_client /usr/local/app/dist/mix-server-client/browser ./wwwroot
 ENTRYPOINT ["dotnet", "MixServer.dll"]
