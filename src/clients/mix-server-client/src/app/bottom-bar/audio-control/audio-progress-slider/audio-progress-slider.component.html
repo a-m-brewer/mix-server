@@ -1,12 +1,11 @@
-<div fxLayout="row">
+<div class="audio-progress-slider-control">
   <app-duration-display
     class="audio-progress-slider-item"
     [duration]="currentTime">
   </app-duration-display>
-  <mat-slider fxFlex
-              step="1"
+  <mat-slider step="1"
               min="0"
-              class="audio-progress-slider-item"
+              class="audio-progress-slider-item audio-progress-slider-slider"
               [max]="audioPlayer.duration"
               [disabled]="audioPlayer.playbackDisabled$ | async">
     <input matSliderThumb

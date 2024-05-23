@@ -1,6 +1,9 @@
 .page-title {
   overflow: hidden;
   text-overflow: ellipsis;
+
+  flex: 1 1 0;
+  box-sizing: border-box;
 }
 
 @media (max-width: 600px) {
@@ -9,7 +12,48 @@
   }
 }
 
+.nav-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.queue-row {
+  display: flex;
+  flex-direction: row;
+
+  justify-content: flex-end;
+}
+
+.spacer {
+  flex: 1 1 0%;
+  box-sizing: border-box;
+}
+
 #file-explorer-toolbar {
-  display: inline-grid;
-  grid-template-columns: 48px auto 48px
+  flex-direction: row;
+  box-sizing: border-box;
+  display: flex;
+}
+
+.file-explorer-toolbar-buttons {
+  flex: 1 1 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .hide-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 960px) {
+  .hide-tablet {
+    display: none;
+  }
+}
+
+@media (min-width: 960px) {
+  .hide-desktop {
+    display: none;
+  }
 }

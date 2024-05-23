@@ -14,7 +14,6 @@ import {AudioPlayerService} from "../../services/audio-player/audio-player.servi
 import {MatProgressBarModule} from "@angular/material/progress-bar";
 import {AudioProgressSliderComponent} from "../audio-control/audio-progress-slider/audio-progress-slider.component";
 import {AudioControlButtonsComponent} from "../audio-control/audio-control-buttons/audio-control-buttons.component";
-import {FlexModule} from "@angular/flex-layout";
 import {SwitchDeviceMenuComponent} from "../audio-control/switch-device-menu/switch-device-menu.component";
 import {Device} from "../../services/repositories/models/device";
 import {DeviceRepositoryService} from "../../services/repositories/device-repository.service";
@@ -32,7 +31,6 @@ import {DeviceRepositoryService} from "../../services/repositories/device-reposi
     MatProgressBarModule,
     AudioProgressSliderComponent,
     AudioControlButtonsComponent,
-    FlexModule,
     SwitchDeviceMenuComponent
   ],
   templateUrl: './audio-control-mobile.component.html',

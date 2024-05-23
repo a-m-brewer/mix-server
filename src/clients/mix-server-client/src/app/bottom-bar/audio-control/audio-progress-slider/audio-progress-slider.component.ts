@@ -4,7 +4,6 @@ import {MatSliderDragEvent, MatSliderModule} from "@angular/material/slider";
 import {AudioPlayerService} from "../../../services/audio-player/audio-player.service";
 import {FormsModule} from "@angular/forms";
 import {AsyncPipe} from "@angular/common";
-import {FlexModule} from "@angular/flex-layout";
 import {Subject, takeUntil} from "rxjs";
 
 @Component({
@@ -14,8 +13,7 @@ import {Subject, takeUntil} from "rxjs";
     DurationDisplayComponent,
     MatSliderModule,
     FormsModule,
-    AsyncPipe,
-    FlexModule
+    AsyncPipe
   ],
   templateUrl: './audio-progress-slider.component.html',
   styleUrl: './audio-progress-slider.component.scss'

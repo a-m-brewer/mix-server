@@ -1,5 +1,5 @@
 <mat-toolbar>
-  <mat-toolbar-row fxLayout="row">
+  <mat-toolbar-row class="nav-row">
     <button mat-icon-button
             (click)="filesClicked()">
       <mat-icon class="home-icon">
@@ -10,7 +10,7 @@
         }
       </mat-icon>
     </button>
-    <div fxFlex
+    <div
          class="page-title">
       @if (currentPage === MenuLabel.Files && currentFolder && currentFolder.node.belongsToRootChild) {
         {{ currentFolder.node.name }}
@@ -25,11 +25,13 @@
       mat-button
       *ngFor="let item of menuItems$ | async"
       [color]="item.color"
-      [fxShow]="item.showOnDesktop"
-      [fxShow.xs]="item.showOnMobile"
-      [fxShow.sm]="item.showOnTablet"
       [disabled]="loadingStatus.loading"
       (click)="navigate(item)"
+      [ngClass]="{
+          'hide-mobile': !item.showOnMobile,
+          'hide-tablet': !item.showOnTablet,
+          'hide-desktop': !item.showOnDesktop
+      }"
     >
       <mat-icon class="mr">{{ item.icon }}</mat-icon>
       {{ item.label }}
@@ -43,9 +45,11 @@
       <mat-menu #dropMenu="matMenu">
         <ng-container *ngFor="let item of menuItems$ | async; last as last">
           <div
-            [fxShow]="!item.showOnDesktop"
-            [fxShow.sm]="!item.showOnTablet"
-            [fxShow.xs]="!item.showOnMobile"
+            [ngClass]="{
+                'hide-mobile': item.showOnMobile,
+                'hide-tablet': item.showOnTablet,
+                'hide-desktop': item.showOnDesktop
+            }"
           >
             <button mat-menu-item
                     [disabled]="loadingStatus.loading"
@@ -63,7 +67,7 @@
 
   <mat-toolbar-row id="file-explorer-toolbar"
                    *ngIf="currentPage === MenuLabel.Files">
-    <div fxFlex>
+    <div class="file-explorer-toolbar-buttons">
       <button mat-icon-button
               *ngIf="currentFolder"
               [disabled]="loadingStatus.loading"
@@ -73,11 +77,11 @@
       </button>
     </div>
     <app-folder-sort-form />
-    <div *ngIf="windowType === WindowType.Mobile" fxFlex></div>
+    <div class="spacer" *ngIf="windowType === WindowType.Mobile"></div>
   </mat-toolbar-row>
 
   <mat-toolbar-row *ngIf="currentPage === MenuLabel.Queue"
-                   fxLayout="row" fxLayoutAlign="end center">
+                   class="queue-row">
     <app-queue-edit-form/>
   </mat-toolbar-row>
 </mat-toolbar>

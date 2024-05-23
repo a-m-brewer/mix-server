@@ -1,11 +1,10 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {MatToolbarModule} from "@angular/material/toolbar";
-import {ExtendedModule, FlexModule} from "@angular/flex-layout";
 import {MatButtonModule} from "@angular/material/button";
 import {MatMenuModule} from "@angular/material/menu";
 import {MatIconModule} from "@angular/material/icon";
 import {MatListModule} from "@angular/material/list";
-import {AsyncPipe, NgForOf, NgIf} from "@angular/common";
+import {AsyncPipe, NgClass, NgForOf, NgIf} from "@angular/common";
 import {MenuItem, MenuLabel} from "./menu-item.interface";
 import {PageRoutes} from "../page-routes.enum";
 import {NavigationEnd, Router, RouterLink} from "@angular/router";
@@ -27,9 +26,7 @@ import {WindowType} from "../services/repositories/enums/window-type";
   standalone: true,
   imports: [
     MatToolbarModule,
-    FlexModule,
     MatButtonModule,
-    ExtendedModule,
     MatMenuModule,
     MatIconModule,
     MatListModule,
@@ -39,7 +36,8 @@ import {WindowType} from "../services/repositories/enums/window-type";
     NgIf,
     AsyncPipe,
     FolderSortFormComponent,
-    QueueEditFormComponent
+    QueueEditFormComponent,
+    NgClass
   ],
   templateUrl: './nav-bar.component.html',
   styleUrl: './nav-bar.component.scss'
