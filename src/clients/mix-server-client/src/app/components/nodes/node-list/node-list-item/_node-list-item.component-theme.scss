@@ -10,7 +10,13 @@
   $accent-palette: map.get($color-config, 'accent');
 
   .node-list-item-container-current-session {
-    color: mat.get-color-from-palette($accent-palette, A200) !important;
+    @media (prefers-color-scheme: light) {
+      color: mat.get-color-from-palette($accent-palette, A200) !important;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      color: mat.get-color-from-palette($primary-palette, A200) !important;
+    }
   }
 
   .user-queue-item-icon {

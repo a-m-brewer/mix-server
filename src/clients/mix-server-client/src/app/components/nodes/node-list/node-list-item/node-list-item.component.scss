@@ -10,7 +10,7 @@
 }
 
 .node-list-item-container-disabled {
-  color: rgba(0, 0, 0, 0.25);
+  color: var(--mat-expansion-header-disabled-state-text-color);
 }
 
 .node-list-item {

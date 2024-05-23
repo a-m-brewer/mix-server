@@ -5,21 +5,36 @@
 @include mat.core();
 @import 'ngx-toastr/toastr';
 
-$mix-server-client-primary: mat.define-palette(mat.$indigo-palette);
-$mix-server-client-accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
-$mix-server-client-warn: mat.define-palette(mat.$red-palette);
-
-$mix-server-client-theme: mat.define-light-theme((
+$dark-theme: mat.define-dark-theme((
   color: (
-    primary: $mix-server-client-primary,
-    accent: $mix-server-client-accent,
-    warn: $mix-server-client-warn,
+    primary: mat.define-palette(mat.$pink-palette),
+    accent: mat.define-palette(mat.$blue-grey-palette),
+    warn: mat.define-palette(mat.$red-palette),
+  ),
+  // Only include `typography` and `density` in the default dark theme.
+  typography: mat.define-typography-config(),
+  density: 0,
+));
+
+$light-theme: mat.define-light-theme((
+  color: (
+    primary:  mat.define-palette(mat.$indigo-palette),
+    accent: mat.define-palette(mat.$pink-palette, A200, A100, A400),
+    warn: mat.define-palette(mat.$red-palette),
   )
 ));
 
-@include mat.all-component-themes($mix-server-client-theme);
-@include node-list-item-theme.theme($mix-server-client-theme);
-@include audio-control-theme.theme($mix-server-client-theme);
+@include mat.core-theme($dark-theme);
+@include mat.all-component-themes($dark-theme);
+@include node-list-item-theme.theme($dark-theme);
+@include audio-control-theme.theme($dark-theme);
+
+@media (prefers-color-scheme: light) {
+  @include mat.core-color($light-theme);
+  @include mat.all-component-colors($light-theme);
+  @include node-list-item-theme.theme($light-theme);
+  @include audio-control-theme.theme($light-theme);
+}
 
 :root {
   --sat: env(safe-area-inset-top);
