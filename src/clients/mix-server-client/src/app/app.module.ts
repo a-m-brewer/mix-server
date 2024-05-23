@@ -4,7 +4,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {MIXSERVER_BASE_URL} from './generated-clients/mix-server-clients';
-import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import {BottomBarComponent} from './bottom-bar/bottom-bar.component';
 import {AudioControlComponent} from './bottom-bar/audio-control/audio-control.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -64,8 +64,7 @@ import {
   AudioControlButtonsComponent
 } from "./bottom-bar/audio-control/audio-control-buttons/audio-control-buttons.component";
 
-@NgModule({
-    declarations: [
+@NgModule({ declarations: [
         AppComponent,
         BottomBarComponent,
         AudioControlComponent,
@@ -87,42 +86,41 @@ import {
         SpinnerOverlayComponent,
         UserAdminComponent
     ],
-  imports: [
-    BrowserModule,
-    CommonModule,
-    AppRoutingModule,
-    HttpClientModule,
-    BrowserAnimationsModule,
-    MatProgressBarModule,
-    MatIconModule,
-    MatButtonModule,
-    MatListModule,
-    MatToolbarModule,
-    MatSliderModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCardModule,
-    MatProgressSpinnerModule,
-    InfiniteScrollModule,
-    MatTooltipModule,
-    ToastrModule.forRoot(),
-    MatButtonToggleModule,
-    MatTabsModule,
-    MatDialogModule,
-    MatMenuModule,
-    MatRippleModule,
-    MatCheckboxModule,
-    MatChipsModule,
-    NavBarComponent,
-    MatExpansionModule,
-    AudioControlMobileComponent,
-    SessionComponent,
-    AudioProgressSliderComponent,
-    AudioControlButtonsComponent
-  ],
-    providers: [
+    exports: [
+        NodeListItemIcon
+    ],
+    bootstrap: [AppComponent], imports: [BrowserModule,
+        CommonModule,
+        AppRoutingModule,
+        BrowserAnimationsModule,
+        MatProgressBarModule,
+        MatIconModule,
+        MatButtonModule,
+        MatListModule,
+        MatToolbarModule,
+        MatSliderModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatCardModule,
+        MatProgressSpinnerModule,
+        InfiniteScrollModule,
+        MatTooltipModule,
+        ToastrModule.forRoot(),
+        MatButtonToggleModule,
+        MatTabsModule,
+        MatDialogModule,
+        MatMenuModule,
+        MatRippleModule,
+        MatCheckboxModule,
+        MatChipsModule,
+        NavBarComponent,
+        MatExpansionModule,
+        AudioControlMobileComponent,
+        SessionComponent,
+        AudioProgressSliderComponent,
+        AudioControlButtonsComponent], providers: [
         {
             provide: MIXSERVER_BASE_URL,
             useFactory: getMixServerApiUrl
@@ -131,12 +129,8 @@ import {
             provide: HTTP_INTERCEPTORS,
             useClass: AuthInterceptor,
             multi: true
-        }
-    ],
-    exports: [
-        NodeListItemIcon
-    ],
-    bootstrap: [AppComponent]
-})
+        },
+        provideHttpClient(withInterceptorsFromDi())
+    ] })
 export class AppModule {
 }
