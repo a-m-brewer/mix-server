@@ -121,8 +121,7 @@ public class IdentityUserAuthenticationService(
 
     public async Task<ITokenRefreshResponse> RefreshAsync(IUserRefreshRequest request)
     {
-        var claimsIdentity = await jwtService.GetPrincipalFromTokenAsync(request.AccessToken);
-        var username = claimsIdentity.Name ?? throw new UnauthorizedRequestException();
+        var (username, claims) = await jwtService.GetUsernameAndClaimsFromTokenAsync(request.AccessToken);
 
         var user = await GetUserOrThrowAsync(username);
 
@@ -135,7 +134,7 @@ public class IdentityUserAuthenticationService(
         
         var roles = await userManager.GetRolesAsync(user);
         
-        var newToken = GenerateTokens(request.Audience,  claimsIdentity.Claims);
+        var newToken = GenerateTokens(request.Audience,  claims);
 
         var userCredential = await userCredentialRepository.AddOrUpdateUserCredentialAsync(user.Id, device.Id, newToken);
 

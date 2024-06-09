@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -20,8 +21,12 @@ public interface IJwtService
         IEnumerable<Claim> claims);
 
     string GenerateRefreshToken();
+    
+    Task<(string Username, IReadOnlyCollection<Claim> Claims)> GetUsernameAndClaimsFromTokenAsync(string token);
+    
+    Task<string> GetUsernameFromTokenAsync(string token);
 
-    Task<ClaimsIdentity> GetPrincipalFromTokenAsync(string token);
+    Task<IReadOnlyCollection<Claim>> GetClaimsFromTokenAsync(string token);
 }
 
 public class JwtService(
@@ -64,7 +69,51 @@ public class JwtService(
         return Convert.ToBase64String(randomNumber);
     }
 
-    public async Task<ClaimsIdentity> GetPrincipalFromTokenAsync(string token)
+    public async Task<(string Username, IReadOnlyCollection<Claim> Claims)> GetUsernameAndClaimsFromTokenAsync(string token)
+    {
+        var claimsPrincipal = await GetPrincipalFromTokenAsync(token);
+        
+        var username = GetUsernameFromToken(claimsPrincipal);
+        
+        var claims = GetClaimsFromToken(claimsPrincipal);
+        
+        return (username, claims);
+    }
+
+    public async Task<string> GetUsernameFromTokenAsync(string token)
+    {
+        var claimsPrincipal = await GetPrincipalFromTokenAsync(token);
+        
+        return GetUsernameFromToken(claimsPrincipal);
+    }
+
+    private string GetUsernameFromToken(IIdentity identity)
+    {
+        var username = identity.Name;
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new UnauthorizedRequestException();
+        }
+        
+        return username;
+    }
+
+    public async Task<IReadOnlyCollection<Claim>> GetClaimsFromTokenAsync(string token)
+    {
+        var claimsPrincipal = await GetPrincipalFromTokenAsync(token);
+        
+        return GetClaimsFromToken(claimsPrincipal);
+    }
+    
+    private IReadOnlyCollection<Claim> GetClaimsFromToken(ClaimsIdentity claimsIdentity)
+    {
+        return claimsIdentity.Claims
+            .Where(w => w.Type != "aud")
+            .ToList();
+    }
+
+    private async Task<ClaimsIdentity> GetPrincipalFromTokenAsync(string token)
     {
         var tokenValidationParameters = GetTokenValidationParameters(validateLifetime: false);
 

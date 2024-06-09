@@ -20,9 +20,7 @@ public class GetStreamQueryHandler(
     {
         await validator.ValidateAndThrowAsync(query);
 
-        var claimsIdentity = await jwtService.GetPrincipalFromTokenAsync(query.AccessToken);
-
-        var username = claimsIdentity.Name ?? throw new UnauthorizedRequestException();
+        var username = await jwtService.GetUsernameFromTokenAsync(query.AccessToken);
         
         var session = await sessionService.GetPlaybackSessionByIdAsync(query.PlaybackSessionId, username);
 
