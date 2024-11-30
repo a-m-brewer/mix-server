@@ -12,7 +12,7 @@ public interface IPlaybackTrackingService
     void UpdateSessionState(IPlaybackSession session);
     void UpdateSessionStateIncludingPlaying(IPlaybackSession session);
     void ClearSession(string userId);
-    void UpdatePlaybackState(
+    void UpdateAudioPlayerCurrentTime(
         string userId,
         Guid requestingDeviceId,
         TimeSpan currentTime);

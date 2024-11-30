@@ -1,4 +1,4 @@
-namespace MixServer.Application.Sessions.Commands.UpdatePlaybackState;
+namespace MixServer.Application.Sessions.Commands.UpdatePlaybackCurrentTime;
 
 public class UpdatePlaybackCurrentTimeCommand
 {

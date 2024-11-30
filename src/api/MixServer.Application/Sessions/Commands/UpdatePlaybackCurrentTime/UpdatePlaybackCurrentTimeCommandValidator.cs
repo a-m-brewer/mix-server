@@ -1,10 +1,10 @@
 using FluentValidation;
 
-namespace MixServer.Application.Sessions.Commands.UpdatePlaybackState;
+namespace MixServer.Application.Sessions.Commands.UpdatePlaybackCurrentTime;
 
-public class UpdatePlaybackStateCommandValidator : AbstractValidator<UpdatePlaybackCurrentTimeCommand>
+public class UpdatePlaybackCurrentTimeCommandValidator : AbstractValidator<UpdatePlaybackCurrentTimeCommand>
 {
-    public UpdatePlaybackStateCommandValidator()
+    public UpdatePlaybackCurrentTimeCommandValidator()
     {
         RuleFor(r => r.CurrentTime)
             .GreaterThanOrEqualTo(TimeSpan.Zero);

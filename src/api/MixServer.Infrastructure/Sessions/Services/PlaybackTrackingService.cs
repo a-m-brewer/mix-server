@@ -99,7 +99,7 @@ public class PlaybackTrackingService(
         });
     }
 
-    public void UpdatePlaybackState(string userId, Guid requestingDeviceId, TimeSpan currentTime)
+    public void UpdateAudioPlayerCurrentTime(string userId, Guid requestingDeviceId, TimeSpan currentTime)
     {
         readWriteLock.ForWrite(() =>
         {
@@ -117,7 +117,7 @@ public class PlaybackTrackingService(
             
             if (state.DeviceId != requestingDeviceId)
             {
-                logger.LogWarning("Could not update playback state for user: {UserId} due mismatching devices" + 
+                logger.LogWarning("Could not update playback current time for user: {UserId} due mismatching devices" + 
                                    " Requesting Device: {RequestingDeviceId} State DeviceId: {StateDeviceId}",
                     userId,
                     requestingDeviceId,
@@ -125,7 +125,13 @@ public class PlaybackTrackingService(
                 return;
             }
 
-            state.UpdateAudioPlayerState(requestingDeviceId, currentTime);
+            if (!state.Playing)
+            {
+                logger.LogWarning("Could not update playback current time for user: {UserId} as the session is not playing", userId);
+                return;
+            }
+
+            state.UpdateAudioPlayerCurrentTime(requestingDeviceId, currentTime);
         });
     }
 
@@ -188,13 +194,20 @@ public class PlaybackTrackingService(
         {
             return;
         }
-        
-        using var scope = serviceProvider.CreateScope();
-        var callbackService = scope.ServiceProvider.GetRequiredService<ICallbackService>();
 
-        await callbackService.PlaybackStateUpdated(playbackState, type);
-        
-        await TrySavePlaybackStateAsync(playbackState, type);
+        try
+        {
+            using var scope = serviceProvider.CreateScope();
+            var callbackService = scope.ServiceProvider.GetRequiredService<ICallbackService>();
+
+            await TrySavePlaybackStateAsync(playbackState, type);
+
+            await callbackService.PlaybackStateUpdated(playbackState, type);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to update playback state");
+        }
     }
 
     public void HandleDeviceDisconnected(string userId, Guid deviceId)
