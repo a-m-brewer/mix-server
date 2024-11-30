@@ -1,7 +1,7 @@
 import {Component, ContentChildren, EventEmitter, Input, Output, QueryList} from '@angular/core';
 import {FileExplorerNodeType} from "../../../../main-content/file-explorer/enums/file-explorer-node-type";
 import {ContextMenuButton} from "./context-menu/context-menu-button";
-import {LoadingNodeStatus} from "../../../../services/repositories/models/loading-node-status";
+import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../../../../services/repositories/models/loading-node-status";
 import {NodeListItemChangedEvent} from "./interfaces/node-list-item-changed-event";
 import {AudioPlayerStateModel} from "../../../../services/audio-player/models/audio-player-state-model";
 import {FileExplorerPlayingState} from "../../../../main-content/file-explorer/enums/file-explorer-playing-state";
@@ -29,7 +29,7 @@ export class NodeListItemComponent {
   public defaultIcon: string = 'folder';
 
   @Input()
-  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
+  public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
 
   @Input()
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();

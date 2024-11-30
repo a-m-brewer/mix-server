@@ -9,7 +9,7 @@ import {MenuItem, MenuLabel} from "./menu-item.interface";
 import {PageRoutes} from "../page-routes.enum";
 import {NavigationEnd, Router, RouterLink} from "@angular/router";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
-import {LoadingNodeStatus} from "../services/repositories/models/loading-node-status";
+import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../services/repositories/models/loading-node-status";
 import {BehaviorSubject, filter, map, Observable, Subject, takeUntil} from "rxjs";
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import {AuthenticationService} from "../services/auth/authentication.service";
@@ -93,7 +93,7 @@ export class NavBarComponent implements OnInit, OnDestroy {
     },
   ]);
 
-  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
+  public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
 
   public currentPage?: MenuLabel;
   public currentFolder?: FileExplorerFolder | null;

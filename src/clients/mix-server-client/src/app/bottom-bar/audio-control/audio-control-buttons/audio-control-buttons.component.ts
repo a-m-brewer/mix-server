@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AsyncPipe} from "@angular/common";
 import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
@@ -10,6 +10,9 @@ import {
 } from "../../../services/repositories/current-playback-session-repository.service";
 import {SwitchDeviceMenuComponent} from "../switch-device-menu/switch-device-menu.component";
 import {SessionService} from "../../../services/sessions/session.service";
+import {LoadingFabIconComponent} from "../../../components/controls/loading-fab-icon/loading-fab-icon.component";
+import {LoadingRepositoryService} from "../../../services/repositories/loading-repository.service";
+import {Subject, takeUntil} from 'rxjs';
 
 @Component({
   selector: 'app-audio-control-buttons, [app-audio-control-buttons]',
@@ -19,15 +22,35 @@ import {SessionService} from "../../../services/sessions/session.service";
     MatButtonModule,
     MatIconModule,
     AudioContextMenuComponent,
-    SwitchDeviceMenuComponent
+    SwitchDeviceMenuComponent,
+    LoadingFabIconComponent
   ],
   templateUrl: './audio-control-buttons.component.html',
   styleUrl: './audio-control-buttons.component.scss'
 })
-export class AudioControlButtonsComponent {
+export class AudioControlButtonsComponent implements OnInit, OnDestroy{
+  private _unsubscribe$: Subject<void> = new Subject<void>();
+
+  public playLoading: boolean = false;
+
   constructor(public audioPlayer: AudioPlayerService,
+              private _loadingRepository: LoadingRepositoryService,
               private _sessionService: SessionService,
               private _queueRepository: QueueRepositoryService) {
+  }
+
+  public ngOnInit(): void {
+    this._loadingRepository
+      .status$()
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(status => {
+        this.playLoading = status.isLoadingAction('RequestPlayback')
+      });
+  }
+
+  public ngOnDestroy(): void {
+    this._unsubscribe$.next();
+    this._unsubscribe$.complete();
   }
 
   public play(): void {

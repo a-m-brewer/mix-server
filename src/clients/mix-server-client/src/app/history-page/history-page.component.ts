@@ -5,7 +5,7 @@ import {
   CurrentPlaybackSessionRepositoryService
 } from "../services/repositories/current-playback-session-repository.service";
 import {HistoryRepositoryService} from "../services/repositories/history-repository.service";
-import {LoadingNodeStatus} from "../services/repositories/models/loading-node-status";
+import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../services/repositories/models/loading-node-status";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
 import {
   NodeListItemChangedEvent
@@ -23,7 +23,7 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
-  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
+  public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
   public sessions: PlaybackSession[] = [];
   public moreItemsAvailable: boolean = true;
 

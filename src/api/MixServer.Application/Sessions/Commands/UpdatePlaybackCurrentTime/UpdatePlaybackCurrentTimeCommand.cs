@@ -1,6 +1,6 @@
 namespace MixServer.Application.Sessions.Commands.UpdatePlaybackState;
 
-public class UpdatePlaybackStateCommand
+public class UpdatePlaybackCurrentTimeCommand
 {
     public TimeSpan CurrentTime { get; set; }
 }

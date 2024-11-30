@@ -9,7 +9,7 @@ import {
   NodeListItemChangedEvent
 } from "../components/nodes/node-list/node-list-item/interfaces/node-list-item-changed-event";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
-import {LoadingNodeStatus} from "../services/repositories/models/loading-node-status";
+import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../services/repositories/models/loading-node-status";
 import {AudioPlayerStateModel} from "../services/audio-player/models/audio-player-state-model";
 import {AudioPlayerStateService} from "../services/audio-player/audio-player-state.service";
 import {
@@ -30,7 +30,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
   public queue: Queue = new Queue(null, []);
   public editQueueForm: EditQueueFormModel = new EditQueueFormModel();
-  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
+  public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
 
   constructor(private _audioPlayerStateService: AudioPlayerStateService,
               private _loadingRepository: LoadingRepositoryService,

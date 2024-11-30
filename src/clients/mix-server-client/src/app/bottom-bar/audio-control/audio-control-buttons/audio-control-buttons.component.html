@@ -27,7 +27,11 @@
           class="audio-control-button"
           [disabled]="audioPlayer.playbackDisabled$ | async"
           (click)="play()">
-    <mat-icon>play_arrow</mat-icon>
+    <app-loading-fab-icon class="audio-control-button-icon audio-control-button-icon-fab"
+                          [diameter]="24"
+                          [loading]="playLoading">
+      play_arrow
+    </app-loading-fab-icon>
   </button>
 }
 

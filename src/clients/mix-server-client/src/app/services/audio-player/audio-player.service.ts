@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
 import {
-  BehaviorSubject,
+  BehaviorSubject, combineLatest,
   combineLatestWith,
   filter, firstValueFrom,
   map,
@@ -141,17 +141,14 @@ export class AudioPlayerService {
   }
 
   public get audioControlsDisabled$(): Observable<boolean> {
-    return this.currentPlaybackDevice$
-      .pipe(combineLatestWith(this._authenticationService.connected$))
-      .pipe(map(([device, connected]) => {
-        return !connected ||
-          (!!device && !device.interactedWith);
+    return combineLatest([this.currentPlaybackDevice$, this._authenticationService.connected$,  this._loadingRepository.status$()])
+      .pipe(map(([device, connected, loadingStatus]) => {
+        return !connected || (!!device && !device.interactedWith) || loadingStatus.loading;
       }));
   }
 
   public get playbackDisabled$(): Observable<boolean> {
-    return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
+    return combineLatest([this.audioControlsDisabled$, this._playbackSessionRepository.currentSession$])
       .pipe(map(([disabled, session]) => {
         return disabled || !session || session.currentNode.playbackDisabled;
       }));
@@ -189,6 +186,11 @@ export class AudioPlayerService {
           ? this.playing
           : currentSessionPlaying;
       }));
+  }
+
+  public get requestingPlayback$(): Observable<boolean> {
+    return this._loadingRepository.status$()
+      .pipe(map(status => status.isLoadingAction('RequestPlayback')));
   }
 
   public sampleCurrentTime$(ms: number, onlyPlaying = true): Observable<number> {
@@ -390,7 +392,11 @@ export class AudioPlayerService {
       this.currentTime = playbackGranted.currentTime;
     }
 
-    this.play().then();
+    this.play()
+      .then()
+      .finally(() => {
+        this._loadingRepository.stopLoadingAction('RequestPlayback');
+      });
   }
 
   private setDevicePlaying(playing: boolean) {

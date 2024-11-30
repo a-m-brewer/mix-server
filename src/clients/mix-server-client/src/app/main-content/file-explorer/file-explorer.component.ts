@@ -5,7 +5,7 @@ import {FileExplorerNodeRepositoryService} from "../../services/repositories/fil
 import {Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../services/repositories/current-playback-session-repository.service";
 import {FileExplorerFolder} from "./models/file-explorer-folder";
-import {LoadingNodeStatus} from "../../services/repositories/models/loading-node-status";
+import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../../services/repositories/models/loading-node-status";
 import {LoadingRepositoryService} from "../../services/repositories/loading-repository.service";
 import {
   NodeListItemChangedEvent
@@ -24,7 +24,7 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
 
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
   public currentFolder: FileExplorerFolder = FileExplorerFolder.Default;
-  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
+  public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
 
   constructor(private _audioPlayerStateService: AudioPlayerStateService,
               private _loadingRepository: LoadingRepositoryService,

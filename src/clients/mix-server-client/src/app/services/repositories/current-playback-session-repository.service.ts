@@ -96,6 +96,10 @@ export class CurrentPlaybackSessionRepositoryService {
       .pipe(map(m => m?.state.playing ?? false))
   }
 
+  public get currentSessionPlaying(): boolean {
+    return this.currentSession?.state.playing ?? false;
+  }
+
   public get currentState$(): Observable<PlaybackState> {
     return this._currentSession$
       .pipe(filter<PlaybackSession | null>(Boolean))
@@ -115,13 +119,12 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public async requestPlayback(deviceId?: string | null): Promise<void> {
-    this._loadingRepository.startLoadingId(deviceId)
-
+    this._loadingRepository.startLoadingAction('RequestPlayback');
     const requestedDeviceId = deviceId ?? this._authenticationService.deviceId;
 
     if (!requestedDeviceId) {
       this._toastService.error('Missing current device id', 'Not Found');
-      this._loadingRepository.stopLoadingId(deviceId);
+      this._loadingRepository.stopLoadingAction('RequestPlayback');
       return;
     }
 
@@ -132,8 +135,10 @@ export class CurrentPlaybackSessionRepositoryService {
         const playbackGranted = this._playbackSessionConverter.fromPlaybackGrantedDto(dto);
         this.handlePlaybackGranted(playbackGranted);
       })
-      .catch(err => this._toastService.logServerError(err, 'Failed to request playback'))
-      .finally(() => this._loadingRepository.stopLoadingId(deviceId));
+      .catch(err => {
+        this._toastService.logServerError(err, 'Failed to request playback');
+        this._loadingRepository.stopLoadingAction('RequestPlayback');
+      });
   }
 
   public requestPause(): void {
@@ -212,6 +217,9 @@ export class CurrentPlaybackSessionRepositoryService {
 
     if (playbackGranted.deviceId === this._authenticationService.deviceId) {
       this._playbackGranted$.next(playbackGranted);
+    }
+    else {
+      this._loadingRepository.stopLoadingAction('RequestPlayback');
     }
   }
 }

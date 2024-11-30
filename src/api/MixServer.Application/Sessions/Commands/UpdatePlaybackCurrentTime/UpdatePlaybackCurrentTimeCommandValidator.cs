@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace MixServer.Application.Sessions.Commands.UpdatePlaybackState;
 
-public class UpdatePlaybackStateCommandValidator : AbstractValidator<UpdatePlaybackStateCommand>
+public class UpdatePlaybackStateCommandValidator : AbstractValidator<UpdatePlaybackCurrentTimeCommand>
 {
     public UpdatePlaybackStateCommandValidator()
     {
