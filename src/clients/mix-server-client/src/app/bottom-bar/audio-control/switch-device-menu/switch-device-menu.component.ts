@@ -4,7 +4,7 @@ import {MatMenuModule} from "@angular/material/menu";
 import {AsyncPipe, NgForOf} from "@angular/common";
 import {MatButtonModule} from "@angular/material/button";
 import {AudioPlayerService} from "../../../services/audio-player/audio-player.service";
-import {combineLatestWith, Subject, takeUntil} from "rxjs";
+import {Subject, takeUntil} from "rxjs";
 import {Device} from "../../../services/repositories/models/device";
 import {
   CurrentPlaybackSessionRepositoryService

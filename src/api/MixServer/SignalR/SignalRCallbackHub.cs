@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.SignalR;
 using MixServer.Application.Devices.Commands.SetDeviceInteraction;
 using MixServer.Application.Devices.Commands.SetDeviceOnline;
-using MixServer.Application.Sessions.Commands.UpdatePlaybackState;
+using MixServer.Application.Sessions.Commands.UpdatePlaybackCurrentTime;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Users.Repository;
@@ -14,7 +14,7 @@ namespace MixServer.SignalR;
 public class SignalRCallbackHub(
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
-    ICommandHandler<UpdatePlaybackStateCommand> updatePlaybackStateCommandHandler,
+    ICommandHandler<UpdatePlaybackCurrentTimeCommand> updatePlaybackStateCommandHandler,
     ICommandHandler<SetDeviceOnlineCommand> setDeviceOnlineCommandHandler,
     ICommandHandler<SetDeviceInteractionCommand> setDeviceInteractionCommandHandler,
     ILogger<SignalRCallbackHub> logger,
@@ -61,7 +61,7 @@ public class SignalRCallbackHub(
     {
         try
         {
-            await updatePlaybackStateCommandHandler.HandleAsync(new UpdatePlaybackStateCommand
+            await updatePlaybackStateCommandHandler.HandleAsync(new UpdatePlaybackCurrentTimeCommand
             {
                 CurrentTime = TimeSpan.FromSeconds(command.CurrentTime)
             });

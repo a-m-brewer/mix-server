@@ -1,0 +1,5 @@
+@if (loading) {
+  <mat-spinner color="primary" [diameter]="diameter"></mat-spinner>
+} @else {
+  <mat-icon><ng-content></ng-content></mat-icon>
+}

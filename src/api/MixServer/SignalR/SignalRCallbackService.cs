@@ -138,7 +138,7 @@ public class SignalRCallbackService(
 
         var dto = playbackStateConverter.Convert(playbackState, type);
 
-        if (type == AudioPlayerStateUpdateType.Seek)
+        if (type is AudioPlayerStateUpdateType.Seek)
         {
             await context.Clients
                 .Clients(deviceConnections)

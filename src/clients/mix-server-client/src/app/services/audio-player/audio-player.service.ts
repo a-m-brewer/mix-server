@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
 import {
-  BehaviorSubject,
+  BehaviorSubject, combineLatest,
   combineLatestWith,
   filter, firstValueFrom,
   map,
@@ -17,16 +17,19 @@ import {QueueRepositoryService} from "../repositories/queue-repository.service";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {AudioPlayerStateService} from "./audio-player-state.service";
 import {AuthenticationService} from "../auth/authentication.service";
-import {PlaybackGranted} from "../repositories/models/playback-granted";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {DeviceRepositoryService} from "../repositories/device-repository.service";
 import {Device} from "../repositories/models/device";
 import {SessionService} from "../sessions/session.service";
+import {PlaybackGrantedEvent} from "../repositories/models/playback-granted-event";
+import {Mutex} from "async-mutex";
 
 @Injectable({
   providedIn: 'root'
 })
 export class AudioPlayerService {
+  private _playMutex = new Mutex();
+
   private _timeChangedBehaviourSubject$ = new BehaviorSubject<number>(0);
 
   private _playbackGranted: boolean = false;
@@ -84,6 +87,10 @@ export class AudioPlayerService {
     this._playbackSessionRepository
       .currentState$
       .subscribe(state => {
+        const delta =  this.currentTime - state.currentTime;
+        if (this.isCurrentPlaybackDevice && delta === 0) {
+          return;
+        }
         this.currentTime = state.currentTime;
       });
 
@@ -141,17 +148,14 @@ export class AudioPlayerService {
   }
 
   public get audioControlsDisabled$(): Observable<boolean> {
-    return this.currentPlaybackDevice$
-      .pipe(combineLatestWith(this._authenticationService.connected$))
-      .pipe(map(([device, connected]) => {
-        return !connected ||
-          (!!device && !device.interactedWith);
+    return combineLatest([this.currentPlaybackDevice$, this._authenticationService.connected$,  this._loadingRepository.status$()])
+      .pipe(map(([device, connected, loadingStatus]) => {
+        return !connected || (!!device && !device.interactedWith) || loadingStatus.loading;
       }));
   }
 
   public get playbackDisabled$(): Observable<boolean> {
-    return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
+    return combineLatest([this.audioControlsDisabled$, this._playbackSessionRepository.currentSession$])
       .pipe(map(([disabled, session]) => {
         return disabled || !session || session.currentNode.playbackDisabled;
       }));
@@ -181,6 +185,10 @@ export class AudioPlayerService {
       }));
   }
 
+  private get isCurrentPlaybackDevice(): boolean {
+    return this._playbackSessionRepository.currentPlaybackDevice === this._authenticationService.deviceId;
+  }
+
   public get playing$(): Observable<boolean> {
     return this.isCurrentPlaybackDevice$
       .pipe(combineLatestWith(this._playbackSessionRepository.currentSessionPlaying$))
@@ -189,6 +197,11 @@ export class AudioPlayerService {
           ? this.playing
           : currentSessionPlaying;
       }));
+  }
+
+  public get requestingPlayback$(): Observable<boolean> {
+    return this._loadingRepository.status$()
+      .pipe(map(status => status.isLoadingAction('RequestPlayback')));
   }
 
   public sampleCurrentTime$(ms: number, onlyPlaying = true): Observable<number> {
@@ -263,11 +276,21 @@ export class AudioPlayerService {
     this.seek(this.currentTime + offset);
   }
 
-  private async play(): Promise<void> {
+  public async play(): Promise<void> {
+    await this._playMutex.runExclusive(async () => {
+      if (this.playing) {
+        return;
+      }
+
+      await this.playInternal();
+    });
+  }
+
+  private async playInternal(): Promise<void> {
     try {
+      this._playbackGranted = true;
       await this._audioElementRepository.playFromTime(this.currentTime);
       this.setDevicePlaying(true);
-      this._playbackGranted = true;
       this._audioSession
         .createMetadata()
         .updatePositionState()
@@ -348,11 +371,18 @@ export class AudioPlayerService {
   private setPlaying(): void {
     this._audioSession.setPlaying();
     this._audioPlayerState.playing = true;
+    if (this.isCurrentPlaybackDevice) {
+      this._playbackSessionRepository.setDevicePlayingState(true);
+    }
+    this._loadingRepository.stopLoadingAction('RequestPlayback');
   }
 
   private setPaused(): void {
     this._audioSession.setPaused();
     this._audioPlayerState.playing = false;
+    if (this.isCurrentPlaybackDevice) {
+      this._playbackSessionRepository.setDevicePlayingState(false);
+    }
   }
 
   private clearSession(): void {
@@ -368,6 +398,10 @@ export class AudioPlayerService {
     }
 
     this._playbackSessionRepository.updatePlaybackState(currentTime);
+
+    if (this.isCurrentPlaybackDevice) {
+      this._playbackSessionRepository.setDevicePlayingStateCurrentTime(currentTime)
+    }
   }
 
   private handleOnSessionEnded(): void {
@@ -385,12 +419,18 @@ export class AudioPlayerService {
     this._loadingRepository.stopLoading();
   }
 
-  private handlePlaybackGranted(playbackGranted: PlaybackGranted): void {
+  private handlePlaybackGranted(playbackGranted: PlaybackGrantedEvent): void {
     if (!playbackGranted.useDeviceCurrentTime) {
       this.currentTime = playbackGranted.currentTime;
     }
 
-    this.play().then();
+    if (playbackGranted.granted) {
+      this.play().then();
+    }
+    else {
+      this.internalPause();
+      this.currentTime = playbackGranted.currentTime;
+    }
   }
 
   private setDevicePlaying(playing: boolean) {

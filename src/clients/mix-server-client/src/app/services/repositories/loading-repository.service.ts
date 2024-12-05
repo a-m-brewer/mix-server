@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import {BehaviorSubject, Observable} from "rxjs";
-import {LoadingNodeStatus} from "./models/loading-node-status";
+import {LoadingAction, LoadingNodeStatus, LoadingNodeStatusImpl} from "./models/loading-node-status";
 
 @Injectable({
   providedIn: 'root'
 })
 export class LoadingRepositoryService {
   private _loadingCount = 0;
-  private _status$ = new BehaviorSubject<LoadingNodeStatus>({loading: false, loadingIds: []});
+  private _status$ = new BehaviorSubject<LoadingNodeStatus>(LoadingNodeStatusImpl.new);
 
   constructor() { }
 
@@ -17,6 +17,10 @@ export class LoadingRepositoryService {
 
   public status$(): Observable<LoadingNodeStatus> {
     return this._status$.asObservable();
+  }
+
+  public startLoadingAction(action: LoadingAction): void {
+    this.nextLoading(true, action);
   }
 
   public startLoadingId(id: string | null | undefined): void {
@@ -29,6 +33,10 @@ export class LoadingRepositoryService {
 
   public startLoading(): void {
     this.nextLoading(true)
+  }
+
+  public stopLoadingAction(action: LoadingAction): void {
+    this.nextLoading(false, action);
   }
 
   public stopLoadingId(id: string | null | undefined): void {
@@ -44,12 +52,17 @@ export class LoadingRepositoryService {
   }
 
   public nextLoading(loading: boolean, id?: string | null): void {
+    const loadingIds = this._status$.value.loadingIds;
+    if (!loading && id && !loadingIds.includes(id)) {
+      return
+    }
+
     const change = loading ? 1 : -1;
     const nextCount = Math.max(0, this._loadingCount + change);
 
     const nextLoading = 0 < nextCount;
 
-    let nextLoadingIds = [...this._status$.value.loadingIds];
+    let nextLoadingIds = [...loadingIds];
     if (id) {
       if (loading) {
         nextLoadingIds.push(id);
@@ -60,6 +73,6 @@ export class LoadingRepositoryService {
     nextLoadingIds = [...new Set(nextLoadingIds)];
 
     this._loadingCount = nextCount;
-    this._status$.next({loading: nextLoading, loadingIds: nextLoadingIds});
+    this._status$.next(new LoadingNodeStatusImpl(nextLoading, nextLoadingIds));
   }
 }

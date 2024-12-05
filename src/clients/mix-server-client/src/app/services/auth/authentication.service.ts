@@ -80,7 +80,6 @@ export class AuthenticationService {
       return;
     }
 
-    console.log(`Server Connection Status Changed from: ${current.state} to: ${state} Reason: ${reason}`);
     this._connectionStatusBehaviourSubject$.next(new ServerConnectionStateEvent(state, reason));
   }
 

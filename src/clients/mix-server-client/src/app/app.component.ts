@@ -16,7 +16,7 @@ import {VisibilityRepositoryService} from "./services/repositories/visibility-re
 import {TitleService} from "./services/title/title.service";
 import {ToastService} from "./services/toasts/toast-service";
 import {FileExplorerFolder} from "./main-content/file-explorer/models/file-explorer-folder";
-import {LoadingNodeStatus} from "./services/repositories/models/loading-node-status";
+import {LoadingNodeStatus, LoadingNodeStatusImpl} from "./services/repositories/models/loading-node-status";
 import {LoadingRepositoryService} from "./services/repositories/loading-repository.service";
 import {WindowSizeRepositoryService} from "./services/repositories/window-size-repository.service";
 
@@ -40,7 +40,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   public currentFolder: FileExplorerFolder | null = null;
   public showFileExplorerToolbar: boolean = false;
   public showQueueToolbar: boolean = false;
-  public loadingStatus: LoadingNodeStatus = {loading: false, loadingIds: []};
+  public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
 
   @ViewChild('navBar')
   public navBar?: ElementRef;

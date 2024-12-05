@@ -1,27 +1,23 @@
 using FluentValidation;
-using Microsoft.Extensions.Logging;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Users.Repository;
 
-namespace MixServer.Application.Sessions.Commands.UpdatePlaybackState;
+namespace MixServer.Application.Sessions.Commands.UpdatePlaybackCurrentTime;
 
-public class UpdatePlaybackStateCommandHandler(
+public class UpdatePlaybackCurrentTimeCommandHandler(
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
-    ILogger<UpdatePlaybackStateCommandHandler> logger,
     IPlaybackTrackingService playbackTrackingService,
-    IValidator<UpdatePlaybackStateCommand> validator)
-    : ICommandHandler<UpdatePlaybackStateCommand>
+    IValidator<UpdatePlaybackCurrentTimeCommand> validator)
+    : ICommandHandler<UpdatePlaybackCurrentTimeCommand>
 {
-    private readonly ILogger<UpdatePlaybackStateCommandHandler> _logger = logger;
-
-    public async Task HandleAsync(UpdatePlaybackStateCommand request)
+    public async Task HandleAsync(UpdatePlaybackCurrentTimeCommand request)
     {
         await validator.ValidateAndThrowAsync(request);
         
-        playbackTrackingService.UpdatePlaybackState(
+        playbackTrackingService.UpdateAudioPlayerCurrentTime(
             currentUserRepository.CurrentUserId,
             currentDeviceRepository.DeviceId,
             request.CurrentTime);

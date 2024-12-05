@@ -12,7 +12,11 @@
         [disabled]="audioPlayer.previousItemDisabled$ | async"
         (click)="skipPrevious()"
 >
-  <mat-icon>skip_previous</mat-icon>
+  <app-loading-fab-icon class="audio-control-button-icon audio-control-button-icon-fab"
+                        [diameter]="24"
+                        [loading]="backLoading">
+    skip_previous
+  </app-loading-fab-icon>
 </button>
 
 @if(audioPlayer.playing$ | async) {
@@ -27,7 +31,11 @@
           class="audio-control-button"
           [disabled]="audioPlayer.playbackDisabled$ | async"
           (click)="play()">
-    <mat-icon>play_arrow</mat-icon>
+    <app-loading-fab-icon class="audio-control-button-icon audio-control-button-icon-fab"
+                          [diameter]="24"
+                          [loading]="playLoading">
+      play_arrow
+    </app-loading-fab-icon>
   </button>
 }
 
@@ -36,7 +44,11 @@
         [disabled]="audioPlayer.nextItemDisabled$ | async"
         (click)="skipNext()"
 >
-  <mat-icon>skip_next</mat-icon>
+  <app-loading-fab-icon class="audio-control-button-icon audio-control-button-icon-fab"
+                        [diameter]="24"
+                        [loading]="skipLoading">
+    skip_next
+  </app-loading-fab-icon>
 </button>
 <button mat-mini-fab color="accent"
         class="audio-control-button"

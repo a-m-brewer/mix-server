@@ -6,7 +6,6 @@ import {
   RequestPlaybackCommand,
   SeekRequest,
   SessionClient,
-  SetNextSessionCommand,
   SetPlayingCommand,
   SyncPlaybackSessionCommand
 } from "../../generated-clients/mix-server-clients";
@@ -19,6 +18,7 @@ import {PlaybackState} from "./models/playback-state";
 import {PlaybackGranted} from "./models/playback-granted";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {AudioElementRepositoryService} from "../audio-player/audio-element-repository.service";
+import {PlaybackGrantedEvent} from "./models/playback-granted-event";
 
 @Injectable({
   providedIn: 'root'
@@ -26,7 +26,7 @@ import {AudioElementRepositoryService} from "../audio-player/audio-element-repos
 export class CurrentPlaybackSessionRepositoryService {
 
   private _pauseRequested$ = new Subject<boolean>();
-  private _playbackGranted$ = new Subject<PlaybackGranted>();
+  private _playbackGranted$ = new Subject<PlaybackGrantedEvent>();
   private _currentSession$ = new BehaviorSubject<PlaybackSession | null>(null);
 
   constructor(audioElementRepository: AudioElementRepositoryService,
@@ -90,6 +90,10 @@ export class CurrentPlaybackSessionRepositoryService {
       .pipe(map(p => p?.state.deviceId));
   }
 
+  public get currentPlaybackDevice(): string | null | undefined {
+    return this.currentSession?.state.deviceId;
+  }
+
   public get currentSessionPlaying$(): Observable<boolean> {
     return this._currentSession$
       .pipe(distinctUntilChanged((p, n) => p?.state.playing === n?.state.playing))
@@ -106,7 +110,7 @@ export class CurrentPlaybackSessionRepositoryService {
     return this._pauseRequested$.asObservable();
   }
 
-  public get playbackGranted$(): Observable<PlaybackGranted> {
+  public get playbackGranted$(): Observable<PlaybackGrantedEvent> {
     return this._playbackGranted$.asObservable();
   }
 
@@ -115,14 +119,19 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public async requestPlayback(deviceId?: string | null): Promise<void> {
-    this._loadingRepository.startLoadingId(deviceId)
-
+    this._loadingRepository.startLoadingAction('RequestPlayback');
     const requestedDeviceId = deviceId ?? this._authenticationService.deviceId;
 
     if (!requestedDeviceId) {
       this._toastService.error('Missing current device id', 'Not Found');
-      this._loadingRepository.stopLoadingId(deviceId);
+      this._loadingRepository.stopLoadingAction('RequestPlayback');
       return;
+    }
+
+    const currentState = this.currentSession?.state;
+
+    if (currentState && !currentState.playing && requestedDeviceId === this._authenticationService.deviceId) {
+      this.nextPlaybackGrantedEvent(true, true, currentState.currentTime);
     }
 
     await firstValueFrom(this._sessionClient.requestPlayback(new RequestPlaybackCommand({
@@ -132,8 +141,10 @@ export class CurrentPlaybackSessionRepositoryService {
         const playbackGranted = this._playbackSessionConverter.fromPlaybackGrantedDto(dto);
         this.handlePlaybackGranted(playbackGranted);
       })
-      .catch(err => this._toastService.logServerError(err, 'Failed to request playback'))
-      .finally(() => this._loadingRepository.stopLoadingId(deviceId));
+      .catch(err => {
+        this._toastService.logServerError(err, 'Failed to request playback');
+        this._loadingRepository.stopLoadingAction('RequestPlayback');
+      });
   }
 
   public requestPause(): void {
@@ -211,7 +222,42 @@ export class CurrentPlaybackSessionRepositoryService {
     this.nextState(playbackGranted);
 
     if (playbackGranted.deviceId === this._authenticationService.deviceId) {
-      this._playbackGranted$.next(playbackGranted);
+      this.nextPlaybackGrantedEvent(playbackGranted.useDeviceCurrentTime, true, playbackGranted.currentTime);
     }
+    else {
+      this._loadingRepository.stopLoadingAction('RequestPlayback');
+    }
+  }
+
+  public setDevicePlayingState(playing: boolean) {
+    const state = this.currentSession?.state;
+    if (!state) {
+      return;
+    }
+
+    const nextState = state.copy()
+    nextState.playing = playing;
+
+    this.nextState(nextState)
+  }
+
+  public setDevicePlayingStateCurrentTime(currentTime: number): void {
+    const state = this.currentSession?.state;
+    if (!state) {
+      return;
+    }
+
+    const nextState = state.copy()
+    nextState.currentTime = currentTime;
+
+    this.nextState(nextState)
+  }
+
+  private nextPlaybackGrantedEvent(useDeviceCurrentTime: boolean, granted: boolean, currentTime: number): void {
+    this._playbackGranted$.next({
+      useDeviceCurrentTime,
+      granted,
+      currentTime
+    });
   }
 }

@@ -62,17 +62,21 @@ export class SessionService {
   }
 
   public back(): void {
+    this._loadingRepository.startLoadingAction('Back');
     this.setNextSession(new SetNextSessionCommand({
       offset: -1,
       resetSessionState: false
     }))
+      .finally(() => this._loadingRepository.stopLoadingAction('Back'));
   }
 
   public skip(): void {
+    this._loadingRepository.startLoadingAction('Skip');
     this.setNextSession(new SetNextSessionCommand({
       offset: 1,
       resetSessionState: false
     }))
+      .finally(() => this._loadingRepository.stopLoadingAction('Skip'));
   }
 
   public setSessionEnded(): void {
@@ -84,15 +88,19 @@ export class SessionService {
     this.setNextSession(new SetNextSessionCommand({
       offset: 1,
       resetSessionState: true
-    }));
+    })).then();
   }
 
-  private setNextSession(command: SetNextSessionCommand): void {
+  private async setNextSession(command: SetNextSessionCommand): Promise<void> {
     this._loadingRepository.startLoading();
-    firstValueFrom(this._sessionClient.setNextSession(command))
-      .then(dto => this.next(dto))
-      .catch(err => this._toastService.logServerError(err, 'Failed to set next session'))
-      .finally(() => this._loadingRepository.stopLoading());
+    try {
+      let dto = await firstValueFrom(this._sessionClient.setNextSession(command));
+      return this.next(dto);
+    } catch (err) {
+      return this._toastService.logServerError(err, 'Failed to set next session');
+    } finally {
+      this._loadingRepository.stopLoading();
+    }
   }
 
   private next(dto: CurrentSessionUpdatedDto): void {

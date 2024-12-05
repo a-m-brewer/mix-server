@@ -126,7 +126,7 @@ public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger
         AudioPlayerStateChanged(AudioPlayerStateUpdateType.Seek);
     }
 
-    public void UpdateAudioPlayerState(Guid deviceId, TimeSpan currentTime)
+    public void UpdateAudioPlayerCurrentTime(Guid deviceId, TimeSpan currentTime)
     {
         AssertPlayingDeviceUpdatedState(deviceId);
 
