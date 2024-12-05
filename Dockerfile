@@ -25,7 +25,7 @@ FROM build AS publish
 RUN dotnet publish "src/api/MixServer/MixServer.csproj" -c Release -o /app/publish -a "$TARGETARCH"
 
 # Use official node image as the base image
-FROM node:20.10 as build_client
+FROM node:20.11.1 as build_client
 
 # Set the working directory
 WORKDIR /usr/local/app
