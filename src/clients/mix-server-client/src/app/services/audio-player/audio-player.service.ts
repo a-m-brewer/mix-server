@@ -87,7 +87,8 @@ export class AudioPlayerService {
     this._playbackSessionRepository
       .currentState$
       .subscribe(state => {
-        if (this.isCurrentPlaybackDevice) {
+        const delta =  this.currentTime - state.currentTime;
+        if (this.isCurrentPlaybackDevice && delta === 0) {
           return;
         }
         this.currentTime = state.currentTime;
