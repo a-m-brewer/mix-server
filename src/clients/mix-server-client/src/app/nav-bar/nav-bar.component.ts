@@ -211,7 +211,6 @@ export class NavBarComponent implements OnInit, OnDestroy {
   }
 
   private setCurrentPage(): void {
-    console.log(this.pathname);
     switch (this.pathname) {
       case PageRoutes.Files.toString():
         this.currentPage = MenuLabel.Files;

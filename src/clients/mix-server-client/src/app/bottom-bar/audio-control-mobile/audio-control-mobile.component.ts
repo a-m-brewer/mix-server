@@ -17,6 +17,8 @@ import {AudioControlButtonsComponent} from "../audio-control/audio-control-butto
 import {SwitchDeviceMenuComponent} from "../audio-control/switch-device-menu/switch-device-menu.component";
 import {Device} from "../../services/repositories/models/device";
 import {DeviceRepositoryService} from "../../services/repositories/device-repository.service";
+import {LoadingFabIconComponent} from "../../components/controls/loading-fab-icon/loading-fab-icon.component";
+import {LoadingRepositoryService} from "../../services/repositories/loading-repository.service";
 
 @Component({
   selector: 'app-audio-control-mobile',
@@ -31,7 +33,8 @@ import {DeviceRepositoryService} from "../../services/repositories/device-reposi
     MatProgressBarModule,
     AudioProgressSliderComponent,
     AudioControlButtonsComponent,
-    SwitchDeviceMenuComponent
+    SwitchDeviceMenuComponent,
+    LoadingFabIconComponent
   ],
   templateUrl: './audio-control-mobile.component.html',
   styleUrl: './audio-control-mobile.component.scss'
@@ -43,9 +46,11 @@ export class AudioControlMobileComponent implements OnInit, OnDestroy {
   public playbackSession?: PlaybackSession | null;
   public currentPlaybackDevice?: Device | null;
   public currentDevice?: Device | null;
+  public playLoading: boolean = false;
 
   constructor(public audioPlayer: AudioPlayerService,
               private _deviceRepository: DeviceRepositoryService,
+              private _loadingRepository: LoadingRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
@@ -66,6 +71,13 @@ export class AudioControlMobileComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(currentDevice => {
         this.currentDevice = currentDevice;
+      });
+
+    this._loadingRepository
+      .status$()
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(status => {
+        this.playLoading = status.isLoadingAction('RequestPlayback')
       });
   }
 

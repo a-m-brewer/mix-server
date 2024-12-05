@@ -52,12 +52,17 @@ export class LoadingRepositoryService {
   }
 
   public nextLoading(loading: boolean, id?: string | null): void {
+    const loadingIds = this._status$.value.loadingIds;
+    if (!loading && id && !loadingIds.includes(id)) {
+      return
+    }
+
     const change = loading ? 1 : -1;
     const nextCount = Math.max(0, this._loadingCount + change);
 
     const nextLoading = 0 < nextCount;
 
-    let nextLoadingIds = [...this._status$.value.loadingIds];
+    let nextLoadingIds = [...loadingIds];
     if (id) {
       if (loading) {
         nextLoadingIds.push(id);

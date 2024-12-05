@@ -1,4 +1,4 @@
-export type LoadingAction = 'RequestPlayback';
+export type LoadingAction = 'RequestPlayback' | 'Skip' | 'Back';
 
 export interface LoadingNodeStatus {
   loading: boolean;

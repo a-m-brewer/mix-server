@@ -27,7 +27,6 @@ export class AudioControlComponent implements OnInit, OnDestroy {
   public nextFile: FileExplorerFileNode | null | undefined;
 
   public isCurrentPlaybackDevice: boolean = false;
-  public currentSessionPlaying: boolean = false;
   public disconnected: boolean = true;
 
   constructor(private _authService: AuthenticationService,
@@ -60,13 +59,6 @@ export class AudioControlComponent implements OnInit, OnDestroy {
         }
         this.updateIsCurrentPlaybackDevice();
       });
-
-    this._playbackSessionRepository
-      .currentSessionPlaying$
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(playing => {
-        this.currentSessionPlaying = playing;
-      })
 
     this._deviceRepository
       .currentDevice$

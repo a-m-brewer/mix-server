@@ -3,4 +3,8 @@ export class PlaybackState {
               public deviceId: string | null | undefined,
               public playing: boolean) {
   }
+
+  public copy(): PlaybackState {
+    return new PlaybackState(this.currentTime, this.deviceId, this.playing);
+  }
 }

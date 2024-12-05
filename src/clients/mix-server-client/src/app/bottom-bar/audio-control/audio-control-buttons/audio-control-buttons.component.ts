@@ -32,6 +32,8 @@ export class AudioControlButtonsComponent implements OnInit, OnDestroy{
   private _unsubscribe$: Subject<void> = new Subject<void>();
 
   public playLoading: boolean = false;
+  public skipLoading: boolean = false;
+  public backLoading: boolean = false;
 
   constructor(public audioPlayer: AudioPlayerService,
               private _loadingRepository: LoadingRepositoryService,
@@ -45,6 +47,8 @@ export class AudioControlButtonsComponent implements OnInit, OnDestroy{
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(status => {
         this.playLoading = status.isLoadingAction('RequestPlayback')
+        this.skipLoading = status.isLoadingAction('Skip');
+        this.backLoading = status.isLoadingAction('Back');
       });
   }
 
