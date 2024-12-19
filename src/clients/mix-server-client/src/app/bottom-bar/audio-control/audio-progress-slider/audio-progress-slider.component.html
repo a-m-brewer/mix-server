@@ -6,11 +6,27 @@
   <mat-slider step="1"
               min="0"
               class="audio-progress-slider-item audio-progress-slider-slider"
+              #slider
               [max]="audioPlayer.duration"
               [disabled]="audioPlayer.playbackDisabled$ | async">
     <input matSliderThumb
            [(ngModel)]="currentTime"
            (dragEnd)="sliderDragEnded($event)">
+
+    @for (marker of markers; track marker.position; let index = $index) {
+      <div
+        class="section-marker-mark"
+        [style.left.%]="marker.position"
+      ></div>
+
+      <div
+        class="section-marker-part"
+        [style.left.%]="marker.position"
+        [style.width]="getWidth(marker, index)"
+      ></div>
+    }
+
+
   </mat-slider>
   <app-duration-display
     class="audio-progress-slider-item"

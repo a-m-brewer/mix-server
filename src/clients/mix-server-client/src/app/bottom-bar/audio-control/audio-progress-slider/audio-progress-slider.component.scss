@@ -4,9 +4,32 @@
 
 .audio-progress-slider-slider {
   flex: 1;
+
+  display: flex;
+  align-items: center;
 }
 
 .audio-progress-slider-control {
   display: flex;
   flex-direction: row;
 }
+
+.section-marker-mark {
+  position: absolute;
+  height: var(--mdc-slider-active-track-height);
+  width: 10px;
+  //background-color: var(--mat-toolbar-container-background-color);
+  background-color: green;
+  z-index: 2;
+}
+
+.section-marker-part {
+  position: absolute;
+  height: var(--mdc-slider-active-track-height);
+  background-color: red;
+  z-index: 1;
+  &:hover {
+    height: calc(var(--mdc-slider-active-track-height) * 1.5);
+  }
+}
+
