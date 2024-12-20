@@ -14,22 +14,32 @@
   flex-direction: row;
 }
 
-.section-marker-mark {
-  position: absolute;
-  height: var(--mdc-slider-active-track-height);
-  width: 10px;
-  //background-color: var(--mat-toolbar-container-background-color);
-  background-color: green;
-  z-index: 2;
-}
+.section-marker {
+  display: flex;
+  align-items: center;
 
-.section-marker-part {
-  position: absolute;
-  height: var(--mdc-slider-active-track-height);
-  background-color: red;
-  z-index: 1;
-  &:hover {
+  &-mark {
+    width: 3px;
+    height: var(--mdc-slider-active-track-height);
+    background-color: var(--mat-toolbar-container-background-color);
+    z-index: 2;
+  }
+
+  &-part {
+    flex: 1;
+  }
+
+  &-part.hover {
     height: calc(var(--mdc-slider-active-track-height) * 1.5);
+  }
+
+  &-part.non-thumb-hover.inactive {
+    background-color: var(--mdc-slider-inactive-track-color);
+    opacity: .24;
+  }
+
+  &-part.non-thumb-hover.active {
+    background-color: var(--mdc-slider-active-track-color);
   }
 }
 

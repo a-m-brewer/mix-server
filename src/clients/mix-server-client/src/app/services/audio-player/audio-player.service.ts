@@ -6,7 +6,7 @@ import {
   filter, firstValueFrom,
   map,
   Observable,
-  sampleTime
+  sampleTime, Subject
 } from "rxjs";
 import {StreamUrlService} from "../converters/stream-url.service";
 import {AudioSessionService} from "./audio-session.service";
@@ -31,6 +31,7 @@ export class AudioPlayerService {
   private _playMutex = new Mutex();
 
   private _timeChangedBehaviourSubject$ = new BehaviorSubject<number>(0);
+  private _durationBehaviourSubject$ = new Subject<void>();
 
   private _playbackGranted: boolean = false;
 
@@ -54,6 +55,10 @@ export class AudioPlayerService {
 
     this.audio.onended = () => {
       this.handleOnSessionEnded();
+    }
+
+    this.audio.ondurationchange = () => {
+      this._durationBehaviourSubject$.next();
     }
 
     this._playbackSessionRepository
@@ -223,6 +228,11 @@ export class AudioPlayerService {
   public set currentTime(value: number) {
     this._timeChangedBehaviourSubject$.next(value);
     this.audio.currentTime = value;
+  }
+
+  public get duration$(): Observable<number> {
+    return this._durationBehaviourSubject$.asObservable()
+      .pipe(map(() => this.audio.duration));
   }
 
   public get duration(): number {
