@@ -5,6 +5,7 @@ export enum PageRoutes {
   Queue = 'queue',
   Login = 'auth/user/login',
   ResetPassword = 'auth/user/reset-password',
-  Admin = 'admin'
+  Admin = 'admin',
+  Tracklist = 'tracklist',
 }
 

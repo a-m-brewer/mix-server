@@ -4,6 +4,7 @@ export enum MenuLabel {
   Logout = 'Logout',
   Admin = 'Admin',
   Files = 'Files',
+  Tracklist = 'Tracklist',
 }
 
 export interface MenuItem {
