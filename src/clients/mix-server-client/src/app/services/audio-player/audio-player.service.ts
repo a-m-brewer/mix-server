@@ -232,7 +232,7 @@ export class AudioPlayerService {
 
   public get duration$(): Observable<number> {
     return this._durationBehaviourSubject$.asObservable()
-      .pipe(map(() => this.audio.duration));
+      .pipe(map(() => isNaN(this.audio.duration) ? 0 : this.audio.duration));
   }
 
   public get duration(): number {
@@ -261,6 +261,11 @@ export class AudioPlayerService {
 
   public async requestPlayback(deviceId?: string): Promise<void> {
     await this._playbackSessionRepository.requestPlayback(deviceId);
+  }
+
+  public retriggerCurrentTimeAndDuration(): void {
+    this._timeChangedBehaviourSubject$.next(this.currentTime);
+    this._durationBehaviourSubject$.next();
   }
 
   public requestPause(): void {

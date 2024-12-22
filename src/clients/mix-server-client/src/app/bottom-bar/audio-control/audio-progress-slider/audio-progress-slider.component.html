@@ -1,44 +1,11 @@
 <div class="audio-progress-slider-control">
   <app-duration-display
-    class="audio-progress-slider-item"
     [duration]="currentTime">
   </app-duration-display>
-  <mat-slider step="1"
-              min="0"
-              class="audio-progress-slider-item audio-progress-slider-slider"
-              (mousemove)="onSliderHover($event)"
-              (mouseleave)="clearHover()"
-              [max]="audioPlayer.duration"
-              [disabled]="audioPlayer.playbackDisabled$ | async">
-    <input matSliderThumb
-           [(ngModel)]="currentTime"
-           (dragEnd)="sliderDragEnded($event)">
-
-    @for (marker of markers; track marker.positionSeconds; let index = $index) {
-      <div class="section-marker"
-           [style.width.%]="marker.width"
-      >
-        <div
-          class="section-marker-mark"
-        ></div>
-
-        <div
-          class="section-marker-part"
-          [ngClass]="{
-            'hover': index === hoverMarkerIndex,
-            'non-thumb-hover': index === hoverMarkerIndex && !thumbInHoverMarker,
-            'inactive': !(!!thumbMarkerIndex) || index > thumbMarkerIndex,
-            'active': !!thumbMarkerIndex && index < thumbMarkerIndex,
-          }"
-          [ngStyle]="{
-          'background': thumbInHoverMarker ? 'linear-gradient(to right, var(--mdc-slider-inactive-track-color) ' + percentageThroughCurrentMarker + '%, #532431 ' + percentageThroughCurrentMarker + '%)' : '',
-          }"
-        ></div>
-      </div>
-    }
-  </mat-slider>
+  <app-audio-slider
+    class="audio-progress-slider-control-slider"
+  />
   <app-duration-display
-    class="audio-progress-slider-item"
     [duration]="duration">
   </app-duration-display>
 </div>

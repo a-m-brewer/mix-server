@@ -1,45 +1,9 @@
-.audio-progress-slider-item {
-  align-self: center;
-}
-
-.audio-progress-slider-slider {
-  flex: 1;
-
-  display: flex;
-  align-items: center;
-}
-
 .audio-progress-slider-control {
   display: flex;
   flex-direction: row;
-}
-
-.section-marker {
-  display: flex;
   align-items: center;
 
-  &-mark {
-    width: 3px;
-    height: var(--mdc-slider-active-track-height);
-    background-color: var(--mat-toolbar-container-background-color);
-    z-index: 2;
-  }
-
-  &-part {
+  &-slider {
     flex: 1;
   }
-
-  &-part.hover {
-    height: calc(var(--mdc-slider-active-track-height) * 1.5);
-  }
-
-  &-part.non-thumb-hover.inactive {
-    background-color: var(--mdc-slider-inactive-track-color);
-    opacity: .24;
-  }
-
-  &-part.non-thumb-hover.active {
-    background-color: var(--mdc-slider-active-track-color);
-  }
 }
-
