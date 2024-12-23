@@ -1,6 +1,8 @@
+@use 'sass:map';
 @use '@angular/material' as mat;
 @use './app/components/nodes/node-list/node-list-item/node-list-item.component-theme' as node-list-item-theme;
 @use './app/bottom-bar/audio-control/audio-control.component-theme' as audio-control-theme;
+@use './app/tracklist-page/tracklist-form/tracklist-form.component-theme' as tracklist-form-theme;
 
 @include mat.core();
 @import 'ngx-toastr/toastr';
@@ -28,12 +30,14 @@ $light-theme: mat.m2-define-light-theme((
 @include mat.all-component-themes($dark-theme);
 @include node-list-item-theme.theme($dark-theme);
 @include audio-control-theme.theme($dark-theme);
+@include tracklist-form-theme.theme($dark-theme);
 
 @media (prefers-color-scheme: light) {
   @include mat.core-color($light-theme);
   @include mat.all-component-colors($light-theme);
   @include node-list-item-theme.theme($light-theme);
   @include audio-control-theme.theme($light-theme);
+  @include tracklist-form-theme.theme($light-theme);
 }
 
 :root {

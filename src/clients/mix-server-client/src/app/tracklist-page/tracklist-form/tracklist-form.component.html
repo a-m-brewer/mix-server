@@ -1,7 +1,9 @@
 <form [formGroup]="formService.form">
   <mat-list>
-    @for (cue of formService.cues.controls; track cue.value.cue; let lastCue = $last) {
-      <div mat-subheader>
+    @for (cue of formService.cues.controls; track cue.value.cue; let lastCue = $last; let i = $index) {
+      <div mat-subheader
+           [ngClass]="{ 'cue-active': i === playingCueIndex }"
+      >
         <h2>
           {{ cue.value.cue }}
           <app-control-dirty-marker
@@ -11,13 +13,13 @@
       </div>
       @for (track of cue.controls.tracks.controls; track track.controls.name; let lastTrack = $last) {
         <mat-list-item class="TracklistForm-track">
-          <div matListItemTitle>
+          <div matListItemTitle [ngClass]="{ 'cue-active': i === playingCueIndex }">
             {{ track.value.name }}
             <app-control-dirty-marker
               [control]="track.controls.name"
             ></app-control-dirty-marker>
           </div>
-          <div matListItemLine>
+          <div matListItemLine [ngClass]="{ 'cue-active': i === playingCueIndex }">
             {{ track.value.artist }}
             <app-control-dirty-marker
               [control]="track.controls.artist"

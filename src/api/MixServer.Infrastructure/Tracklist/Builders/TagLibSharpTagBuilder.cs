@@ -31,6 +31,12 @@ public class TagLibSharpTagBuilder : ITagBuilder
         string[] artists,
         ICollection<CustomTag> customTags)
     {
+        var existingChapter = _id3Tag.GetFrames<ChapterFrame>().FirstOrDefault(f => f.Id == startTime.ToString());
+        if (existingChapter is not null)
+        {
+            _id3Tag.RemoveFrame(existingChapter);
+        }
+        
         var chapter = new ChapterFrame(startTime.ToString(), title);
         
         if (subtitles.Length > 0)
@@ -67,6 +73,14 @@ public class TagLibSharpTagBuilder : ITagBuilder
         _id3Tag.AddFrame(chapter);
         
         return this;
+    }
+
+    public void ClearChapters()
+    {
+        foreach (var frame in _id3Tag.GetFrames<ChapterFrame>().ToList())
+        {
+            _id3Tag.RemoveFrame(frame);
+        }
     }
 
 

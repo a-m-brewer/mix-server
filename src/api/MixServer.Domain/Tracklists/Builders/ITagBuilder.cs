@@ -15,5 +15,6 @@ public interface ITagBuilder : IReadOnlyTagBuilder
         string[] subtitles,
         string[] artists,
         ICollection<CustomTag> customTags);
+    void ClearChapters();
     void Save();
 }

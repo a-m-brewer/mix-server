@@ -18,6 +18,9 @@ public class TracklistTagService(
     public void SaveTags(string absoluteFilePath, ImportTracklistDto tracklist)
     {
         var tagBuilder = factory.Create(absoluteFilePath);
+        
+        // TODO: actually compare tags
+        tagBuilder.ClearChapters();
 
         foreach (var cue in tracklist.Cues)
         {
