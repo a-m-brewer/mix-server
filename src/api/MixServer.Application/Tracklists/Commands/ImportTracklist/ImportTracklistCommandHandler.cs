@@ -3,7 +3,7 @@ using MixServer.Domain.Interfaces;
 using MixServer.Domain.Tracklists.Dtos.Import;
 using Newtonsoft.Json;
 
-namespace MixServer.Application.Tracklists.Commands;
+namespace MixServer.Application.Tracklists.Commands.ImportTracklist;
 
 public class ImportTracklistCommandHandler : ICommandHandler<ImportTracklistCommand, ImportTracklistResponse>
 {

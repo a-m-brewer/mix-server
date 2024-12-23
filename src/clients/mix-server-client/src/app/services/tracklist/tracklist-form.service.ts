@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
-  ImportCueDto, ImportPlayerDto, ImportTrackDto,
-  ImportTracklistResponse,
+  ImportCueDto, ImportPlayerDto, ImportTrackDto, ImportTracklistDto,
+  ImportTracklistResponse, SaveTracklistCommand,
   TracklistClient,
   TracklistPlayerType
 } from "../../generated-clients/mix-server-clients";
@@ -55,7 +55,7 @@ export class TracklistFormService {
         fileName: file.name,
         data: file as Blob
       }));
-      this.form = this.createTracklistForm(dto);
+      this.form = this.createTracklistForm(dto.tracklist);
       this.markAllAsDirty(this.form);
     } catch (err) {
       this._toastService.logServerError(err, 'Failed to import tracklist file');
@@ -64,8 +64,24 @@ export class TracklistFormService {
     }
   }
 
-  private createTracklistForm(dto?: ImportTracklistResponse): FormGroup<TracklistForm> {
-    const cues = dto?.tracklist.cues ?? [];
+
+  public async saveTracklist(): Promise<void> {
+    this._loading.startLoading();
+
+    try {
+      const dto = await firstValueFrom(this._client.saveTracklist(new SaveTracklistCommand({
+        tracklist: this.convertFormToDto()
+      })));
+      this.form = this.createTracklistForm(dto.tracklist);
+    } catch (err) {
+      this._toastService.logServerError(err, 'Failed to save tracklist');
+    } finally {
+      this._loading.stopLoading();
+    }
+  }
+
+  private createTracklistForm(dto?: ImportTracklistDto): FormGroup<TracklistForm> {
+    const cues = dto?.cues ?? [];
     return this._formBuilder.group<TracklistForm>({
       cues: this._formBuilder.array<FormGroup<TracklistCueForm>>(cues.map(cue => this.createCueForm(cue)))
     });
@@ -104,5 +120,33 @@ export class TracklistFormService {
         this.markAllAsDirty(childControl); // Recursively mark child controls
       });
     }
+  }
+
+  private convertFormToDto(): ImportTracklistDto {
+    return new ImportTracklistDto({
+      cues: this.cues.controls.map(cue => this.convertCueFormToDto(cue))
+    });
+  }
+
+  private convertCueFormToDto(cue: FormGroup<TracklistCueForm>): ImportCueDto {
+    return new ImportCueDto({
+      cue: cue.controls.cue.value,
+      tracks: cue.controls.tracks.controls.map(track => this.convertTrackFormToDto(track))
+    });
+  }
+
+  private convertTrackFormToDto(track: FormGroup<TrackForm>): ImportTrackDto {
+    return new ImportTrackDto({
+      name: track.controls.name.value,
+      artist: track.controls.artist.value,
+      players: track.controls.players.controls.map(player => this.convertPlayerFormToDto(player))
+    });
+  }
+
+  private convertPlayerFormToDto(player: FormGroup<PlayersForm>): ImportPlayerDto {
+    return new ImportPlayerDto({
+      type: player.controls.type.value,
+      urls: player.controls.urls.controls.map(url => url.value)
+    });
   }
 }
