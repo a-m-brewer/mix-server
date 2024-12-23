@@ -9,6 +9,7 @@ import {LoadingRepositoryService} from "../repositories/loading-repository.servi
 import {ToastService} from "../toasts/toast-service";
 import {firstValueFrom} from "rxjs";
 import {AbstractControl, FormArray, FormBuilder, FormControl, FormGroup} from "@angular/forms";
+import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
 
 export interface PlayersForm {
   type: FormControl<TracklistPlayerType>;
@@ -39,8 +40,17 @@ export class TracklistFormService {
   constructor(private _client: TracklistClient,
               private _formBuilder: FormBuilder,
               private _loading: LoadingRepositoryService,
+              private _sessionRepository: CurrentPlaybackSessionRepositoryService,
               private _toastService: ToastService) {
     this.form = this.createTracklistForm();
+
+    this._sessionRepository
+      .currentSession$
+      .subscribe(session => {
+        if (session) {
+          this.form = this.createTracklistForm(session.tracklist);
+        }
+      })
   }
 
   public get cues(): FormArray<FormGroup<TracklistCueForm>> {

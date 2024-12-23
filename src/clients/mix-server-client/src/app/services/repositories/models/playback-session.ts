@@ -1,5 +1,6 @@
 import {FileExplorerFileNode} from "../../../main-content/file-explorer/models/file-explorer-file-node";
 import {PlaybackState} from "./playback-state";
+import {ImportTracklistDto} from "../../../generated-clients/mix-server-clients";
 
 export interface IPlaybackSession {
   id: string;
@@ -7,6 +8,7 @@ export interface IPlaybackSession {
   lastPlayed: Date,
   deviceId: string | null | undefined,
   autoPlay: boolean
+  tracklist: ImportTracklistDto
 }
 
 export class PlaybackSession implements IPlaybackSession {
@@ -14,7 +16,8 @@ export class PlaybackSession implements IPlaybackSession {
               public currentNode: FileExplorerFileNode,
               public lastPlayed: Date,
               public state: PlaybackState,
-              public autoPlay: boolean) {
+              public autoPlay: boolean,
+              public tracklist: ImportTracklistDto) {
   }
 
   public static copy(session: IPlaybackSession, state: PlaybackState) : PlaybackSession {
@@ -23,7 +26,8 @@ export class PlaybackSession implements IPlaybackSession {
       session.currentNode,
       session.lastPlayed,
       state,
-      session.autoPlay);
+      session.autoPlay,
+      session.tracklist);
   }
 
   public get deviceId(): string | null | undefined {

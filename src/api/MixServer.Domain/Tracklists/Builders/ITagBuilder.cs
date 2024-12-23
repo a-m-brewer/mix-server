@@ -4,6 +4,7 @@ namespace MixServer.Domain.Tracklists.Builders;
 
 public interface IReadOnlyTagBuilder
 {
+    ICollection<Chapter> Chapters { get; }
 }
 
 public interface ITagBuilder : IReadOnlyTagBuilder

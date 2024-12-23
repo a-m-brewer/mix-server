@@ -18,7 +18,8 @@ export class PlaybackSessionConverterService {
       this._fileExplorerNodeConverter.fromFileExplorerFileNode(dto.file),
       dto.lastPlayed,
       this.stateFromSessionDto(dto),
-      dto.autoPlay);
+      dto.autoPlay,
+      dto.tracklist);
   }
 
   public stateFromSessionDto(dto: PlaybackSessionDto): PlaybackState {

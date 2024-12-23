@@ -2,7 +2,6 @@ using MixServer.Domain.Tracklists.Builders;
 using MixServer.Domain.Tracklists.Models;
 using TagLib;
 using TagLib.Id3v2;
-using Tag = TagLib.Tag;
 
 namespace MixServer.Infrastructure.Tracklist.Builders;
 
@@ -74,5 +73,53 @@ public class TagLibSharpTagBuilder : ITagBuilder
     public void Save()
     {
         _file.Save();
+    }
+
+    public ICollection<Chapter> Chapters => GetChapters();
+
+    private ICollection<Chapter> GetChapters()
+    {
+        var chapters = new List<Chapter>();
+
+        foreach (var frame in _id3Tag.GetFrames<ChapterFrame>())
+        {
+            var titleFrame = frame.SubFrames
+                .OfType<TextInformationFrame>()
+                .SingleOrDefault(f => f.FrameId == "TIT2");
+            var title = titleFrame is not null && titleFrame.Text.Length > 0
+                ? titleFrame.Text[0] ?? string.Empty
+                : string.Empty;
+            
+            var subtitleFrame = frame.SubFrames
+                .OfType<TextInformationFrame>()
+                .SingleOrDefault(f => f.FrameId == "TIT3");
+            var subtitles = subtitleFrame is not null && subtitleFrame.Text.Length > 0
+                ? subtitleFrame.Text[0]?.Split('/') ?? []
+                : [];
+            
+            var artistFrame = frame.SubFrames
+                .OfType<TextInformationFrame>()
+                .SingleOrDefault(f => f.FrameId == "TPE1");
+            var artists = artistFrame is not null && artistFrame.Text.Length > 0
+                ? artistFrame.Text ?? []
+                : [];
+            
+            var customTags = frame.SubFrames
+                .OfType<UserTextInformationFrame>()
+                .Select(f => new CustomTag(f.Description, f.Text))
+                .ToList();
+            
+            var chapter = new Chapter(
+                frame.Id,
+                title,
+                subtitles,
+                artists,
+                customTags
+            );
+
+            chapters.Add(chapter);
+        }
+
+        return chapters;
     }
 }

@@ -17,10 +17,10 @@ public class SessionService(
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
     IDateTimeProvider dateTimeProvider,
-    IFileService fileService,
     ILogger<SessionService> logger,
     IPlaybackSessionRepository playbackSessionRepository,
     IPlaybackTrackingService playbackTrackingService,
+    ISessionHydrationService sessionHydrationService,
     IUserRepository userRepository,
     IUnitOfWork unitOfWork)
     : ISessionService
@@ -78,7 +78,7 @@ public class SessionService(
         
         user.CurrentPlaybackSession = session;
 
-        SetSessionNonMappedProperties(session);
+        sessionHydrationService.Hydrate(session);
         
         unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(session.UserId, currentDeviceRepository.DeviceId, session));
         return session;
@@ -109,7 +109,7 @@ public class SessionService(
             throw new ForbiddenRequestException();
         }
 
-        SetSessionNonMappedProperties(session);
+        sessionHydrationService.Hydrate(session);
         
         return session;
     }
@@ -118,7 +118,7 @@ public class SessionService(
     {
         var session = await GetCurrentPlaybackSessionAsync();
         
-        SetSessionNonMappedProperties(session);
+        sessionHydrationService.Hydrate(session);
 
         return session;
     }
@@ -154,19 +154,9 @@ public class SessionService(
 
         foreach (var session in sessions)
         {
-            SetSessionNonMappedProperties(session);
+            sessionHydrationService.Hydrate(session);
         }
 
         return sessions;
-    }
-
-    private void SetSessionNonMappedProperties(
-        IPlaybackSession session)
-    {
-        var currentNode = fileService.GetFile(session.AbsolutePath);
-
-        playbackTrackingService.Populate(session);
-
-        session.File = currentNode;
     }
 }
