@@ -1,3 +1,3 @@
 namespace MixServer.Domain.Tracklists.Models;
 
-public record CustomTag(string description, string value);
+public record CustomTag(string description, string[] values);

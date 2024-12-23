@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Tracklists.Builders;
+using MixServer.Domain.Tracklists.Factories;
 using MixServer.Domain.Tracklists.Models;
 using MixServer.Infrastructure.Users.Repository;
 
@@ -10,7 +11,7 @@ namespace MixServer.Application.Tracklists.Commands.SaveTracklist;
 public class SaveTracklistCommandHandler(
     ICurrentUserRepository currentUserRepository,
     ILogger<SaveTracklistCommandHandler> logger,
-    Func<string, ITagBuilder> tagBuilderFactory)
+    ITagBuilderFactory tagBuilderFactory)
     : ICommandHandler<SaveTracklistCommand, SaveTracklistResponse>
 {
     public async Task<SaveTracklistResponse> HandleAsync(SaveTracklistCommand request)
@@ -29,7 +30,7 @@ public class SaveTracklistCommandHandler(
             throw new NotFoundException("File", currentSessionFilePath);
         }
 
-        var tagBuilder = tagBuilderFactory(currentSessionFilePath);
+        var tagBuilder = tagBuilderFactory.Create(currentSessionFilePath);
 
         foreach (var cue in request.Tracklist.Cues)
         {
@@ -43,15 +44,19 @@ public class SaveTracklistCommandHandler(
             var additionalTracks = cue.Tracks.Skip(1).ToList();
 
             var customTags = (from track in cue.Tracks
-                    from player in track.Players
-                    select new CustomTag($"{track.Name};{track.Artist};{player.Type}", string.Join(",", player.Urls)))
-                .ToList();
+                let lines =
+                    (from player in track.Players
+                        let urls = string.Join(",", player.Urls)
+                        where urls.Length > 0
+                        select $"{player.Type};{urls}").ToArray()
+                    where lines.Length > 0
+                select new CustomTag($"{track.Name};{track.Artist};Players", lines)).ToList();
 
             tagBuilder.AddChapter(
                 cue.Cue,
                 primaryTrack.Name,
-                string.Join(",", additionalTracks.Select(t => t.Name)),
-                string.Join(",", cue.Tracks.Select(t => t.Artist)),
+                additionalTracks.Select(t => t.Name).ToArray(),
+                cue.Tracks.Select(t => t.Artist).ToArray(),
                 customTags);
         }
 

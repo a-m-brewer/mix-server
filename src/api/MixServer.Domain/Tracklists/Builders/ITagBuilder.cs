@@ -2,13 +2,17 @@ using MixServer.Domain.Tracklists.Models;
 
 namespace MixServer.Domain.Tracklists.Builders;
 
-public interface ITagBuilder
+public interface IReadOnlyTagBuilder
+{
+}
+
+public interface ITagBuilder : IReadOnlyTagBuilder
 {
     ITagBuilder AddChapter(
         TimeSpan startTime,
         string title,
-        string subtitle,
-        string artist,
+        string[] subtitles,
+        string[] artists,
         ICollection<CustomTag> customTags);
     void Save();
 }
