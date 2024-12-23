@@ -1,0 +1,18 @@
+<form [formGroup]="form">
+  <button mat-button
+          type="button"
+          [disabled]="form.invalid"
+          color="primary"
+          (click)="fileInput.click()"
+  >
+    Import
+  </button>
+
+  <input type="file"
+         [formControl]="fileControl"
+         accept=".json"
+         hidden
+         #fileInput
+         (change)="onFileChange($event)"
+  >
+</form>

@@ -1437,6 +1437,100 @@ export class StreamClient implements IStreamClient {
     }
 }
 
+export interface ITracklistClient {
+    importTracklist(file?: FileParameter | undefined): Observable<ImportTracklistResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class TracklistClient implements ITracklistClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(MIXSERVER_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    importTracklist(file?: FileParameter | undefined): Observable<ImportTracklistResponse> {
+        let url_ = this.baseUrl + "/api/tracklist";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = new FormData();
+        if (file === null || file === undefined)
+            throw new Error("The parameter 'file' cannot be null.");
+        else
+            content_.append("File", file.data, file.fileName ? file.fileName : "File");
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processImportTracklist(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processImportTracklist(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<ImportTracklistResponse>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<ImportTracklistResponse>;
+        }));
+    }
+
+    protected processImportTracklist(response: HttpResponseBase): Observable<ImportTracklistResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ImportTracklistResponse.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+}
+
 export interface IUserClient {
     getAll(): Observable<GetAllUsersResponse>;
     addUser(command: AddUserCommand): Observable<AddUserCommandResponse>;
@@ -3451,6 +3545,264 @@ export interface ISeekRequest {
     time: number;
 }
 
+export class ImportTracklistResponse implements IImportTracklistResponse {
+    tracklist!: ImportTracklistDto;
+
+    constructor(data?: IImportTracklistResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.tracklist = new ImportTracklistDto();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.tracklist = _data["tracklist"] ? ImportTracklistDto.fromJS(_data["tracklist"]) : new ImportTracklistDto();
+        }
+    }
+
+    static fromJS(data: any): ImportTracklistResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportTracklistResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["tracklist"] = this.tracklist ? this.tracklist.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface IImportTracklistResponse {
+    tracklist: ImportTracklistDto;
+}
+
+export class ImportTracklistDto implements IImportTracklistDto {
+    cues!: ImportCueDto[];
+
+    constructor(data?: IImportTracklistDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.cues = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["cues"])) {
+                this.cues = [] as any;
+                for (let item of _data["cues"])
+                    this.cues!.push(ImportCueDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): ImportTracklistDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportTracklistDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.cues)) {
+            data["cues"] = [];
+            for (let item of this.cues)
+                data["cues"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IImportTracklistDto {
+    cues: ImportCueDto[];
+}
+
+export class ImportCueDto implements IImportCueDto {
+    cue!: string;
+    tracks!: ImportTrackDto[];
+
+    constructor(data?: IImportCueDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.tracks = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.cue = _data["cue"];
+            if (Array.isArray(_data["tracks"])) {
+                this.tracks = [] as any;
+                for (let item of _data["tracks"])
+                    this.tracks!.push(ImportTrackDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): ImportCueDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportCueDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["cue"] = this.cue;
+        if (Array.isArray(this.tracks)) {
+            data["tracks"] = [];
+            for (let item of this.tracks)
+                data["tracks"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IImportCueDto {
+    cue: string;
+    tracks: ImportTrackDto[];
+}
+
+export class ImportTrackDto implements IImportTrackDto {
+    name!: string;
+    artist!: string;
+    players!: ImportPlayerDto[];
+
+    constructor(data?: IImportTrackDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.players = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.artist = _data["artist"];
+            if (Array.isArray(_data["players"])) {
+                this.players = [] as any;
+                for (let item of _data["players"])
+                    this.players!.push(ImportPlayerDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): ImportTrackDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportTrackDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["artist"] = this.artist;
+        if (Array.isArray(this.players)) {
+            data["players"] = [];
+            for (let item of this.players)
+                data["players"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IImportTrackDto {
+    name: string;
+    artist: string;
+    players: ImportPlayerDto[];
+}
+
+export class ImportPlayerDto implements IImportPlayerDto {
+    type!: TracklistPlayerType;
+    urls!: string[];
+
+    constructor(data?: IImportPlayerDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.urls = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.type = _data["type"];
+            if (Array.isArray(_data["urls"])) {
+                this.urls = [] as any;
+                for (let item of _data["urls"])
+                    this.urls!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): ImportPlayerDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportPlayerDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["type"] = this.type;
+        if (Array.isArray(this.urls)) {
+            data["urls"] = [];
+            for (let item of this.urls)
+                data["urls"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IImportPlayerDto {
+    type: TracklistPlayerType;
+    urls: string[];
+}
+
+export enum TracklistPlayerType {
+    Unknown = "Unknown",
+    Beatport = "Beatport",
+    Apple = "Apple",
+    Deezer = "Deezer",
+    Traxsource = "Traxsource",
+    Bandcamp = "Bandcamp",
+    Soundcloud = "Soundcloud",
+    Youtube = "Youtube",
+    Mixcloud = "Mixcloud",
+    Spotify = "Spotify",
+    Hearthis = "Hearthis",
+    Affiliate = "Affiliate",
+}
+
 export class GetAllUsersResponse implements IGetAllUsersResponse {
     users!: UserDto[];
 
@@ -4297,6 +4649,11 @@ export enum LogLevel {
     Error = "Error",
     Critical = "Critical",
     None = "None",
+}
+
+export interface FileParameter {
+    data: any;
+    fileName: string;
 }
 
 export interface FileResponse {

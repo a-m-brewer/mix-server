@@ -1,0 +1,48 @@
+<form [formGroup]="formService.form">
+  <mat-list>
+    @for (cue of formService.cues.controls; track cue.value.cue; let lastCue = $last) {
+      <div mat-subheader>
+        <h2>
+          {{ cue.value.cue }}
+          <app-control-dirty-marker
+            [control]="cue"
+          ></app-control-dirty-marker>
+        </h2>
+      </div>
+      @for (track of cue.controls.tracks.controls; track track.controls.name; let lastTrack = $last) {
+        <mat-list-item class="TracklistForm-track">
+          <div matListItemTitle>
+            {{ track.value.name }}
+            <app-control-dirty-marker
+              [control]="track.controls.name"
+            ></app-control-dirty-marker>
+          </div>
+          <div matListItemLine>
+            {{ track.value.artist }}
+            <app-control-dirty-marker
+              [control]="track.controls.artist"
+            ></app-control-dirty-marker>
+          </div>
+          <div matListItemMeta>
+            @for (player of track.controls.players.controls; track player.value.type) {
+              @for (playerLink of player.controls.urls.controls; track playerLink.value) {
+                <a
+                  mat-button
+                  [href]="playerLink.value"
+                  target="_blank"
+                >
+                  {{ player.value.type }}
+                  <app-control-dirty-marker
+                    [control]="playerLink"
+                  ></app-control-dirty-marker>
+                </a>
+              }
+            }
+          </div>
+        </mat-list-item>
+        <mat-divider *ngIf="!lastTrack"></mat-divider>
+      }
+      <mat-divider *ngIf="!lastCue"></mat-divider>
+    }
+  </mat-list>
+</form>
