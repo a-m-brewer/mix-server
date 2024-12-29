@@ -9,17 +9,17 @@ export class WindowSizeRepositoryService {
   private _windowType$ = new BehaviorSubject<WindowType>(this.calculateWindowType());
 
   constructor() {
-    this.windowResized$
-      .subscribe(() => {
-        const lastWindowType = this._windowType$.getValue();
-        const nextWindowType = this.calculateWindowType();
+    window.matchMedia("(max-width: 600px)").addEventListener('change', (event) => {
+      const nextWindowType = this.calculateWindowType();
 
-        if (lastWindowType === nextWindowType) {
-          return;
-        }
+      this._windowType$.next(nextWindowType);
+    });
 
-        this._windowType$.next(nextWindowType);
-      });
+    window.matchMedia("(min-width: 601px)").addEventListener('change', (event) => {
+      const nextWindowType = this.calculateWindowType();
+
+      this._windowType$.next(nextWindowType);
+    });
   }
 
   public get windowResized$(): Observable<Event> {

@@ -1,4 +1,8 @@
-export function timespanToTotalSeconds(time: string): number {
+export function timespanToTotalSeconds(time?: string | null): number {
+  if (!time) {
+    return 0;
+  }
+
   // Split into days and time parts
   const [daysPart, timePart] = time.includes('.') ? time.split('.') : [undefined, time];
   const days = daysPart ? Number(daysPart) : 0;

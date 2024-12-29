@@ -2,7 +2,7 @@
   <button mat-button
           type="button"
           [disabled]="form.invalid"
-          [color]="formService.form.dirty ? 'accent' : 'primary'"
+          [color]="form && form.dirty ? 'accent' : 'primary'"
           (click)="fileInput.click()"
   >
     Import

@@ -1,6 +1,8 @@
 import {FileExplorerFileNode} from "../../../main-content/file-explorer/models/file-explorer-file-node";
 import {PlaybackState} from "./playback-state";
 import {ImportTracklistDto} from "../../../generated-clients/mix-server-clients";
+import {TracklistCueForm, TracklistForm} from "../../tracklist/models/tracklist-form.interface";
+import {FormArray, FormGroup} from "@angular/forms";
 
 export interface IPlaybackSession {
   id: string;
@@ -8,7 +10,7 @@ export interface IPlaybackSession {
   lastPlayed: Date,
   deviceId: string | null | undefined,
   autoPlay: boolean
-  tracklist: ImportTracklistDto
+  tracklist: FormGroup<TracklistForm>;
 }
 
 export class PlaybackSession implements IPlaybackSession {
@@ -17,10 +19,11 @@ export class PlaybackSession implements IPlaybackSession {
               public lastPlayed: Date,
               public state: PlaybackState,
               public autoPlay: boolean,
-              public tracklist: ImportTracklistDto) {
+              public tracklist: FormGroup<TracklistForm>) {
   }
 
-  public static copy(session: IPlaybackSession, state: PlaybackState) : PlaybackSession {
+  public static copy(session: IPlaybackSession,
+                     state: PlaybackState) : PlaybackSession {
     return new PlaybackSession(
       session.id,
       session.currentNode,
@@ -36,5 +39,9 @@ export class PlaybackSession implements IPlaybackSession {
 
   public set deviceId(value: string | null | undefined) {
     this.state.deviceId = value;
+  }
+
+  public get cues(): FormArray<FormGroup<TracklistCueForm>> {
+    return this.tracklist.controls.cues as FormArray<FormGroup<TracklistCueForm>>;
   }
 }

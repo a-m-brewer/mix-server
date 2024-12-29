@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {MatButton} from "@angular/material/button";
 import {TracklistFormService} from "../../../services/tracklist/tracklist-form.service";
+import {TracklistForm} from "../../../services/tracklist/models/tracklist-form.interface";
 
 interface ImportTracklistFormGroup {
   file: FormControl<File | null | undefined>;
@@ -29,6 +30,9 @@ export class ImportTracklistFormComponent {
       file: this.fileControl
     });
   }
+
+  @Input()
+  public tracklistForm?: FormGroup<TracklistForm>;
 
   public async onFileChange(e: Event): Promise<void> {
     const input = e.target as HTMLInputElement;

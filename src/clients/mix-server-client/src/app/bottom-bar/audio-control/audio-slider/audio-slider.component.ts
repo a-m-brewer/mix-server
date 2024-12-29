@@ -2,18 +2,23 @@ import {
   AfterViewChecked,
   AfterViewInit,
   ChangeDetectorRef,
-  Component,
+  Component, ElementRef,
   OnDestroy,
   OnInit,
-  QueryList,
+  QueryList, ViewChild,
   ViewChildren
 } from '@angular/core';
 import {AsyncPipe, NgClass, NgIf, NgStyle} from "@angular/common";
 import {FormsModule} from "@angular/forms";
 import {MatSlider, MatSliderDragEvent, MatSliderThumb} from "@angular/material/slider";
 import {AudioPlayerService} from "../../../services/audio-player/audio-player.service";
-import {BehaviorSubject, combineLatestWith, filter, Subject, takeUntil} from "rxjs";
+import {BehaviorSubject, combineLatestWith, debounce, filter, interval, Subject, takeUntil} from "rxjs";
 import {MatTooltip} from "@angular/material/tooltip";
+import {
+  CurrentPlaybackSessionRepositoryService
+} from "../../../services/repositories/current-playback-session-repository.service";
+import {timespanToTotalSeconds} from "../../../utils/timespan-helpers";
+import {WindowSizeRepositoryService} from "../../../services/repositories/window-size-repository.service";
 
 export interface SliderMarker {
   positionSeconds: number;
@@ -61,7 +66,8 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
   public thumbInHoverMarker: boolean = false;
   public isThumbActive: boolean = false;
 
-  constructor(public audioPlayer: AudioPlayerService) {
+  constructor(public audioPlayer: AudioPlayerService,
+              private _sessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
   @ViewChildren(MatTooltip) tooltipsQuery!: QueryList<MatTooltip>;
@@ -70,18 +76,25 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
     // This is very important to avoid NG0100: Expression has changed after it was checked
     // The audio.currentTime can not be binded directly to the slider value as it changes outside of Angulars change detection
     this.audioPlayer.currentTime$
+      .pipe(combineLatestWith(this.audioPlayer.duration$, this._sessionRepository.currentSession$))
       .pipe(takeUntil(this._unsubscribe$))
-      .pipe(combineLatestWith(this.audioPlayer.duration$))
       .pipe(filter(([, duration]) => duration > 0))
-      .subscribe(([currentTime, duration]) => {
+      .subscribe(([currentTime, duration, session]) => {
         this._currentTime = currentTime;
         this.duration = duration;
 
-        this.updateMarkers([
-          {positionSeconds: 10 * 72, tooltip: 'Marker 10'},
-          // {positionSeconds: 50 * 72, tooltip: 'Marker 50'},
-          // {positionSeconds: 90 * 72, tooltip: 'Marker 90'},
-        ]);
+        const cues = session?.tracklist.value.cues;
+        if (cues) {
+          const markers: SliderMarker[] = cues.map(cue => ({
+            positionSeconds: timespanToTotalSeconds(cue.cue),
+            tooltip: (cue.tracks ?? []).map(track => `${track.name} - ${track.artist}`).join('\n')
+          }));
+
+          this.updateMarkers(markers);
+        } else {
+          this.updateMarkers([]);
+        }
+
         this.calculateThumbMarkerIndex();
       });
 
@@ -168,7 +181,7 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
       this._thumbContainer.style.zIndex = '2';
     }
 
-    this._tooltips = this.tooltipsQuery.toArray();
+    this._tooltips = this.tooltipsQuery?.toArray() ?? [];
   }
 
   public get currentTime(): number {
@@ -207,7 +220,7 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
     this.sliderDragEnded({value: this._currentTime} as MatSliderDragEvent);
   }
 
-  private   updateMarkers(nextMarkers: SliderMarker[]) {
+  private  updateMarkers(nextMarkers: SliderMarker[]) {
     const nextMarkerDetails: SliderMarkerDetails[] = [];
 
     const percentages = nextMarkers.map(marker => (marker.positionSeconds / this.duration) * 100);
@@ -227,7 +240,7 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.markers = nextMarkerDetails;
     this.percentageRemaining = 100 - this.markers.reduce((acc, marker) => acc + marker.width, 0);
-    this._tooltips = this.tooltipsQuery.toArray();
+    this._tooltips = this.tooltipsQuery?.toArray() ?? [];
   }
 
   onSliderHover(e: MouseEvent | TouchEvent) {

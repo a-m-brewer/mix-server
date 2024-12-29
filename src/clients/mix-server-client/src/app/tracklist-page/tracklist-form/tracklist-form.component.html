@@ -1,6 +1,6 @@
-<form [formGroup]="formService.form">
+<form *ngIf="session && session.tracklist" [formGroup]="session.tracklist">
   <mat-list>
-    @for (cue of formService.cues.controls; track cue.value.cue; let lastCue = $last; let i = $index) {
+    @for (cue of session.cues.controls; track cue.value.cue; let lastCue = $last; let i = $index) {
       <div mat-subheader
            [ngClass]="{ 'cue-active': i === playingCueIndex }"
       >

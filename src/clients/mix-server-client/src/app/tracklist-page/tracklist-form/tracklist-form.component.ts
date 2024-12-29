@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {TracklistFormService} from "../../services/tracklist/tracklist-form.service";
-import {FormArray, ReactiveFormsModule} from "@angular/forms";
+import {FormArray, FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {
   MatList,
   MatListItem,
@@ -13,8 +13,13 @@ import {NgClass, NgIf} from "@angular/common";
 import {MatAnchor} from "@angular/material/button";
 import {ControlDirtyMarkerComponent} from "../../components/forms/control-dirty-marker/control-dirty-marker.component";
 import {AudioPlayerService} from "../../services/audio-player/audio-player.service";
-import {Subject, takeUntil} from "rxjs";
+import {combineLatestWith, Subject, takeUntil} from "rxjs";
 import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
+import {
+  CurrentPlaybackSessionRepositoryService
+} from "../../services/repositories/current-playback-session-repository.service";
+import {TracklistForm} from "../../services/tracklist/models/tracklist-form.interface";
+import {PlaybackSession} from "../../services/repositories/models/playback-session";
 
 @Component({
   selector: 'app-tracklist-form',
@@ -40,26 +45,36 @@ export class TracklistFormComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject<void>();
 
   public playingCueIndex: number = -1;
+  public session?: PlaybackSession | null;
 
-  constructor(public formService: TracklistFormService,
-              private _audioPlayerService: AudioPlayerService) {
+  constructor(private _audioPlayerService: AudioPlayerService,
+              private _sessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
   public ngOnInit(): void {
-    this._audioPlayerService.sampleCurrentTime$(500, false)
+    this._sessionRepository.currentSession$
       .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(currentTime => {
-        for (let i = this.formService.cues.controls.length - 1; i >= 0; i--) {
-          const cue = this.formService.cues.controls[i].value.cue;
-          if (!cue) {
-            continue;
-          }
+      .subscribe(session => {
+        this.session = session;
+      });
 
-          const cueStartTimeSeconds = timespanToTotalSeconds(cue);
+    this._audioPlayerService.sampleCurrentTime$(500, false)
+      .pipe(combineLatestWith(this._sessionRepository.currentSession$))
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(([currentTime, session]) => {
+        if (session) {
+          for (let i = session.cues.controls.length - 1; i >= 0; i--) {
+            const cue = session.cues.controls[i].value.cue;
+            if (!cue) {
+              continue;
+            }
 
-          if (cueStartTimeSeconds <= currentTime) {
-            this.playingCueIndex = i;
-            return;
+            const cueStartTimeSeconds = timespanToTotalSeconds(cue);
+
+            if (cueStartTimeSeconds <= currentTime) {
+              this.playingCueIndex = i;
+              return;
+            }
           }
         }
 
