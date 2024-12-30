@@ -37,14 +37,14 @@ public class TagLibSharpTagBuilder : ITagBuilder
             _id3Tag.RemoveFrame(existingChapter);
         }
         
-        var chapter = new ChapterFrame(id, title);
+        var chapter = new ChapterFrame(id, title.Replace("/", "-"));
         
         if (subtitles.Length > 0)
         {
             chapter.SubFrames.Add(new TextInformationFrame((ByteVector) "TIT3")
             {
                 Text = [
-                    string.Join("/", subtitles)
+                    string.Join("/", subtitles.Select(s => s.Replace("/", "-")))
                 ]
             });
         }

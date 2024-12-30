@@ -10,7 +10,7 @@ import {
 } from "@angular/material/list";
 import {MatDivider} from "@angular/material/divider";
 import {NgClass, NgIf} from "@angular/common";
-import {MatAnchor} from "@angular/material/button";
+import {MatAnchor, MatIconButton} from "@angular/material/button";
 import {ControlDirtyMarkerComponent} from "../../components/forms/control-dirty-marker/control-dirty-marker.component";
 import {AudioPlayerService} from "../../services/audio-player/audio-player.service";
 import {combineLatestWith, Subject, takeUntil} from "rxjs";
@@ -18,8 +18,10 @@ import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
 import {
   CurrentPlaybackSessionRepositoryService
 } from "../../services/repositories/current-playback-session-repository.service";
-import {TracklistForm} from "../../services/tracklist/models/tracklist-form.interface";
+import {TracklistCueForm, TracklistForm} from "../../services/tracklist/models/tracklist-form.interface";
 import {PlaybackSession} from "../../services/repositories/models/playback-session";
+import {MatIcon} from "@angular/material/icon";
+import {MatTooltip} from "@angular/material/tooltip";
 
 @Component({
   selector: 'app-tracklist-form',
@@ -36,7 +38,10 @@ import {PlaybackSession} from "../../services/repositories/models/playback-sessi
     MatListItemMeta,
     MatAnchor,
     ControlDirtyMarkerComponent,
-    NgClass
+    NgClass,
+    MatIcon,
+    MatIconButton,
+    MatTooltip
   ],
   templateUrl: './tracklist-form.component.html',
   styleUrl: './tracklist-form.component.scss'
@@ -69,5 +74,16 @@ export class TracklistFormComponent implements OnInit, OnDestroy {
   public ngOnDestroy(): void {
     this._unsubscribe$.next();
     this._unsubscribe$.complete();
+  }
+
+  playCue(cue: FormGroup<TracklistCueForm>) {
+    const cueValue = cue.value.cue;
+    if (!cueValue) {
+      return;
+    }
+
+    const cueTotalSeconds = timespanToTotalSeconds(cueValue);
+
+    this._audioPlayerService.seek(cueTotalSeconds);
   }
 }

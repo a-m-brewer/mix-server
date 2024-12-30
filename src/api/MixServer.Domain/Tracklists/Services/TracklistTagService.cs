@@ -132,13 +132,15 @@ public class TracklistTagService(
                     logger.LogWarning("Skipping track with no title");
                     continue;
                 }
+
+                var artist = i < artists.Length ? artists[i] : "Unknown Artist";
                 
                 var track = new ImportTrackDto
                 {
                     Name = title,
-                    Artist = artists[i],
+                    Artist = artist,
                     Players = players
-                        .Where(w => w.trackName == title && w.trackArtist == artists[i])
+                        .Where(w => w.trackName == title && w.trackArtist == artist)
                         .Select(s => s.player)
                         .ToList()
                 };

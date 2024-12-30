@@ -1,5 +1,46 @@
+@use '@angular/material' as mat;
+
 .TracklistForm {
-  &-track {
-    margin-left: 16px;
+  margin: .75rem 16px;
+
+  &-list {
+    display: flex;
+    flex-direction: column;
+
+    &-cue {
+      display: flex;
+      flex-direction: column;
+      
+      margin: 1rem 16px;
+
+      &-header {
+        padding-left: 8px;
+
+        display: flex;
+        align-items: center;
+      }
+
+      &-tracks {
+        margin-left: 16px;
+
+        &-track {
+          padding-left: 8px;
+
+          &-name {
+          }
+
+          &-artist {
+            font-style: italic;
+          }
+
+          &-players {
+          }
+
+          &-divider {
+            margin: 8px 0;
+          }
+        }
+      }
+    }
   }
 }

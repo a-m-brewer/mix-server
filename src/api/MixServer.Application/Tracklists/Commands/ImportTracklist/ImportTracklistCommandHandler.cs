@@ -22,6 +22,17 @@ public class ImportTracklistCommandHandler : ICommandHandler<ImportTracklistComm
             throw new InvalidRequestException(nameof(request.File), "Failed to deserialize the tracklist file.");
         }
         
+        SanitizeTracklist(tracklistDto);
+        
         return new ImportTracklistResponse(tracklistDto);
+    }
+
+    private static void SanitizeTracklist(ImportTracklistDto tracklistDto)
+    {
+        foreach (var track in tracklistDto.Cues.SelectMany(cue => cue.Tracks))
+        {
+            track.Name = track.Name.Trim().Replace('/', '-');
+            track.Artist = track.Artist.Trim().Replace('/', '-');
+        }
     }
 }
