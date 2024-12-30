@@ -1,0 +1,72 @@
+<form class="TracklistForm" *ngIf="session && session.tracklist" [formGroup]="session.tracklist">
+  <div class="TracklistForm-no-cues" *ngIf="session.tracklist.controls.cues.controls.length === 0">
+    <h3>No tracklist found. please import a tracklist</h3>
+  </div>
+  <div class="TracklistForm-list">
+    @for (cue of session.cues.controls; track cue.value.cue; let lastCue = $last; let i = $index) {
+      <div class="TracklistForm-list-cue">
+        <div class="TracklistForm-list-cue-header"
+             [ngClass]="{ 'cue-active': i === playingCueIndex }"
+        >
+          <span>
+            {{ cue.value.cue }}
+          </span>
+
+          <button mat-icon-button
+                  matTooltip="Play from cue"
+                  (click)="playCue(cue)"
+          >
+            <mat-icon>play_arrow</mat-icon>
+          </button>
+
+          <app-control-dirty-marker
+            [control]="cue"
+          ></app-control-dirty-marker>
+        </div>
+
+        <div class="TracklistForm-list-cue-tracks">
+          @for (track of cue.controls.tracks.controls; track track.controls.name; let lastTrack = $last) {
+            <div class="TracklistForm-list-cue-tracks-track">
+              <!-- Name -->
+              <div class="TracklistForm-list-cue-tracks-track-name" [ngClass]="{ 'cue-active': i === playingCueIndex }">
+                {{ track.value.name }}
+                <app-control-dirty-marker
+                  [control]="track.controls.name"
+                ></app-control-dirty-marker>
+              </div>
+
+              <!-- Artist -->
+              <div class="TracklistForm-list-cue-tracks-track-artist" [ngClass]="{ 'cue-active': i === playingCueIndex }">
+                {{ track.value.artist }}
+                <app-control-dirty-marker
+                  [control]="track.controls.artist"
+                ></app-control-dirty-marker>
+              </div>
+
+              <!-- Players -->
+              <div class="TracklistForm-list-cue-tracks-track-players">
+                @for (player of track.controls.players.controls; track player.value.type) {
+                  @for (playerLink of player.controls.urls.controls; track playerLink.value) {
+                    <a
+                      mat-button
+                      [href]="playerLink.value"
+                      target="_blank"
+                    >
+                      {{ player.value.type }}
+                      <app-control-dirty-marker
+                        [control]="playerLink"
+                      ></app-control-dirty-marker>
+                    </a>
+                  }
+                }
+              </div>
+            </div>
+
+            <mat-divider class="TracklistForm-list-cue-tracks-track-divider" *ngIf="!lastTrack"></mat-divider>
+          }
+        </div>
+      </div>
+      <mat-divider *ngIf="!lastCue"></mat-divider>
+    }
+  </div>
+</form>

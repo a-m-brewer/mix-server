@@ -6,7 +6,7 @@ import {
   filter, firstValueFrom,
   map,
   Observable,
-  sampleTime
+  sampleTime, Subject, takeUntil
 } from "rxjs";
 import {StreamUrlService} from "../converters/stream-url.service";
 import {AudioSessionService} from "./audio-session.service";
@@ -23,6 +23,7 @@ import {Device} from "../repositories/models/device";
 import {SessionService} from "../sessions/session.service";
 import {PlaybackGrantedEvent} from "../repositories/models/playback-granted-event";
 import {Mutex} from "async-mutex";
+import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +32,7 @@ export class AudioPlayerService {
   private _playMutex = new Mutex();
 
   private _timeChangedBehaviourSubject$ = new BehaviorSubject<number>(0);
+  private _durationBehaviourSubject$ = new Subject<void>();
 
   private _playbackGranted: boolean = false;
 
@@ -54,6 +56,10 @@ export class AudioPlayerService {
 
     this.audio.onended = () => {
       this.handleOnSessionEnded();
+    }
+
+    this.audio.ondurationchange = () => {
+      this._durationBehaviourSubject$.next();
     }
 
     this._playbackSessionRepository
@@ -204,6 +210,41 @@ export class AudioPlayerService {
       .pipe(map(status => status.isLoadingAction('RequestPlayback')));
   }
 
+  public get currentCueIndex$(): Observable<number> {
+    return this.sampleCurrentTime$(500, false)
+      .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
+      .pipe(map(([currentTime, session]) => {
+        if (session) {
+          for (let i = session.cues.controls.length - 1; i >= 0; i--) {
+            const cue = session.cues.controls[i].value.cue;
+            if (!cue) {
+              continue;
+            }
+
+            const cueStartTimeSeconds = timespanToTotalSeconds(cue);
+
+            if (cueStartTimeSeconds <= currentTime) {
+              return i;
+            }
+          }
+        }
+
+        return -1;
+      }));
+  }
+
+  public get currentCue$() {
+    return this.currentCueIndex$
+      .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
+      .pipe(map(([cueIndex, session]) => {
+        if (session) {
+          return session.cues.controls[cueIndex]?.value;
+        }
+
+        return null;
+      }));
+  }
+
   public sampleCurrentTime$(ms: number, onlyPlaying = true): Observable<number> {
     const behaviour = onlyPlaying
       ? this._timeChangedBehaviourSubject$.pipe(filter((_, __) => this.playing))
@@ -223,6 +264,11 @@ export class AudioPlayerService {
   public set currentTime(value: number) {
     this._timeChangedBehaviourSubject$.next(value);
     this.audio.currentTime = value;
+  }
+
+  public get duration$(): Observable<number> {
+    return this._durationBehaviourSubject$.asObservable()
+      .pipe(map(() => isNaN(this.audio.duration) ? 0 : this.audio.duration));
   }
 
   public get duration(): number {
@@ -251,6 +297,11 @@ export class AudioPlayerService {
 
   public async requestPlayback(deviceId?: string): Promise<void> {
     await this._playbackSessionRepository.requestPlayback(deviceId);
+  }
+
+  public retriggerCurrentTimeAndDuration(): void {
+    this._timeChangedBehaviourSubject$.next(this.currentTime);
+    this._durationBehaviourSubject$.next();
   }
 
   public requestPause(): void {

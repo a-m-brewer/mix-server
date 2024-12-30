@@ -14,6 +14,13 @@
       <app-audio-control-buttons class="middle-buttons" />
 
       <div class="content-right">
+        <div class="content-right-track-info"
+             matTooltip="{{ currentlyPlayingTrackInfo }}"
+             matTooltipPosition="above"
+             *ngIf="currentlyPlayingTrackInfo">
+          {{ currentlyPlayingTrackInfo }}
+        </div>
+
         <div id="audio-control-volume">
           <button mat-mini-fab color="primary"
                   class="audio-control-button mute-volume-button"

@@ -1,1 +1,1 @@
-<button mat-button (click)="onClick()" [disabled]="disabled">{{ fileName }}</button>
+<button mat-button (click)="onClick()" [disabled]="sessionCurrentDirectory?.disabled ?? true">{{ fileName }}</button>

@@ -2,6 +2,7 @@ import {Injectable} from '@angular/core';
 import {BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, Observable, Subject} from "rxjs";
 import {PlaybackSession} from "./models/playback-session";
 import {
+  ImportTracklistDto,
   ProblemDetails,
   RequestPlaybackCommand,
   SeekRequest,
@@ -19,6 +20,8 @@ import {PlaybackGranted} from "./models/playback-granted";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {AudioElementRepositoryService} from "../audio-player/audio-element-repository.service";
 import {PlaybackGrantedEvent} from "./models/playback-granted-event";
+import {TracklistConverterService} from "../converters/tracklist-converter.service";
+import {markAllAsDirty} from "../../utils/form-utils";
 
 @Injectable({
   providedIn: 'root'
@@ -27,6 +30,7 @@ export class CurrentPlaybackSessionRepositoryService {
 
   private _pauseRequested$ = new Subject<boolean>();
   private _playbackGranted$ = new Subject<PlaybackGrantedEvent>();
+  private _tracklistChanged$ = new Subject<void>();
   private _currentSession$ = new BehaviorSubject<PlaybackSession | null>(null);
 
   constructor(audioElementRepository: AudioElementRepositoryService,
@@ -35,6 +39,7 @@ export class CurrentPlaybackSessionRepositoryService {
               private _sessionClient: SessionClient,
               private _sessionSignalRClient: SessionSignalrClientService,
               private _toastService: ToastService,
+              private _tracklistConverter: TracklistConverterService,
               private _authenticationService: AuthenticationService) {
     this._authenticationService.serverConnectionStatus$
       .subscribe(serverConnectionStatus => {
@@ -84,6 +89,11 @@ export class CurrentPlaybackSessionRepositoryService {
       .pipe(distinctUntilChanged((p, n) => p?.id === n?.id))
   }
 
+  public get currentSessionTracklistUpdated$(): Observable<PlaybackSession | null> {
+    return this._currentSession$
+      .pipe(distinctUntilChanged((p, n) => p?.tracklist === n?.tracklist))
+  }
+
   public get currentPlaybackDevice$(): Observable<string | null | undefined> {
     return this._currentSession$
       // .pipe(distinctUntilChanged((p, n) => p?.state.deviceId === n?.state.deviceId))
@@ -112,6 +122,10 @@ export class CurrentPlaybackSessionRepositoryService {
 
   public get playbackGranted$(): Observable<PlaybackGrantedEvent> {
     return this._playbackGranted$.asObservable();
+  }
+
+  public get tracklistChanged$(): Observable<void> {
+    return this._tracklistChanged$.asObservable();
   }
 
   public async requestPlaybackOnCurrentPlaybackDevice(): Promise<void> {
@@ -179,6 +193,25 @@ export class CurrentPlaybackSessionRepositoryService {
     })).subscribe({
       error: err => this._toastService.logServerError(err, 'Failed to seek')
     })
+  }
+
+  public updateCurrentSessionTracklist(tracklist: ImportTracklistDto, dirty: boolean): void {
+    const previousSession = this.currentSession;
+    if (!previousSession) {
+      return;
+    }
+
+    const form = this._tracklistConverter.createTracklistForm(tracklist);
+    if (dirty) {
+      markAllAsDirty(form);
+    }
+
+    const nextSession = PlaybackSession.copy(previousSession, previousSession.state);
+
+    nextSession.tracklist = form;
+
+    this.currentSession = nextSession;
+    this._tracklistChanged$.next();
   }
 
   private initializeSignalR(): void {

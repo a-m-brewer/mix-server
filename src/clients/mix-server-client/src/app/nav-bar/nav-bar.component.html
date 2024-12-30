@@ -84,4 +84,9 @@
                    class="queue-row">
     <app-queue-edit-form/>
   </mat-toolbar-row>
+
+  <mat-toolbar-row *ngIf="currentPage === MenuLabel.Tracklist"
+                   class="queue-row">
+    <app-tracklist-toolbar />
+  </mat-toolbar-row>
 </mat-toolbar>

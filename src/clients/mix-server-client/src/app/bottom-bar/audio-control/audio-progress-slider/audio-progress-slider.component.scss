@@ -1,12 +1,9 @@
-.audio-progress-slider-item {
-  align-self: center;
-}
-
-.audio-progress-slider-slider {
-  flex: 1;
-}
-
 .audio-progress-slider-control {
   display: flex;
   flex-direction: row;
+  align-items: center;
+
+  &-slider {
+    flex: 1;
+  }
 }

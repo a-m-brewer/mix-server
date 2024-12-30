@@ -1,0 +1,84 @@
+@use 'sass:map';
+@use '@angular/material' as mat;
+
+@mixin color($theme) {
+  // Get the color config from the theme.
+  $color-config: mat.m2-get-color-config($theme);
+
+  // Get the accent color palette from the color-config.
+  $primary-palette: map.get($color-config, 'primary');
+  $accent-palette: map.get($color-config, 'accent');
+
+  .cue-active {
+    color: mat.m2-get-color-from-palette($primary-palette) !important;
+  }
+
+  .TracklistForm {
+    &-list {
+      &-cue {
+        border-left: 4px solid mat.m2-get-color-from-palette($primary-palette);
+
+        &-header {
+        }
+
+        &-tracks {
+          &-track {
+            border-left: 3px solid mat.m2-get-color-from-palette($accent-palette);
+
+            &-name {
+            }
+
+            &-artist {
+            }
+
+            &-players {
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@mixin typography($theme) {
+  $typography-config: mat.m2-get-typography-config($theme);
+
+  .TracklistForm {
+    &-list {
+      &-cue {
+        &-header {
+          @include mat.m2-typography-level($typography-config, headline-5);
+        }
+
+        &-tracks {
+          &-track {
+            &-name {
+              @include mat.m2-typography-level($typography-config, subtitle-1);
+            }
+
+            // headline-1, headline-2, headline-3, headline-4, headline-5, headline-6, subtitle-1, subtitle-2, body-1, body-2, caption, button, overline, font-family.
+            &-artist {
+              @include mat.m2-typography-level($typography-config, caption);
+            }
+
+            &-players {
+
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@mixin theme($theme) {
+  $color-config: mat.m2-get-color-config($theme);
+  @if $color-config != null {
+    @include color($theme);
+  }
+
+  $typography-config: mat.m2-get-typography-config($theme);
+  @if $typography-config != null {
+    @include typography($theme);
+  }
+}

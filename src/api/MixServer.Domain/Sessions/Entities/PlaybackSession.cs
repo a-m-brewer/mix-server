@@ -2,6 +2,7 @@
 using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Sessions.Models;
+using MixServer.Domain.Tracklists.Dtos.Import;
 
 namespace MixServer.Domain.Sessions.Entities;
 
@@ -11,6 +12,7 @@ public interface IPlaybackSession : IPlaybackState
     string AbsolutePath { get; set; }
     DateTime LastPlayed { get; set; }
     IFileExplorerFileNode? File { get; set; }
+    ImportTracklistDto Tracklist { get; set; }
 
     string GetParentFolderPathOrThrow();
     string? GetParentFolderPathOrDefault();
@@ -42,6 +44,9 @@ public class PlaybackSession : IPlaybackSession
 
     [NotMapped]
     public IFileExplorerFileNode? File { get; set; }
+    
+    [NotMapped]
+    public ImportTracklistDto Tracklist { get; set; } = new();
     
     public string GetParentFolderPathOrThrow()
     {

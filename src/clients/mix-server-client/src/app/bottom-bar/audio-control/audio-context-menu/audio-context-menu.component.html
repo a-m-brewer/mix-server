@@ -41,5 +41,14 @@
     <mat-icon>folder</mat-icon>
     <span>Go to Location</span>
   </button>
+
+  <button mat-menu-item
+          matTooltip="Go to tracklist"
+          *ngIf="session"
+          [disabled]="disconnected"
+          (click)="goToTracklist()">
+    <mat-icon>list</mat-icon>
+    <span>Go to Tracklist</span>
+  </button>
 </mat-menu>
 

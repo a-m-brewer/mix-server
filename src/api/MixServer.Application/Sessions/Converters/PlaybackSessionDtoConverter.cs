@@ -29,6 +29,7 @@ public class PlaybackSessionDtoConverter(
         {
             Id = value.Id,
             File = fileNodeConverter.Convert(value.File ?? throw new InvalidOperationException()),
+            Tracklist = value.Tracklist,
             LastPlayed = value.LastPlayed,
             AutoPlay = value2,
             Playing = value.Playing,

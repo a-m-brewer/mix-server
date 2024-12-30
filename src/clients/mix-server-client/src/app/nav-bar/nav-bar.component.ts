@@ -20,6 +20,7 @@ import {FolderSortFormComponent} from "../main-content/file-explorer/folder-sort
 import {QueueEditFormComponent} from "../queue-page/queue-edit-form/queue-edit-form.component";
 import { WindowSizeRepositoryService } from "../services/repositories/window-size-repository.service";
 import {WindowType} from "../services/repositories/enums/window-type";
+import {TracklistToolbarComponent} from "../tracklist-page/tracklist-toolbar/tracklist-toolbar.component";
 
 @Component({
   selector: 'app-nav-bar',
@@ -37,7 +38,8 @@ import {WindowType} from "../services/repositories/enums/window-type";
     AsyncPipe,
     FolderSortFormComponent,
     QueueEditFormComponent,
-    NgClass
+    NgClass,
+    TracklistToolbarComponent
   ],
   templateUrl: './nav-bar.component.html',
   styleUrl: './nav-bar.component.scss'
@@ -223,6 +225,9 @@ export class NavBarComponent implements OnInit, OnDestroy {
         break;
       case PageRoutes.Admin:
         this.currentPage = MenuLabel.Admin;
+        break;
+      case PageRoutes.Tracklist:
+        this.currentPage = MenuLabel.Tracklist;
         break;
       default:
         this.currentPage = undefined;

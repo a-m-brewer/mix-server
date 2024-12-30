@@ -19,6 +19,11 @@
       <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.1" />
       <PackageReference Include="PasswordGenerator" Version="2.1.0" />
       <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" />
+      <PackageReference Include="TagLibSharp" Version="2.3.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Tracklist\Services\" />
     </ItemGroup>
 
 </Project>

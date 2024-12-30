@@ -1,19 +1,12 @@
 <div class="audio-progress-slider-control">
   <app-duration-display
-    class="audio-progress-slider-item"
     [duration]="currentTime">
   </app-duration-display>
-  <mat-slider step="1"
-              min="0"
-              class="audio-progress-slider-item audio-progress-slider-slider"
-              [max]="audioPlayer.duration"
-              [disabled]="audioPlayer.playbackDisabled$ | async">
-    <input matSliderThumb
-           [(ngModel)]="currentTime"
-           (dragEnd)="sliderDragEnded($event)">
-  </mat-slider>
+  <app-audio-slider
+    [showTooltips]="!onMobile"
+    class="audio-progress-slider-control-slider"
+  />
   <app-duration-display
-    class="audio-progress-slider-item"
-    [duration]="audioPlayer.duration">
+    [duration]="duration">
   </app-duration-display>
 </div>

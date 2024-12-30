@@ -4,13 +4,15 @@ import {PlaybackSession} from "../repositories/models/playback-session";
 import {FileExplorerNodeConverterService} from "./file-explorer-node-converter.service";
 import {PlaybackState} from "../repositories/models/playback-state";
 import {PlaybackGranted} from "../repositories/models/playback-granted";
+import {TracklistConverterService} from "./tracklist-converter.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlaybackSessionConverterService {
 
-  constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService) { }
+  constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
+              private _tracklistConverter: TracklistConverterService) { }
 
   public fromDto(dto: PlaybackSessionDto): PlaybackSession {
     return new PlaybackSession(
@@ -18,7 +20,8 @@ export class PlaybackSessionConverterService {
       this._fileExplorerNodeConverter.fromFileExplorerFileNode(dto.file),
       dto.lastPlayed,
       this.stateFromSessionDto(dto),
-      dto.autoPlay);
+      dto.autoPlay,
+      this._tracklistConverter.createTracklistForm(dto.tracklist));
   }
 
   public stateFromSessionDto(dto: PlaybackSessionDto): PlaybackState {

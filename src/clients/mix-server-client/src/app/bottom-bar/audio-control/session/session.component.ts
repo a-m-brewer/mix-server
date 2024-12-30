@@ -4,6 +4,8 @@ import {CurrentPlaybackSessionRepositoryService} from "../../../services/reposit
 import {FileExplorerNodeRepositoryService} from "../../../services/repositories/file-explorer-node-repository.service";
 import {FileExplorerFolderNode} from "../../../main-content/file-explorer/models/file-explorer-folder-node";
 import {MatButtonModule} from "@angular/material/button";
+import {Router} from "@angular/router";
+import {PageRoutes} from "../../../page-routes.enum";
 
 @Component({
   selector: 'app-session',
@@ -17,10 +19,10 @@ import {MatButtonModule} from "@angular/material/button";
 export class SessionComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
   public fileName: string | undefined;
-  private _sessionCurrentDirectory: FileExplorerFolderNode | undefined;
+  public sessionCurrentDirectory: FileExplorerFolderNode | undefined;
 
   constructor(private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
-              private _nodeRepository: FileExplorerNodeRepositoryService){
+              private _router: Router){
   }
 
   public ngOnInit(): void {
@@ -28,12 +30,8 @@ export class SessionComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(s => {
         this.fileName = s?.currentNode.name ?? '';
-        this._sessionCurrentDirectory = s?.currentNode.parent;
+        this.sessionCurrentDirectory = s?.currentNode.parent;
       });
-  }
-
-  public get disabled(): boolean {
-    return this._sessionCurrentDirectory?.disabled ?? true;
   }
 
   public ngOnDestroy(): void {
@@ -41,7 +39,9 @@ export class SessionComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
-  public onClick(): void {
-    this._nodeRepository.changeDirectory(this._sessionCurrentDirectory);
+  public async onClick(): Promise<void> {
+    if (!this.sessionCurrentDirectory) return;
+
+    await this._router.navigate([PageRoutes.Tracklist]);
   }
 }
