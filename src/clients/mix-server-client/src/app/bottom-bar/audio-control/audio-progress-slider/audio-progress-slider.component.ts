@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {DurationDisplayComponent} from "../duration-display/duration-display.component";
 import {MatSliderModule} from "@angular/material/slider";
 import {AudioPlayerService} from "../../../services/audio-player/audio-player.service";
@@ -28,6 +28,9 @@ export class AudioProgressSliderComponent implements OnInit, OnDestroy {
 
   public currentTime: number = 0;
   public duration: number = 0;
+
+  @Input()
+  public onMobile: boolean = false;
 
   public ngOnInit(): void {
     this.audioPlayer.sampleCurrentTime$(500, false)

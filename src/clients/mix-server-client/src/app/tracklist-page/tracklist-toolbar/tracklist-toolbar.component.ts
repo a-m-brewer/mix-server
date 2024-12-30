@@ -31,7 +31,7 @@ export class TracklistToolbarComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this._sessionRepository.currentSession$
+    this._sessionRepository.currentSessionTracklistUpdated$
       .pipe(takeUntil(this._unsubscribe))
       .subscribe((session) => {
         this.form = session?.tracklist;

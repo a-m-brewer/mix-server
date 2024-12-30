@@ -2,7 +2,7 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ExpansionPanelComponent} from "../../components/controls/expansion-panel/expansion-panel.component";
 import {AppModule} from "../../app.module";
 import {SessionComponent} from "../audio-control/session/session.component";
-import {Subject, takeUntil} from "rxjs";
+import {distinctUntilChanged, Subject, takeUntil} from "rxjs";
 import {
   CurrentPlaybackSessionRepositoryService
 } from "../../services/repositories/current-playback-session-repository.service";
@@ -47,6 +47,7 @@ export class AudioControlMobileComponent implements OnInit, OnDestroy {
   public currentPlaybackDevice?: Device | null;
   public currentDevice?: Device | null;
   public playLoading: boolean = false;
+  public currentlyPlayingTrackInfo?: string;
 
   constructor(public audioPlayer: AudioPlayerService,
               private _deviceRepository: DeviceRepositoryService,
@@ -65,6 +66,15 @@ export class AudioControlMobileComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(currentPlaybackDevice => {
         this.currentPlaybackDevice = currentPlaybackDevice;
+      });
+
+    this.audioPlayer.currentCue$
+      .pipe(
+        takeUntil(this._unsubscribe$),
+        distinctUntilChanged((prev, curr) => prev?.cue === curr?.cue)
+      )
+      .subscribe(cue => {
+        this.currentlyPlayingTrackInfo = (cue?.tracks ?? []).map(track => `${track.name} - ${track.artist}`).join(', ');
       });
 
     this._deviceRepository.currentDevice$

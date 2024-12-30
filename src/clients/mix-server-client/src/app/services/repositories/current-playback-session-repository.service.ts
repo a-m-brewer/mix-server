@@ -30,6 +30,7 @@ export class CurrentPlaybackSessionRepositoryService {
 
   private _pauseRequested$ = new Subject<boolean>();
   private _playbackGranted$ = new Subject<PlaybackGrantedEvent>();
+  private _tracklistChanged$ = new Subject<void>();
   private _currentSession$ = new BehaviorSubject<PlaybackSession | null>(null);
 
   constructor(audioElementRepository: AudioElementRepositoryService,
@@ -88,6 +89,11 @@ export class CurrentPlaybackSessionRepositoryService {
       .pipe(distinctUntilChanged((p, n) => p?.id === n?.id))
   }
 
+  public get currentSessionTracklistUpdated$(): Observable<PlaybackSession | null> {
+    return this._currentSession$
+      .pipe(distinctUntilChanged((p, n) => p?.tracklist === n?.tracklist))
+  }
+
   public get currentPlaybackDevice$(): Observable<string | null | undefined> {
     return this._currentSession$
       // .pipe(distinctUntilChanged((p, n) => p?.state.deviceId === n?.state.deviceId))
@@ -116,6 +122,10 @@ export class CurrentPlaybackSessionRepositoryService {
 
   public get playbackGranted$(): Observable<PlaybackGrantedEvent> {
     return this._playbackGranted$.asObservable();
+  }
+
+  public get tracklistChanged$(): Observable<void> {
+    return this._tracklistChanged$.asObservable();
   }
 
   public async requestPlaybackOnCurrentPlaybackDevice(): Promise<void> {
@@ -201,6 +211,7 @@ export class CurrentPlaybackSessionRepositoryService {
     nextSession.tracklist = form;
 
     this.currentSession = nextSession;
+    this._tracklistChanged$.next();
   }
 
   private initializeSignalR(): void {

@@ -81,4 +81,9 @@ export class AudioContextMenuComponent implements OnInit, OnDestroy{
   public goToLocation(): void {
     this._nodeRepository.changeDirectory(this.session?.currentNode.parent);
   }
+
+  goToTracklist() {
+    this._router.navigate([PageRoutes.Tracklist])
+      .then();
+  }
 }

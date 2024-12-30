@@ -25,19 +25,19 @@ public class TagLibSharpTagBuilder : ITagBuilder
     }
 
     public ITagBuilder AddChapter(
-        TimeSpan startTime,
+        string id,
         string title,
         string[] subtitles,
         string[] artists,
         ICollection<CustomTag> customTags)
     {
-        var existingChapter = _id3Tag.GetFrames<ChapterFrame>().FirstOrDefault(f => f.Id == startTime.ToString());
+        var existingChapter = _id3Tag.GetFrames<ChapterFrame>().FirstOrDefault(f => f.Id == id);
         if (existingChapter is not null)
         {
             _id3Tag.RemoveFrame(existingChapter);
         }
         
-        var chapter = new ChapterFrame(startTime.ToString(), title);
+        var chapter = new ChapterFrame(id, title);
         
         if (subtitles.Length > 0)
         {
@@ -75,9 +75,9 @@ public class TagLibSharpTagBuilder : ITagBuilder
         return this;
     }
 
-    public void ClearChapters()
+    public void ClearChapters(Func<Chapter, bool> selector)
     {
-        foreach (var frame in _id3Tag.GetFrames<ChapterFrame>().ToList())
+        foreach (var frame in _id3Tag.GetFrames<ChapterFrame>().Where(f => selector(ToChapter(f))).ToList())
         {
             _id3Tag.RemoveFrame(frame);
         }
@@ -93,47 +93,43 @@ public class TagLibSharpTagBuilder : ITagBuilder
 
     private ICollection<Chapter> GetChapters()
     {
-        var chapters = new List<Chapter>();
+        return _id3Tag.GetFrames<ChapterFrame>().Select(ToChapter).ToList();
+    }
 
-        foreach (var frame in _id3Tag.GetFrames<ChapterFrame>())
-        {
-            var titleFrame = frame.SubFrames
-                .OfType<TextInformationFrame>()
-                .SingleOrDefault(f => f.FrameId == "TIT2");
-            var title = titleFrame is not null && titleFrame.Text.Length > 0
-                ? titleFrame.Text[0] ?? string.Empty
-                : string.Empty;
+    private Chapter ToChapter(ChapterFrame frame)
+    {
+        var titleFrame = frame.SubFrames
+            .OfType<TextInformationFrame>()
+            .SingleOrDefault(f => f.FrameId == "TIT2");
+        var title = titleFrame is not null && titleFrame.Text.Length > 0
+            ? titleFrame.Text[0] ?? string.Empty
+            : string.Empty;
             
-            var subtitleFrame = frame.SubFrames
-                .OfType<TextInformationFrame>()
-                .SingleOrDefault(f => f.FrameId == "TIT3");
-            var subtitles = subtitleFrame is not null && subtitleFrame.Text.Length > 0
-                ? subtitleFrame.Text[0]?.Split('/') ?? []
-                : [];
+        var subtitleFrame = frame.SubFrames
+            .OfType<TextInformationFrame>()
+            .SingleOrDefault(f => f.FrameId == "TIT3");
+        var subtitles = subtitleFrame is not null && subtitleFrame.Text.Length > 0
+            ? subtitleFrame.Text[0]?.Split('/') ?? []
+            : [];
             
-            var artistFrame = frame.SubFrames
-                .OfType<TextInformationFrame>()
-                .SingleOrDefault(f => f.FrameId == "TPE1");
-            var artists = artistFrame is not null && artistFrame.Text.Length > 0
-                ? artistFrame.Text ?? []
-                : [];
+        var artistFrame = frame.SubFrames
+            .OfType<TextInformationFrame>()
+            .SingleOrDefault(f => f.FrameId == "TPE1");
+        var artists = artistFrame is not null && artistFrame.Text.Length > 0
+            ? artistFrame.Text ?? []
+            : [];
             
-            var customTags = frame.SubFrames
-                .OfType<UserTextInformationFrame>()
-                .Select(f => new CustomTag(f.Description, f.Text))
-                .ToList();
+        var customTags = frame.SubFrames
+            .OfType<UserTextInformationFrame>()
+            .Select(f => new CustomTag(f.Description, f.Text))
+            .ToList();
             
-            var chapter = new Chapter(
-                frame.Id,
-                title,
-                subtitles,
-                artists,
-                customTags
-            );
-
-            chapters.Add(chapter);
-        }
-
-        return chapters;
+        return new Chapter(
+            frame.Id,
+            title,
+            subtitles,
+            artists,
+            customTags
+        );
     }
 }

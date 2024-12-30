@@ -2,7 +2,7 @@ import {
   AfterViewChecked,
   AfterViewInit,
   ChangeDetectorRef,
-  Component, ElementRef,
+  Component, ElementRef, Input,
   OnDestroy,
   OnInit,
   QueryList, ViewChild,
@@ -70,13 +70,16 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
               private _sessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
+  @Input()
+  public showTooltips: boolean = true;
+
   @ViewChildren(MatTooltip) tooltipsQuery!: QueryList<MatTooltip>;
 
   public ngOnInit(): void {
     // This is very important to avoid NG0100: Expression has changed after it was checked
     // The audio.currentTime can not be binded directly to the slider value as it changes outside of Angulars change detection
     this.audioPlayer.currentTime$
-      .pipe(combineLatestWith(this.audioPlayer.duration$, this._sessionRepository.currentSession$))
+      .pipe(combineLatestWith(this.audioPlayer.duration$, this._sessionRepository.currentSessionTracklistUpdated$))
       .pipe(takeUntil(this._unsubscribe$))
       .pipe(filter(([, duration]) => duration > 0))
       .subscribe(([currentTime, duration, session]) => {
@@ -158,13 +161,15 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         }
 
-        this._tooltips.forEach((tooltip, index) => {
-          if (index === this.hoverMarkerIndex) {
-            tooltip.show();
-          } else {
-            tooltip.hide();
-          }
-        });
+        if (this.showTooltips) {
+          this._tooltips.forEach((tooltip, index) => {
+            if (index === this.hoverMarkerIndex) {
+              tooltip.show();
+            } else {
+              tooltip.hide();
+            }
+          });
+        }
       });
   }
 

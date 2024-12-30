@@ -52,33 +52,17 @@ export class TracklistFormComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this._sessionRepository.currentSession$
+    this._sessionRepository.currentSessionTracklistUpdated$
+      .pipe()
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(session => {
         this.session = session;
       });
 
-    this._audioPlayerService.sampleCurrentTime$(500, false)
-      .pipe(combineLatestWith(this._sessionRepository.currentSession$))
+    this._audioPlayerService.currentCueIndex$
       .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(([currentTime, session]) => {
-        if (session) {
-          for (let i = session.cues.controls.length - 1; i >= 0; i--) {
-            const cue = session.cues.controls[i].value.cue;
-            if (!cue) {
-              continue;
-            }
-
-            const cueStartTimeSeconds = timespanToTotalSeconds(cue);
-
-            if (cueStartTimeSeconds <= currentTime) {
-              this.playingCueIndex = i;
-              return;
-            }
-          }
-        }
-
-        this.playingCueIndex = -1;
+      .subscribe(cueIndex => {
+        this.playingCueIndex = cueIndex;
       });
   }
 

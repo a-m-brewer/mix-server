@@ -10,11 +10,11 @@ public interface IReadOnlyTagBuilder
 public interface ITagBuilder : IReadOnlyTagBuilder
 {
     ITagBuilder AddChapter(
-        TimeSpan startTime,
+        string id,
         string title,
         string[] subtitles,
         string[] artists,
         ICollection<CustomTag> customTags);
-    void ClearChapters();
+    void ClearChapters(Func<Chapter, bool> selector);
     void Save();
 }
