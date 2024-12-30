@@ -8,6 +8,7 @@ public enum TracklistPlayerType
     Deezer = 3,
     Traxsource = 4,
     Bandcamp = 6,
+    Volumo = 7,
     Soundcloud = 10,
     Mixcloud = 16,
     Youtube = 13,

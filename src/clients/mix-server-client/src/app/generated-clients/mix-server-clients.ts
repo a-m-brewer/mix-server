@@ -3388,6 +3388,7 @@ export enum TracklistPlayerType {
     Deezer = "Deezer",
     Traxsource = "Traxsource",
     Bandcamp = "Bandcamp",
+    Volumo = "Volumo",
     Soundcloud = "Soundcloud",
     Youtube = "Youtube",
     Mixcloud = "Mixcloud",
