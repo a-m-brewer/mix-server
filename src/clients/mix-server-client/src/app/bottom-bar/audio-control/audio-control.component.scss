@@ -15,6 +15,21 @@
   display: grid;
 }
 
+.content-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  &-track-info {
+    flex: 1;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    padding-right: 8px;
+  }
+}
+
 @media (max-width: 600px) {
   .parent {
     height: auto;

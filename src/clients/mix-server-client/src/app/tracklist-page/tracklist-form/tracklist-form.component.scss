@@ -3,6 +3,11 @@
 .TracklistForm {
   margin: .75rem 16px;
 
+  &-no-cues {
+    display: flex;
+    justify-content: center;
+  }
+
   &-list {
     display: flex;
     flex-direction: column;
@@ -10,7 +15,7 @@
     &-cue {
       display: flex;
       flex-direction: column;
-      
+
       margin: 1rem 16px;
 
       &-header {

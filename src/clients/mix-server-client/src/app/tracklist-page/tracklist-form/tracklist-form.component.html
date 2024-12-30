@@ -1,4 +1,7 @@
 <form class="TracklistForm" *ngIf="session && session.tracklist" [formGroup]="session.tracklist">
+  <div class="TracklistForm-no-cues" *ngIf="session.tracklist.controls.cues.controls.length === 0">
+    <h3>No tracklist found. please import a tracklist</h3>
+  </div>
   <div class="TracklistForm-list">
     @for (cue of session.cues.controls; track cue.value.cue; let lastCue = $last; let i = $index) {
       <div class="TracklistForm-list-cue">

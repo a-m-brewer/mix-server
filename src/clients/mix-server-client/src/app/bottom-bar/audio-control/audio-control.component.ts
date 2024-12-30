@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AudioPlayerService} from "../../services/audio-player/audio-player.service";
-import {Observable, Subject, takeUntil} from "rxjs";
+import {distinctUntilChanged, Observable, Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../services/repositories/current-playback-session-repository.service";
 import {IPlaybackSession} from "../../services/repositories/models/playback-session";
 import {QueueRepositoryService} from "../../services/repositories/queue-repository.service";
@@ -28,6 +28,7 @@ export class AudioControlComponent implements OnInit, OnDestroy {
 
   public isCurrentPlaybackDevice: boolean = false;
   public disconnected: boolean = true;
+  public currentlyPlayingTrackInfo?: string;
 
   constructor(private _authService: AuthenticationService,
               public audioPlayer: AudioPlayerService,
@@ -81,6 +82,15 @@ export class AudioControlComponent implements OnInit, OnDestroy {
       .previousQueueItem$()
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(item => this.previousFile = item?.file);
+
+    this.audioPlayer.currentCue$
+      .pipe(
+        takeUntil(this._unsubscribe$),
+        distinctUntilChanged((prev, curr) => prev?.cue === curr?.cue)
+      )
+      .subscribe(cue => {
+        this.currentlyPlayingTrackInfo = (cue?.tracks ?? []).map(track => `${track.name} - ${track.artist}`).join(', ');
+      });
 
     this._volumeBeforeMute = this.audioPlayer.volume;
   }

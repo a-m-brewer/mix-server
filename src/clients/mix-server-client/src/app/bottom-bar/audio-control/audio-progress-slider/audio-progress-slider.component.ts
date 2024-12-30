@@ -43,7 +43,6 @@ export class AudioProgressSliderComponent implements OnInit, OnDestroy {
       .pipe(combineLatestWith(this._windowSizeRepository.windowType$))
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(([duration, windowSize]) => {
-        console.log('duration', duration, windowSize);
         this.duration = duration;
       });
   }
