@@ -58,10 +58,11 @@ public class FileExplorerConverter(
         return new FileExplorerFileNode(
             fileInfo.Name,
             fileInfo.FullName,
+            fileInfo.Extension,
             FileExplorerNodeType.File,
             fileInfo.Exists,
             fileInfo.CreationTimeUtc,
-            mimeTypeService.GetMimeType(fileInfo.FullName),
+            mimeTypeService.GetMimeType(fileInfo.FullName, fileInfo.Extension),
             parent);
     }
 }

@@ -6,6 +6,7 @@ namespace MixServer.Domain.FileExplorer.Models;
 public partial class FileExplorerFileNode(
     string name,
     string absolutePath,
+    string extension,
     FileExplorerNodeType type,
     bool exists,
     DateTime creationTimeUtc,
@@ -15,6 +16,7 @@ public partial class FileExplorerFileNode(
 {
     public string Name { get; } = name;
     public string AbsolutePath { get; } = absolutePath;
+    public string Extension { get; } = extension;
     public FileExplorerNodeType Type { get; } = type;
     public bool Exists { get; } = exists;
     public DateTime CreationTimeUtc { get; } = creationTimeUtc;

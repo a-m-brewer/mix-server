@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Tracklists.Services;
@@ -11,6 +12,7 @@ public interface ISessionHydrationService
 
 public class SessionHydrationService(
     IFileService fileService,
+    ILogger<SessionHydrationService> logger,
     IPlaybackTrackingService playbackTrackingService,
     ITracklistTagService tracklistTagService) : ISessionHydrationService
 {
@@ -21,6 +23,14 @@ public class SessionHydrationService(
         playbackTrackingService.Populate(session);
 
         session.File = currentNode;
-        session.Tracklist = tracklistTagService.GetTracklistForFile(session.AbsolutePath);
+
+        try
+        {
+            session.Tracklist = tracklistTagService.GetTracklistForFile(session.AbsolutePath);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to load tracklist for session: {Session}", session.AbsolutePath);
+        }
     }
 }

@@ -17,6 +17,8 @@ public interface IFileExplorerNode
 
 public interface IFileExplorerFileNode : IFileExplorerNode
 {
+    string Extension { get; }
+    
     string MimeType { get; }
 
     bool PlaybackSupported { get; }

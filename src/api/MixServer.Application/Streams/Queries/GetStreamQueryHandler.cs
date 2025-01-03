@@ -24,12 +24,12 @@ public class GetStreamQueryHandler(
         
         var session = await sessionService.GetPlaybackSessionByIdAsync(query.PlaybackSessionId, username);
 
-        if (!File.Exists(session.AbsolutePath))
+        if (session.File is null || !session.File.Exists)
         {
             throw new NotFoundException(nameof(PlaybackSession), session.AbsolutePath);
         }
 
-        var mimeType = mimeTypeService.GetMimeType(session.AbsolutePath);
+        var mimeType = mimeTypeService.GetMimeType(session.File.AbsolutePath, session.File.Extension);
 
         var result = new GetStreamQueryResponse
         {
