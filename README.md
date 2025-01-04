@@ -9,7 +9,15 @@ Before developing this project I struggled to find an audio player that satisfie
 2. Had an option to view my files through a file explorer rather than through ID3 tags.
 3. Was available on all my devices
 
+## Screenshots
+
+### Desktop
+
 ![Mix Server UI](./screenshots/mix-server-ui.png)
+
+### Mobile
+
+<img src="./screenshots/mix-server-ui-mobile.png" alt="drawing" width="200"/>
 
 ## Features
 
@@ -19,6 +27,8 @@ Before developing this project I struggled to find an audio player that satisfie
 - __User Management__: Create multiple users who can each keep track of there own progress
 - __History__: View a history of all the files you have listened to
 - __Queue__: Queue audio from any folder to be played next
+- __Themes__: Choose between a light and dark theme
+- __Tracklists__: Add tracklists to your mixes
 
 ## Installation
 
@@ -65,6 +75,78 @@ volumes:
 For further configuration see 
 - [appsettings.json](src/api/MixServer/appsettings.json)
 - [appsettings.Development.json](src/api/MixServer/appsettings.Development.json)
+
+## Help
+
+### Importing tracklists
+
+Tracklists are imported using JSON and must match the following schema
+
+```json
+{
+   "$schema": "http://json-schema.org/draft-07/schema#",
+   "title": "Generated schema for Root",
+   "type": "object",
+   "properties": {
+      "cues": {
+         "type": "array",
+         "items": {
+            "type": "object",
+            "properties": {
+               "cue": {
+                  "type": "string"
+               },
+               "tracks": {
+                  "type": "array",
+                  "items": {
+                     "type": "object",
+                     "properties": {
+                        "name": {
+                           "type": "string"
+                        },
+                        "artist": {
+                           "type": "string"
+                        },
+                        "players": {
+                           "type": "array",
+                           "items": {
+                              "type": "object",
+                              "properties": {
+                                 "type": {
+                                    "type": "string"
+                                 },
+                                 "urls": {
+                                    "type": "array",
+                                    "items": {
+                                       "type": "string"
+                                    }
+                                 }
+                              },
+                              "required": [
+                                 "type",
+                                 "urls"
+                              ]
+                           }
+                        }
+                     },
+                     "required": [
+                        "players"
+                     ]
+                  }
+               }
+            },
+            "required": [
+               "cue",
+               "tracks"
+            ]
+         }
+      }
+   },
+   "required": [
+      "cues"
+   ]
+}
+```
 
 ## Developing
 
