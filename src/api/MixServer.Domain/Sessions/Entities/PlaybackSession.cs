@@ -12,8 +12,6 @@ public interface IPlaybackSession : IPlaybackState
     string AbsolutePath { get; set; }
     DateTime LastPlayed { get; set; }
     IFileExplorerFileNode? File { get; set; }
-    ImportTracklistDto Tracklist { get; set; }
-
     string GetParentFolderPathOrThrow();
     string? GetParentFolderPathOrDefault();
     void PopulateState(IPlaybackState playingItem);
@@ -44,9 +42,6 @@ public class PlaybackSession : IPlaybackSession
 
     [NotMapped]
     public IFileExplorerFileNode? File { get; set; }
-    
-    [NotMapped]
-    public ImportTracklistDto Tracklist { get; set; } = new();
     
     public string GetParentFolderPathOrThrow()
     {

@@ -1,6 +1,7 @@
 import {FileExplorerNode} from "./file-explorer-node";
 import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
 import {FileExplorerFolderNode} from "./file-explorer-folder-node";
+import {FileMetadata} from "./file-metadata";
 
 export class FileExplorerFileNode implements FileExplorerNode {
   constructor(public name: string,
@@ -8,7 +9,7 @@ export class FileExplorerFileNode implements FileExplorerNode {
               public type: FileExplorerNodeType,
               public exists: boolean,
               public creationTimeUtc: Date,
-              public mimeType: string,
+              public metadata: FileMetadata,
               public playbackSupported: boolean,
               public parent: FileExplorerFolderNode) {
     this.disabled = absolutePath.trim() === '' || !exists || !playbackSupported;
@@ -42,7 +43,7 @@ export class FileExplorerFileNode implements FileExplorerNode {
       this.type,
       this.exists,
       this.creationTimeUtc,
-      this.mimeType,
+      this.metadata.copy(),
       this.playbackSupported,
       this.parent.copy()
     );

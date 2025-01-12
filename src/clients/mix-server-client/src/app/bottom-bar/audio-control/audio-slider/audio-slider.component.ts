@@ -19,6 +19,7 @@ import {
 } from "../../../services/repositories/current-playback-session-repository.service";
 import {timespanToTotalSeconds} from "../../../utils/timespan-helpers";
 import {WindowSizeRepositoryService} from "../../../services/repositories/window-size-repository.service";
+import {MediaMetadata} from "../../../main-content/file-explorer/models/media-metadata";
 
 export interface SliderMarker {
   positionSeconds: number;
@@ -86,7 +87,9 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
         this._currentTime = currentTime;
         this.duration = duration;
 
-        const cues = session?.tracklist.value.cues;
+        const cues = session?.currentNode.metadata instanceof MediaMetadata
+          ? session.currentNode.metadata.tracklist.value.cues
+          : null;
         if (cues) {
           const markers: SliderMarker[] = cues.map(cue => ({
             positionSeconds: timespanToTotalSeconds(cue.cue),

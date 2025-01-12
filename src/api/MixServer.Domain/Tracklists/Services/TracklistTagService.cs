@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.Tracklists.Builders;
 using MixServer.Domain.Tracklists.Dtos.Import;
 using MixServer.Domain.Tracklists.Enums;
 using MixServer.Domain.Tracklists.Factories;
@@ -9,7 +10,7 @@ namespace MixServer.Domain.Tracklists.Services;
 public interface ITracklistTagService
 {
     void SaveTags(string absoluteFilePath, ImportTracklistDto tracklist);
-    ImportTracklistDto GetTracklistForFile(string absolutePath);
+    ImportTracklistDto GetTracklist(IReadOnlyTagBuilder tagBuilder);
 }
 
 public class TracklistTagService(
@@ -56,10 +57,8 @@ public class TracklistTagService(
         tagBuilder.Save();
     }
     
-    public ImportTracklistDto GetTracklistForFile(string absolutePath)
+    public ImportTracklistDto GetTracklist(IReadOnlyTagBuilder tagBuilder)
     {
-        var tagBuilder = factory.CreateReadOnly(absolutePath);
-
         var cues = new List<ImportCueDto>();
 
         foreach (var chapter in tagBuilder.Chapters.Where(c => c.Id.StartsWith(IdPrefix)))

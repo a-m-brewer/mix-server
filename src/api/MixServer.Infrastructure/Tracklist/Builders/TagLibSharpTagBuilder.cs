@@ -89,6 +89,10 @@ public class TagLibSharpTagBuilder : ITagBuilder
         _file.Save();
     }
 
+    public TimeSpan Duration => _file.Properties.Duration;
+
+    public int Bitrate => _file.Properties.AudioBitrate;
+
     public ICollection<Chapter> Chapters => GetChapters();
 
     private ICollection<Chapter> GetChapters()

@@ -13,11 +13,14 @@ import {FileExplorerNode} from "../../main-content/file-explorer/models/file-exp
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/file-explorer-folder-node";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
+import {FileMetadataConverterService} from "./file-metadata-converter.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FileExplorerNodeConverterService {
+  constructor(private _fileMetadataConverter: FileMetadataConverterService) {
+  }
 
   public fromFileExplorerFolder(dto: FileExplorerFolderResponse): FileExplorerFolder {
     return new FileExplorerFolder(
@@ -46,7 +49,7 @@ export class FileExplorerNodeConverterService {
       dto.type,
       dto.exists,
       dto.creationTimeUtc,
-      dto.mimeType,
+      this._fileMetadataConverter.fromResponse(dto.metadata),
       dto.playbackSupported,
       this.fromFileExplorerFolderNode(dto.parent)
     );

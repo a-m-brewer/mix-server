@@ -4,6 +4,10 @@ namespace MixServer.Domain.Tracklists.Builders;
 
 public interface IReadOnlyTagBuilder
 {
+    TimeSpan Duration { get; }
+    
+    int Bitrate { get; }
+    
     ICollection<Chapter> Chapters { get; }
 }
 

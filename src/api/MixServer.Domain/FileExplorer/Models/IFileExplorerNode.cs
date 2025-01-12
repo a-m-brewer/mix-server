@@ -1,4 +1,5 @@
 using MixServer.Domain.FileExplorer.Enums;
+using MixServer.Domain.FileExplorer.Models.Metadata;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
@@ -19,7 +20,7 @@ public interface IFileExplorerFileNode : IFileExplorerNode
 {
     string Extension { get; }
     
-    string MimeType { get; }
+    IFileMetadata Metadata { get; }
 
     bool PlaybackSupported { get; }
     
