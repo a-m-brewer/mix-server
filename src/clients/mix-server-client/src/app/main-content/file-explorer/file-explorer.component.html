@@ -15,7 +15,6 @@
   <app-node-list-item
     *ngFor="let node of currentFolder.children; last as last"
     [id]="node.absolutePath"
-    [name]="node.name"
     [nodeType]="node.type"
     [defaultIcon]="node.mdIcon"
     [loadingStatus]="loadingStatus"
@@ -24,6 +23,10 @@
     [last]="last"
     (contentClick)="onNodeClick($event)"
     >
+    <div appNodeListItemTitle>
+      {{ node.name }}
+    </div>
+
     <app-add-to-queue-button
       [file]="node"
     />

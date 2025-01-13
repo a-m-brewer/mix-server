@@ -32,7 +32,8 @@
     </div>
 
     <div class="node-list-item-content-text node-list-item">
-      {{ name }}
+      <ng-content  select="[appNodeListItemTitle]"></ng-content>
+      <ng-content class="node-list-item-content-text-subtitle" select="[appNodeListItemSubtitle]"></ng-content>
     </div>
   </div>
 

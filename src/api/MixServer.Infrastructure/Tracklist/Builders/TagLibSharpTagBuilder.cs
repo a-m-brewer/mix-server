@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using MixServer.Domain.Tracklists.Builders;
 using MixServer.Domain.Tracklists.Models;
 using TagLib;
@@ -7,13 +8,16 @@ namespace MixServer.Infrastructure.Tracklist.Builders;
 
 public class TagLibSharpTagBuilder : ITagBuilder
 {
+    private readonly ILogger<TagLibSharpTagBuilder> _logger;
     private readonly TagLib.File _file;
-    private readonly TagLib.Id3v2.Tag _id3Tag;
+    private readonly TagLib.Id3v2.Tag? _id3Tag;
 
     public TagLibSharpTagBuilder(
         string filePath,
-        bool create)
-    { 
+        bool create,
+        ILogger<TagLibSharpTagBuilder> logger)
+    {
+        _logger = logger;
         _file = TagLib.File.Create(filePath);
         
         if (_file.TagTypes != TagTypes.Id3v2)
@@ -31,6 +35,12 @@ public class TagLibSharpTagBuilder : ITagBuilder
         string[] artists,
         ICollection<CustomTag> customTags)
     {
+        if (_id3Tag is null)
+        {
+            _logger.LogWarning("No ID3v2 tag found in file");
+            return this;
+        }
+
         var existingChapter = _id3Tag.GetFrames<ChapterFrame>().FirstOrDefault(f => f.Id == id);
         if (existingChapter is not null)
         {
@@ -77,6 +87,12 @@ public class TagLibSharpTagBuilder : ITagBuilder
 
     public void ClearChapters(Func<Chapter, bool> selector)
     {
+        if (_id3Tag is null)
+        {
+            _logger.LogWarning("No ID3v2 tag found in file");
+            return;
+        }
+        
         foreach (var frame in _id3Tag.GetFrames<ChapterFrame>().Where(f => selector(ToChapter(f))).ToList())
         {
             _id3Tag.RemoveFrame(frame);
@@ -97,7 +113,10 @@ public class TagLibSharpTagBuilder : ITagBuilder
 
     private ICollection<Chapter> GetChapters()
     {
-        return _id3Tag.GetFrames<ChapterFrame>().Select(ToChapter).ToList();
+        if (_id3Tag is not null) return _id3Tag.GetFrames<ChapterFrame>().Select(ToChapter).ToList();
+        _logger.LogWarning("No ID3v2 tag found in file");
+        return new List<Chapter>();
+
     }
 
     private Chapter ToChapter(ChapterFrame frame)

@@ -26,7 +26,7 @@ public partial class FileMetadataConverter(
 
         var defaultMetadata = new FileMetadata(mimeType);
         
-        if (!isMedia)
+        if (!isMedia || !file.Exists)
         {
             return defaultMetadata;
         }

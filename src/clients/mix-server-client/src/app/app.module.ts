@@ -63,6 +63,11 @@ import {
 import {
   AudioControlButtonsComponent
 } from "./bottom-bar/audio-control/audio-control-buttons/audio-control-buttons.component";
+import {NodeListItemTitleDirective} from "./components/nodes/node-list/node-list-item/node-list-item-title.directive";
+import {
+  NodeListItemSubtitleDirective
+} from "./components/nodes/node-list/node-list-item/node-list-item-subtitle.directive";
+import {InstanceOfPipe} from "./pipes/instance-of.pipe";
 
 @NgModule({ declarations: [
         AppComponent,
@@ -90,37 +95,37 @@ import {
         NodeListItemIcon
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
-        CommonModule,
-        AppRoutingModule,
-        BrowserAnimationsModule,
-        MatProgressBarModule,
-        MatIconModule,
-        MatButtonModule,
-        MatListModule,
-        MatToolbarModule,
-        MatSliderModule,
-        FormsModule,
-        ReactiveFormsModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatCardModule,
-        MatProgressSpinnerModule,
-        InfiniteScrollModule,
-        MatTooltipModule,
-        ToastrModule.forRoot(),
-        MatButtonToggleModule,
-        MatTabsModule,
-        MatDialogModule,
-        MatMenuModule,
-        MatRippleModule,
-        MatCheckboxModule,
-        MatChipsModule,
-        NavBarComponent,
-        MatExpansionModule,
-        AudioControlMobileComponent,
-        SessionComponent,
-        AudioProgressSliderComponent,
-        AudioControlButtonsComponent], providers: [
+    CommonModule,
+    AppRoutingModule,
+    BrowserAnimationsModule,
+    MatProgressBarModule,
+    MatIconModule,
+    MatButtonModule,
+    MatListModule,
+    MatToolbarModule,
+    MatSliderModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCardModule,
+    MatProgressSpinnerModule,
+    InfiniteScrollModule,
+    MatTooltipModule,
+    ToastrModule.forRoot(),
+    MatButtonToggleModule,
+    MatTabsModule,
+    MatDialogModule,
+    MatMenuModule,
+    MatRippleModule,
+    MatCheckboxModule,
+    MatChipsModule,
+    NavBarComponent,
+    MatExpansionModule,
+    AudioControlMobileComponent,
+    SessionComponent,
+    AudioProgressSliderComponent,
+    AudioControlButtonsComponent, NodeListItemTitleDirective, NodeListItemSubtitleDirective, InstanceOfPipe], providers: [
         {
             provide: MIXSERVER_BASE_URL,
             useFactory: getMixServerApiUrl

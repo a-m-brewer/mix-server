@@ -27,6 +27,7 @@ public class FileMetadataResponseConverter : IFileMetadataResponseConverter
     {
         return new MediaMetadataResponse
         {
+            MimeType = value.MimeType,
             Duration = value.Duration,
             Bitrate = value.Bitrate,
             Tracklist = value.Tracklist
