@@ -1,3 +1,4 @@
+using System.Text;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Interfaces;
 
@@ -28,9 +29,37 @@ public class FileMetadataResponseConverter : IFileMetadataResponseConverter
         return new MediaMetadataResponse
         {
             MimeType = value.MimeType,
-            Duration = value.Duration,
+            Duration = FormatTimespan(value.Duration),
             Bitrate = value.Bitrate,
             Tracklist = value.Tracklist
         };
+    }
+    
+    private static string FormatTimespan(TimeSpan duration)
+    {
+        var sb = new StringBuilder();
+        
+        var previousAdded = false;
+        
+        if (duration.Days > 0)
+        {
+            sb.Append($"{duration.Days:D1}.");
+            previousAdded = true;
+        }
+        
+        if (duration.Hours > 0 || previousAdded)
+        {
+            sb.Append($"{duration.Hours:D2}:");
+            previousAdded = true;
+        }
+        
+        if (duration.Minutes > 0 || previousAdded)
+        {
+            sb.Append($"{duration.Minutes:D2}:");
+        }
+        
+        sb.Append($"{duration.Seconds:D2}");
+        
+        return sb.ToString();
     }
 }

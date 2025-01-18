@@ -17,6 +17,10 @@
       {{ queueItem.name }}
     </div>
 
+    <app-file-metadata-subtitle appNodeListItemSubtitle
+      [metadata]="queueItem.file.metadata"
+    />
+
     <mat-icon
       *ngIf="queueItem.itemType === UserItemType"
       matTooltip="Added by user"

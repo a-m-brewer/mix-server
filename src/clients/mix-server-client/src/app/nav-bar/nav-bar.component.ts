@@ -21,6 +21,7 @@ import {QueueEditFormComponent} from "../queue-page/queue-edit-form/queue-edit-f
 import { WindowSizeRepositoryService } from "../services/repositories/window-size-repository.service";
 import {WindowType} from "../services/repositories/enums/window-type";
 import {TracklistToolbarComponent} from "../tracklist-page/tracklist-toolbar/tracklist-toolbar.component";
+import {FolderPasteFormComponent} from "../main-content/file-explorer/folder-paste-form/folder-paste-form.component";
 
 @Component({
   selector: 'app-nav-bar',
@@ -39,7 +40,8 @@ import {TracklistToolbarComponent} from "../tracklist-page/tracklist-toolbar/tra
     FolderSortFormComponent,
     QueueEditFormComponent,
     NgClass,
-    TracklistToolbarComponent
+    TracklistToolbarComponent,
+    FolderPasteFormComponent
   ],
   templateUrl: './nav-bar.component.html',
   styleUrl: './nav-bar.component.scss'

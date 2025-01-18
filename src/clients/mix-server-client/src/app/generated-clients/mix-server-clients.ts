@@ -404,6 +404,149 @@ export class NodeClient implements INodeClient {
     }
 }
 
+export interface INodeManagementClient {
+    copyNode(command: CopyNodeCommand): Observable<void>;
+    deleteNode(command: DeleteNodeCommand): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class NodeManagementClient implements INodeManagementClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(MIXSERVER_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    copyNode(command: CopyNodeCommand): Observable<void> {
+        let url_ = this.baseUrl + "/api/nodemanagement";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(command);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processCopyNode(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processCopyNode(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processCopyNode(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ValidationProblemDetails.fromJS(resultData400);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    deleteNode(command: DeleteNodeCommand): Observable<void> {
+        let url_ = this.baseUrl + "/api/nodemanagement";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(command);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("delete", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processDeleteNode(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processDeleteNode(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processDeleteNode(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ValidationProblemDetails.fromJS(resultData400);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+}
+
 export interface IQueueClient {
     queue(): Observable<QueueSnapshotDto>;
     addToQueue(command: AddToQueueCommand): Observable<QueueSnapshotDto>;
@@ -3181,6 +3324,94 @@ export interface ISetFolderSortCommand {
     absoluteFolderPath: string;
     descending: boolean;
     sortMode: FolderSortMode;
+}
+
+export class CopyNodeCommand implements ICopyNodeCommand {
+    sourceAbsolutePath!: string;
+    destinationFolder!: string;
+    destinationName!: string;
+    move!: boolean;
+    overwrite!: boolean;
+
+    constructor(data?: ICopyNodeCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.sourceAbsolutePath = _data["sourceAbsolutePath"];
+            this.destinationFolder = _data["destinationFolder"];
+            this.destinationName = _data["destinationName"];
+            this.move = _data["move"];
+            this.overwrite = _data["overwrite"];
+        }
+    }
+
+    static fromJS(data: any): CopyNodeCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new CopyNodeCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["sourceAbsolutePath"] = this.sourceAbsolutePath;
+        data["destinationFolder"] = this.destinationFolder;
+        data["destinationName"] = this.destinationName;
+        data["move"] = this.move;
+        data["overwrite"] = this.overwrite;
+        return data;
+    }
+}
+
+export interface ICopyNodeCommand {
+    sourceAbsolutePath: string;
+    destinationFolder: string;
+    destinationName: string;
+    move: boolean;
+    overwrite: boolean;
+}
+
+export class DeleteNodeCommand implements IDeleteNodeCommand {
+    absolutePath!: string;
+
+    constructor(data?: IDeleteNodeCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.absolutePath = _data["absolutePath"];
+        }
+    }
+
+    static fromJS(data: any): DeleteNodeCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeleteNodeCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["absolutePath"] = this.absolutePath;
+        return data;
+    }
+}
+
+export interface IDeleteNodeCommand {
+    absolutePath: string;
 }
 
 export class QueueSnapshotDto implements IQueueSnapshotDto {

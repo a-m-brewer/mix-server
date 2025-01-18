@@ -78,7 +78,15 @@ export class FileExplorerNodeRepositoryService {
         }
 
         const nextFolder = currentFolder.copy();
-        nextFolder.children.push(node);
+
+        const index = nextFolder.children.findIndex(n => n.absolutePath === node.absolutePath);
+
+        if (index === -1) {
+          nextFolder.children.push(node)
+        }
+        else {
+          nextFolder.children[index] = node;
+        }
 
         this._currentFolder$.next(nextFolder);
       })

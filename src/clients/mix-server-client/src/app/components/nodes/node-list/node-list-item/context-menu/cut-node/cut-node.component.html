@@ -1,0 +1,7 @@
+<button mat-menu-item
+        *ngIf="file"
+        [disabled]="disabled"
+        (click)="cutNode()">
+  <mat-icon>content_cut</mat-icon>
+  <span>Cut</span>
+</button>

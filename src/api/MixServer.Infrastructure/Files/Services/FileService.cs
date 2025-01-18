@@ -1,6 +1,7 @@
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Entities;
+using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
@@ -68,6 +69,79 @@ public class FileService(
     public IFileExplorerFileNode GetFile(string fileAbsolutePath)
     {
         return fileExplorerConverter.Convert(fileAbsolutePath);
+    }
+
+    public void CopyNode(
+        string sourcePath,
+        string destinationFolder,
+        string destinationName,
+        bool move,
+        bool overwrite)
+    {
+        var destinationFolderType = GetNodeTypeOrThrow(destinationFolder);
+        switch (destinationFolderType)
+        {
+            case FileExplorerNodeType.File:
+                throw new InvalidRequestException(nameof(destinationFolder), $"{destinationFolder} is a file");
+            case FileExplorerNodeType.Folder:
+                break;
+            default:
+                throw new NotFoundException(nameof(destinationFolder), destinationFolder);
+        }
+        
+        var destinationPath = Path.Join(destinationFolder, destinationName);
+        
+        var type = GetNodeTypeOrThrow(sourcePath);
+
+        if (type == FileExplorerNodeType.File)
+        {
+            if (move)
+            {
+                File.Move(sourcePath, destinationPath);
+            }
+            else
+            {
+                File.Copy(sourcePath, destinationPath, overwrite);
+            }
+        }
+        else
+        {
+            throw new NotSupportedException("Copying folders is not supported");
+        }
+    }
+
+    public void DeleteNode(string absolutePath)
+    {
+        // check if file or folder
+        var type = GetNodeTypeOrThrow(absolutePath);
+        
+        if (type == FileExplorerNodeType.File)
+        {
+            File.Delete(absolutePath);
+        }
+        else
+        {
+            throw new NotSupportedException("Deleting folders is not supported");
+            // Directory.Delete(absolutePath, true);
+        }
+    }
+
+    private static FileExplorerNodeType GetNodeTypeOrThrow(string absolutePath) =>
+        GetNodeType(absolutePath) ?? throw new NotFoundException("Node", absolutePath);
+
+    private static FileExplorerNodeType? GetNodeType(string absolutePath)
+    {
+        if (File.Exists(absolutePath))
+        {
+            return FileExplorerNodeType.File;
+        }
+        
+        if (Directory.Exists(absolutePath))
+        {
+            return FileExplorerNodeType.Folder;
+        }
+        
+        return null;
     }
 
     public async Task SetFolderSortAsync(IFolderSortRequest request)

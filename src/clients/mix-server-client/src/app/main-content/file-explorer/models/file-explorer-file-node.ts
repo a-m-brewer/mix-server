@@ -3,6 +3,12 @@ import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
 import {FileExplorerFolderNode} from "./file-explorer-folder-node";
 import {FileMetadata} from "./file-metadata";
 
+export interface FileExplorerFileNodeNameParts {
+  nameWithoutExtension: string;
+  nameWithoutSuffix: string;
+  extension?: string;
+}
+
 export class FileExplorerFileNode implements FileExplorerNode {
   constructor(public name: string,
               public absolutePath: string,
@@ -18,6 +24,21 @@ export class FileExplorerFileNode implements FileExplorerNode {
   public disabled: boolean;
 
   public mdIcon: string = 'description';
+
+  public get nameSections(): FileExplorerFileNodeNameParts | null {
+    const re = /^((.+?)( - Copy)?( \([0-9]+\))?)(\.(.*))?$/;
+    const match = re.exec(this.name);
+
+    if (!match) {
+      return null
+    }
+
+    return {
+      nameWithoutExtension: match[1],
+      nameWithoutSuffix: match[2],
+      extension: match[6]
+    };
+  }
 
   public isEqual(node: FileExplorerNode | null | undefined): boolean {
     if (!node) {

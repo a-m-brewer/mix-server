@@ -22,9 +22,9 @@
       {{ session.currentNode.name }}
     </div>
 
-    <div appNodeListItemSubtitle *ngIf="session.currentNode.metadata | instanceOf:MediaMetadata as metadata">
-      {{ metadata.mimeType }} · {{ metadata.bitrate }}Kbps · {{ metadata.duration }}
-    </div>
+    <app-file-metadata-subtitle appNodeListItemSubtitle
+      [metadata]="session.currentNode.metadata"
+    />
 
     <app-add-to-queue-button
       [file]="session.currentNode"

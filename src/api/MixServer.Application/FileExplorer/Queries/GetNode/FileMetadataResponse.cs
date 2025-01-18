@@ -26,7 +26,7 @@ public class FileMetadataResponse
 
 public class MediaMetadataResponse : FileMetadataResponse
 {
-    public TimeSpan Duration { get; init; }
+    public string Duration { get; init; }
     
     public int Bitrate { get; init; }
 

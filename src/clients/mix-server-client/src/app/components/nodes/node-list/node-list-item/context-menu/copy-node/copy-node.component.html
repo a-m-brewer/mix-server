@@ -1,0 +1,7 @@
+<button mat-menu-item
+        *ngIf="file"
+        [disabled]="disabled"
+        (click)="copyNode()">
+  <mat-icon>file_copy</mat-icon>
+  <span>Copy</span>
+</button>
