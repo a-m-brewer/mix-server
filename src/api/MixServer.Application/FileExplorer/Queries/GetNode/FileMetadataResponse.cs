@@ -26,7 +26,7 @@ public class FileMetadataResponse
 
 public class MediaMetadataResponse : FileMetadataResponse
 {
-    public string Duration { get; init; }
+    public string Duration { get; init; } = string.Empty;
     
     public int Bitrate { get; init; }
 

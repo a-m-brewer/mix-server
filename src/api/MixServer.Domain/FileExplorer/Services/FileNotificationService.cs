@@ -62,7 +62,7 @@ public class FileNotificationService(
     {
         if (sender is not IFileExplorerFolder fileExplorerFolder)
         {
-            logger.LogWarning("event raised by non-folder item Sender: {Sender}",
+            Logger.LogWarning("event raised by non-folder item Sender: {Sender}",
                 sender?.GetType().Name ?? "null");
             parent = null;
             return false;
