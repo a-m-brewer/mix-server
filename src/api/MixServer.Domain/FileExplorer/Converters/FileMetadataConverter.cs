@@ -33,7 +33,7 @@ public partial class FileMetadataConverter(
 
         try
         {
-            var tagBuilder = tagBuilderFactory.CreateReadOnly(file.FullName);
+            using var tagBuilder = tagBuilderFactory.CreateReadOnly(file.FullName);
             var tracklist = tracklistTagService.GetTracklist(tagBuilder);
             
             return new MediaMetadata(mimeType,

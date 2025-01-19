@@ -2,7 +2,7 @@ using MixServer.Domain.Tracklists.Models;
 
 namespace MixServer.Domain.Tracklists.Builders;
 
-public interface IReadOnlyTagBuilder
+public interface IReadOnlyTagBuilder : IDisposable
 {
     TimeSpan Duration { get; }
     

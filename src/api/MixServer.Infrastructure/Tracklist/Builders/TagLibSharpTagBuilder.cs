@@ -155,4 +155,11 @@ public class TagLibSharpTagBuilder : ITagBuilder
             customTags
         );
     }
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        
+        _file.Dispose();
+    }
 }
