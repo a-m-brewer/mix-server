@@ -31,6 +31,8 @@ public class SignalRCallbackService(
     ISignalRUserManager userManager)
     : ICallbackService
 {
+    public IReadOnlyCollection<string> ConnectedUserIds => userManager.ConnectedUsers.Select(user => user.SignalRUserId.Id).ToList();
+
     public async Task CurrentSessionUpdated(string userId, Guid deviceId, PlaybackSession? session)
     {
         var currentSessionDto = session == null
@@ -199,18 +201,40 @@ public class SignalRCallbackService(
             .UserUpdated(userDtoConverter.Convert(user));
     }
 
-    public Task FileExplorerNodeAdded(IFileExplorerNode node)
+    public Task FileExplorerNodeAdded(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node)
     {
-        return context.Clients
-            .All
-            .FileExplorerNodeAdded(fileExplorerResponseConverter.Convert(node));
+        var tasks = new List<Task>();
+        var nodeDto = fileExplorerResponseConverter.Convert(node);
+        foreach (var user in  userManager.ConnectedUsers)
+        {
+            var index = expectedNodeIndexes.TryGetValue(user.SignalRUserId.Id, out var i) ? i : -1;
+            var dto = new FileExplorerNodeAddedDto
+            {
+                Node = nodeDto,
+                Index = index
+            };
+            var connections = user.GetConnections();
+            var task = context.Clients.Clients(connections).FileExplorerNodeAdded(dto);
+            tasks.Add(task);
+        }
+        
+        return Task.WhenAll(tasks);
     }
     
-    public Task FileExplorerNodeUpdated(IFileExplorerNode node, string oldAbsolutePath)
+    public Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string oldAbsolutePath)
     {
-        return context.Clients
-            .All
-            .FileExplorerNodeUpdated(new FileExplorerNodeUpdatedDto(fileExplorerResponseConverter.Convert(node), oldAbsolutePath));
+        var tasks = new List<Task>();
+        var nodeDto = fileExplorerResponseConverter.Convert(node);
+        foreach (var user in  userManager.ConnectedUsers)
+        {
+            var index = expectedNodeIndexes.TryGetValue(user.SignalRUserId.Id, out var i) ? i : -1;
+            var dto = new FileExplorerNodeUpdatedDto(nodeDto, oldAbsolutePath, index);
+            var connections = user.GetConnections();
+            var task = context.Clients.Clients(connections).FileExplorerNodeUpdated(dto);
+            tasks.Add(task);
+        }
+        
+        return Task.WhenAll(tasks);
     }
 
     public Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath)

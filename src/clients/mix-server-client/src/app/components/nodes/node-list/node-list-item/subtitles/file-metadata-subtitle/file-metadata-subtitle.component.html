@@ -1,0 +1,3 @@
+<div *ngIf="metadata | instanceOf:MediaMetadata as mediaMetadata">
+  {{ mediaMetadata.mimeType }} · {{ mediaMetadata.bitrate }}Kbps · {{ mediaMetadata.duration }}
+</div>

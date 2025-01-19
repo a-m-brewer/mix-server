@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.FileExplorer.Converters;
 using DirectoryInfo = System.IO.DirectoryInfo;
@@ -20,7 +21,14 @@ public interface IFolderCacheItem : ICacheFolder, IDisposable
 
 public class FolderCacheItem : IFolderCacheItem
 {
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private record FolderChangeEvent(
+        string fullName,
+        ChangeType changeType,
+        WatcherChangeTypes watcherChangeType,
+        string oldFullName = "");
+    
+    private readonly CancellationTokenSource _cts = new();
+    private readonly BlockingCollection<FolderChangeEvent> _events = new();
     
     private readonly string _absolutePath;
     private readonly ILogger<FolderCacheItem> _logger;
@@ -72,6 +80,8 @@ public class FolderCacheItem : IFolderCacheItem
         _watcher.Error += WatcherOnError;
         
         _watcher.EnableRaisingEvents = true;
+        
+        Task.Run(ProcessEvents);
     }
 
     public event EventHandler<IFileExplorerNode>? ItemAdded;
@@ -81,69 +91,88 @@ public class FolderCacheItem : IFolderCacheItem
     public IFileExplorerFolder Folder => _folder;
 
     private void OnCreated(object sender, FileSystemEventArgs e) =>
-        UpdateCache(e.FullPath, ChangeType.Created, e.ChangeType);
+        SubmitCacheUpdate(e.FullPath, ChangeType.Created, e.ChangeType);
 
     private void OnDeleted(object sender, FileSystemEventArgs e) =>
-        UpdateCache(e.FullPath, ChangeType.Deleted, e.ChangeType);
+        SubmitCacheUpdate(e.FullPath, ChangeType.Deleted, e.ChangeType);
 
     private void OnChanged(object sender, FileSystemEventArgs e) =>
-        UpdateCache(e.FullPath, ChangeType.Changed, e.ChangeType);
+        SubmitCacheUpdate(e.FullPath, ChangeType.Changed, e.ChangeType);
 
     private void OnRenamed(object sender, RenamedEventArgs e) =>
-        UpdateCache(e.FullPath, ChangeType.Renamed, e.ChangeType, e.OldFullPath);
+        SubmitCacheUpdate(e.FullPath, ChangeType.Renamed, e.ChangeType, e.OldFullPath);
 
     private void WatcherOnError(object sender, ErrorEventArgs e)
     {
         _logger.LogError(e.GetException(), "Error occurred in FileSystemWatcher for {AbsolutePath}", _absolutePath);
     }
     
-    private async void UpdateCache(string fullName, ChangeType changeType, WatcherChangeTypes watcherChangeType, string oldFullName = "")
+    private void SubmitCacheUpdate(string fullName, ChangeType changeType, WatcherChangeTypes watcherChangeType, string oldFullName = "")
     {
-        await _semaphore.WaitAsync();
-
+        _logger.LogDebug("Submitting cache update for {FullName} with ChangeType: {ChangeType} and WatcherChangeType: {WatcherChangeType}",
+            fullName, changeType, watcherChangeType);
+        _events.Add(new FolderChangeEvent(fullName, changeType, watcherChangeType, oldFullName));
+    }
+    
+    private void ProcessEvents()
+    {
         try
         {
-            _logger.LogInformation("[{FolderAbsolutePath}]: File: {FileAbsolutePath} Change: {ChangeType} Watcher Change: {WatcherChangeType}",
-                _absolutePath,
-                fullName,
-                changeType,
-                watcherChangeType);
-        
-            var directoryExists = Directory.Exists(fullName);
-            var fileExists = File.Exists(fullName);
-            var isFile = fileExists && !directoryExists;
-        
-            switch (changeType)
+            foreach (var e in _events.GetConsumingEnumerable(_cts.Token))
             {
-                case ChangeType.Created:
-                    if (Folder.Children.Any(a => a.AbsolutePath == fullName))
-                    {
-                        _logger.LogTrace("Item already exists in cache, skipping: {FullName}", fullName);
-                        return;
-                    }
-                    var newItem = Create(isFile, fullName);
-                    ItemAdded?.Invoke(this, newItem);
-                    break;
-                case ChangeType.Deleted:
-                    Delete(fullName);
-                    ItemRemoved?.Invoke(this, fullName);
-                    break;
-                case ChangeType.Changed:
-                    var changedItem = Replace(isFile, fullName);
-                    ItemUpdated?.Invoke(this, new FolderItemUpdatedEventArgs(changedItem, fullName));
-                    break;
-                case ChangeType.Renamed:
-                    var renamedItem = Replace(isFile, fullName, oldFullName);
-                    ItemUpdated?.Invoke(this, new FolderItemUpdatedEventArgs(renamedItem, oldFullName));
-                    break;
+                try
+                {
+                    UpdateCache(e);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Error occurred processing event: {Event}", e);
+                }
             }
         }
-        finally
+        catch (TaskCanceledException)
         {
-            _semaphore.Release();
+            _logger.LogInformation("Stopping processing events for {AbsolutePath}", _absolutePath);
         }
     }
 
+    private void UpdateCache(FolderChangeEvent e)
+    {
+        _logger.LogInformation("[{FolderAbsolutePath}]: File: {FileAbsolutePath} Change: {ChangeType} Watcher Change: {WatcherChangeType}",
+            _absolutePath,
+            e.fullName,
+            e.changeType,
+            e.watcherChangeType);
+        
+        var directoryExists = Directory.Exists(e.fullName);
+        var fileExists = File.Exists(e.fullName);
+        var isFile = fileExists && !directoryExists;
+        
+        switch (e.changeType)
+        {
+            case ChangeType.Created:
+                if (Folder.Children.Any(a => a.AbsolutePath == e.fullName))
+                {
+                    _logger.LogTrace("Item already exists in cache, skipping: {FullName}", e.fullName);
+                    return;
+                }
+                var newItem = Create(isFile, e.fullName);
+                ItemAdded?.Invoke(this, newItem);
+                break;
+            case ChangeType.Deleted:
+                Delete(e.fullName);
+                ItemRemoved?.Invoke(this, e.fullName);
+                break;
+            case ChangeType.Changed:
+                var changedItem = Replace(isFile, e.fullName);
+                ItemUpdated?.Invoke(this, new FolderItemUpdatedEventArgs(changedItem, e.fullName));
+                break;
+            case ChangeType.Renamed:
+                var renamedItem = Replace(isFile, e.fullName, e.oldFullName);
+                ItemUpdated?.Invoke(this, new FolderItemUpdatedEventArgs(renamedItem, e.oldFullName));
+                break;
+        }
+    }
 
     private IFileExplorerNode Replace(bool isFile, string fullName) => Replace(isFile, fullName, fullName);
 
@@ -190,6 +219,8 @@ public class FolderCacheItem : IFolderCacheItem
     public void Dispose()
     {
         GC.SuppressFinalize(this);
+        
+        _cts.Cancel();
 
         if (_watcher is null)
         {

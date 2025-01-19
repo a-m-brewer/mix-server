@@ -11,8 +11,7 @@ import {TracklistConverterService} from "./tracklist-converter.service";
 })
 export class PlaybackSessionConverterService {
 
-  constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
-              private _tracklistConverter: TracklistConverterService) { }
+  constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService) { }
 
   public fromDto(dto: PlaybackSessionDto): PlaybackSession {
     return new PlaybackSession(
@@ -20,8 +19,7 @@ export class PlaybackSessionConverterService {
       this._fileExplorerNodeConverter.fromFileExplorerFileNode(dto.file),
       dto.lastPlayed,
       this.stateFromSessionDto(dto),
-      dto.autoPlay,
-      this._tracklistConverter.createTracklistForm(dto.tracklist));
+      dto.autoPlay);
   }
 
   public stateFromSessionDto(dto: PlaybackSessionDto): PlaybackState {

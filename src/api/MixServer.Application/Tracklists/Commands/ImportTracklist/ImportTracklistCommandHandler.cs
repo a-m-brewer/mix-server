@@ -22,17 +22,29 @@ public class ImportTracklistCommandHandler : ICommandHandler<ImportTracklistComm
             throw new InvalidRequestException(nameof(request.File), "Failed to deserialize the tracklist file.");
         }
         
-        SanitizeTracklist(tracklistDto);
+        var sanitizedTracklist = SanitizeTracklist(tracklistDto);
         
-        return new ImportTracklistResponse(tracklistDto);
+        return new ImportTracklistResponse(sanitizedTracklist);
     }
 
-    private static void SanitizeTracklist(ImportTracklistDto tracklistDto)
+    private static ImportTracklistDto SanitizeTracklist(ImportTracklistDto tracklistDto)
     {
         foreach (var track in tracklistDto.Cues.SelectMany(cue => cue.Tracks))
         {
             track.Name = track.Name.Trim().Replace('/', '-');
             track.Artist = track.Artist.Trim().Replace('/', '-');
         }
+
+        return new ImportTracklistDto
+        {
+            Cues = tracklistDto.Cues
+                .GroupBy(g => g.Cue)
+                .Select(s => new ImportCueDto
+                {
+                    Cue = s.Key,
+                    Tracks = s.SelectMany(t => t.Tracks).ToList()
+                })
+                .ToList()
+        };
     }
 }

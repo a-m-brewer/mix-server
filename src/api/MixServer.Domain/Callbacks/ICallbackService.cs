@@ -10,6 +10,8 @@ namespace MixServer.Domain.Callbacks;
 
 public interface ICallbackService
 {
+    IReadOnlyCollection<string> ConnectedUserIds { get; }
+    
     Task CurrentSessionUpdated(string userId, Guid deviceId, PlaybackSession? session);
     Task CurrentQueueUpdated(string userId, QueueSnapshot queueSnapshot);
     Task CurrentQueueUpdated(string userId, Guid deviceId, QueueSnapshot queueSnapshot);
@@ -25,7 +27,7 @@ public interface ICallbackService
     Task UserDeleted(string userId);
     Task UserAdded(IUser user);
     Task UserUpdated(IUser user);
-    Task FileExplorerNodeAdded(IFileExplorerNode node);
-    Task FileExplorerNodeUpdated(IFileExplorerNode node, string oldAbsolutePath);
+    Task FileExplorerNodeAdded(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node);
+    Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string oldAbsolutePath);
     Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath);
 }

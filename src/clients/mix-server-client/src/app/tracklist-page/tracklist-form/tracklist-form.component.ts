@@ -22,20 +22,15 @@ import {TracklistCueForm, TracklistForm} from "../../services/tracklist/models/t
 import {PlaybackSession} from "../../services/repositories/models/playback-session";
 import {MatIcon} from "@angular/material/icon";
 import {MatTooltip} from "@angular/material/tooltip";
+import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Component({
   selector: 'app-tracklist-form',
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    MatList,
-    MatListItem,
-    MatListItemTitle,
-    MatListItemLine,
     MatDivider,
     NgIf,
-    MatListSubheaderCssMatStyler,
-    MatListItemMeta,
     MatAnchor,
     ControlDirtyMarkerComponent,
     NgClass,
@@ -50,18 +45,21 @@ export class TracklistFormComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject<void>();
 
   public playingCueIndex: number = -1;
-  public session?: PlaybackSession | null;
+  public tracklistForm?: FormGroup<TracklistForm>;
 
   constructor(private _audioPlayerService: AudioPlayerService,
               private _sessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
   public ngOnInit(): void {
-    this._sessionRepository.currentSessionTracklistUpdated$
-      .pipe()
+    this._sessionRepository.currentSessionTracklistChanged$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(session => {
-        this.session = session;
+        if (session?.currentNode && session.currentNode.metadata instanceof MediaMetadata) {
+          this.tracklistForm = session.currentNode.metadata.tracklist;
+        } else {
+          this.tracklistForm = undefined;
+        }
       });
 
     this._audioPlayerService.currentCueIndex$

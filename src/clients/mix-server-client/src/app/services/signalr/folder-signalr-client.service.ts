@@ -3,7 +3,7 @@ import {ISignalrClient} from "./signalr-client.interface";
 import {HubConnection} from "@microsoft/signalr";
 import {Observable, Subject} from "rxjs";
 import {
-  FileExplorerFolderResponse,
+  FileExplorerFolderResponse, FileExplorerNodeAddedDto,
   FileExplorerNodeDeletedDto, FileExplorerNodeResponse,
   FileExplorerNodeUpdatedDto
 } from "../../generated-clients/mix-server-clients";
@@ -12,6 +12,7 @@ import {NodeUpdatedEvent} from "./models/node-updated-event";
 import {NodeDeletedEvent} from "./models/node-deleted-event";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {FileExplorerNode} from "../../main-content/file-explorer/models/file-explorer-node";
+import {NodeAddedEvent} from "./models/node-added-event";
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,7 @@ import {FileExplorerNode} from "../../main-content/file-explorer/models/file-exp
 export class FolderSignalrClientService implements ISignalrClient {
   private _folderRefreshed$ = new Subject<FileExplorerFolder>();
   private _folderSortedSubject$ = new Subject<FileExplorerFolder>();
-  private _nodeAddedSubject$ = new Subject<FileExplorerNode>();
+  private _nodeAddedSubject$ = new Subject<NodeAddedEvent>();
   private _nodeUpdatedSubject$ = new Subject<NodeUpdatedEvent>();
   private _nodeDeletedSubject$ = new Subject<NodeDeletedEvent>();
 
@@ -33,7 +34,7 @@ export class FolderSignalrClientService implements ISignalrClient {
     return this._folderSortedSubject$.asObservable();
   }
 
-  public nodeAdded$(): Observable<FileExplorerNode> {
+  public nodeAdded$(): Observable<NodeAddedEvent> {
     return this._nodeAddedSubject$.asObservable();
   }
 
@@ -56,7 +57,7 @@ export class FolderSignalrClientService implements ISignalrClient {
 
     connection.on(
       'FileExplorerNodeAdded',
-      (obj: object) => this.handleFileExplorerNodeAdded(FileExplorerNodeResponse.fromJS(obj))
+      (obj: object) => this.handleFileExplorerNodeAdded(FileExplorerNodeAddedDto.fromJS(obj))
     )
 
     connection.on(
@@ -82,14 +83,14 @@ export class FolderSignalrClientService implements ISignalrClient {
     this._folderSortedSubject$.next(converted);
   }
 
-  private handleFileExplorerNodeAdded(dto: FileExplorerNodeResponse): void {
-    const node = this._folderNodeConverter.fromFileExplorerNode(dto);
-    this._nodeAddedSubject$.next(node);
+  private handleFileExplorerNodeAdded(dto: FileExplorerNodeAddedDto): void {
+    const node = this._folderNodeConverter.fromFileExplorerNode(dto.node);
+    this._nodeAddedSubject$.next(new NodeAddedEvent(node, dto.index));
   }
 
   private handleFileExplorerNodeUpdated(dto: FileExplorerNodeUpdatedDto): void {
     const node = this._folderNodeConverter.fromFileExplorerNode(dto.node);
-    this._nodeUpdatedSubject$.next(new NodeUpdatedEvent(node, dto.oldAbsolutePath));
+    this._nodeUpdatedSubject$.next(new NodeUpdatedEvent(node, dto.index, dto.oldAbsolutePath));
   }
 
   private handleFileExplorerNodeDeleted(dto: FileExplorerNodeDeletedDto): void {

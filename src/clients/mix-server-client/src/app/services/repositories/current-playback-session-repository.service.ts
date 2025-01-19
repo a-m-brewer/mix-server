@@ -1,5 +1,14 @@
 import {Injectable} from '@angular/core';
-import {BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, Observable, Subject} from "rxjs";
+import {
+  BehaviorSubject,
+  combineLatest, combineLatestWith,
+  distinctUntilChanged,
+  filter,
+  firstValueFrom,
+  map, merge,
+  Observable,
+  Subject
+} from "rxjs";
 import {PlaybackSession} from "./models/playback-session";
 import {
   ImportTracklistDto,
@@ -22,6 +31,7 @@ import {AudioElementRepositoryService} from "../audio-player/audio-element-repos
 import {PlaybackGrantedEvent} from "./models/playback-granted-event";
 import {TracklistConverterService} from "../converters/tracklist-converter.service";
 import {markAllAsDirty} from "../../utils/form-utils";
+import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Injectable({
   providedIn: 'root'
@@ -89,9 +99,12 @@ export class CurrentPlaybackSessionRepositoryService {
       .pipe(distinctUntilChanged((p, n) => p?.id === n?.id))
   }
 
-  public get currentSessionTracklistUpdated$(): Observable<PlaybackSession | null> {
-    return this._currentSession$
-      .pipe(distinctUntilChanged((p, n) => p?.tracklist === n?.tracklist))
+  public get currentSessionTracklistChanged$(): Observable<PlaybackSession | null> {
+    return merge(
+      this.currentSession$,
+      this._tracklistChanged$
+    )
+      .pipe(map(() => this.currentSession));
   }
 
   public get currentPlaybackDevice$(): Observable<string | null | undefined> {
@@ -122,10 +135,6 @@ export class CurrentPlaybackSessionRepositoryService {
 
   public get playbackGranted$(): Observable<PlaybackGrantedEvent> {
     return this._playbackGranted$.asObservable();
-  }
-
-  public get tracklistChanged$(): Observable<void> {
-    return this._tracklistChanged$.asObservable();
   }
 
   public async requestPlaybackOnCurrentPlaybackDevice(): Promise<void> {
@@ -197,7 +206,7 @@ export class CurrentPlaybackSessionRepositoryService {
 
   public updateCurrentSessionTracklist(tracklist: ImportTracklistDto, dirty: boolean): void {
     const previousSession = this.currentSession;
-    if (!previousSession) {
+    if (!previousSession || !(previousSession.currentNode.metadata instanceof MediaMetadata)) {
       return;
     }
 
@@ -208,7 +217,9 @@ export class CurrentPlaybackSessionRepositoryService {
 
     const nextSession = PlaybackSession.copy(previousSession, previousSession.state);
 
-    nextSession.tracklist = form;
+    if (nextSession.currentNode.metadata instanceof MediaMetadata) {
+      nextSession.currentNode.metadata.tracklist = form;
+    }
 
     this.currentSession = nextSession;
     this._tracklistChanged$.next();

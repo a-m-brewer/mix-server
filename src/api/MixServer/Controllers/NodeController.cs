@@ -32,7 +32,6 @@ public class NodeController(
         return Ok(await refreshFolderCommandHandler.HandleAsync(command));
     }
 
-
     [HttpPost("sort")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]

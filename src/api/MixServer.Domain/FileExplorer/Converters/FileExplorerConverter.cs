@@ -14,8 +14,8 @@ public interface IFileExplorerConverter
 }
 
 public class FileExplorerConverter(
-    IRootFileExplorerFolder rootFolder,
-    IMimeTypeService mimeTypeService) : IFileExplorerConverter
+    IFileMetadataConverter metadataConverter,
+    IRootFileExplorerFolder rootFolder) : IFileExplorerConverter
 {
     public IFileExplorerFileNode Convert(string fileAbsolutePath)
     {
@@ -62,7 +62,7 @@ public class FileExplorerConverter(
             FileExplorerNodeType.File,
             fileInfo.Exists,
             fileInfo.CreationTimeUtc,
-            mimeTypeService.GetMimeType(fileInfo.FullName, fileInfo.Extension),
+            metadataConverter.Convert(fileInfo),
             parent);
     }
 }

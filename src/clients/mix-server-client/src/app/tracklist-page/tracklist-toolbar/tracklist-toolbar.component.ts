@@ -10,6 +10,7 @@ import {
 import {Subject, takeUntil} from "rxjs";
 import { FormGroup } from '@angular/forms';
 import {TracklistForm} from "../../services/tracklist/models/tracklist-form.interface";
+import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Component({
   selector: 'app-tracklist-toolbar',
@@ -31,10 +32,14 @@ export class TracklistToolbarComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this._sessionRepository.currentSessionTracklistUpdated$
+    this._sessionRepository.currentSessionTracklistChanged$
       .pipe(takeUntil(this._unsubscribe))
-      .subscribe((session) => {
-        this.form = session?.tracklist;
+      .subscribe(session => {
+        if (session?.currentNode && session.currentNode.metadata instanceof MediaMetadata) {
+          this.form = session.currentNode.metadata.tracklist;
+        } else {
+          this.form = undefined;
+        }
       });
   }
 

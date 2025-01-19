@@ -2,7 +2,6 @@
   <app-node-list-item
     *ngFor="let queueItem of queue.items; last as last"
     [id]="queueItem.id"
-    [name]="queueItem.name"
     [nodeType]="queueItem.type"
     [defaultIcon]="queueItem.mdIcon"
     [loadingStatus]="loadingStatus"
@@ -14,6 +13,14 @@
     (contentClick)="onNodeClick($event)"
     (selectedChange)="onNodeSelectedChanged($event)"
   >
+    <div appNodeListItemTitle>
+      {{ queueItem.name }}
+    </div>
+
+    <app-file-metadata-subtitle appNodeListItemSubtitle
+      [metadata]="queueItem.file.metadata"
+    />
+
     <mat-icon
       *ngIf="queueItem.itemType === UserItemType"
       matTooltip="Added by user"

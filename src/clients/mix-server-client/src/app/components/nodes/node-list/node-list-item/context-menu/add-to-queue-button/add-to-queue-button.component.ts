@@ -16,18 +16,21 @@ export class AddToQueueButtonComponent extends ContextMenuButton {
     super();
   }
 
-  @Input()
-  public file: FileExplorerNode | null | undefined;
+  public fileVar?: FileExplorerFileNode;
 
-  public get disabled(): boolean {
-    return !this.file || !(this.file instanceof FileExplorerFileNode) || this.file.playbackDisabled;
+  public disabled: boolean = false;
+
+  @Input()
+  public set file(file: FileExplorerFileNode) {
+    this.fileVar = file;
+    this.disabled = !file || file.playbackDisabled;
   }
 
   public addToQueue(): void {
-    if (!this.file|| !(this.file instanceof FileExplorerFileNode)) {
+    if (!this.fileVar) {
       return;
     }
 
-    this._queueRepository.addToQueue(this.file)
+    this._queueRepository.addToQueue(this.fileVar)
   }
 }

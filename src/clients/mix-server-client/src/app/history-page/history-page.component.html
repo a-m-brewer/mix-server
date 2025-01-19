@@ -10,7 +10,6 @@
   <app-node-list-item
     *ngFor="let session of sessions; last as last"
     [id]="session.currentNode.absolutePath"
-    [name]="session.currentNode.name"
     [nodeType]="session.currentNode.type"
     [defaultIcon]="session.currentNode.mdIcon"
     [loadingStatus]="loadingStatus"
@@ -19,6 +18,14 @@
     [last]="last"
     (contentClick)="onNodeClick($event)"
   >
+    <div appNodeListItemTitle>
+      {{ session.currentNode.name }}
+    </div>
+
+    <app-file-metadata-subtitle appNodeListItemSubtitle
+      [metadata]="session.currentNode.metadata"
+    />
+
     <app-add-to-queue-button
       [file]="session.currentNode"
     />

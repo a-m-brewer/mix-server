@@ -80,4 +80,6 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   private onFileClick(file: FileExplorerFileNode): void {
     this._sessionService.setFile(file);
   }
+
+  protected readonly FileExplorerFileNode = FileExplorerFileNode;
 }

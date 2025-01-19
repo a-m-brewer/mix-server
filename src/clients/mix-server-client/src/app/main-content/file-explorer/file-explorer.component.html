@@ -2,7 +2,6 @@
   <app-node-list-item
     *ngIf="currentFolder.node.parent"
     [id]="currentFolder.node.parent.absolutePath"
-    name=".."
     [nodeType]="currentFolder.node.parent.type"
     [defaultIcon]="currentFolder.node.parent.mdIcon"
     [loadingStatus]="loadingStatus"
@@ -10,12 +9,15 @@
     [disabled]="currentFolder.node.parent.disabled"
     [last]="currentFolder.children.length === 0"
     (contentClick)="onNodeClick($event)"
-  />
+  >
+    <div appNodeListItemTitle>
+      ..
+    </div>
+  </app-node-list-item>
 
   <app-node-list-item
     *ngFor="let node of currentFolder.children; last as last"
     [id]="node.absolutePath"
-    [name]="node.name"
     [nodeType]="node.type"
     [defaultIcon]="node.mdIcon"
     [loadingStatus]="loadingStatus"
@@ -24,8 +26,32 @@
     [last]="last"
     (contentClick)="onNodeClick($event)"
     >
-    <app-add-to-queue-button
-      [file]="node"
+    <div appNodeListItemTitle>
+      {{ node.name }}
+    </div>
+
+    <app-file-metadata-subtitle appNodeListItemSubtitle
+                                *ngIf="node | instanceOf:FileExplorerFileNode as fileNode"
+      [metadata]="fileNode.metadata"
     />
+
+    @if (node | instanceOf:FileExplorerFileNode; as fileNode) {
+      <app-add-to-queue-button
+        *ngIf="fileNode.playbackSupported && fileNode.exists"
+        [file]="fileNode"
+      />
+
+      <app-copy-node
+        [file]="fileNode"
+      />
+
+      <app-cut-node
+        [file]="fileNode"
+      />
+
+      <app-delete-node
+        [file]="fileNode"
+      />
+    }
   </app-node-list-item>
 </div>

@@ -101,6 +101,23 @@ builder.Services.AddProblemDetails(setup =>
             Type = $"https://httpstatuses.com/{StatusCodes.Status404NotFound}"
         };
     });
+    setup.Map<ConflictException>(exception =>
+    {
+        var errors = new Dictionary<string, string[]>
+        {
+            { "message", [exception.Message] }
+        };
+
+        return new ValidationProblemDetails(errors)
+        {
+            Detail = exception.Message,
+            Instance = exception.HelpLink,
+            Status = StatusCodes.Status409Conflict,
+            Title = "Item already exists",
+            Type = $"https://httpstatuses.com/{StatusCodes.Status409Conflict}"
+        };
+    });
+    setup.MapToStatusCode<NotSupportedException>(StatusCodes.Status400BadRequest);
     setup.MapToStatusCode<UnauthorizedRequestException>(StatusCodes.Status401Unauthorized);
     setup.Map<ForbiddenRequestException>(exception =>
     {

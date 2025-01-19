@@ -1,16 +1,16 @@
-using System.Text.RegularExpressions;
 using MixServer.Domain.FileExplorer.Enums;
+using MixServer.Domain.FileExplorer.Models.Metadata;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
-public partial class FileExplorerFileNode(
+public class FileExplorerFileNode(
     string name,
     string absolutePath,
     string extension,
     FileExplorerNodeType type,
     bool exists,
     DateTime creationTimeUtc,
-    string mimeType,
+    IFileMetadata fileMetadata,
     IFileExplorerFolderNode parent)
     : IFileExplorerFileNode
 {
@@ -20,13 +20,11 @@ public partial class FileExplorerFileNode(
     public FileExplorerNodeType Type { get; } = type;
     public bool Exists { get; } = exists;
     public DateTime CreationTimeUtc { get; } = creationTimeUtc;
-    public string MimeType { get; } = mimeType;
+
+    public IFileMetadata Metadata { get; } = fileMetadata;
+
     public bool PlaybackSupported => Parent.BelongsToRootChild &&
                                      Exists && 
-                                     !string.IsNullOrWhiteSpace(MimeType) &&
-                                     AudioVideoMimeTypeRegex().IsMatch(MimeType);
+                                     Metadata is IMediaMetadata;
     public IFileExplorerFolderNode Parent { get; } = parent;
-    
-    [GeneratedRegex(@"^(audio|video)\/(.*)")]
-    private static partial Regex AudioVideoMimeTypeRegex();
 }

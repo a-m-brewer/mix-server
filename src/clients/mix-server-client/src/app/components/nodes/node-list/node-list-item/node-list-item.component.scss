@@ -45,6 +45,13 @@
   text-overflow: ellipsis;
   overflow: hidden;
   min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  &-title {
+
+  }
 }
 
 .node-list-item-action-list-container {

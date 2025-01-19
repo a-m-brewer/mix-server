@@ -2,8 +2,12 @@ using MixServer.Domain.Tracklists.Models;
 
 namespace MixServer.Domain.Tracklists.Builders;
 
-public interface IReadOnlyTagBuilder
+public interface IReadOnlyTagBuilder : IDisposable
 {
+    TimeSpan Duration { get; }
+    
+    int Bitrate { get; }
+    
     ICollection<Chapter> Chapters { get; }
 }
 

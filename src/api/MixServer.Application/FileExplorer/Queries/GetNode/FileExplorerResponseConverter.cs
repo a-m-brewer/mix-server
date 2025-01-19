@@ -13,7 +13,7 @@ public interface IFileExplorerResponseConverter
 {
 }
 
-public class FileExplorerResponseConverter : IFileExplorerResponseConverter
+public class FileExplorerResponseConverter(IFileMetadataResponseConverter metadataConverter) : IFileExplorerResponseConverter
 {
     public FileExplorerNodeResponse Convert(IFileExplorerNode value)
     {
@@ -34,7 +34,7 @@ public class FileExplorerResponseConverter : IFileExplorerResponseConverter
             Name = value.Name,
             Type = value.Type,
             CreationTimeUtc = value.CreationTimeUtc,
-            MimeType = value.MimeType,
+            Metadata = metadataConverter.Convert(value.Metadata),
             PlaybackSupported = value.PlaybackSupported,
             Parent = Convert(value.Parent)
         };

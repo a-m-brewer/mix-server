@@ -1,0 +1,7 @@
+<button mat-button
+        *ngIf="sourceNode && currentFolder"
+        [disabled]="loading"
+        color="primary"
+        (click)="paste()">
+  Paste
+</button>

@@ -24,6 +24,7 @@ import {SessionService} from "../sessions/session.service";
 import {PlaybackGrantedEvent} from "../repositories/models/playback-granted-event";
 import {Mutex} from "async-mutex";
 import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
+import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Injectable({
   providedIn: 'root'
@@ -214,9 +215,9 @@ export class AudioPlayerService {
     return this.sampleCurrentTime$(500, false)
       .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
       .pipe(map(([currentTime, session]) => {
-        if (session) {
-          for (let i = session.cues.controls.length - 1; i >= 0; i--) {
-            const cue = session.cues.controls[i].value.cue;
+        if (session?.currentNode.metadata instanceof MediaMetadata) {
+          for (let i = session.currentNode.metadata.tracklist.controls.cues.controls.length - 1; i >= 0; i--) {
+            const cue = session.currentNode.metadata.tracklist.controls.cues.controls[i].value.cue;
             if (!cue) {
               continue;
             }
@@ -237,8 +238,8 @@ export class AudioPlayerService {
     return this.currentCueIndex$
       .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
       .pipe(map(([cueIndex, session]) => {
-        if (session) {
-          return session.cues.controls[cueIndex]?.value;
+        if (session?.currentNode.metadata instanceof MediaMetadata) {
+          return session.currentNode.metadata.tracklist.controls.cues.controls[cueIndex]?.value;
         }
 
         return null;

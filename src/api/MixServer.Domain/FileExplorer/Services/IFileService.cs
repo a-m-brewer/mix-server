@@ -9,5 +9,12 @@ public interface IFileService
     List<IFileExplorerFileNode> GetFiles(IReadOnlyList<string> absoluteFilePaths);
     IFileExplorerFileNode GetFile(string absoluteFolderPath, string fileName);
     IFileExplorerFileNode GetFile(string absoluteFilePath);
+    void CopyNode(
+        string sourcePath,
+        string destinationFolder,
+        string destinationName,
+        bool move,
+        bool overwrite);
+    void DeleteNode(string absolutePath);
     Task SetFolderSortAsync(IFolderSortRequest request);
 }

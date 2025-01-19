@@ -124,20 +124,20 @@ public class FolderCacheService(
 
     private void OnItemAdded(object? sender, IFileExplorerNode e)
     {
-        if (!IsFolderCacheItem(sender, out _)) return;
-        ItemAdded?.Invoke(this, e);
+        if (!IsFolderCacheItem(sender, out var parent)) return;
+        ItemAdded?.Invoke(parent.Folder, e);
     }
 
     private void OnItemUpdated(object? sender, FolderItemUpdatedEventArgs e)
     {
         if (!IsFolderCacheItem(sender, out var parent)) return;
-        ItemUpdated?.Invoke(this, new FolderCacheServiceItemUpdatedEventArgs(e.Item, e.OldFullPath));
+        ItemUpdated?.Invoke(parent.Folder, new FolderCacheServiceItemUpdatedEventArgs(e.Item, e.OldFullPath));
     }
 
     private void OnItemRemoved(object? sender, string e)
     {
         if (!IsFolderCacheItem(sender, out var parent)) return;
-        ItemRemoved?.Invoke(this, new FolderCacheServiceItemRemovedEventArgs(parent.Folder.Node, e));
+        ItemRemoved?.Invoke(parent.Folder, new FolderCacheServiceItemRemovedEventArgs(parent.Folder.Node, e));
     }
 
     private bool IsFolderCacheItem(object? sender, [MaybeNullWhen(false)] out IFolderCacheItem parent)

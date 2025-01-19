@@ -19,6 +19,7 @@ import {
 } from "../../../services/repositories/current-playback-session-repository.service";
 import {timespanToTotalSeconds} from "../../../utils/timespan-helpers";
 import {WindowSizeRepositoryService} from "../../../services/repositories/window-size-repository.service";
+import {MediaMetadata} from "../../../main-content/file-explorer/models/media-metadata";
 
 export interface SliderMarker {
   positionSeconds: number;
@@ -79,14 +80,16 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
     // This is very important to avoid NG0100: Expression has changed after it was checked
     // The audio.currentTime can not be binded directly to the slider value as it changes outside of Angulars change detection
     this.audioPlayer.currentTime$
-      .pipe(combineLatestWith(this.audioPlayer.duration$, this._sessionRepository.currentSessionTracklistUpdated$))
+      .pipe(combineLatestWith(this.audioPlayer.duration$, this._sessionRepository.currentSessionTracklistChanged$))
       .pipe(takeUntil(this._unsubscribe$))
       .pipe(filter(([, duration]) => duration > 0))
       .subscribe(([currentTime, duration, session]) => {
         this._currentTime = currentTime;
         this.duration = duration;
 
-        const cues = session?.tracklist.value.cues;
+        const cues = session?.currentNode.metadata instanceof MediaMetadata
+          ? session.currentNode.metadata.tracklist.value.cues
+          : null;
         if (cues) {
           const markers: SliderMarker[] = cues.map(cue => ({
             positionSeconds: timespanToTotalSeconds(cue.cue),

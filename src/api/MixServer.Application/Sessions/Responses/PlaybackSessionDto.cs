@@ -10,8 +10,6 @@ public class PlaybackSessionDto
     public string FileDirectory { get; set; } = string.Empty;
 
     public FileExplorerFileNodeResponse File { get; set; } = null!;
-
-    public ImportTracklistDto Tracklist { get; set; } = new();
     
     public DateTime LastPlayed { get; set; }
 

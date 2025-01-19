@@ -20,9 +20,6 @@ export class NodeListItemComponent {
   public id: string = null!;
 
   @Input()
-  public name: string = null!;
-
-  @Input()
   public nodeType: FileExplorerNodeType = FileExplorerNodeType.Folder;
 
   @Input()

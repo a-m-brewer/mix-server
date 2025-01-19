@@ -36,7 +36,7 @@ public class FileExplorerNodeResponse
 
 public class FileExplorerFileNodeResponse : FileExplorerNodeResponse
 {
-    public string MimeType { get; init; } = MimeTypeConstants.DefaultMimeType;
+    public FileMetadataResponse Metadata { get; init; } = new ();
 
     public bool PlaybackSupported { get; init; }
 

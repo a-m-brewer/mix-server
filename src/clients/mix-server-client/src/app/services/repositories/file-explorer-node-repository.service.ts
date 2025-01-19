@@ -71,14 +71,29 @@ export class FileExplorerNodeRepositoryService {
       });
 
     this._folderSignalRClient.nodeAdded$()
-      .subscribe(node => {
+      .subscribe(event => {
+        const node = event.node;
+
         const currentFolder = this._currentFolder$.getValue();
         if (!node.parent?.absolutePath || currentFolder.node.absolutePath !== node.parent.absolutePath) {
           return
         }
 
         const nextFolder = currentFolder.copy();
-        nextFolder.children.push(node);
+
+        const index = nextFolder.children.findIndex(n => n.absolutePath === node.absolutePath);
+
+        if (index === -1) {
+          if (event.index !== -1 && event.index < nextFolder.children.length) {
+            nextFolder.children.splice(event.index, 0, node);
+          }
+          else {
+            nextFolder.children.push(node);
+          }
+        }
+        else {
+          nextFolder.children[index] = node;
+        }
 
         this._currentFolder$.next(nextFolder);
       })
@@ -99,7 +114,12 @@ export class FileExplorerNodeRepositoryService {
           : oldPathIndex;
 
         if (index === -1) {
-          nextFolder.children.push(node)
+          if (event.index !== -1 && event.index < nextFolder.children.length) {
+            nextFolder.children.splice(event.index, 0, node);
+          }
+          else {
+            nextFolder.children.push(node);
+          }
         }
         else {
           nextFolder.children[index] = node;
