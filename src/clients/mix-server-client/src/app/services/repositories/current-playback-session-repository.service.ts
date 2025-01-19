@@ -1,5 +1,14 @@
 import {Injectable} from '@angular/core';
-import {BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, Observable, Subject} from "rxjs";
+import {
+  BehaviorSubject,
+  combineLatest, combineLatestWith,
+  distinctUntilChanged,
+  filter,
+  firstValueFrom,
+  map, merge,
+  Observable,
+  Subject
+} from "rxjs";
 import {PlaybackSession} from "./models/playback-session";
 import {
   ImportTracklistDto,
@@ -90,19 +99,12 @@ export class CurrentPlaybackSessionRepositoryService {
       .pipe(distinctUntilChanged((p, n) => p?.id === n?.id))
   }
 
-  public get currentSessionTracklistUpdated$(): Observable<PlaybackSession | null> {
-    return this._currentSession$
-      .pipe(distinctUntilChanged((p, n) => {
-        if (!p || !n) {
-          return p === n;
-        }
-
-        if (!(p.currentNode.metadata instanceof MediaMetadata) || !(n.currentNode.metadata instanceof MediaMetadata)) {
-          return p === n;
-        }
-
-        return p.currentNode.metadata.tracklist === n.currentNode.metadata.tracklist;
-      }))
+  public get currentSessionTracklistChanged$(): Observable<PlaybackSession | null> {
+    return merge(
+      this.currentSession$,
+      this._tracklistChanged$
+    )
+      .pipe(map(() => this.currentSession));
   }
 
   public get currentPlaybackDevice$(): Observable<string | null | undefined> {
@@ -133,10 +135,6 @@ export class CurrentPlaybackSessionRepositoryService {
 
   public get playbackGranted$(): Observable<PlaybackGrantedEvent> {
     return this._playbackGranted$.asObservable();
-  }
-
-  public get tracklistChanged$(): Observable<void> {
-    return this._tracklistChanged$.asObservable();
   }
 
   public async requestPlaybackOnCurrentPlaybackDevice(): Promise<void> {

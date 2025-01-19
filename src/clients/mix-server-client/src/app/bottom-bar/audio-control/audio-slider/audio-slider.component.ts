@@ -80,7 +80,7 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
     // This is very important to avoid NG0100: Expression has changed after it was checked
     // The audio.currentTime can not be binded directly to the slider value as it changes outside of Angulars change detection
     this.audioPlayer.currentTime$
-      .pipe(combineLatestWith(this.audioPlayer.duration$, this._sessionRepository.currentSessionTracklistUpdated$))
+      .pipe(combineLatestWith(this.audioPlayer.duration$, this._sessionRepository.currentSessionTracklistChanged$))
       .pipe(takeUntil(this._unsubscribe$))
       .pipe(filter(([, duration]) => duration > 0))
       .subscribe(([currentTime, duration, session]) => {

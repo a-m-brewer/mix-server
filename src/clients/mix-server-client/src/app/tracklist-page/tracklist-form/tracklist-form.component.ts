@@ -29,14 +29,8 @@ import {MediaMetadata} from "../../main-content/file-explorer/models/media-metad
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    MatList,
-    MatListItem,
-    MatListItemTitle,
-    MatListItemLine,
     MatDivider,
     NgIf,
-    MatListSubheaderCssMatStyler,
-    MatListItemMeta,
     MatAnchor,
     ControlDirtyMarkerComponent,
     NgClass,
@@ -58,8 +52,7 @@ export class TracklistFormComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this._sessionRepository.currentSessionTracklistUpdated$
-      .pipe()
+    this._sessionRepository.currentSessionTracklistChanged$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(session => {
         if (session?.currentNode && session.currentNode.metadata instanceof MediaMetadata) {

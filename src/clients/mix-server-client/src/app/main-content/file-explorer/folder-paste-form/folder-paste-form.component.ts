@@ -22,6 +22,7 @@ export class FolderPasteFormComponent implements OnInit, OnDestroy {
 
   public sourceNode: FileExplorerFileNode | null = null;
   public currentFolder: FileExplorerFolder | null = null;
+  public loading = false;
 
   constructor(private _copyService: CopyNodeService,
               private _fileExplorer: FileExplorerNodeRepositoryService) {
@@ -63,6 +64,8 @@ export class FolderPasteFormComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.loading = true;
+
     const duplicates = this.currentFolder.children
       .map(child => {
         const childNameSections = child instanceof FileExplorerFileNode
@@ -91,5 +94,7 @@ export class FolderPasteFormComponent implements OnInit, OnDestroy {
     }
 
     await this._copyService.pasteNode(sourceNode, false);
+
+    this.loading = false;
   }
 }

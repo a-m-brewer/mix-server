@@ -35,11 +35,12 @@
       [metadata]="fileNode.metadata"
     />
 
-    <app-add-to-queue-button
-      [file]="node"
-    />
-
     @if (node | instanceOf:FileExplorerFileNode; as fileNode) {
+      <app-add-to-queue-button
+        *ngIf="fileNode.playbackSupported && fileNode.exists"
+        [file]="fileNode"
+      />
+
       <app-copy-node
         [file]="fileNode"
       />

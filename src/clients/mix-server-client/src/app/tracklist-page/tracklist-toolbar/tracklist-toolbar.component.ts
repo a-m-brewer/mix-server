@@ -32,9 +32,9 @@ export class TracklistToolbarComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this._sessionRepository.currentSessionTracklistUpdated$
+    this._sessionRepository.currentSessionTracklistChanged$
       .pipe(takeUntil(this._unsubscribe))
-      .subscribe((session) => {
+      .subscribe(session => {
         if (session?.currentNode && session.currentNode.metadata instanceof MediaMetadata) {
           this.form = session.currentNode.metadata.tracklist;
         } else {
