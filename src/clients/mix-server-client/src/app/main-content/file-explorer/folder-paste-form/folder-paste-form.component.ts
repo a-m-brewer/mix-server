@@ -1,16 +1,11 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {MatButton} from "@angular/material/button";
 import {CopyNodeService} from "../../../services/nodes/copy-node.service";
-import {firstValueFrom, Subject, takeUntil} from "rxjs";
+import {Subject, takeUntil} from "rxjs";
 import {FileExplorerFileNode} from "../models/file-explorer-file-node";
 import {NgIf} from "@angular/common";
 import {FileExplorerNodeRepositoryService} from "../../../services/repositories/file-explorer-node-repository.service";
-import {FileExplorerFolderNode} from "../models/file-explorer-folder-node";
 import {FileExplorerFolder} from "../models/file-explorer-folder";
-import {MatDialog} from "@angular/material/dialog";
-import {
-  ConfirmationDialogComponent
-} from "../../../components/dialogs/confirmation-dialog/confirmation-dialog.component";
 
 @Component({
   selector: 'app-folder-paste-form',
@@ -29,7 +24,6 @@ export class FolderPasteFormComponent implements OnInit, OnDestroy {
   public currentFolder: FileExplorerFolder | null = null;
 
   constructor(private _copyService: CopyNodeService,
-              private _dialog: MatDialog,
               private _fileExplorer: FileExplorerNodeRepositoryService) {
   }
 
@@ -57,6 +51,12 @@ export class FolderPasteFormComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this._copyService.isMove &&
+      this.sourceNode.parent.absolutePath === this.currentFolder.node.absolutePath) {
+      this._copyService.resetForm();
+      return;
+    }
+
     const nameSections = this.sourceNode.nameSections;
 
     if (!nameSections) {
@@ -64,18 +64,29 @@ export class FolderPasteFormComponent implements OnInit, OnDestroy {
     }
 
     const duplicates = this.currentFolder.children
-      .filter(child =>
-        child instanceof FileExplorerFileNode &&
-        child.nameSections &&
-        child.nameSections.nameWithoutSuffix === nameSections.nameWithoutSuffix)
-      .length;
+      .map(child => {
+        const childNameSections = child instanceof FileExplorerFileNode
+          ? child.nameSections
+          : null;
+
+        if (!childNameSections) {
+          return null;
+        }
+
+        return childNameSections.nameWithoutSuffix === nameSections.nameWithoutSuffix
+          ? childNameSections
+          : null;
+      })
+      .filter(f => f !== null);
+
+    const maxCopyNumber = Math.max(...duplicates.map(d => d?.copyNumber ?? -1));
 
     let sourceNode = this.sourceNode;
-    if (duplicates > 0) {
+    if (duplicates.length > 0) {
       sourceNode = this.sourceNode.copy();
       sourceNode.exists = false;
 
-      const suffix = duplicates === 1 ? '': ` (${duplicates})`;
+      const suffix = maxCopyNumber === -1 ? '' : ` (${maxCopyNumber + 1})`;
       sourceNode.name = `${nameSections.nameWithoutSuffix} - Copy${suffix}.${nameSections.extension}`
     }
 

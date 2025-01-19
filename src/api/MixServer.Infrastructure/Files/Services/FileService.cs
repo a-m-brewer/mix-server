@@ -91,6 +91,11 @@ public class FileService(
         
         var destinationPath = Path.Join(destinationFolder, destinationName);
         
+        if (File.Exists(destinationPath) && !overwrite)
+        {
+            throw new ConflictException(destinationFolder, destinationName);
+        }
+        
         var type = GetNodeTypeOrThrow(sourcePath);
 
         if (type == FileExplorerNodeType.File)

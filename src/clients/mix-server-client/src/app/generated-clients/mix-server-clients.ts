@@ -476,6 +476,13 @@ export class NodeManagementClient implements INodeManagementClient {
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("A server side error occurred.", status, _responseText, _headers, result404);
             }));
+        } else if (status === 409) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result409: any = null;
+            let resultData409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result409 = ProblemDetails.fromJS(resultData409);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result409);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -4954,8 +4961,52 @@ export interface IUserDeletedDto {
     userId: string;
 }
 
+export class FileExplorerNodeAddedDto implements IFileExplorerNodeAddedDto {
+    node!: FileExplorerNodeResponse;
+    index!: number;
+
+    constructor(data?: IFileExplorerNodeAddedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.node = new FileExplorerNodeResponse();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.node = _data["node"] ? FileExplorerNodeResponse.fromJS(_data["node"]) : new FileExplorerNodeResponse();
+            this.index = _data["index"];
+        }
+    }
+
+    static fromJS(data: any): FileExplorerNodeAddedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new FileExplorerNodeAddedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["node"] = this.node ? this.node.toJSON() : <any>undefined;
+        data["index"] = this.index;
+        return data;
+    }
+}
+
+export interface IFileExplorerNodeAddedDto {
+    node: FileExplorerNodeResponse;
+    index: number;
+}
+
 export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
     node!: FileExplorerNodeResponse;
+    index!: number;
     oldAbsolutePath!: string;
 
     constructor(data?: IFileExplorerNodeUpdatedDto) {
@@ -4973,6 +5024,7 @@ export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
     init(_data?: any) {
         if (_data) {
             this.node = _data["node"] ? FileExplorerNodeResponse.fromJS(_data["node"]) : new FileExplorerNodeResponse();
+            this.index = _data["index"];
             this.oldAbsolutePath = _data["oldAbsolutePath"];
         }
     }
@@ -4987,6 +5039,7 @@ export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["node"] = this.node ? this.node.toJSON() : <any>undefined;
+        data["index"] = this.index;
         data["oldAbsolutePath"] = this.oldAbsolutePath;
         return data;
     }
@@ -4994,6 +5047,7 @@ export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
 
 export interface IFileExplorerNodeUpdatedDto {
     node: FileExplorerNodeResponse;
+    index: number;
     oldAbsolutePath: string;
 }
 

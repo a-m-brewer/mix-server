@@ -45,6 +45,8 @@ public interface IFileExplorerFolder
     IFolderSort Sort { get; set; }
 
     IReadOnlyCollection<T> GenerateSortedChildren<T>() where T : IFileExplorerNode;
+
+    IReadOnlyCollection<T> GenerateSortedChildren<T>(IFolderSort sort) where T : IFileExplorerNode;
 }
 
 public interface IRootFileExplorerFolder : IFileExplorerFolder

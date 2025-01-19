@@ -83,6 +83,9 @@ import {
   CopyNodeComponent
 } from "./components/nodes/node-list/node-list-item/context-menu/copy-node/copy-node.component";
 import {CutNodeComponent} from "./components/nodes/node-list/node-list-item/context-menu/cut-node/cut-node.component";
+import {
+  DeleteNodeComponent
+} from "./components/nodes/node-list/node-list-item/context-menu/delete-node/delete-node.component";
 
 @NgModule({
   declarations: [
@@ -142,7 +145,7 @@ import {CutNodeComponent} from "./components/nodes/node-list/node-list-item/cont
     AudioControlMobileComponent,
     SessionComponent,
     AudioProgressSliderComponent,
-    AudioControlButtonsComponent, NodeListItemTitleDirective, NodeListItemSubtitleDirective, InstanceOfPipe, FileMetadataSubtitleComponent, CopyNodeComponent, CutNodeComponent],
+    AudioControlButtonsComponent, NodeListItemTitleDirective, NodeListItemSubtitleDirective, InstanceOfPipe, FileMetadataSubtitleComponent, CopyNodeComponent, CutNodeComponent, DeleteNodeComponent],
   providers: [
     {
       provide: MIXSERVER_BASE_URL,

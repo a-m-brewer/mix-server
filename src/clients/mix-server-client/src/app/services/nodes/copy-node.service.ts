@@ -29,6 +29,10 @@ export class CopyNodeService {
     this._form = this.createForm();
   }
 
+  public get isMove() {
+    return this._form.value.move;
+  }
+
   public get sourceNode$() {
     return this._source$.asObservable();
   }
@@ -77,6 +81,7 @@ export class CopyNodeService {
   private createForm(): FormGroup<CopyNodeForm> {
     if (this._sourceControlSub) {
       this._sourceControlSub.unsubscribe();
+      this._source$.next(null);
     }
 
     const form = this._formBuilder.group<CopyNodeForm>({
@@ -91,5 +96,9 @@ export class CopyNodeService {
     });
 
     return form;
+  }
+
+  resetForm() {
+    this._form = this.createForm();
   }
 }

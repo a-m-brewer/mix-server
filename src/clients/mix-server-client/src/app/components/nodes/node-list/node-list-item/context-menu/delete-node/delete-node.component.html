@@ -1,0 +1,7 @@
+<button mat-menu-item
+        *ngIf="file"
+        [disabled]="disabled"
+        (click)="deleteNode()">
+  <mat-icon>delete</mat-icon>
+  <span>Delete</span>
+</button>

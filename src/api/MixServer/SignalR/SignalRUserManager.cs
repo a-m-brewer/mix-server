@@ -11,6 +11,7 @@ public interface ISignalRUserManager : IConnectionManager
 {
     event EventHandler? UserConnected;
 
+    IReadOnlyCollection<SignalRCallbackUser> ConnectedUsers { get; }
     int UsersConnected { get; }
 
     Task UserConnectedAsync(ClaimsPrincipal contextUser, SignalRConnectionId signalRConnectionId, string accessToken);
@@ -25,6 +26,8 @@ public class SignalRUserManager(ILogger<SignalRUserManager> logger, IServiceProv
 
     public event EventHandler? UserConnected;
 
+    public IReadOnlyCollection<SignalRCallbackUser> ConnectedUsers => _users.Values.ToList();
+    
     public int UsersConnected => _users.Count;
 
     public async Task UserConnectedAsync(ClaimsPrincipal contextUser, SignalRConnectionId signalRConnectionId, string accessToken)

@@ -20,6 +20,7 @@ public class NodeManagementController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CopyNode([FromBody] CopyNodeCommand command)
     {
         await copyNodeCommandHandler.HandleAsync(command);

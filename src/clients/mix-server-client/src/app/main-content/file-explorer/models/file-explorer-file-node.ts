@@ -6,6 +6,7 @@ import {FileMetadata} from "./file-metadata";
 export interface FileExplorerFileNodeNameParts {
   nameWithoutExtension: string;
   nameWithoutSuffix: string;
+  copyNumber?: number;
   extension?: string;
 }
 
@@ -26,17 +27,28 @@ export class FileExplorerFileNode implements FileExplorerNode {
   public mdIcon: string = 'description';
 
   public get nameSections(): FileExplorerFileNodeNameParts | null {
-    const re = /^((.+?)( - Copy)?( \([0-9]+\))?)(\.(.*))?$/;
+    const re = /^((.+?)( - Copy)?( \(([0-9]+)\))?)(\.(.*))?$/;
     const match = re.exec(this.name);
 
     if (!match) {
       return null
     }
 
+    let copyNumber = undefined;
+    // is a copy (Has - Copy)
+    if (match[3]) {
+      if (match[5]) {
+        copyNumber = parseInt(match[5]);
+      } else {
+        copyNumber = 1;
+      }
+    }
+
     return {
+      copyNumber,
       nameWithoutExtension: match[1],
       nameWithoutSuffix: match[2],
-      extension: match[6]
+      extension: match[7]
     };
   }
 
