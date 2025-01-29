@@ -41,17 +41,19 @@
         [file]="fileNode"
       />
 
-      <app-copy-node
-        [file]="fileNode"
-      />
+      @if (isAdmin) {
+        <app-copy-node
+          [file]="fileNode"
+        />
 
-      <app-cut-node
-        [file]="fileNode"
-      />
+        <app-cut-node
+          [file]="fileNode"
+        />
 
-      <app-delete-node
-        [file]="fileNode"
-      />
+        <app-delete-node
+          [file]="fileNode"
+        />
+      }
     }
   </app-node-list-item>
 </div>

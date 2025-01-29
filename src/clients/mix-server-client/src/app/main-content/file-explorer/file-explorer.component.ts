@@ -13,6 +13,8 @@ import {
 import {AudioPlayerStateService} from "../../services/audio-player/audio-player-state.service";
 import {AudioPlayerStateModel} from "../../services/audio-player/models/audio-player-state-model";
 import {SessionService} from "../../services/sessions/session.service";
+import {RoleRepositoryService} from "../../services/repositories/role-repository.service";
+import {Role} from "../../generated-clients/mix-server-clients";
 
 @Component({
   selector: 'app-file-explorer',
@@ -25,10 +27,12 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
   public currentFolder: FileExplorerFolder = FileExplorerFolder.Default;
   public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
+  public isAdmin: boolean = false;
 
   constructor(private _audioPlayerStateService: AudioPlayerStateService,
               private _loadingRepository: LoadingRepositoryService,
               private _nodeRepository: FileExplorerNodeRepositoryService,
+              private _roleRepository: RoleRepositoryService,
               private _sessionService: SessionService) {
   }
 
@@ -50,6 +54,12 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
       .subscribe(status => {
         this.loadingStatus = status;
       });
+
+    this._roleRepository.inRole$(Role.Administrator)
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(isAdmin => {
+        this.isAdmin = isAdmin;
+      })
   }
 
   public ngOnDestroy(): void {
