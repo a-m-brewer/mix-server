@@ -1,12 +1,15 @@
 import {Injectable} from '@angular/core';
 import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
 import {
-  BehaviorSubject, combineLatest,
+  BehaviorSubject,
+  combineLatest,
   combineLatestWith,
-  filter, firstValueFrom,
+  filter,
+  firstValueFrom,
   map,
   Observable,
-  sampleTime, Subject, takeUntil
+  sampleTime,
+  Subject
 } from "rxjs";
 import {StreamUrlService} from "../converters/stream-url.service";
 import {AudioSessionService} from "./audio-session.service";
@@ -25,6 +28,7 @@ import {PlaybackGrantedEvent} from "../repositories/models/playback-granted-even
 import {Mutex} from "async-mutex";
 import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
 import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
+import Hls from "hls.js";
 
 @Injectable({
   providedIn: 'root'
@@ -35,6 +39,8 @@ export class AudioPlayerService {
   private _timeChangedBehaviourSubject$ = new BehaviorSubject<number>(0);
   private _durationBehaviourSubject$ = new Subject<void>();
 
+  private _streamUrl: string = '';
+  private _transcode: boolean = false;
   private _playbackGranted: boolean = false;
 
   private _previousFile: FileExplorerFileNode | null | undefined;
@@ -341,7 +347,7 @@ export class AudioPlayerService {
   private async playInternal(): Promise<void> {
     try {
       this._playbackGranted = true;
-      await this._audioElementRepository.playFromTime(this.currentTime);
+      await this._audioElementRepository.playFromTime(this.currentTime, this._streamUrl, this._transcode);
       this.setDevicePlaying(true);
       this._audioSession
         .createMetadata()
@@ -409,7 +415,10 @@ export class AudioPlayerService {
   }
 
   private setCurrentSession(session: PlaybackSession): void {
-    this.audio.src = this._streamUrlService.getStreamUrl(session.id);
+    this._transcode = true;//this.audio.canPlayType(session.currentNode.metadata.mimeType) === '';
+    this._streamUrl = this._streamUrlService.getStreamUrl(session.id, this._transcode);
+
+    this._audioElementRepository.attachHls(this._transcode, this._streamUrl);
 
     this._timeChangedBehaviourSubject$.next(session.state.currentTime);
 

@@ -1,22 +1,25 @@
 ﻿using FluentValidation;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Services;
-using MixServer.Infrastructure.Files.Services;
+using MixServer.Domain.Streams.Models;
+using MixServer.Domain.Streams.Services;
 using MixServer.Infrastructure.Users.Services;
 
-namespace MixServer.Application.Streams.Queries;
+namespace MixServer.Application.Streams.Queries.GetStream;
 
 public class GetStreamQueryHandler(
     IJwtService jwtService,
     IMimeTypeService mimeTypeService,
     ISessionService sessionService,
+    ITranscodeService transcodeService,
     IValidator<GetStreamQuery> validator)
-    : IQueryHandler<GetStreamQuery, GetStreamQueryResponse>
+    : IQueryHandler<GetStreamQuery, HttpFileInfo>
 {
-    public async Task<GetStreamQueryResponse> HandleAsync(GetStreamQuery query)
+    public async Task<HttpFileInfo> HandleAsync(GetStreamQuery query)
     {
         await validator.ValidateAndThrowAsync(query);
 
@@ -31,12 +34,16 @@ public class GetStreamQueryHandler(
 
         var mimeType = mimeTypeService.GetMimeType(session.File.AbsolutePath, session.File.Extension);
 
-        var result = new GetStreamQueryResponse
+        if (query.Transcode)
         {
-            AbsoluteFilePath = session.AbsolutePath,
-            ContentType = mimeType
-        };
+            return await transcodeService.StartTranscodeAsync(
+                session.File.AbsolutePath,
+                (session.File.Metadata as IMediaMetadata)?.Bitrate);
+        }
 
-        return result;
+        return new DirectFileInfo(mimeType)
+        {
+            Path = session.File.AbsolutePath
+        };
     }
 }

@@ -7,6 +7,8 @@ using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Domain.Streams.Repositories;
+using MixServer.Domain.Streams.Services;
 using MixServer.Domain.Tracklists.Services;
 using MixServer.Domain.Users.Validators;
 using MixServer.Domain.Utilities;
@@ -24,6 +26,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IRootFileExplorerFolder, RootFileExplorerFolder>();
         services.AddTransient<ISessionHydrationService, SessionHydrationService>();
         services.AddTransient<ITracklistTagService, TracklistTagService>();
+        services.AddTransient<ITranscodeService, TranscodeService>();
+        services.AddSingleton<IProcessService, ProcessService>();
+        services.AddSingleton<ITranscodeRepository, TranscodeRepository>();
 
         services.AddDomainInterfaces();
         services.AddDomainUtilities();

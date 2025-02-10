@@ -1,4 +1,4 @@
-﻿namespace MixServer.Infrastructure.Files.Constants;
+﻿namespace MixServer.Domain.Constants;
 
 public static class MimeTypeConstants
 {

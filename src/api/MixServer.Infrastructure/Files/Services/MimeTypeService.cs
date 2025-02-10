@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
+using MixServer.Domain.Constants;
 using MixServer.Domain.FileExplorer.Services;
-using MixServer.Infrastructure.Files.Constants;
 
 namespace MixServer.Infrastructure.Files.Services;
 

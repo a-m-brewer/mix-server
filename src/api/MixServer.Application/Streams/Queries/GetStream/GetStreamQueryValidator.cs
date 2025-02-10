@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 
-namespace MixServer.Application.Streams.Queries;
+namespace MixServer.Application.Streams.Queries.GetStream;
 
 public class GetStreamQueryValidator : AbstractValidator<GetStreamQuery>
 {

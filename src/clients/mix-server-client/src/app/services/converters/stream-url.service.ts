@@ -11,10 +11,10 @@ export class StreamUrlService {
               @Inject(MIXSERVER_BASE_URL) private _baseUrl: string) {
   }
 
-  public getStreamUrl(playbackSessionId: string): string {
+  public getStreamUrl(playbackSessionId: string, transcode: boolean): string {
     const accessToken = this._authenticationService.accessToken?.value;
-    const accessTokenQuery = accessToken ? `?access_token=${accessToken}` : '';
+    const accessTokenQuery = accessToken ? `&access_token=${accessToken}` : '';
 
-    return `${this._baseUrl}/api/stream/${playbackSessionId}` + accessTokenQuery
+    return `${this._baseUrl}/api/stream/${playbackSessionId}?transcode=${transcode}` + accessTokenQuery
   }
 }

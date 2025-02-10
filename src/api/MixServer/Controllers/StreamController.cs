@@ -1,31 +1,54 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MixServer.Application.Streams.Queries;
+using MixServer.Application.Streams.Queries.GetSegment;
+using MixServer.Application.Streams.Queries.GetStream;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Interfaces;
+using MixServer.Domain.Streams.Models;
 
 namespace MixServer.Controllers;
 
 [Route("api/[controller]")]
-public class StreamController(IQueryHandler<GetStreamQuery, GetStreamQueryResponse> getStreamQueryHandler)
+public class StreamController(IQueryHandler<GetStreamQuery, HttpFileInfo> getStreamQueryHandler,
+    IQueryHandler<GetSegmentQuery, SegmentFileInfo> getSegmentQueryHandler)
     : ControllerBase
 {
     [AllowAnonymous]
-    [HttpGet("{playbackSessionId:guid}")]
+    [HttpGet("{id}")]
     public async Task<IActionResult> GetStream(
         // ReSharper disable once InconsistentNaming - so it matches signalR code
         [FromQuery] string? access_token,
-        [FromRoute] Guid playbackSessionId)
+        [FromRoute] string id,
+        [FromQuery] bool transcode = false)
     {
-        var stream = await getStreamQueryHandler.HandleAsync(new GetStreamQuery
+        if (Guid.TryParse(id, out var playbackSessionId))
         {
-            PlaybackSessionId = playbackSessionId,
-            AccessToken = access_token ?? throw new UnauthorizedRequestException()
-        });
+            var stream = await getStreamQueryHandler.HandleAsync(new GetStreamQuery
+            {
+                PlaybackSessionId = playbackSessionId,
+                AccessToken = access_token ?? throw new UnauthorizedRequestException(),
+                Transcode = transcode
+            });
         
-        return new PhysicalFileResult(stream.AbsoluteFilePath, stream.ContentType)
+            return new PhysicalFileResult(stream.Path, stream.MimeType)
+            {
+                EnableRangeProcessing = true
+            };
+        }
+
+        if (id.EndsWith(".ts"))
         {
-            EnableRangeProcessing = true
-        };
+            var segment = await getSegmentQueryHandler.HandleAsync(new GetSegmentQuery
+            {
+                Segment = id
+            });
+            
+            return new PhysicalFileResult(segment.Path, segment.MimeType)
+            {
+                EnableRangeProcessing = true
+            };
+        }
+
+        return BadRequest();
     }
 }
