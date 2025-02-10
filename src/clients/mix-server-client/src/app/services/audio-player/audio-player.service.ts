@@ -212,11 +212,6 @@ export class AudioPlayerService {
       }));
   }
 
-  public get requestingPlayback$(): Observable<boolean> {
-    return this._loadingRepository.status$()
-      .pipe(map(status => status.isLoadingAction('RequestPlayback')));
-  }
-
   public get currentCueIndex$(): Observable<number> {
     return this.sampleCurrentTime$(500, false)
       .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
@@ -275,11 +270,25 @@ export class AudioPlayerService {
 
   public get duration$(): Observable<number> {
     return this._durationBehaviourSubject$.asObservable()
-      .pipe(map(() => isNaN(this.audio.duration) ? 0 : this.audio.duration));
+      .pipe(map(() => this.duration));
   }
 
   public get duration(): number {
-    return this.audio.duration;
+    return Math.max(this.audioElementDuration, this.expectedDuration);
+  }
+
+  private get audioElementDuration(): number {
+    return isNaN(this.audio.duration)
+      ? 0
+      : this.audio.duration;
+  }
+
+  private get expectedDuration(): number {
+    if (this._audioPlayerState.state.node?.metadata instanceof MediaMetadata) {
+      return timespanToTotalSeconds(this._audioPlayerState.state.node.metadata.duration);
+    }
+
+    return 0;
   }
 
   public get volume(): number {
@@ -304,11 +313,6 @@ export class AudioPlayerService {
 
   public async requestPlayback(deviceId?: string): Promise<void> {
     await this._playbackSessionRepository.requestPlayback(deviceId);
-  }
-
-  public retriggerCurrentTimeAndDuration(): void {
-    this._timeChangedBehaviourSubject$.next(this.currentTime);
-    this._durationBehaviourSubject$.next();
   }
 
   public requestPause(): void {
@@ -423,6 +427,7 @@ export class AudioPlayerService {
     this._timeChangedBehaviourSubject$.next(session.state.currentTime);
 
     this._audioPlayerState.node = session.currentNode;
+    this._durationBehaviourSubject$.next();
 
     if (session.deviceId === this._authenticationService.deviceId) {
       this.play().then();
