@@ -33,7 +33,9 @@ export class AudioPlayerService {
   private _playMutex = new Mutex();
 
   private _timeChangedBehaviourSubject$ = new BehaviorSubject<number>(0);
-  private _durationBehaviourSubject$ = new Subject<void>();
+
+  private _clientDurationBehaviourSubject$ = new BehaviorSubject<number>(this.getSanitizedClientDuration());
+  private _serverDurationBehaviourSubject$ = new BehaviorSubject<number>(0);
 
   private _playbackGranted: boolean = false;
 
@@ -60,7 +62,7 @@ export class AudioPlayerService {
     }
 
     this.audio.ondurationchange = () => {
-      this._durationBehaviourSubject$.next();
+      this._clientDurationBehaviourSubject$.next(this.getSanitizedClientDuration());
     }
 
     this._playbackSessionRepository
@@ -268,12 +270,13 @@ export class AudioPlayerService {
   }
 
   public get duration$(): Observable<number> {
-    return this._durationBehaviourSubject$.asObservable()
-      .pipe(map(() => isNaN(this.audio.duration) ? 0 : this.audio.duration));
+    return this._serverDurationBehaviourSubject$
+      .pipe(combineLatestWith(this._clientDurationBehaviourSubject$))
+      .pipe(map(([serverDuration, clientDuration]) => this.getDuration(serverDuration, clientDuration)));
   }
 
   public get duration(): number {
-    return this.audio.duration;
+    return this.getDuration(this._serverDurationBehaviourSubject$.value, this._clientDurationBehaviourSubject$.value);
   }
 
   public get volume(): number {
@@ -298,11 +301,6 @@ export class AudioPlayerService {
 
   public async requestPlayback(deviceId?: string): Promise<void> {
     await this._playbackSessionRepository.requestPlayback(deviceId);
-  }
-
-  public retriggerCurrentTimeAndDuration(): void {
-    this._timeChangedBehaviourSubject$.next(this.currentTime);
-    this._durationBehaviourSubject$.next();
   }
 
   public requestPause(): void {
@@ -409,6 +407,11 @@ export class AudioPlayerService {
   }
 
   private setCurrentSession(session: PlaybackSession): void {
+    const serverDuration = session.currentNode.metadata instanceof MediaMetadata
+      ? timespanToTotalSeconds(session.currentNode.metadata.duration)
+      : 0;
+    this._serverDurationBehaviourSubject$.next(serverDuration);
+
     this.audio.src = this._streamUrlService.getStreamUrl(session.id);
 
     this._timeChangedBehaviourSubject$.next(session.state.currentTime);
@@ -442,6 +445,8 @@ export class AudioPlayerService {
     this.audio.load();
     this.updateTimeChangedBehaviourSubject();
     this._audioPlayerState.clear();
+    this._serverDurationBehaviourSubject$.next(0);
+    this._clientDurationBehaviourSubject$.next(0);
   }
 
   private updatePlaybackState(currentTime: number): void {
@@ -487,5 +492,13 @@ export class AudioPlayerService {
 
   private setDevicePlaying(playing: boolean) {
     this._playbackSessionRepository.setDevicePlaying(this.currentTime, playing);
+  }
+
+  private getSanitizedClientDuration(): number {
+    return !!this.audio && !isNaN(this.audio.duration) ? this.audio.duration : 0
+  }
+
+  private getDuration(serverDuration: number, clientDuration: number): number {
+    return Math.max(serverDuration, clientDuration, 0)
   }
 }

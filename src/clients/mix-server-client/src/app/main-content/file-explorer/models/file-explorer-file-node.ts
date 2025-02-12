@@ -17,12 +17,16 @@ export class FileExplorerFileNode implements FileExplorerNode {
               public exists: boolean,
               public creationTimeUtc: Date,
               public metadata: FileMetadata,
-              public playbackSupported: boolean,
+              public serverPlaybackSupported: boolean,
+              public clientPlaybackSupported: boolean,
               public parent: FileExplorerFolderNode) {
-    this.disabled = absolutePath.trim() === '' || !exists || !playbackSupported;
+
+    this.playbackSupported = serverPlaybackSupported && clientPlaybackSupported;
+    this.disabled = absolutePath.trim() === '' || !exists || !this.playbackSupported;
   }
 
   public disabled: boolean;
+  public playbackSupported: boolean;
 
   public mdIcon: string = 'description';
 
@@ -77,7 +81,8 @@ export class FileExplorerFileNode implements FileExplorerNode {
       this.exists,
       this.creationTimeUtc,
       this.metadata.copy(),
-      this.playbackSupported,
+      this.serverPlaybackSupported,
+      this.clientPlaybackSupported,
       this.parent.copy()
     );
   }
