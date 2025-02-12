@@ -73,6 +73,11 @@ export class FileExplorerFileNode implements FileExplorerNode {
       !this.exists
   }
 
+  public get serverPlaybackDisabled(): boolean {
+    return !this.serverPlaybackSupported ||
+      !this.exists
+  }
+
   public copy(): FileExplorerFileNode {
     return new FileExplorerFileNode(
       this.name,

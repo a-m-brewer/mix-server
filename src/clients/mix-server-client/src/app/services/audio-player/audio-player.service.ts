@@ -164,25 +164,25 @@ export class AudioPlayerService {
   }
 
   public get playbackDisabled$(): Observable<boolean> {
-    return combineLatest([this.audioControlsDisabled$, this._playbackSessionRepository.currentSession$])
-      .pipe(map(([disabled, session]) => {
-        return disabled || !session || session.currentNode.playbackDisabled;
+    return combineLatest([this.audioControlsDisabled$, this._playbackSessionRepository.currentSession$, this.isCurrentPlaybackDevice$])
+      .pipe(map(([disabled, session, isCurrentPlaybackDevice]) => {
+        return disabled || !session || this.fileControlDisabled(session.currentNode, isCurrentPlaybackDevice);
       }));
   }
 
   public get previousItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._queueRepository.previousQueueItem$()))
-      .pipe(map(([disabled, previousItem]) => {
-        return disabled || !previousItem || previousItem.disabled;
+      .pipe(combineLatestWith(this._queueRepository.previousQueueItem$(), this.isCurrentPlaybackDevice$))
+      .pipe(map(([disabled, previousItem, isCurrentPlaybackDevice]) => {
+        return disabled || !previousItem || this.fileControlDisabled(previousItem.file, isCurrentPlaybackDevice);
       }));
   }
 
   public get nextItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._queueRepository.nextQueueItem$()))
-      .pipe(map(([disabled, nextItem]) => {
-        return disabled || !nextItem || nextItem.disabled;
+      .pipe(combineLatestWith(this._queueRepository.nextQueueItem$(), this.isCurrentPlaybackDevice$))
+      .pipe(map(([disabled, nextItem, isCurrentPlaybackDevice]) => {
+        return disabled || !nextItem || this.fileControlDisabled(nextItem.file, isCurrentPlaybackDevice);
       }));
   }
 
@@ -500,5 +500,9 @@ export class AudioPlayerService {
 
   private getDuration(serverDuration: number, clientDuration: number): number {
     return Math.max(serverDuration, clientDuration, 0)
+  }
+
+  private fileControlDisabled(file: FileExplorerFileNode | null | undefined, isCurrentPlaybackDevice: boolean): boolean {
+    return !file || (isCurrentPlaybackDevice && file.playbackDisabled || !isCurrentPlaybackDevice && file.serverPlaybackDisabled)
   }
 }
