@@ -16,6 +16,7 @@ public class DeviceDtoConverter :
             Id = value.Id,
             LastSeen = value.LastSeen,
             InteractedWith = value.InteractedWith,
+            Capabilities = value.Capabilities,
             Online = value.Online,
             ClientType = value.ClientType,
             DeviceType = value.DeviceType,
@@ -34,7 +35,8 @@ public class DeviceDtoConverter :
             DeviceId = value.DeviceId,
             LastInteractedWith = value.LastInteractedWith,
             InteractedWith = value.InteractedWith,
-            Online = value.Online
+            Online = value.Online,
+            Capabilities = value.Capabilities
         };
     }
 }

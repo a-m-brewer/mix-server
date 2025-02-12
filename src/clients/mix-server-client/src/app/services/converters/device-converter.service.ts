@@ -18,6 +18,7 @@ export class DeviceConverterService {
       dto.lastSeen,
       dto.interactedWith,
       dto.online,
+      dto.capabilities,
       dto.brand,
       dto.browserName,
       dto.model,
@@ -30,6 +31,6 @@ export class DeviceConverterService {
   }
 
   public fromStateDto(dto: DeviceStateDto): DeviceState {
-    return new DeviceState(dto.deviceId, dto.lastInteractedWith, dto.interactedWith, dto.online);
+    return new DeviceState(dto.deviceId, dto.lastInteractedWith, dto.interactedWith, dto.online, dto.capabilities);
   }
 }

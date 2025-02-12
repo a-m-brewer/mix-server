@@ -25,6 +25,7 @@ import {PlaybackGrantedEvent} from "../repositories/models/playback-granted-even
 import {Mutex} from "async-mutex";
 import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
 import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
+import {AudioPlayerCapabilitiesService} from "./audio-player-capabilities.service";
 
 @Injectable({
   providedIn: 'root'
@@ -42,7 +43,8 @@ export class AudioPlayerService {
   private _previousFile: FileExplorerFileNode | null | undefined;
   private _nextFile: FileExplorerFileNode | null | undefined;
 
-  constructor(private _audioElementRepository: AudioElementRepositoryService,
+  constructor(private _audioCapabilities: AudioPlayerCapabilitiesService,
+              private _audioElementRepository: AudioElementRepositoryService,
               private _audioSession: AudioSessionService,
               private _audioPlayerState: AudioPlayerStateService,
               private _authenticationService: AuthenticationService,
@@ -146,13 +148,13 @@ export class AudioPlayerService {
 
   public get otherValidPlaybackDevices$(): Observable<Array<Device>> {
     return this._deviceRepository.onlineDevices$
-      .pipe(combineLatestWith(this._playbackSessionRepository.currentPlaybackDevice$))
-      .pipe(map(([devices, currentPlaybackDeviceId]) => {
+      .pipe(combineLatestWith(this._playbackSessionRepository.currentPlaybackDevice$, this._playbackSessionRepository.currentSession$))
+      .pipe(map(([devices, currentPlaybackDeviceId, session]) => {
         if (!currentPlaybackDeviceId) {
-          return devices.filter(f => f.id !== this._authenticationService.deviceId);
+          return devices.filter(d => d.id !== this._authenticationService.deviceId && d.canPlay(session?.currentNode));
         }
 
-        return devices.filter(d => d.id !== currentPlaybackDeviceId);
+        return devices.filter(d => d.id !== currentPlaybackDeviceId && d.canPlay(session?.currentNode));
       }));
   }
 
@@ -164,25 +166,38 @@ export class AudioPlayerService {
   }
 
   public get playbackDisabled$(): Observable<boolean> {
-    return combineLatest([this.audioControlsDisabled$, this._playbackSessionRepository.currentSession$, this.isCurrentPlaybackDevice$])
-      .pipe(map(([disabled, session, isCurrentPlaybackDevice]) => {
-        return disabled || !session || this.fileControlDisabled(session.currentNode, isCurrentPlaybackDevice);
+    return combineLatest([
+      this.audioControlsDisabled$,
+      this._playbackSessionRepository.currentSession$,
+      this.currentPlaybackDevice$,
+      this._deviceRepository.currentDevice$
+    ])
+      .pipe(map(([disabled, session, currentPlaybackDevice, currentDevice]) => {
+        return disabled || !session || this.fileControlDisabled(session.currentNode, currentPlaybackDevice, currentDevice);
       }));
   }
 
   public get previousItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._queueRepository.previousQueueItem$(), this.isCurrentPlaybackDevice$))
-      .pipe(map(([disabled, previousItem, isCurrentPlaybackDevice]) => {
-        return disabled || !previousItem || this.fileControlDisabled(previousItem.file, isCurrentPlaybackDevice);
+      .pipe(combineLatestWith(
+        this._queueRepository.previousQueueItem$(),
+        this.currentPlaybackDevice$,
+        this._deviceRepository.currentDevice$
+      ))
+      .pipe(map(([disabled, previousItem, currentPlaybackDevice, currentDevice]) => {
+        return disabled || !previousItem || this.fileControlDisabled(previousItem.file, currentPlaybackDevice, currentDevice);
       }));
   }
 
   public get nextItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._queueRepository.nextQueueItem$(), this.isCurrentPlaybackDevice$))
-      .pipe(map(([disabled, nextItem, isCurrentPlaybackDevice]) => {
-        return disabled || !nextItem || this.fileControlDisabled(nextItem.file, isCurrentPlaybackDevice);
+      .pipe(combineLatestWith(
+        this._queueRepository.nextQueueItem$(),
+        this.currentPlaybackDevice$,
+        this._deviceRepository.currentDevice$
+      ))
+      .pipe(map(([disabled, nextItem, currentPlaybackDevice, currentDevice]) => {
+        return disabled || !nextItem || this.fileControlDisabled(nextItem.file, currentPlaybackDevice, currentDevice);
       }));
   }
 
@@ -502,7 +517,13 @@ export class AudioPlayerService {
     return Math.max(serverDuration, clientDuration, 0)
   }
 
-  private fileControlDisabled(file: FileExplorerFileNode | null | undefined, isCurrentPlaybackDevice: boolean): boolean {
-    return !file || (isCurrentPlaybackDevice && file.playbackDisabled || !isCurrentPlaybackDevice && file.serverPlaybackDisabled)
+  private fileControlDisabled(
+    file: FileExplorerFileNode | null | undefined,
+    currentPlaybackDevice: Device | null | undefined,
+    currentDevice: Device | null | undefined): boolean {
+
+    const deviceToInspect = currentPlaybackDevice ?? currentDevice;
+
+    return !file || !deviceToInspect || !deviceToInspect.canPlay(file);
   }
 }

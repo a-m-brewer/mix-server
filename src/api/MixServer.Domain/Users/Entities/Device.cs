@@ -29,11 +29,15 @@ public class Device : IDevice
     [NotMapped]
     public bool Online { get; set; }
 
+    [NotMapped]
+    public Dictionary<string, bool> Capabilities { get; private set; } = new();
+
     public void Populate(IDeviceState state)
     {
         Online = state.Online;
         LastInteractedWith = state.LastInteractedWith;
         InteractedWith = state.InteractedWith;
+        Capabilities = state.Capabilities;
     }
 
     #region DeviceInfo

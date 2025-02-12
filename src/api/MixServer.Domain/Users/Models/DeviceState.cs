@@ -8,6 +8,8 @@ public interface IDeviceState
     bool InteractedWith { get; }
     
     bool Online { get;}
+
+    Dictionary<string, bool> Capabilities { get; }
 }
 
 public class DeviceState(Guid deviceId) : IDeviceState
@@ -22,6 +24,8 @@ public class DeviceState(Guid deviceId) : IDeviceState
     
     public bool InteractedWith { get; private set; }
     
+    public Dictionary<string, bool> Capabilities { get; } = new();
+    
     public void SetOnline(bool online)
     {
         Online = online;
@@ -34,5 +38,28 @@ public class DeviceState(Guid deviceId) : IDeviceState
         InteractedWith = interactedWith;
         
         StateChanged?.Invoke(this, EventArgs.Empty);
+    }
+    
+    public void UpdateCapabilities(Dictionary<string, bool> capabilities)
+    {
+        var changed = false;
+        
+        foreach (var (mimeType, supported) in capabilities)
+        {
+            var hasCapability = Capabilities.ContainsKey(mimeType);
+            var capabilityChanged = hasCapability && Capabilities[mimeType] != supported;
+
+            if (capabilityChanged)
+            {
+                changed = true;
+            }
+            
+            Capabilities[mimeType] = supported;
+        }
+        
+        if (changed)
+        {
+            StateChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 }

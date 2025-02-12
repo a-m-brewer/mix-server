@@ -1,4 +1,5 @@
 import {ClientType, DeviceType} from "../../../generated-clients/mix-server-clients";
+import {FileExplorerFileNode} from "../../../main-content/file-explorer/models/file-explorer-file-node";
 
 export class Device {
   constructor(public id: string,
@@ -7,6 +8,7 @@ export class Device {
               public lastSeen: Date,
               public interactedWith: boolean,
               public online: boolean,
+              public capabilities: { [mimeType: string]: boolean },
               public brand: string | undefined,
               public browserName: string | undefined,
               public model: string | undefined,
@@ -20,5 +22,9 @@ export class Device {
 
   public get icon(): string {
     return 'devices'
+  }
+
+  canPlay(file?: FileExplorerFileNode | null) {
+    return file && (this.capabilities[file.metadata.mimeType] ?? false);
   }
 }

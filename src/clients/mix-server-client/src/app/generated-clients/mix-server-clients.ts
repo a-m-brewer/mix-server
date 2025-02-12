@@ -19,6 +19,7 @@ export interface IDeviceClient {
     devices(): Observable<GetUsersDevicesQueryResponse>;
     deleteDevice(deviceId: string): Observable<void>;
     setDeviceInteracted(command: SetDeviceInteractionCommand): Observable<void>;
+    updateDeviceCapabilities(command: UpdateDevicePlaybackCapabilitiesCommand): Observable<void>;
 }
 
 @Injectable({
@@ -173,6 +174,61 @@ export class DeviceClient implements IDeviceClient {
     }
 
     protected processSetDeviceInteracted(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    updateDeviceCapabilities(command: UpdateDevicePlaybackCapabilitiesCommand): Observable<void> {
+        let url_ = this.baseUrl + "/api/device/capabilities";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(command);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processUpdateDeviceCapabilities(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdateDeviceCapabilities(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processUpdateDeviceCapabilities(response: HttpResponseBase): Observable<void> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -2308,6 +2364,7 @@ export class DeviceDto implements IDeviceDto {
     clientType!: ClientType;
     deviceType!: DeviceType;
     interactedWith!: boolean;
+    capabilities!: { [key: string]: boolean; };
     online!: boolean;
     browserName?: string | undefined;
     model?: string | undefined;
@@ -2322,6 +2379,9 @@ export class DeviceDto implements IDeviceDto {
                     (<any>this)[property] = (<any>data)[property];
             }
         }
+        if (!data) {
+            this.capabilities = {};
+        }
     }
 
     init(_data?: any) {
@@ -2331,6 +2391,13 @@ export class DeviceDto implements IDeviceDto {
             this.clientType = _data["clientType"];
             this.deviceType = _data["deviceType"];
             this.interactedWith = _data["interactedWith"];
+            if (_data["capabilities"]) {
+                this.capabilities = {} as any;
+                for (let key in _data["capabilities"]) {
+                    if (_data["capabilities"].hasOwnProperty(key))
+                        (<any>this.capabilities)![key] = _data["capabilities"][key];
+                }
+            }
             this.online = _data["online"];
             this.browserName = _data["browserName"];
             this.model = _data["model"];
@@ -2354,6 +2421,13 @@ export class DeviceDto implements IDeviceDto {
         data["clientType"] = this.clientType;
         data["deviceType"] = this.deviceType;
         data["interactedWith"] = this.interactedWith;
+        if (this.capabilities) {
+            data["capabilities"] = {};
+            for (let key in this.capabilities) {
+                if (this.capabilities.hasOwnProperty(key))
+                    (<any>data["capabilities"])[key] = (<any>this.capabilities)[key];
+            }
+        }
         data["online"] = this.online;
         data["browserName"] = this.browserName;
         data["model"] = this.model;
@@ -2370,6 +2444,7 @@ export interface IDeviceDto {
     clientType: ClientType;
     deviceType: DeviceType;
     interactedWith: boolean;
+    capabilities: { [key: string]: boolean; };
     online: boolean;
     browserName?: string | undefined;
     model?: string | undefined;
@@ -2523,6 +2598,57 @@ export class SetDeviceInteractionCommand implements ISetDeviceInteractionCommand
 
 export interface ISetDeviceInteractionCommand {
     interacted: boolean;
+}
+
+export class UpdateDevicePlaybackCapabilitiesCommand implements IUpdateDevicePlaybackCapabilitiesCommand {
+    capabilities!: { [key: string]: boolean; };
+
+    constructor(data?: IUpdateDevicePlaybackCapabilitiesCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.capabilities = {};
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (_data["capabilities"]) {
+                this.capabilities = {} as any;
+                for (let key in _data["capabilities"]) {
+                    if (_data["capabilities"].hasOwnProperty(key))
+                        (<any>this.capabilities)![key] = _data["capabilities"][key];
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): UpdateDevicePlaybackCapabilitiesCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateDevicePlaybackCapabilitiesCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (this.capabilities) {
+            data["capabilities"] = {};
+            for (let key in this.capabilities) {
+                if (this.capabilities.hasOwnProperty(key))
+                    (<any>data["capabilities"])[key] = (<any>this.capabilities)[key];
+            }
+        }
+        return data;
+    }
+}
+
+export interface IUpdateDevicePlaybackCapabilitiesCommand {
+    capabilities: { [key: string]: boolean; };
 }
 
 export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
@@ -4846,6 +4972,7 @@ export class DeviceStateDto implements IDeviceStateDto {
     lastInteractedWith!: string;
     interactedWith!: boolean;
     online!: boolean;
+    capabilities!: { [key: string]: boolean; };
 
     constructor(data?: IDeviceStateDto) {
         if (data) {
@@ -4853,6 +4980,9 @@ export class DeviceStateDto implements IDeviceStateDto {
                 if (data.hasOwnProperty(property))
                     (<any>this)[property] = (<any>data)[property];
             }
+        }
+        if (!data) {
+            this.capabilities = {};
         }
     }
 
@@ -4862,6 +4992,13 @@ export class DeviceStateDto implements IDeviceStateDto {
             this.lastInteractedWith = _data["lastInteractedWith"];
             this.interactedWith = _data["interactedWith"];
             this.online = _data["online"];
+            if (_data["capabilities"]) {
+                this.capabilities = {} as any;
+                for (let key in _data["capabilities"]) {
+                    if (_data["capabilities"].hasOwnProperty(key))
+                        (<any>this.capabilities)![key] = _data["capabilities"][key];
+                }
+            }
         }
     }
 
@@ -4878,6 +5015,13 @@ export class DeviceStateDto implements IDeviceStateDto {
         data["lastInteractedWith"] = this.lastInteractedWith;
         data["interactedWith"] = this.interactedWith;
         data["online"] = this.online;
+        if (this.capabilities) {
+            data["capabilities"] = {};
+            for (let key in this.capabilities) {
+                if (this.capabilities.hasOwnProperty(key))
+                    (<any>data["capabilities"])[key] = (<any>this.capabilities)[key];
+            }
+        }
         return data;
     }
 }
@@ -4887,6 +5031,7 @@ export interface IDeviceStateDto {
     lastInteractedWith: string;
     interactedWith: boolean;
     online: boolean;
+    capabilities: { [key: string]: boolean; };
 }
 
 export class DeviceDeletedDto implements IDeviceDeletedDto {

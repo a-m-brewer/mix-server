@@ -12,7 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Devices\Commands\" />
       <Folder Include="Devices\Queries\" />
       <Folder Include="FileExplorer\Services\" />
     </ItemGroup>

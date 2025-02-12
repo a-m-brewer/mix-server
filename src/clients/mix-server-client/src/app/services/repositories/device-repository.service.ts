@@ -121,6 +121,7 @@ export class DeviceRepositoryService {
   }
 
   private next(devices: Device[]): void {
+    console.log('online devices', devices.filter(m => m.online));
     this._devicesBehaviourSubject$.next(devices);
   }
 }

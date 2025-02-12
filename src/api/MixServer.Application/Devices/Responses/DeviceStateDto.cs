@@ -9,4 +9,6 @@ public class DeviceStateDto
     public bool InteractedWith { get; set; }
     
     public bool Online { get; set; }
+    
+    public Dictionary<string, bool> Capabilities { get; set; } = new();
 }
