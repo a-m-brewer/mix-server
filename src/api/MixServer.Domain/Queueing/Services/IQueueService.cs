@@ -12,10 +12,11 @@ public interface IQueueService
     Task<QueueSnapshot> SetQueuePositionAsync(Guid queuePositionId);
     Task<QueueSnapshot> AddToQueueAsync(IFileExplorerFileNode file);
     Task<QueueSnapshot> RemoveUserQueueItemsAsync(List<Guid> ids);
-    Task<(PlaylistIncrementResult Result, QueueSnapshot Snapshot)> IncrementQueuePositionAsync(int offset);
+    Task<QueueSnapshot> SetQueuePositionAsync(QueueSnapshotItem item);
     Task ResortQueueAsync();
     void ClearQueue();
     Task<QueueSnapshot> GenerateQueueSnapshotAsync();
+    Task<(PlaylistIncrementResult Result, QueueSnapshotItem? Snapshot)> GetQueueSnapshotItemAsync(int offset);
     Task<IFileExplorerFileNode> GetCurrentPositionFileOrThrowAsync();
     string? GetCurrentQueueFolderAbsolutePath();
 }

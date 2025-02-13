@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
 
@@ -9,6 +10,7 @@ public interface IPlaybackState
 {
     string UserId { get; }
     Guid? SessionId { get; }
+    string AbsolutePath { get; }
     Guid? LastPlaybackDeviceId { get; }
     Guid? DeviceId { get; }
     bool Playing { get; }
@@ -25,6 +27,8 @@ public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger
     public string UserId { get; } = session.UserId;
 
     public Guid? SessionId { get; private set; } = session.SessionId;
+
+    public string AbsolutePath { get; private set; } = session.AbsolutePath;
 
     public Guid? LastPlaybackDeviceId { get; private set; } = session.LastPlaybackDeviceId;
 
@@ -62,6 +66,7 @@ public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger
         
         SessionId = session.SessionId;
         DeviceId = session.DeviceId;
+        AbsolutePath = session.AbsolutePath;
 
         if (includePlaying)
         {
@@ -157,6 +162,7 @@ public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger
     public void ClearSession()
     {
         SessionId = null;
+        AbsolutePath = string.Empty;
         CurrentTime = TimeSpan.Zero;
     }
 }

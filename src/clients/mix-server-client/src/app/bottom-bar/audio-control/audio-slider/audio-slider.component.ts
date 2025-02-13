@@ -254,7 +254,7 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
   onSliderHover(e: MouseEvent | TouchEvent) {
     const sliderContainer = e.currentTarget as HTMLElement;
     const rect = sliderContainer.getBoundingClientRect();
-    const clientX = (e instanceof TouchEvent) ? e.touches[0].clientX : e.clientX;
+    const clientX = ('touches' in e) ? e.touches[0].clientX : e.clientX;
     const positionRaw = ((clientX - rect.left) / rect.width) * 100;
     const position = Math.min(100, Math.max(0, positionRaw));
 

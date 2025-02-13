@@ -64,6 +64,10 @@ export class AuthenticationService {
       .pipe(distinctUntilChanged());
   }
 
+  public get connected(): boolean {
+    return this.serverConnectionStatus === ServerConnectionState.Connected;
+  }
+
   private get unauthorized$(): Observable<boolean> {
     return this._connectionStatusBehaviourSubject$
       .pipe(map(s => s.state === ServerConnectionState.Unauthorized))

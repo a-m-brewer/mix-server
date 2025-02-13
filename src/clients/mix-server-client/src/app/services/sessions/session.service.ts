@@ -14,6 +14,8 @@ import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-p
 import {QueueRepositoryService} from "../repositories/queue-repository.service";
 import {QueueConverterService} from "../converters/queue-converter.service";
 import {AuthenticationService} from "../auth/authentication.service";
+import {DeviceRepositoryService} from "../repositories/device-repository.service";
+import {PlaybackSession} from "../repositories/models/playback-session";
 
 @Injectable({
   providedIn: 'root'
@@ -22,6 +24,7 @@ export class SessionService {
 
   constructor(
     private _authenticationService: AuthenticationService,
+    private _deviceRepository: DeviceRepositoryService,
     private _loadingRepository: LoadingRepositoryService,
     private _playbackSessionConverter: PlaybackSessionConverterService,
     private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
@@ -62,18 +65,39 @@ export class SessionService {
   }
 
   public back(): void {
+    const currentSession = this._playbackSessionRepository.currentSession;
+    if (!currentSession || currentSession.state.deviceId !== this._authenticationService.deviceId) {
+      return;
+    }
+
+    const offset = this.findNextValidQueueItemOffset(currentSession, -1);
+    if (!offset) {
+      return;
+    }
+
     this._loadingRepository.startLoadingAction('Back');
     this.setNextSession(new SetNextSessionCommand({
-      offset: -1,
+      offset,
       resetSessionState: false
     }))
       .finally(() => this._loadingRepository.stopLoadingAction('Back'));
   }
 
   public skip(): void {
+    const currentSession = this._playbackSessionRepository.currentSession;
+    if (!currentSession || currentSession.state.deviceId !== this._authenticationService.deviceId) {
+      return;
+    }
+
+    const offset = this.findNextValidQueueItemOffset(currentSession, 1);
+    if (!offset) {
+      return;
+    }
+
     this._loadingRepository.startLoadingAction('Skip');
+
     this.setNextSession(new SetNextSessionCommand({
-      offset: 1,
+      offset,
       resetSessionState: false
     }))
       .finally(() => this._loadingRepository.stopLoadingAction('Skip'));
@@ -85,8 +109,13 @@ export class SessionService {
       return;
     }
 
+    const offset = this.findNextValidQueueItemOffset(currentSession, 1);
+    if (!offset) {
+      return;
+    }
+
     this.setNextSession(new SetNextSessionCommand({
-      offset: 1,
+      offset,
       resetSessionState: true
     })).then();
   }
@@ -109,5 +138,22 @@ export class SessionService {
 
     this._playbackSessionRepository.currentSession = session;
     this._queueRepository.queue = queue;
+  }
+
+  private findNextValidQueueItemOffset(currentSession: PlaybackSession, requestedOffset: number) : number | null {
+    const currentPlaybackDevice = this._deviceRepository.onlineDevices.find(f => f.id === currentSession.state.deviceId);
+    if (!currentPlaybackDevice) {
+      return null;
+    }
+
+    const offset = this._queueRepository.queue.findNextValidOffset(requestedOffset, (i) => {
+      return currentPlaybackDevice.canPlay(i.file);
+    });
+
+    if (!offset) {
+      return null;
+    }
+
+    return offset;
   }
 }

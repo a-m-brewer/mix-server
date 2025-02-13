@@ -6,13 +6,18 @@ import {firstValueFrom} from "rxjs";
 import {HistoryRepositoryService} from "../repositories/history-repository.service";
 import {DeviceClient, UpdateDevicePlaybackCapabilitiesCommand} from "../../generated-clients/mix-server-clients";
 import {ToastService} from "../toasts/toast-service";
+import {FileExplorerNodeRepositoryService} from "../repositories/file-explorer-node-repository.service";
+import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
+import {AuthenticationService} from "../auth/authentication.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class AudioPlayerCapabilitiesService {
-  constructor(private _audioElementRepository: AudioElementRepositoryService,
+  constructor(private authenticationService: AuthenticationService,
+              private _audioElementRepository: AudioElementRepositoryService,
               private _devicesClient: DeviceClient,
+              private _fileExplorer: FileExplorerNodeRepositoryService,
               private _historyRepository: HistoryRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _toastService: ToastService,
@@ -35,9 +40,22 @@ export class AudioPlayerCapabilitiesService {
         const mimeTypes = [...new Set(queue.items.map(m => m.file.metadata.mimeType))]
         this.updateAudioCapabilities(mimeTypes);
       });
+
+    this._fileExplorer.currentFolder$
+      .subscribe(folder => {
+        if (folder) {
+          const files = folder.children.filter(f => f instanceof FileExplorerFileNode) as FileExplorerFileNode[];
+          const mimeTypes = [...new Set(files.map(m => m.metadata.mimeType))]
+          this.updateAudioCapabilities(mimeTypes);
+        }
+      });
   }
 
   private updateAudioCapabilities(mimeTypes: string[]) {
+    if (!this.authenticationService.connected) {
+      return
+    }
+
     const update: { [mimeType: string]: boolean } = {}
     mimeTypes.forEach(mimeType => {
       update[mimeType] = this._audioElementRepository.audio.canPlayType(mimeType) !== '';

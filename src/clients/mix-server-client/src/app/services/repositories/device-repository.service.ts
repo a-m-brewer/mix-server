@@ -76,7 +76,11 @@ export class DeviceRepositoryService {
   public get onlineDevices$(): Observable<Device[]> {
     return this._devicesBehaviourSubject$
       // Require the device is interacted with unless its this device because to do anything they would have to interact anyway
-      .pipe(map(m => m.filter(f => (f.online && f.interactedWith) || f.id === this._authenticationService.deviceId)));
+      .pipe(map(m => this.filterOnlineDevices(m)));
+  }
+
+  public get onlineDevices(): Device[] {
+    return this.filterOnlineDevices(this._devicesBehaviourSubject$.getValue());
   }
 
   public get currentDevice$(): Observable<Device | null | undefined> {
@@ -121,7 +125,10 @@ export class DeviceRepositoryService {
   }
 
   private next(devices: Device[]): void {
-    console.log('online devices', devices.filter(m => m.online));
     this._devicesBehaviourSubject$.next(devices);
+  }
+
+  private filterOnlineDevices(devices: Device[]): Device[] {
+    return devices.filter(f => (f.online && f.interactedWith) || f.id === this._authenticationService.deviceId);
   }
 }

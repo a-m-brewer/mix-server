@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -20,6 +21,7 @@ public interface IFolderCacheService
     event EventHandler<FolderCacheServiceItemRemovedEventArgs> ItemRemoved;
 
     Task<ICacheFolder> GetOrAddAsync(string absolutePath);
+    IFileExplorerFileNode GetFile(string fileAbsolutePath);
     void InvalidateFolder(string absolutePath);
 }
 
@@ -100,6 +102,41 @@ public class FolderCacheService(
 
             return cacheItem;
         });
+    }
+
+    public IFileExplorerFileNode GetFile(string fileAbsolutePath)
+    {
+        var directoryAbsolutePath = Path.GetDirectoryName(fileAbsolutePath);
+
+        if (string.IsNullOrWhiteSpace(directoryAbsolutePath))
+        {
+            throw new InvalidRequestException(nameof(directoryAbsolutePath), "Directory Absolute Path is Null");
+        }
+
+        var dir = readWriteLock.ForRead(() => _cache.TryGetValue<IFolderCacheItem>(directoryAbsolutePath, out var cacheItem) ? cacheItem : null);
+
+        if (dir is null)
+        {
+            logger.LogWarning("Directory {DirectoryAbsolutePath} not found in cache when retrieving file", directoryAbsolutePath);
+            
+            return fileExplorerConverter.Convert(fileAbsolutePath);
+        }
+
+        var file = dir.Folder.Children.OfType<IFileExplorerFileNode>().FirstOrDefault(f => f.AbsolutePath == fileAbsolutePath);
+        
+        if (file is null)
+        {
+            logger.LogWarning("File {FileAbsolutePath} not found in cache", fileAbsolutePath);
+
+            if (Debugger.IsAttached && File.Exists(fileAbsolutePath))
+            {
+                Debugger.Break();
+            }
+            
+            return fileExplorerConverter.Convert(new FileInfo(fileAbsolutePath), dir.Folder.Node);
+        }
+        
+        return file;
     }
 
     public void InvalidateFolder(string absolutePath)

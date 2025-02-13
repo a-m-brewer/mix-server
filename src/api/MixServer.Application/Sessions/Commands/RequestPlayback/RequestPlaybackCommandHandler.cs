@@ -3,6 +3,7 @@ using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Models;
 using MixServer.Domain.Sessions.Services;
@@ -19,6 +20,7 @@ public class RequestPlaybackCommandHandler(
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
     IDeviceTrackingService deviceTrackingService,
+    IFolderCacheService folderCacheService,
     ILogger<RequestPlaybackCommandHandler> logger,
     IPlaybackTrackingService playbackTrackingService)
     : ICommandHandler<RequestPlaybackCommand, PlaybackGrantedDto>
@@ -26,6 +28,14 @@ public class RequestPlaybackCommandHandler(
     public async Task<PlaybackGrantedDto> HandleAsync(RequestPlaybackCommand request)
     {
         var playbackState = playbackTrackingService.GetOrThrow(currentUserRepository.CurrentUserId);
+        
+        var deviceState = deviceTrackingService.GetDeviceStateOrThrow(request.DeviceId);
+        var file = folderCacheService.GetFile(playbackState.AbsolutePath);
+
+        if (!deviceState.CanPlay(file))
+        {
+            throw new InvalidRequestException(nameof(request.DeviceId), $"Device {request.DeviceId} can not play {file.Metadata.MimeType}");
+        }
 
         if (!playbackState.HasDevice)
         {
@@ -39,8 +49,8 @@ public class RequestPlaybackCommandHandler(
                 playbackState.DeviceId);
             return await SendPlaybackGrantedAsync(playbackState, true);
         }
-
-        if (!deviceTrackingService.DeviceInteractedWith(request.DeviceId))
+        
+        if (!deviceState.InteractedWith)
         {
             throw new InvalidRequestException(nameof(RequestPlaybackCommand.DeviceId),
                 "Can not request playback with a device that has not been interacted with due to browser auto play rules");

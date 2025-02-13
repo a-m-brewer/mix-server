@@ -26,6 +26,7 @@ import {Mutex} from "async-mutex";
 import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
 import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 import {AudioPlayerCapabilitiesService} from "./audio-player-capabilities.service";
+import {Queue} from "../repositories/models/queue";
 
 @Injectable({
   providedIn: 'root'
@@ -179,25 +180,17 @@ export class AudioPlayerService {
 
   public get previousItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(
-        this._queueRepository.previousQueueItem$(),
-        this.currentPlaybackDevice$,
-        this._deviceRepository.currentDevice$
-      ))
-      .pipe(map(([disabled, previousItem, currentPlaybackDevice, currentDevice]) => {
-        return disabled || !previousItem || this.fileControlDisabled(previousItem.file, currentPlaybackDevice, currentDevice);
+      .pipe(combineLatestWith(this._queueRepository.queue$(), this.currentPlaybackDevice$, this._deviceRepository.currentDevice$))
+      .pipe(map(([disabled, queue, currentPlaybackDevice, currentDevice]) => {
+        return disabled || !queue || this.offsetDisabled(queue, -1, currentPlaybackDevice, currentDevice);
       }));
   }
 
   public get nextItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(
-        this._queueRepository.nextQueueItem$(),
-        this.currentPlaybackDevice$,
-        this._deviceRepository.currentDevice$
-      ))
-      .pipe(map(([disabled, nextItem, currentPlaybackDevice, currentDevice]) => {
-        return disabled || !nextItem || this.fileControlDisabled(nextItem.file, currentPlaybackDevice, currentDevice);
+      .pipe(combineLatestWith(this._queueRepository.queue$(), this.currentPlaybackDevice$, this._deviceRepository.currentDevice$))
+      .pipe(map(([disabled, queue, currentPlaybackDevice, currentDevice]) => {
+        return disabled || !queue || this.offsetDisabled(queue, 1, currentPlaybackDevice, currentDevice);
       }));
   }
 
@@ -421,6 +414,12 @@ export class AudioPlayerService {
     return this._audioElementRepository.audio;
   }
 
+  private get requestedPlaybackDevice$(): Observable<Device | null | undefined> {
+    return this.currentPlaybackDevice$
+      .pipe(combineLatestWith(this._deviceRepository.currentDevice$))
+      .pipe(map(([currentPlaybackDevice, currentDevice]) => currentPlaybackDevice ?? currentDevice));
+  }
+
   private setCurrentSession(session: PlaybackSession): void {
     const serverDuration = session.currentNode.metadata instanceof MediaMetadata
       ? timespanToTotalSeconds(session.currentNode.metadata.duration)
@@ -525,5 +524,14 @@ export class AudioPlayerService {
     const deviceToInspect = currentPlaybackDevice ?? currentDevice;
 
     return !file || !deviceToInspect || !deviceToInspect.canPlay(file);
+  }
+
+  private offsetDisabled(queue: Queue,
+                         offset: number,
+                         currentPlaybackDevice: Device | null | undefined,
+                         currentDevice: Device | null | undefined) {
+    const deviceToInspect = currentPlaybackDevice ?? currentDevice;
+
+    return !deviceToInspect || !queue.findNextValidOffset(offset, i => deviceToInspect.canPlay(i.file))
   }
 }

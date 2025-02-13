@@ -2,6 +2,7 @@
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.EF;
+using MixServer.Infrastructure.Sessions.Services;
 using MixServer.Infrastructure.Users.Services;
 
 namespace MixServer;
@@ -16,6 +17,7 @@ public class Bootstrapper(
     MixServerDbContext context,
     IFileNotificationService fileNotificationService,
     IFirstUserInitializationService firstUserInitializationService,
+    ISessionDirectoryCacheInitializationService sessionDirectoryCacheInitializationService,
     IUserRoleService userRoleService)
     : IBootstrapper
 {
@@ -29,5 +31,7 @@ public class Bootstrapper(
         await userRoleService.InitializeAsync();
         await firstUserInitializationService.AddFirstUserIfNotExistsAsync();
         fileNotificationService.Initialize();
+        
+        await sessionDirectoryCacheInitializationService.LoadUsersCurrentPlaybackSessionDirectoriesAsync();
     }
 }

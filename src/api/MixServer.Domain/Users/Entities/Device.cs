@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Users.Enums;
 using MixServer.Domain.Users.Models;
 
@@ -31,6 +32,16 @@ public class Device : IDevice
 
     [NotMapped]
     public Dictionary<string, bool> Capabilities { get; private set; } = new();
+
+    public bool CanPlay(IFileExplorerFileNode? sessionFile)
+    {
+        if (sessionFile is null)
+        {
+            return false;
+        }
+        
+        return Capabilities.TryGetValue(sessionFile.Metadata.MimeType, out var supported) && supported;
+    }
 
     public void Populate(IDeviceState state)
     {

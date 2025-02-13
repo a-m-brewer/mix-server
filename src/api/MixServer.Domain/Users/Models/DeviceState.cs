@@ -1,3 +1,5 @@
+using MixServer.Domain.FileExplorer.Models;
+
 namespace MixServer.Domain.Users.Models;
 
 public interface IDeviceState
@@ -10,6 +12,7 @@ public interface IDeviceState
     bool Online { get;}
 
     Dictionary<string, bool> Capabilities { get; }
+    bool CanPlay(IFileExplorerFileNode? sessionFile);
 }
 
 public class DeviceState(Guid deviceId) : IDeviceState
@@ -25,7 +28,17 @@ public class DeviceState(Guid deviceId) : IDeviceState
     public bool InteractedWith { get; private set; }
     
     public Dictionary<string, bool> Capabilities { get; } = new();
-    
+
+    public bool CanPlay(IFileExplorerFileNode? sessionFile)
+    {
+        if (sessionFile is null)
+        {
+            return false;
+        }
+        
+        return Capabilities.TryGetValue(sessionFile.Metadata.MimeType, out var supported) && supported;
+    }
+
     public void SetOnline(bool online)
     {
         Online = online;

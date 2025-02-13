@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
+using MixServer.Domain.Exceptions;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Models;
 using MixServer.Domain.Users.Services;
@@ -15,9 +16,11 @@ public class DeviceTrackingService(
 {
     private readonly ConcurrentDictionary<Guid, DeviceState> _states = new();
 
-    public bool DeviceInteractedWith(Guid deviceId)
+    public IDeviceState GetDeviceStateOrThrow(Guid deviceId)
     {
-        return _states.TryGetValue(deviceId, out var state) && state.InteractedWith;
+        return _states.TryGetValue(deviceId, out var state)
+            ? state
+            : throw new NotFoundException(nameof(DeviceState), deviceId);
     }
 
     public void SetOnline(string userId, Guid deviceId, bool online)

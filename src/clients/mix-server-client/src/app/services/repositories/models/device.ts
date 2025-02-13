@@ -24,7 +24,7 @@ export class Device {
     return 'devices'
   }
 
-  canPlay(file?: FileExplorerFileNode | null) {
-    return file && (this.capabilities[file.metadata.mimeType] ?? false);
+  canPlay(file?: FileExplorerFileNode | null): boolean {
+    return !!file && (this.capabilities[file.metadata.mimeType] ?? false);
   }
 }

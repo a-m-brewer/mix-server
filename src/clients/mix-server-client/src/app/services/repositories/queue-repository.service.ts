@@ -3,8 +3,7 @@ import {
   AddToQueueCommand,
   ProblemDetails,
   QueueClient, QueueSnapshotDto,
-  RemoveFromQueueCommand,
-  SetQueuePositionCommand
+  RemoveFromQueueCommand
 } from "../../generated-clients/mix-server-clients";
 import {BehaviorSubject, firstValueFrom, map, Observable} from "rxjs";
 import {Queue} from "./models/queue";
