@@ -14,6 +14,8 @@ import {AuthenticationService} from "../auth/authentication.service";
   providedIn: 'root'
 })
 export class AudioPlayerCapabilitiesService {
+  private _capabilitiesCache: { [mimeType: string]: boolean } = {};
+
   constructor(private authenticationService: AuthenticationService,
               private _audioElementRepository: AudioElementRepositoryService,
               private _devicesClient: DeviceClient,
@@ -25,6 +27,13 @@ export class AudioPlayerCapabilitiesService {
   }
 
   public initialize() {
+    this.authenticationService.connected$
+      .subscribe(connected => {
+        if (connected) {
+          this.updateAudioCapabilities([]);
+        }
+      });
+
     this._historyRepository.sessions$
       .subscribe(sessions => {
         const mimeTypes = [...new Set(sessions.map(m => m.currentNode.metadata.mimeType))]
@@ -55,18 +64,22 @@ export class AudioPlayerCapabilitiesService {
   }
 
   private updateAudioCapabilities(mimeTypes: string[]) {
-    if (!this.authenticationService.connected) {
-      return
-    }
-
     const update: { [mimeType: string]: boolean } = {}
     mimeTypes.forEach(mimeType => {
       update[mimeType] = this._audioElementRepository.audio.canPlayType(mimeType) !== '';
     });
 
+    this._capabilitiesCache = {...this._capabilitiesCache, ...update};
+
+    if (!this.authenticationService.connected) {
+      return
+    }
+
     firstValueFrom(this._devicesClient.updateDeviceCapabilities(new UpdateDevicePlaybackCapabilitiesCommand({
-      capabilities: update
-    }))).catch(
+      capabilities: this._capabilitiesCache
+    })))
+      .then(() => this._capabilitiesCache = {})
+      .catch(
       e => this._toastService.logServerError(
         e, 'Failed to update device capabilities'
       )

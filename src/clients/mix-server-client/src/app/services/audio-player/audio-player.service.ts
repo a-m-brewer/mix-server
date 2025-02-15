@@ -156,8 +156,8 @@ export class AudioPlayerService {
       this._playbackSessionRepository.currentSession$,
       this._playbackDeviceService.requestPlaybackDevice$
     ])
-      .pipe(map(([disabled, session]) => {
-        return disabled || !session || session.currentNode.disabled;
+      .pipe(map(([disabled, session, device]) => {
+        return disabled || !session || !device || !device.canPlay(session.currentNode);
       }));
   }
 
@@ -201,11 +201,6 @@ export class AudioPlayerService {
           ? this.playing
           : currentSessionPlaying;
       }));
-  }
-
-  public get requestingPlayback$(): Observable<boolean> {
-    return this._loadingRepository.status$()
-      .pipe(map(status => status.isLoadingAction('RequestPlayback')));
   }
 
   public get currentCueIndex$(): Observable<number> {

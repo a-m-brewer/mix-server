@@ -125,6 +125,6 @@ export class DeviceRepositoryService {
   }
 
   private filterOnlineDevices(devices: Device[]): Device[] {
-    return devices.filter(f => (f.online && f.interactedWith) || f.id === this._authenticationService.deviceId);
+    return devices.filter(f => (f.online && (f.interactedWith || f.isCurrentDevice)) || f.id === this._authenticationService.deviceId);
   }
 }
