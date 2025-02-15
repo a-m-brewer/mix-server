@@ -2,6 +2,7 @@ import {FileExplorerNode} from "./file-explorer-node";
 import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
 import {FileExplorerFolderNode} from "./file-explorer-folder-node";
 import {FileMetadata} from "./file-metadata";
+import {Device} from "../../../services/repositories/models/device";
 
 export interface FileExplorerFileNodeNameParts {
   nameWithoutExtension: string;
@@ -11,6 +12,9 @@ export interface FileExplorerFileNodeNameParts {
 }
 
 export class FileExplorerFileNode implements FileExplorerNode {
+  private _fileInvalid: boolean;
+  private _requestedPlaybackDevicePlaybackSupported: boolean;
+
   constructor(public name: string,
               public absolutePath: string,
               public type: FileExplorerNodeType,
@@ -20,9 +24,11 @@ export class FileExplorerFileNode implements FileExplorerNode {
               public serverPlaybackSupported: boolean,
               public clientPlaybackSupported: boolean,
               public parent: FileExplorerFolderNode) {
+    this._fileInvalid = absolutePath.trim() === '' || !exists;
+    this._requestedPlaybackDevicePlaybackSupported = clientPlaybackSupported;
 
-    this.playbackSupported = serverPlaybackSupported && clientPlaybackSupported;
-    this.disabled = absolutePath.trim() === '' || !exists || !this.playbackSupported;
+    this.playbackSupported = serverPlaybackSupported && this._requestedPlaybackDevicePlaybackSupported;
+    this.disabled = this._fileInvalid || !this.playbackSupported;
   }
 
   public disabled: boolean;
@@ -90,5 +96,11 @@ export class FileExplorerFileNode implements FileExplorerNode {
       this.clientPlaybackSupported,
       this.parent.copy()
     );
+  }
+
+  updateCanPlay(device: Device | null | undefined) {
+    this._requestedPlaybackDevicePlaybackSupported = device?.canPlay(this) ?? false;
+    this.playbackSupported = this.serverPlaybackSupported && this._requestedPlaybackDevicePlaybackSupported;
+    this.disabled = this._fileInvalid || !this.playbackSupported;
   }
 }

@@ -13,6 +13,10 @@ import {FolderSignalrClientService} from "../signalr/folder-signalr-client.servi
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
+import {PlaybackDeviceService} from "../audio-player/playback-device.service";
+import {Device} from "./models/device";
+import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
+import {cloneDeep} from "lodash";
 
 @Injectable({
   providedIn: 'root'
@@ -26,6 +30,7 @@ export class FileExplorerNodeRepositoryService {
               private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
               private _folderSignalRClient: FolderSignalrClientService,
               private _loadingRepository: LoadingRepositoryService,
+              private _playbackDeviceService: PlaybackDeviceService,
               private _route: ActivatedRoute,
               private _router: Router,
               private _toastService: ToastService) {
@@ -49,6 +54,12 @@ export class FileExplorerNodeRepositoryService {
         }
       });
 
+    this._playbackDeviceService.requestPlaybackDevice$
+      .subscribe(device => {
+        const folder = this._currentFolder$.value.copy();
+        this.nextWithDevice(folder, device);
+      });
+
     this._folderSignalRClient.folderRefreshed$()
       .subscribe(updatedFolder => {
         const currentFolder = this._currentFolder$.getValue();
@@ -56,7 +67,7 @@ export class FileExplorerNodeRepositoryService {
           return;
         }
 
-        this._currentFolder$.next(updatedFolder);
+        this.next(updatedFolder);
       });
 
     this._folderSignalRClient.folderSorted$()
@@ -66,7 +77,7 @@ export class FileExplorerNodeRepositoryService {
           return;
         }
 
-        this._currentFolder$.next(updatedFolder);
+        this.next(updatedFolder);
         this._loadingRepository.stopLoadingId(updatedFolder.node.absolutePath);
       });
 
@@ -95,7 +106,7 @@ export class FileExplorerNodeRepositoryService {
           nextFolder.children[index] = node;
         }
 
-        this._currentFolder$.next(nextFolder);
+        this.next(nextFolder);
       })
 
     this._folderSignalRClient.nodeUpdated$()
@@ -125,7 +136,7 @@ export class FileExplorerNodeRepositoryService {
           nextFolder.children[index] = node;
         }
 
-        this._currentFolder$.next(nextFolder);
+        this.next(nextFolder);
       });
 
     this._folderSignalRClient.nodeDeleted$()
@@ -139,7 +150,7 @@ export class FileExplorerNodeRepositoryService {
 
         nextFolder.children = currentFolder.children.filter(f => f.absolutePath !== event.absolutePath);
 
-        this._currentFolder$.next(nextFolder);
+        this.next(nextFolder);
       })
   }
 
@@ -173,7 +184,7 @@ export class FileExplorerNodeRepositoryService {
     firstValueFrom(this._client.getNode(absolutePath))
       .then(folderResponse => {
         const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(folderResponse);
-        this._currentFolder$.next(folder);
+        this.next(folder);
       })
       .catch(err => {
         this._toastService.logServerError(err, `Failed to navigate to directory ${absolutePath}`);
@@ -206,7 +217,7 @@ export class FileExplorerNodeRepositoryService {
       absolutePath: currentFolder
     })))
       .then(value => {
-        this._currentFolder$.next(this._fileExplorerNodeConverter.fromFileExplorerFolder(value));
+        this.next(this._fileExplorerNodeConverter.fromFileExplorerFolder(value));
       })
       .catch(err => {
         this._toastService.logServerError(err, 'Failed to refresh folder');
@@ -233,7 +244,7 @@ export class FileExplorerNodeRepositoryService {
   }
 
   private clear(): void {
-    this._currentFolder$.next(FileExplorerFolder.Default);
+    this.next(FileExplorerFolder.Default);
   }
 
   private toFolderSortMode(sortMode: FileExplorerFolderSortMode): FolderSortMode {
@@ -245,5 +256,19 @@ export class FileExplorerNodeRepositoryService {
       default:
         return FolderSortMode.Name;
     }
+  }
+
+  private next(folder: FileExplorerFolder): void {
+    this.nextWithDevice(folder, this._playbackDeviceService.requestPlaybackDevice);
+  }
+
+  private nextWithDevice(folder: FileExplorerFolder, device: Device | null | undefined) {
+    folder.children.forEach(child => {
+      if (child instanceof FileExplorerFileNode) {
+        child.updateCanPlay(device);
+      }
+    })
+
+    this._currentFolder$.next(folder);
   }
 }

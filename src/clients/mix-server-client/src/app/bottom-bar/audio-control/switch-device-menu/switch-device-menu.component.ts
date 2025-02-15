@@ -11,6 +11,7 @@ import {
 } from "../../../services/repositories/current-playback-session-repository.service";
 import {PlaybackSession} from "../../../services/repositories/models/playback-session";
 import {DeviceRepositoryService} from "../../../services/repositories/device-repository.service";
+import {PlaybackDeviceService} from "../../../services/audio-player/playback-device.service";
 
 @Component({
   selector: 'app-switch-device-menu',
@@ -34,8 +35,8 @@ export class SwitchDeviceMenuComponent implements OnInit, OnDestroy {
   public devices: Device[] = [];
   public session: PlaybackSession | null = null;
 
-  constructor(public audioPlayer: AudioPlayerService,
-              private _devicesRepository: DeviceRepositoryService,
+  constructor(private _devicesRepository: DeviceRepositoryService,
+              private _playbackDeviceService: PlaybackDeviceService,
               private _sessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
@@ -61,7 +62,7 @@ export class SwitchDeviceMenuComponent implements OnInit, OnDestroy {
         this.currentDevice = currentDevice;
       });
 
-    this.audioPlayer
+    this._playbackDeviceService
       .otherValidPlaybackDevices$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(devices => {

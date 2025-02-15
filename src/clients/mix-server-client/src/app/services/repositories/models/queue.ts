@@ -6,13 +6,13 @@ export class Queue {
               public items: QueueItem[]) {
   }
 
-  public findNextValidOffset(offset: number, validationFunc: (queueItem: QueueItem) => boolean): number | null {
+  public findNextValidOffset(offset: number): number | null {
     const currentIndex = this.items.findIndex(f => f.id === this.currentQueuePosition);
     let offsetIndex = currentIndex + offset;
 
     while (offsetIndex >= 0 && offsetIndex < this.items.length) {
       const item = this.items[offsetIndex];
-      if (!item.file.serverPlaybackDisabled && validationFunc(item)) {
+      if (!item.file.disabled) {
         return offsetIndex - currentIndex;
       }
 
@@ -21,5 +21,9 @@ export class Queue {
     }
 
     return null;
+  }
+
+  public hasValidOffset(offset: number): boolean {
+    return this.findNextValidOffset(offset) !== null;
   }
 }

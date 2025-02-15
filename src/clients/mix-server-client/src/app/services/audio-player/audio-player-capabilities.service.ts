@@ -22,6 +22,9 @@ export class AudioPlayerCapabilitiesService {
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _toastService: ToastService,
               private _queueRepository: QueueRepositoryService) {
+  }
+
+  public initialize() {
     this._historyRepository.sessions$
       .subscribe(sessions => {
         const mimeTypes = [...new Set(sessions.map(m => m.currentNode.metadata.mimeType))]

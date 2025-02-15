@@ -6,7 +6,7 @@ import {
   filter, firstValueFrom,
   map,
   Observable,
-  sampleTime, Subject, takeUntil
+  sampleTime
 } from "rxjs";
 import {StreamUrlService} from "../converters/stream-url.service";
 import {AudioSessionService} from "./audio-session.service";
@@ -19,14 +19,13 @@ import {AudioPlayerStateService} from "./audio-player-state.service";
 import {AuthenticationService} from "../auth/authentication.service";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {DeviceRepositoryService} from "../repositories/device-repository.service";
-import {Device} from "../repositories/models/device";
 import {SessionService} from "../sessions/session.service";
 import {PlaybackGrantedEvent} from "../repositories/models/playback-granted-event";
 import {Mutex} from "async-mutex";
 import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
 import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 import {AudioPlayerCapabilitiesService} from "./audio-player-capabilities.service";
-import {Queue} from "../repositories/models/queue";
+import {PlaybackDeviceService} from "./playback-device.service";
 
 @Injectable({
   providedIn: 'root'
@@ -44,13 +43,13 @@ export class AudioPlayerService {
   private _previousFile: FileExplorerFileNode | null | undefined;
   private _nextFile: FileExplorerFileNode | null | undefined;
 
-  constructor(private _audioCapabilities: AudioPlayerCapabilitiesService,
-              private _audioElementRepository: AudioElementRepositoryService,
+  constructor(private _audioElementRepository: AudioElementRepositoryService,
               private _audioSession: AudioSessionService,
               private _audioPlayerState: AudioPlayerStateService,
               private _authenticationService: AuthenticationService,
               private _deviceRepository: DeviceRepositoryService,
               private _loadingRepository: LoadingRepositoryService,
+              private _playbackDeviceService: PlaybackDeviceService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _queueRepository: QueueRepositoryService,
               private _sessionService: SessionService,
@@ -139,30 +138,15 @@ export class AudioPlayerService {
       }));
   }
 
-  public get currentPlaybackDevice$(): Observable<Device | null | undefined> {
-    return this._playbackSessionRepository.currentPlaybackDevice$
-      .pipe(combineLatestWith(this._deviceRepository.devices$))
-      .pipe(map(([currentPlaybackDeviceId, devices]) => {
-        return devices.find(d => d.id === currentPlaybackDeviceId);
-      }));
-  }
-
-  public get otherValidPlaybackDevices$(): Observable<Array<Device>> {
-    return this._deviceRepository.onlineDevices$
-      .pipe(combineLatestWith(this._playbackSessionRepository.currentPlaybackDevice$, this._playbackSessionRepository.currentSession$))
-      .pipe(map(([devices, currentPlaybackDeviceId, session]) => {
-        if (!currentPlaybackDeviceId) {
-          return devices.filter(d => d.id !== this._authenticationService.deviceId && d.canPlay(session?.currentNode));
-        }
-
-        return devices.filter(d => d.id !== currentPlaybackDeviceId && d.canPlay(session?.currentNode));
-      }));
-  }
-
   public get audioControlsDisabled$(): Observable<boolean> {
-    return combineLatest([this.currentPlaybackDevice$, this._authenticationService.connected$,  this._loadingRepository.status$()])
+    return combineLatest(
+      [
+        this._playbackDeviceService.requestPlaybackDevice$,
+        this._authenticationService.connected$,
+        this._loadingRepository.status$()
+      ])
       .pipe(map(([device, connected, loadingStatus]) => {
-        return !connected || (!!device && !device.interactedWith) || loadingStatus.loading;
+        return !connected || (!!device && !(device.interactedWith || device.isCurrentDevice)) || loadingStatus.loading;
       }));
   }
 
@@ -170,27 +154,30 @@ export class AudioPlayerService {
     return combineLatest([
       this.audioControlsDisabled$,
       this._playbackSessionRepository.currentSession$,
-      this.currentPlaybackDevice$,
-      this._deviceRepository.currentDevice$
+      this._playbackDeviceService.requestPlaybackDevice$
     ])
-      .pipe(map(([disabled, session, currentPlaybackDevice, currentDevice]) => {
-        return disabled || !session || this.fileControlDisabled(session.currentNode, currentPlaybackDevice, currentDevice);
+      .pipe(map(([disabled, session]) => {
+        return disabled || !session || session.currentNode.disabled;
       }));
   }
 
   public get previousItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._queueRepository.queue$(), this.currentPlaybackDevice$, this._deviceRepository.currentDevice$))
-      .pipe(map(([disabled, queue, currentPlaybackDevice, currentDevice]) => {
-        return disabled || !queue || this.offsetDisabled(queue, -1, currentPlaybackDevice, currentDevice);
+      .pipe(combineLatestWith(this._queueRepository.queue$()))
+      .pipe(map(([disabled, queue]) => {
+        return disabled ||
+          !queue ||
+          !queue.hasValidOffset(-1);
       }));
   }
 
   public get nextItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._queueRepository.queue$(), this.currentPlaybackDevice$, this._deviceRepository.currentDevice$))
-      .pipe(map(([disabled, queue, currentPlaybackDevice, currentDevice]) => {
-        return disabled || !queue || this.offsetDisabled(queue, 1, currentPlaybackDevice, currentDevice);
+      .pipe(combineLatestWith(this._queueRepository.queue$()))
+      .pipe(map(([disabled, queue]) => {
+        return disabled ||
+          !queue ||
+          !queue.hasValidOffset(1);
       }));
   }
 
@@ -414,12 +401,6 @@ export class AudioPlayerService {
     return this._audioElementRepository.audio;
   }
 
-  private get requestedPlaybackDevice$(): Observable<Device | null | undefined> {
-    return this.currentPlaybackDevice$
-      .pipe(combineLatestWith(this._deviceRepository.currentDevice$))
-      .pipe(map(([currentPlaybackDevice, currentDevice]) => currentPlaybackDevice ?? currentDevice));
-  }
-
   private setCurrentSession(session: PlaybackSession): void {
     const serverDuration = session.currentNode.metadata instanceof MediaMetadata
       ? timespanToTotalSeconds(session.currentNode.metadata.duration)
@@ -514,24 +495,5 @@ export class AudioPlayerService {
 
   private getDuration(serverDuration: number, clientDuration: number): number {
     return Math.max(serverDuration, clientDuration, 0)
-  }
-
-  private fileControlDisabled(
-    file: FileExplorerFileNode | null | undefined,
-    currentPlaybackDevice: Device | null | undefined,
-    currentDevice: Device | null | undefined): boolean {
-
-    const deviceToInspect = currentPlaybackDevice ?? currentDevice;
-
-    return !file || !deviceToInspect || !deviceToInspect.canPlay(file);
-  }
-
-  private offsetDisabled(queue: Queue,
-                         offset: number,
-                         currentPlaybackDevice: Device | null | undefined,
-                         currentDevice: Device | null | undefined) {
-    const deviceToInspect = currentPlaybackDevice ?? currentDevice;
-
-    return !deviceToInspect || !queue.findNextValidOffset(offset, i => deviceToInspect.canPlay(i.file))
   }
 }

@@ -79,10 +79,6 @@ export class DeviceRepositoryService {
       .pipe(map(m => this.filterOnlineDevices(m)));
   }
 
-  public get onlineDevices(): Device[] {
-    return this.filterOnlineDevices(this._devicesBehaviourSubject$.getValue());
-  }
-
   public get currentDevice$(): Observable<Device | null | undefined> {
     return this._devicesBehaviourSubject$
       .pipe(map(devices => devices.find(f => f.id === this._authenticationService.deviceId)));

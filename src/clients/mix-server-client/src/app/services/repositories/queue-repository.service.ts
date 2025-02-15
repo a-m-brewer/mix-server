@@ -15,6 +15,9 @@ import {QueueItem} from "./models/queue-item";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {QueueEditFormRepositoryService} from "./queue-edit-form-repository.service";
 import {LoadingRepositoryService} from "./loading-repository.service";
+import {PlaybackDeviceService} from "../audio-player/playback-device.service";
+import {cloneDeep} from "lodash";
+import {Device} from "./models/device";
 
 @Injectable({
   providedIn: 'root'
@@ -24,6 +27,7 @@ export class QueueRepositoryService {
 
 
   constructor(private _loadingRepository: LoadingRepositoryService,
+              private _playbackDeviceService: PlaybackDeviceService,
               private _queueConverter: QueueConverterService,
               private _queueSignalRClient: QueueSignalrClientService,
               private _queueClient: QueueClient,
@@ -47,15 +51,19 @@ export class QueueRepositoryService {
         }
       });
 
+    this._playbackDeviceService.requestPlaybackDevice$
+      .subscribe(requestedPlaybackDevice => {
+        const queue = cloneDeep(this.queue);
+
+        this.setNextQueueWithDevice(queue, requestedPlaybackDevice);
+      });
+
+
     this.initializeSignalR();
   }
 
   public get queue(): Queue {
     return this._queueBehaviourSubject$.getValue();
-  }
-
-  public set queue(value: Queue) {
-    this._queueBehaviourSubject$.next(value);
   }
 
   public queue$(): Observable<Queue> {
@@ -147,16 +155,28 @@ export class QueueRepositoryService {
       .finally(() => this._loadingRepository.stopLoadingIds(queueItems));
   }
 
+  public setNextQueue(queue: Queue) {
+    this.setNextQueueWithDevice(queue, this._playbackDeviceService.requestPlaybackDevice);
+  }
+
   private initializeSignalR(): void {
     this._queueSignalRClient.queue$()
       .subscribe({
         next: updatedQueue => {
-          this.queue = updatedQueue;
+          this.setNextQueue(updatedQueue);
         }
       })
   }
 
   private nextQueue(dto: QueueSnapshotDto): void {
-    this.queue = this._queueConverter.fromDto(dto);
+    this.setNextQueue(this._queueConverter.fromDto(dto));
+  }
+
+  private setNextQueueWithDevice(queue: Queue, requestPlaybackDevice: Device | null | undefined): void {
+    queue.items.forEach(item => {
+      item.file.updateCanPlay(requestPlaybackDevice);
+    });
+
+    this._queueBehaviourSubject$.next(queue);
   }
 }

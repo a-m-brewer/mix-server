@@ -6,6 +6,9 @@ import {AuthenticationService} from "../auth/authentication.service";
 import {LoadingRepositoryService} from "./loading-repository.service";
 import {ToastService} from "../toasts/toast-service";
 import {PlaybackSessionConverterService} from "../converters/playback-session-converter.service";
+import {cloneDeep} from "lodash";
+import {PlaybackDeviceService} from "../audio-player/playback-device.service";
+import {Device} from "./models/device";
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +19,7 @@ export class HistoryRepositoryService {
 
   constructor(authenticationService: AuthenticationService,
               private _loadingRepository: LoadingRepositoryService,
+              private _playbackDeviceService: PlaybackDeviceService,
               private _playbackSessionConverter: PlaybackSessionConverterService,
               private _sessionClient: SessionClient,
               private _toastService: ToastService) {
@@ -25,6 +29,11 @@ export class HistoryRepositoryService {
           this.loadMoreItems().then();
         }
       })
+
+    this._playbackDeviceService.requestPlaybackDevice$
+      .subscribe(requestedPlaybackDevice => {
+        this.nextWithDevice(cloneDeep(this._sessions$.value), requestedPlaybackDevice);
+      });
   }
 
   public get sessions$(): Observable<Array<PlaybackSession>> {
@@ -42,7 +51,7 @@ export class HistoryRepositoryService {
 
     this._loadingRepository.startLoading();
 
-    const previousSessionHistory = this._sessions$.value;
+    const previousSessionHistory = cloneDeep(this._sessions$.value);
 
     const pageSize = 15;
     const history = await firstValueFrom(this._sessionClient.history(previousSessionHistory.length, pageSize))
@@ -58,9 +67,21 @@ export class HistoryRepositoryService {
         ...previousSessionHistory,
         ...history.sessions.map(m => this._playbackSessionConverter.fromDto(m))
       ];
-      this._sessions$.next(nextSessionHistory);
+      this.next(nextSessionHistory);
     }
 
     this._loadingRepository.stopLoading();
+  }
+
+  private next(sessions: PlaybackSession[]) {
+    this.nextWithDevice(sessions, this._playbackDeviceService.requestPlaybackDevice);
+  }
+
+  private nextWithDevice(sessions: PlaybackSession[], device: Device | null | undefined) {
+    sessions.forEach(session => {
+      session.currentNode.updateCanPlay(device);
+    })
+
+    this._sessions$.next(sessions)
   }
 }

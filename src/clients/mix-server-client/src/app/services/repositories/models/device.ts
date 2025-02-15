@@ -7,6 +7,7 @@ export class Device {
               public deviceType: DeviceType,
               public lastSeen: Date,
               public interactedWith: boolean,
+              public isCurrentDevice: boolean,
               public online: boolean,
               public capabilities: { [mimeType: string]: boolean },
               public brand: string | undefined,

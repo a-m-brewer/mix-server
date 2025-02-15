@@ -66,11 +66,11 @@ export class SessionService {
 
   public back(): void {
     const currentSession = this._playbackSessionRepository.currentSession;
-    if (!currentSession || currentSession.state.deviceId !== this._authenticationService.deviceId) {
+    if (!currentSession) {
       return;
     }
 
-    const offset = this.findNextValidQueueItemOffset(currentSession, -1);
+    const offset = this._queueRepository.queue.findNextValidOffset(-1);
     if (!offset) {
       return;
     }
@@ -85,11 +85,11 @@ export class SessionService {
 
   public skip(): void {
     const currentSession = this._playbackSessionRepository.currentSession;
-    if (!currentSession || currentSession.state.deviceId !== this._authenticationService.deviceId) {
+    if (!currentSession) {
       return;
     }
 
-    const offset = this.findNextValidQueueItemOffset(currentSession, 1);
+    const offset = this._queueRepository.queue.findNextValidOffset(1);
     if (!offset) {
       return;
     }
@@ -109,7 +109,7 @@ export class SessionService {
       return;
     }
 
-    const offset = this.findNextValidQueueItemOffset(currentSession, 1);
+    const offset = this._queueRepository.queue.findNextValidOffset(1);
     if (!offset) {
       return;
     }
@@ -137,23 +137,6 @@ export class SessionService {
     const queue = this._queueConverter.fromDto(dto.queue);
 
     this._playbackSessionRepository.currentSession = session;
-    this._queueRepository.queue = queue;
-  }
-
-  private findNextValidQueueItemOffset(currentSession: PlaybackSession, requestedOffset: number) : number | null {
-    const currentPlaybackDevice = this._deviceRepository.onlineDevices.find(f => f.id === currentSession.state.deviceId);
-    if (!currentPlaybackDevice) {
-      return null;
-    }
-
-    const offset = this._queueRepository.queue.findNextValidOffset(requestedOffset, (i) => {
-      return currentPlaybackDevice.canPlay(i.file);
-    });
-
-    if (!offset) {
-      return null;
-    }
-
-    return offset;
+    this._queueRepository.setNextQueue(queue);
   }
 }
