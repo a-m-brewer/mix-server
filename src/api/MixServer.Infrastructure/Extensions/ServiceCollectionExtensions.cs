@@ -9,6 +9,7 @@ using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Tracklists.Builders;
 using MixServer.Domain.Tracklists.Factories;
 using MixServer.Domain.Users.Services;
+using MixServer.Domain.Utilities;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.Files.Services;
 using MixServer.Infrastructure.Queueing.Repositories;
@@ -20,6 +21,7 @@ using MixServer.Infrastructure.Tracklist.Builders;
 using MixServer.Infrastructure.Tracklist.Factories;
 using MixServer.Infrastructure.Users.Repository;
 using MixServer.Infrastructure.Users.Services;
+using MixServer.Infrastructure.Utilities;
 
 namespace MixServer.Infrastructure.Extensions;
 
@@ -49,6 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ISessionService, SessionService>();
         services.AddSingleton<IPlaybackTrackingService, PlaybackTrackingService>();
         services.AddTransient<ISessionDirectoryCacheInitializationService, SessionDirectoryCacheInitializationService>();
+        services.AddTransient<IHashService, XxHashService>();
         
         services.Scan(s => s.FromAssemblyOf<IRateLimiter>()
             .AddClasses(c => c.AssignableTo<IRateLimiter>())

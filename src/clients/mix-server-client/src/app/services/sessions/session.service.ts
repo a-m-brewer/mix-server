@@ -24,7 +24,6 @@ export class SessionService {
 
   constructor(
     private _authenticationService: AuthenticationService,
-    private _deviceRepository: DeviceRepositoryService,
     private _loadingRepository: LoadingRepositoryService,
     private _playbackSessionConverter: PlaybackSessionConverterService,
     private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,

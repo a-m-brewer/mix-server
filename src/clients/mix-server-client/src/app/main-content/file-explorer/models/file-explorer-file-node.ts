@@ -23,9 +23,10 @@ export class FileExplorerFileNode implements FileExplorerNode {
               public metadata: FileMetadata,
               public serverPlaybackSupported: boolean,
               public clientPlaybackSupported: boolean,
+              public hasTranscode: boolean,
               public parent: FileExplorerFolderNode) {
     this._fileInvalid = absolutePath.trim() === '' || !exists;
-    this._requestedPlaybackDevicePlaybackSupported = clientPlaybackSupported;
+    this._requestedPlaybackDevicePlaybackSupported = clientPlaybackSupported || hasTranscode;
 
     this.playbackSupported = serverPlaybackSupported && this._requestedPlaybackDevicePlaybackSupported;
     this.disabled = this._fileInvalid || !this.playbackSupported;
@@ -94,6 +95,7 @@ export class FileExplorerFileNode implements FileExplorerNode {
       this.metadata.copy(),
       this.serverPlaybackSupported,
       this.clientPlaybackSupported,
+      this.hasTranscode,
       this.parent.copy()
     );
   }

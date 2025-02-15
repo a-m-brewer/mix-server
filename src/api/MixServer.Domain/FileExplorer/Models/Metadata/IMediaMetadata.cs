@@ -8,5 +8,7 @@ public interface IMediaMetadata : IFileMetadata
     
     int Bitrate { get; }
     
+    string FileHash { get; }
+    
     ImportTracklistDto Tracklist { get; }
 }

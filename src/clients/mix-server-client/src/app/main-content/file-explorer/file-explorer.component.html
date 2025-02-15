@@ -37,11 +37,17 @@
 
     @if (node | instanceOf:FileExplorerFileNode; as fileNode) {
       <app-add-to-queue-button
-        *ngIf="fileNode.playbackSupported && fileNode.exists"
+        *ngIf="fileNode.playbackSupported"
         [file]="fileNode"
       />
 
-      @if (isAdmin) {
+      @if (fileNode.exists && !fileNode.hasTranscode) {
+        <app-request-transcode-button
+          [file]="fileNode"
+        />
+      }
+
+      @if (fileNode.exists && isAdmin) {
         <app-copy-node
           [file]="fileNode"
         />

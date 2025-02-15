@@ -13,7 +13,6 @@
 
     <ItemGroup>
       <Folder Include="Devices\Queries\" />
-      <Folder Include="FileExplorer\Services\" />
     </ItemGroup>
 
 </Project>

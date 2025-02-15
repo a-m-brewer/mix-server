@@ -1,0 +1,7 @@
+<button mat-menu-item
+        *ngIf="fileVar"
+        [disabled]="disabled"
+        (click)="requestTranscode()">
+  <mat-icon>sync_alt</mat-icon>
+  <span>Request Transcode</span>
+</button>

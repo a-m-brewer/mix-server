@@ -59,6 +59,7 @@ export class FileExplorerNodeConverterService {
       metadata,
       dto.playbackSupported,
       clientPlaybackSupported,
+      false, // TODO: Implement hasTranscode
       this.fromFileExplorerFolderNode(dto.parent)
     );
   }

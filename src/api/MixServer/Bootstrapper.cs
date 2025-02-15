@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.FileExplorer.Services;
+using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.Sessions.Services;
@@ -18,6 +19,7 @@ public class Bootstrapper(
     IFileNotificationService fileNotificationService,
     IFirstUserInitializationService firstUserInitializationService,
     ISessionDirectoryCacheInitializationService sessionDirectoryCacheInitializationService,
+    ITranscodeCache transcodeCache,
     IUserRoleService userRoleService)
     : IBootstrapper
 {
@@ -32,6 +34,7 @@ public class Bootstrapper(
         await firstUserInitializationService.AddFirstUserIfNotExistsAsync();
         fileNotificationService.Initialize();
         
+        transcodeCache.Initialize();
         await sessionDirectoryCacheInitializationService.LoadUsersCurrentPlaybackSessionDirectoriesAsync();
     }
 }

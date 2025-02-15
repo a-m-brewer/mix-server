@@ -86,6 +86,9 @@ import {CutNodeComponent} from "./components/nodes/node-list/node-list-item/cont
 import {
   DeleteNodeComponent
 } from "./components/nodes/node-list/node-list-item/context-menu/delete-node/delete-node.component";
+import {
+  RequestTranscodeButtonComponent
+} from "./components/nodes/node-list/node-list-item/context-menu/request-transcode-button/request-transcode-button.component";
 
 @NgModule({
   declarations: [
@@ -145,7 +148,7 @@ import {
     AudioControlMobileComponent,
     SessionComponent,
     AudioProgressSliderComponent,
-    AudioControlButtonsComponent, NodeListItemTitleDirective, NodeListItemSubtitleDirective, InstanceOfPipe, FileMetadataSubtitleComponent, CopyNodeComponent, CutNodeComponent, DeleteNodeComponent],
+    AudioControlButtonsComponent, NodeListItemTitleDirective, NodeListItemSubtitleDirective, InstanceOfPipe, FileMetadataSubtitleComponent, CopyNodeComponent, CutNodeComponent, DeleteNodeComponent, RequestTranscodeButtonComponent],
   providers: [
     {
       provide: MIXSERVER_BASE_URL,
