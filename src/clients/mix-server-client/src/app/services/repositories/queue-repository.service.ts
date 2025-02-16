@@ -37,7 +37,7 @@ export class QueueRepositoryService {
     this._authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
-          this._loadingRepository.startLoading();
+          this._loadingRepository.startLoadingAction('GetQueue');
           firstValueFrom(this._queueClient.queue())
             .then(dto => {
               this.nextQueue(dto);
@@ -47,7 +47,7 @@ export class QueueRepositoryService {
                 this._toastService.logServerError(err, 'Failed to fetch current session');
               }
             })
-            .finally(() => this._loadingRepository.stopLoading());
+            .finally(() => this._loadingRepository.stopLoadingAction('GetQueue'));
         }
       });
 
@@ -117,14 +117,14 @@ export class QueueRepositoryService {
   }
 
   public addToQueue(file: FileExplorerFileNode): void {
-    this._loadingRepository.startLoadingId(file.absolutePath);
+    this._loadingRepository.startLoading(file.absolutePath);
     firstValueFrom(this._queueClient.addToQueue(new AddToQueueCommand({
       absoluteFolderPath: file.parent.absolutePath ?? '',
       fileName: file.name
     })))
       .then(dto => this.nextQueue(dto))
       .catch(err => this._toastService.logServerError(err, 'Failed to add item to queue'))
-      .finally(() => this._loadingRepository.stopLoadingId(file.absolutePath));
+      .finally(() => this._loadingRepository.stopLoading(file.absolutePath));
   }
 
   public removeFromQueue(item: QueueItem | null | undefined): void {
@@ -132,11 +132,11 @@ export class QueueRepositoryService {
       return;
     }
 
-    this._loadingRepository.startLoadingId(item.id);
+    this._loadingRepository.startLoading(item.id);
     firstValueFrom(this._queueClient.removeFromQueue(item.id))
       .then(dto => this.nextQueue(dto))
       .catch(err => this._toastService.logServerError(err, 'Failed to remove item from queue'))
-      .finally(() => this._loadingRepository.stopLoadingId(item.id));
+      .finally(() => this._loadingRepository.stopLoading(item.id));
   }
 
   public removeRangeFromQueue(queueItems: Array<string>): void {
@@ -152,7 +152,7 @@ export class QueueRepositoryService {
         this._queueEditFormRepository.updateEditForm(f => f.selectedItems = {});
       })
       .catch(err => this._toastService.logServerError(err, 'Failed to remove items from queue'))
-      .finally(() => this._loadingRepository.stopLoadingIds(queueItems));
+      .finally(() => this._loadingRepository.stopLoadingItems(queueItems));
   }
 
   public setNextQueue(queue: Queue) {

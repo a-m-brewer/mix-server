@@ -12,6 +12,8 @@ public class Transcode(ILogger<Transcode> logger)
     public event EventHandler? HasCompletePlaylistChanged;
 
     public required string FileHash { get; init; }
+    
+    public required string AbsoluteFilePath { get; init; }
 
     public bool HasCompletePlaylist
     {

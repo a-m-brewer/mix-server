@@ -22,8 +22,6 @@ public interface ISignalRCallbackClient
     Task UserAdded(UserDto dto);
     Task UserUpdated(UserDto dto);
     Task UserDeleted(UserDeletedDto dto);
-    Task FileExplorerNodeAdded(FileExplorerNodeAddedDto dto);
     Task FileExplorerNodeUpdated(FileExplorerNodeUpdatedDto dto);
     Task FileExplorerNodeDeleted(FileExplorerNodeDeletedDto dto);
-    Task TranscodeStatusUpdated(TranscodeStatusUpdatedDto dto);
 }

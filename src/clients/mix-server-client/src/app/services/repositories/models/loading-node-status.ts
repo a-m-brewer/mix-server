@@ -1,4 +1,16 @@
-export type LoadingAction = 'RequestPlayback' | 'Skip' | 'Back';
+export type LoadingAction =
+  'RequestPlayback' |
+  'Skip' |
+  'Back' |
+  'SaveTracklist' |
+  'ImportTracklist' |
+  'SetNextSession' |
+  'ClearSession' |
+  'GetQueue' |
+  'LoadMoreHistoryItems' |
+  'RequestPause' |
+  'SyncPlaybackSession' |
+  'PauseRequested';
 
 export interface LoadingNodeStatus {
   loading: boolean;

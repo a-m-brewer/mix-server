@@ -22,7 +22,7 @@ export class TracklistFormService {
   }
 
   public async importTracklistFile(file: File): Promise<void> {
-    this._loading.startLoading();
+    this._loading.startLoadingAction('ImportTracklist');
 
     try {
       const dto = await firstValueFrom(this._client.importTracklist({
@@ -34,7 +34,7 @@ export class TracklistFormService {
     } catch (err) {
       this._toastService.logServerError(err, 'Failed to import tracklist file');
     } finally {
-      this._loading.stopLoading();
+      this._loading.stopLoadingAction('ImportTracklist');
     }
   }
 
@@ -47,7 +47,7 @@ export class TracklistFormService {
       return;
     }
 
-    this._loading.startLoading();
+    this._loading.startLoadingAction('SaveTracklist')
 
     try {
       const dto = await firstValueFrom(this._client.saveTracklist(new SaveTracklistCommand({
@@ -57,7 +57,7 @@ export class TracklistFormService {
     } catch (err) {
       this._toastService.logServerError(err, 'Failed to save tracklist');
     } finally {
-      this._loading.stopLoading();
+      this._loading.stopLoadingAction('SaveTracklist');
     }
   }
 }

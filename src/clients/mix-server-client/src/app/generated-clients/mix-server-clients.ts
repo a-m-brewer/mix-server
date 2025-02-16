@@ -3004,6 +3004,7 @@ export interface IFileMetadataResponse {
 export class MediaMetadataResponse extends FileMetadataResponse implements IMediaMetadataResponse {
     duration!: string;
     bitrate!: number;
+    fileHash!: string;
     transcodeState!: TranscodeState;
     tracklist!: ImportTracklistDto;
 
@@ -3020,6 +3021,7 @@ export class MediaMetadataResponse extends FileMetadataResponse implements IMedi
         if (_data) {
             this.duration = _data["duration"];
             this.bitrate = _data["bitrate"];
+            this.fileHash = _data["fileHash"];
             this.transcodeState = _data["transcodeState"];
             this.tracklist = _data["tracklist"] ? ImportTracklistDto.fromJS(_data["tracklist"]) : new ImportTracklistDto();
         }
@@ -3036,6 +3038,7 @@ export class MediaMetadataResponse extends FileMetadataResponse implements IMedi
         data = typeof data === 'object' ? data : {};
         data["duration"] = this.duration;
         data["bitrate"] = this.bitrate;
+        data["fileHash"] = this.fileHash;
         data["transcodeState"] = this.transcodeState;
         data["tracklist"] = this.tracklist ? this.tracklist.toJSON() : <any>undefined;
         super.toJSON(data);
@@ -3046,6 +3049,7 @@ export class MediaMetadataResponse extends FileMetadataResponse implements IMedi
 export interface IMediaMetadataResponse extends IFileMetadataResponse {
     duration: string;
     bitrate: number;
+    fileHash: string;
     transcodeState: TranscodeState;
     tracklist: ImportTracklistDto;
 }
@@ -5232,53 +5236,10 @@ export interface IUserDeletedDto {
     userId: string;
 }
 
-export class FileExplorerNodeAddedDto implements IFileExplorerNodeAddedDto {
-    node!: FileExplorerNodeResponse;
-    index!: number;
-
-    constructor(data?: IFileExplorerNodeAddedDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.node = new FileExplorerNodeResponse();
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.node = _data["node"] ? FileExplorerNodeResponse.fromJS(_data["node"]) : new FileExplorerNodeResponse();
-            this.index = _data["index"];
-        }
-    }
-
-    static fromJS(data: any): FileExplorerNodeAddedDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new FileExplorerNodeAddedDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["node"] = this.node ? this.node.toJSON() : <any>undefined;
-        data["index"] = this.index;
-        return data;
-    }
-}
-
-export interface IFileExplorerNodeAddedDto {
-    node: FileExplorerNodeResponse;
-    index: number;
-}
-
 export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
     node!: FileExplorerNodeResponse;
     index!: number;
-    oldAbsolutePath!: string;
+    oldAbsolutePath?: string | undefined;
 
     constructor(data?: IFileExplorerNodeUpdatedDto) {
         if (data) {
@@ -5319,7 +5280,7 @@ export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
 export interface IFileExplorerNodeUpdatedDto {
     node: FileExplorerNodeResponse;
     index: number;
-    oldAbsolutePath: string;
+    oldAbsolutePath?: string | undefined;
 }
 
 export class FileExplorerNodeDeletedDto implements IFileExplorerNodeDeletedDto {

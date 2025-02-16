@@ -23,35 +23,27 @@ export class LoadingRepositoryService {
     this.nextLoading(true, action);
   }
 
-  public startLoadingId(id: string | null | undefined): void {
+  public startLoading(id: string): void {
     this.nextLoading(true, id);
   }
 
   public startLoadingIds(ids: Array<string>): void {
-    ids.forEach(id => this.startLoadingId(id));
-  }
-
-  public startLoading(): void {
-    this.nextLoading(true)
+    ids.forEach(id => this.startLoading(id));
   }
 
   public stopLoadingAction(action: LoadingAction): void {
     this.nextLoading(false, action);
   }
 
-  public stopLoadingId(id: string | null | undefined): void {
+  public stopLoading(id: string): void {
     this.nextLoading(false, id);
   }
 
-  public stopLoadingIds(ids: Array<string>): void {
-    ids.forEach(id => this.stopLoadingId(id));
+  public stopLoadingItems(ids: Array<string>): void {
+    ids.forEach(id => this.stopLoading(id));
   }
 
-  public stopLoading(): void {
-    this.nextLoading(false);
-  }
-
-  public nextLoading(loading: boolean, id?: string | null): void {
+  public nextLoading(loading: boolean, id: string): void {
     const loadingIds = this._status$.value.loadingIds;
     if (!loading && id && !loadingIds.includes(id)) {
       return

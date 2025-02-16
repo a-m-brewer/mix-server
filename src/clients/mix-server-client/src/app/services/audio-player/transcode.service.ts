@@ -15,7 +15,7 @@ export class TranscodeService {
               private _transcodeClient: TranscodeClient) { }
 
   public async requestTranscode(file: FileExplorerFileNode): Promise<void> {
-    this._loading.startLoadingId(file.absolutePath);
+    this._loading.startLoading(file.absolutePath);
 
     try {
       await firstValueFrom(this._transcodeClient.requestTranscode(new RequestTranscodeCommand({
@@ -24,7 +24,7 @@ export class TranscodeService {
     } catch (err) {
       this._toastService.logServerError(err, 'Failed to request transcode file');
     } finally {
-      this._loading.stopLoadingId(file.absolutePath);
+      this._loading.stopLoading(file.absolutePath);
     }
   }
 }

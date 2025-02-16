@@ -49,7 +49,7 @@ export class HistoryRepositoryService {
       return;
     }
 
-    this._loadingRepository.startLoading();
+    this._loadingRepository.startLoadingAction('LoadMoreHistoryItems');
 
     const previousSessionHistory = cloneDeep(this._sessions$.value);
 
@@ -70,7 +70,7 @@ export class HistoryRepositoryService {
       this.next(nextSessionHistory);
     }
 
-    this._loadingRepository.stopLoading();
+    this._loadingRepository.stopLoadingAction('LoadMoreHistoryItems');
   }
 
   private next(sessions: PlaybackSession[]) {

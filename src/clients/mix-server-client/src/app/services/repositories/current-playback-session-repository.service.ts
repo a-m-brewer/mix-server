@@ -55,7 +55,7 @@ export class CurrentPlaybackSessionRepositoryService {
       .subscribe(serverConnectionStatus => {
         if (serverConnectionStatus === ServerConnectionState.Connected) {
           const currentSession = this.currentSession;
-          this._loadingRepository.startLoading();
+          this._loadingRepository.startLoadingAction('SyncPlaybackSession');
           firstValueFrom(this._sessionClient.syncPlaybackSession(new SyncPlaybackSessionCommand({
             playbackSessionId: currentSession?.id,
             playing: audioElementRepository.audio.duration > 0 && !audioElementRepository.audio.paused,
@@ -75,7 +75,7 @@ export class CurrentPlaybackSessionRepositoryService {
                 this._toastService.logServerError(err, 'Failed to fetch current session');
               }
             })
-            .finally(() => this._loadingRepository.stopLoading());
+            .finally(() => this._loadingRepository.stopLoadingAction('SyncPlaybackSession'));
         }
 
         if (serverConnectionStatus === ServerConnectionState.Unauthorized) {
@@ -171,11 +171,11 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public requestPause(): void {
-    this._loadingRepository.startLoading();
+    this._loadingRepository.startLoadingAction('RequestPause');
 
     firstValueFrom(this._sessionClient.requestPause())
       .catch(err => this._toastService.logServerError(err, 'Failed to request pause'))
-      .finally(() => this._loadingRepository.stopLoading());
+      .finally(() => this._loadingRepository.startLoadingAction('RequestPause'));
   }
 
   public updatePlaybackState(currentTime: number): void {

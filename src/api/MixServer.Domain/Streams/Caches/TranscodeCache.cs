@@ -1,14 +1,13 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Caching;
 using MixServer.Domain.Settings;
 using MixServer.Domain.Streams.Enums;
+using MixServer.Domain.Streams.Events;
 using MixServer.Domain.Streams.Models;
 
 
@@ -16,20 +15,25 @@ namespace MixServer.Domain.Streams.Caches;
 
 public interface ITranscodeCache : IDisposable
 {
+    event EventHandler<TranscodeStatusUpdatedEventArgs>? TranscodeStatusUpdated;
+    
     void Initialize();
     TranscodeState GetTranscodeStatus(string hash);
     void CalculateHasCompletePlaylist(string hash);
+    void AddTranscodeMapping(string hash, string absoluteFilePath);
 }
 
 public class TranscodeCache(
     IOptions<DataFolderSettings> dataFolderSettings,
     IFileExplorerConverter fileExplorerConverter,
     ILogger<TranscodeCache> logger,
-    ILoggerFactory loggerFactory,
-    IServiceProvider serviceProvider) : ITranscodeCache
+    ILoggerFactory loggerFactory) : ITranscodeCache
 {
     private FolderCacheItem? _cacheFolder;
-    private ConcurrentDictionary<string, Transcode> _transcodeFolders = new();
+    private readonly ConcurrentDictionary<string, string> _transcodeHashToFileMappings = new();
+    private readonly ConcurrentDictionary<string, Transcode> _transcodeFolders = new();
+
+    public event EventHandler<TranscodeStatusUpdatedEventArgs>? TranscodeStatusUpdated;
 
     [MemberNotNullWhen(true, nameof(_cacheFolder))]
     public void Initialize()
@@ -74,6 +78,11 @@ public class TranscodeCache(
         transcode.CalculateHasCompletePlaylist();
     }
 
+    public void AddTranscodeMapping(string hash, string absoluteFilePath)
+    {
+        _transcodeHashToFileMappings[hash] = absoluteFilePath;
+    }
+
     private async void CacheFolderOnItemAdded(object? sender, IFileExplorerNode e)
     {
         if (e is not IFileExplorerFolderNode)
@@ -95,6 +104,12 @@ public class TranscodeCache(
             return;
         }
         
+        if (!_transcodeHashToFileMappings.TryGetValue(hash, out var absoluteFilePath))
+        {
+            logger.LogWarning("Missing file path for {Hash}", hash);
+            return;
+        }
+        
         var folder = new FolderCacheItem(e.AbsolutePath, loggerFactory.CreateLogger<FolderCacheItem>(), fileExplorerConverter, LogLevel.None);
         folder.ItemAdded += TranscodeFolderOnItemAdded;
         folder.ItemUpdated += TranscodeFolderOnItemUpdated;
@@ -102,17 +117,15 @@ public class TranscodeCache(
         var transcode = new Transcode(loggerFactory.CreateLogger<Transcode>())
         {
             FileHash = hash,
-            TranscodeFolder = folder
+            TranscodeFolder = folder,
+            AbsoluteFilePath = absoluteFilePath
         };
 
         try
         {
             await transcode.InitializeAsync();
             
-            await SendTranscodeStatusUpdatedAsync(transcode.FileHash, 
-                transcode.HasCompletePlaylist
-                    ? TranscodeState.Completed
-                    : TranscodeState.InProgress);
+            SendTranscodeStatusUpdated(transcode.AbsoluteFilePath);
         }
         catch (Exception exception)
         {
@@ -179,11 +192,7 @@ public class TranscodeCache(
             return;
         }
 
-        _ = SendTranscodeStatusUpdatedAsync(
-            transcode.FileHash, 
-            transcode.HasCompletePlaylist
-                ? TranscodeState.Completed
-                : TranscodeState.InProgress);
+        SendTranscodeStatusUpdated(transcode.AbsoluteFilePath);
     }
 
     public void Dispose()
@@ -222,11 +231,21 @@ public class TranscodeCache(
         CalculateHasCompletePlaylist(hash);
     }
     
-    private async Task SendTranscodeStatusUpdatedAsync(string hash, TranscodeState state)
+    private void SendTranscodeStatusUpdated(string absoluteFilePath)
     {
-        using var scope = serviceProvider.CreateScope();
-        var callbackService = scope.ServiceProvider.GetRequiredService<ICallbackService>();
-
-        await callbackService.TranscodeStatusUpdated(hash, state);
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                TranscodeStatusUpdated?.Invoke(this, new TranscodeStatusUpdatedEventArgs
+                {
+                    AbsoluteFilePath = absoluteFilePath
+                });
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Failed to send transcode status updated event");
+            }
+        });
     }
 }

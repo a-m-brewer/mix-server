@@ -463,7 +463,7 @@ export class AudioPlayerService {
     this.internalPause();
 
     this._playbackSessionRepository.setDevicePlaying(this.currentTime, false);
-    this._loadingRepository.stopLoading();
+    this._loadingRepository.stopLoadingAction('PauseRequested');
   }
 
   private handlePlaybackGranted(playbackGranted: PlaybackGrantedEvent): void {

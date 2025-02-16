@@ -201,35 +201,20 @@ public class SignalRCallbackService(
             .Clients(connections)
             .UserUpdated(userDtoConverter.Convert(user));
     }
-
-    public Task FileExplorerNodeAdded(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node)
-    {
-        var tasks = new List<Task>();
-        var nodeDto = fileExplorerResponseConverter.Convert(node);
-        foreach (var user in  userManager.ConnectedUsers)
-        {
-            var index = expectedNodeIndexes.TryGetValue(user.SignalRUserId.Id, out var i) ? i : -1;
-            var dto = new FileExplorerNodeAddedDto
-            {
-                Node = nodeDto,
-                Index = index
-            };
-            var connections = user.GetConnections();
-            var task = context.Clients.Clients(connections).FileExplorerNodeAdded(dto);
-            tasks.Add(task);
-        }
-        
-        return Task.WhenAll(tasks);
-    }
     
-    public Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string oldAbsolutePath)
+    public Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string? oldAbsolutePath)
     {
         var tasks = new List<Task>();
         var nodeDto = fileExplorerResponseConverter.Convert(node);
         foreach (var user in  userManager.ConnectedUsers)
         {
             var index = expectedNodeIndexes.TryGetValue(user.SignalRUserId.Id, out var i) ? i : -1;
-            var dto = new FileExplorerNodeUpdatedDto(nodeDto, oldAbsolutePath, index);
+            var dto = new FileExplorerNodeUpdatedDto
+            {
+                Index = index,
+                Node = nodeDto,
+                OldAbsolutePath = oldAbsolutePath
+            };
             var connections = user.GetConnections();
             var task = context.Clients.Clients(connections).FileExplorerNodeUpdated(dto);
             tasks.Add(task);
@@ -243,17 +228,6 @@ public class SignalRCallbackService(
         return context.Clients
             .All
             .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto(fileExplorerResponseConverter.Convert(parentNode), absolutePath));
-    }
-
-    public Task TranscodeStatusUpdated(string hash, TranscodeState state)
-    {
-        return context.Clients
-            .All
-            .TranscodeStatusUpdated(new TranscodeStatusUpdatedDto
-            {
-                FileHash = hash,
-                TranscodeState = state
-            });
     }
 
     public async Task UserDeleted(string userId)

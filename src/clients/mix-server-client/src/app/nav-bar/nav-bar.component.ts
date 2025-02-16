@@ -182,16 +182,16 @@ export class NavBarComponent implements OnInit, OnDestroy {
   }
 
   public navigate(item: MenuItem) {
-    this._loadingRepository.startLoadingId(item.label);
+    this._loadingRepository.startLoading(item.label);
     if (typeof item.route === 'string') {
       this._router.navigate([item.route])
-        .finally(() => this._loadingRepository.stopLoadingId(item.label));
+        .finally(() => this._loadingRepository.stopLoading(item.label));
     }
     else {
       try {
         item.route();
       } finally {
-        this._loadingRepository.stopLoadingId(item.label);
+        this._loadingRepository.stopLoading(item.label);
       }
     }
   }

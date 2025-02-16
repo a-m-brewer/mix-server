@@ -61,7 +61,7 @@ export class CopyNodeService {
       return;
     }
 
-    this._loading.startLoadingId(sourceNode.absolutePath)
+    this._loading.startLoading(sourceNode.absolutePath)
     try {
       await firstValueFrom(this._nodeManagementClient.copyNode(new CopyNodeCommand({
         sourceAbsolutePath: sourceNode.absolutePath,
@@ -73,7 +73,7 @@ export class CopyNodeService {
     } catch (err) {
       this._toast.logServerError(err, 'Failed to copy node');
     } finally {
-      this._loading.stopLoadingId(sourceNode.absolutePath);
+      this._loading.stopLoading(sourceNode.absolutePath);
       this._form = this.createForm();
     }
   }

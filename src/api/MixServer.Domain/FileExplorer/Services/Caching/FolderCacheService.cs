@@ -22,6 +22,7 @@ public interface IFolderCacheService
 
     Task<ICacheFolder> GetOrAddAsync(string absolutePath);
     IFileExplorerFileNode GetFile(string fileAbsolutePath);
+    Task<(IFileExplorerFolder Parent, IFileExplorerFileNode File)> GetFileAndFolderAsync(string absoluteFilePath);
     void InvalidateFolder(string absolutePath);
 }
 
@@ -137,6 +138,24 @@ public class FolderCacheService(
         }
         
         return file;
+    }
+
+    public async Task<(IFileExplorerFolder Parent, IFileExplorerFileNode File)> GetFileAndFolderAsync(string absoluteFilePath)
+    {
+        var directoryAbsolutePath = Path.GetDirectoryName(absoluteFilePath);
+        
+        if (string.IsNullOrWhiteSpace(directoryAbsolutePath))
+        {
+            throw new InvalidRequestException(nameof(directoryAbsolutePath), "Directory Absolute Path is Null");
+        }
+
+        var folder = await GetOrAddAsync(directoryAbsolutePath);
+        
+        var file = folder.Folder.Children
+            .OfType<IFileExplorerFileNode>()
+            .SingleOrDefault(f => f.AbsolutePath == absoluteFilePath) ?? throw new NotFoundException(directoryAbsolutePath, Path.GetFileName(absoluteFilePath));
+        
+        return (folder.Folder, file);
     }
 
     public void InvalidateFolder(string absolutePath)

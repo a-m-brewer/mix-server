@@ -28,8 +28,6 @@ public interface ICallbackService
     Task UserDeleted(string userId);
     Task UserAdded(IUser user);
     Task UserUpdated(IUser user);
-    Task FileExplorerNodeAdded(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node);
-    Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string oldAbsolutePath);
+    Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string? oldAbsolutePath);
     Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath);
-    Task TranscodeStatusUpdated(string hash, TranscodeState state);
 }

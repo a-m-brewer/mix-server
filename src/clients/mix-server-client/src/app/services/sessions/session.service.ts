@@ -34,7 +34,7 @@ export class SessionService {
     private _queueRepository: QueueRepositoryService) { }
 
   public setFile(file: FileExplorerFileNode): void  {
-    this._loadingRepository.startLoadingId(file.absolutePath);
+    this._loadingRepository.startLoading(file.absolutePath);
 
     firstValueFrom(this._sessionClient.setCurrentSession(new SetCurrentSessionCommand({
       absoluteFolderPath: file.parent.absolutePath,
@@ -42,25 +42,25 @@ export class SessionService {
     })))
       .then(dto => this.next(dto))
       .catch(err => this._toastService.logServerError(err, 'Failed to set current session'))
-      .finally(() => this._loadingRepository.stopLoadingId(file.absolutePath));
+      .finally(() => this._loadingRepository.stopLoading(file.absolutePath));
   }
 
   public setQueuePosition(queueItemId: string): void {
-    this._loadingRepository.startLoadingId(queueItemId);
+    this._loadingRepository.startLoading(queueItemId);
     firstValueFrom(this._queueClient.setQueuePosition(new SetQueuePositionCommand({
       queueItemId
     })))
       .then(dto => this.next(dto))
       .catch(err => this._toastService.logServerError(err, 'Failed to set queue position'))
-      .finally(() => this._loadingRepository.stopLoadingId(queueItemId));
+      .finally(() => this._loadingRepository.stopLoading(queueItemId));
   }
 
   public clearSession(): void {
-    this._loadingRepository.startLoading();
+    this._loadingRepository.startLoadingAction('ClearSession');
     firstValueFrom(this._sessionClient.clearCurrentSession())
       .then(dto => this.next(dto))
       .catch(err => this._toastService.logServerError(err, 'Failed to clear current session'))
-      .finally(() => this._loadingRepository.stopLoading());
+      .finally(() => this._loadingRepository.stopLoadingAction('ClearSession'));
   }
 
   public back(): void {
@@ -120,14 +120,14 @@ export class SessionService {
   }
 
   private async setNextSession(command: SetNextSessionCommand): Promise<void> {
-    this._loadingRepository.startLoading();
+    this._loadingRepository.startLoadingAction('SetNextSession');
     try {
       let dto = await firstValueFrom(this._sessionClient.setNextSession(command));
       return this.next(dto);
     } catch (err) {
       return this._toastService.logServerError(err, 'Failed to set next session');
     } finally {
-      this._loadingRepository.stopLoading();
+      this._loadingRepository.stopLoadingAction('SetNextSession');
     }
   }
 
