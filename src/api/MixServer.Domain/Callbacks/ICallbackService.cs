@@ -3,6 +3,7 @@ using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
 using MixServer.Domain.Sessions.Models;
+using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Models;
 
@@ -30,4 +31,5 @@ public interface ICallbackService
     Task FileExplorerNodeAdded(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node);
     Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string oldAbsolutePath);
     Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath);
+    Task TranscodeStatusUpdated(string hash, TranscodeState state);
 }

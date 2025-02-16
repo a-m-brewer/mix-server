@@ -1,10 +1,12 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using MixServer.Domain.FileExplorer.Enums;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
 public class FileExplorerFolder(IFileExplorerFolderNode node) : IFileExplorerFolder
 {
-    protected readonly List<IFileExplorerNode> ChildNodes = [];
+    protected readonly ConcurrentDictionary<string, IFileExplorerNode> ChildNodes = [];
 
     public IFileExplorerFolderNode Node { get; } = node;
 
@@ -25,8 +27,8 @@ public class FileExplorerFolder(IFileExplorerFolderNode node) : IFileExplorerFol
 
         var values = sort.SortMode switch
         {
-            FolderSortMode.Name => ChildNodes.OrderByDescending(o => o.Type),
-            _ => ChildNodes.OrderBy(o => o.Type)
+            FolderSortMode.Name => ChildNodes.Values.OrderByDescending(o => o.Type),
+            _ => ChildNodes.Values.OrderBy(o => o.Type)
         };
 
         values = sort.Descending
@@ -38,11 +40,17 @@ public class FileExplorerFolder(IFileExplorerFolderNode node) : IFileExplorerFol
 
     public void AddChild(IFileExplorerNode node)
     {
-        ChildNodes.Add(node);
+        if (!ChildNodes.TryAdd(node.Name, node))
+        {
+            if (Debugger.IsAttached)
+            {
+                Debugger.Break();
+            }
+        }
     }
 
-    public void RemoveChild(IFileExplorerNode node)
+    public void RemoveChild(string name)
     {
-        ChildNodes.Remove(node);
+        ChildNodes.TryRemove(name, out _);
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
+using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Tracklists.Factories;
 using MixServer.Domain.Tracklists.Services;
 using MixServer.Domain.Utilities;
@@ -19,12 +20,18 @@ public partial class FileMetadataConverter(
     IMimeTypeService mimeTypeService)
     : IFileMetadataConverter
 {
+    private static readonly HashSet<string> ExcludedMediaMimeTypes =
+    [
+        "video/vnd.dlna.mpeg-tts"
+    ];
+    
     public IFileMetadata Convert(FileInfo file)
     {
         var mimeType = mimeTypeService.GetMimeType(file.FullName, file.Extension);
 
         var isMedia = !string.IsNullOrWhiteSpace(mimeType) &&
-                      AudioVideoMimeTypeRegex().IsMatch(mimeType);
+                      AudioVideoMimeTypeRegex().IsMatch(mimeType) &&
+                      !ExcludedMediaMimeTypes.Contains(mimeType);
 
         var defaultMetadata = new FileMetadata(mimeType);
         

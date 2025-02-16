@@ -1,5 +1,6 @@
 using System.Runtime.Serialization;
 using JetBrains.Annotations;
+using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Tracklists.Dtos.Import;
 using MixServer.Infrastructure.Files.Constants;
 using Newtonsoft.Json;
@@ -26,9 +27,13 @@ public class FileMetadataResponse
 
 public class MediaMetadataResponse : FileMetadataResponse
 {
-    public string Duration { get; init; } = string.Empty;
+    public required string Duration { get; init; }
     
-    public int Bitrate { get; init; }
+    public required int Bitrate { get; init; }
+    
+    public required string FileHash { get; init; }
+    
+    public required TranscodeState TranscodeState { get; init; }
 
-    public ImportTracklistDto Tracklist { get; init; } = new ();
+    public required ImportTracklistDto Tracklist { get; init; }
 }

@@ -1811,6 +1811,86 @@ export class TracklistClient implements ITracklistClient {
     }
 }
 
+export interface ITranscodeClient {
+    requestTranscode(command: RequestTranscodeCommand): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class TranscodeClient implements ITranscodeClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(MIXSERVER_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    requestTranscode(command: RequestTranscodeCommand): Observable<void> {
+        let url_ = this.baseUrl + "/api/transcode";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(command);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processRequestTranscode(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processRequestTranscode(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processRequestTranscode(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 202) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+}
+
 export interface IUserClient {
     getAll(): Observable<GetAllUsersResponse>;
     addUser(command: AddUserCommand): Observable<AddUserCommandResponse>;
@@ -2924,6 +3004,7 @@ export interface IFileMetadataResponse {
 export class MediaMetadataResponse extends FileMetadataResponse implements IMediaMetadataResponse {
     duration!: string;
     bitrate!: number;
+    transcodeState!: TranscodeState;
     tracklist!: ImportTracklistDto;
 
     constructor(data?: IMediaMetadataResponse) {
@@ -2939,6 +3020,7 @@ export class MediaMetadataResponse extends FileMetadataResponse implements IMedi
         if (_data) {
             this.duration = _data["duration"];
             this.bitrate = _data["bitrate"];
+            this.transcodeState = _data["transcodeState"];
             this.tracklist = _data["tracklist"] ? ImportTracklistDto.fromJS(_data["tracklist"]) : new ImportTracklistDto();
         }
     }
@@ -2954,6 +3036,7 @@ export class MediaMetadataResponse extends FileMetadataResponse implements IMedi
         data = typeof data === 'object' ? data : {};
         data["duration"] = this.duration;
         data["bitrate"] = this.bitrate;
+        data["transcodeState"] = this.transcodeState;
         data["tracklist"] = this.tracklist ? this.tracklist.toJSON() : <any>undefined;
         super.toJSON(data);
         return data;
@@ -2963,7 +3046,14 @@ export class MediaMetadataResponse extends FileMetadataResponse implements IMedi
 export interface IMediaMetadataResponse extends IFileMetadataResponse {
     duration: string;
     bitrate: number;
+    transcodeState: TranscodeState;
     tracklist: ImportTracklistDto;
+}
+
+export enum TranscodeState {
+    None = "None",
+    InProgress = "InProgress",
+    Completed = "Completed",
 }
 
 export class ImportTracklistDto implements IImportTracklistDto {
@@ -4409,6 +4499,42 @@ export class ImportTracklistResponse implements IImportTracklistResponse {
 
 export interface IImportTracklistResponse {
     tracklist: ImportTracklistDto;
+}
+
+export class RequestTranscodeCommand implements IRequestTranscodeCommand {
+    absoluteFilePath!: string;
+
+    constructor(data?: IRequestTranscodeCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.absoluteFilePath = _data["absoluteFilePath"];
+        }
+    }
+
+    static fromJS(data: any): RequestTranscodeCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new RequestTranscodeCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["absoluteFilePath"] = this.absoluteFilePath;
+        return data;
+    }
+}
+
+export interface IRequestTranscodeCommand {
+    absoluteFilePath: string;
 }
 
 export class GetAllUsersResponse implements IGetAllUsersResponse {

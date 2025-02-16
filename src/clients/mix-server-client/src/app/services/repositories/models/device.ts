@@ -26,6 +26,6 @@ export class Device {
   }
 
   canPlay(file?: FileExplorerFileNode | null): boolean {
-    return !!file && (file.hasTranscode || (this.capabilities[file.metadata.mimeType] ?? false));
+    return !!file && (file.hasCompletedTranscode || (this.capabilities[file.metadata.mimeType] ?? false));
   }
 }

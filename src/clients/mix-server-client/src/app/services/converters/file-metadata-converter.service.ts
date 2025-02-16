@@ -20,6 +20,7 @@ export class FileMetadataConverterService {
       dto.mimeType,
       dto.duration,
       dto.bitrate,
+      dto.transcodeState,
       this._tracklistConverter.createTracklistForm(dto.tracklist)
     )
   }

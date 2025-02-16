@@ -4,6 +4,7 @@ import {FileExplorerFileNode} from "../../../../../../main-content/file-explorer
 import {MatIcon} from "@angular/material/icon";
 import {MatMenuItem} from "@angular/material/menu";
 import {NgIf} from "@angular/common";
+import {TranscodeService} from "../../../../../../services/audio-player/transcode.service";
 
 @Component({
   selector: 'app-request-transcode-button',
@@ -20,7 +21,7 @@ import {NgIf} from "@angular/common";
 export class RequestTranscodeButtonComponent extends ContextMenuButton {
   public disabled = false;
 
-  constructor() {
+  constructor(private _transcodeService: TranscodeService) {
     super();
   }
 
@@ -32,9 +33,11 @@ export class RequestTranscodeButtonComponent extends ContextMenuButton {
     this.disabled = !this.fileVar || this.fileVar.hasTranscode;
   };
 
-  requestTranscode() {
+  async requestTranscode() {
     if (this.disabled) {
       return;
     }
+
+    await this._transcodeService.requestTranscode(this.fileVar!);
   }
 }

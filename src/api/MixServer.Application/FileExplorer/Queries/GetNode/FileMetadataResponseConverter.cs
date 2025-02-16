@@ -1,6 +1,7 @@
 using System.Text;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Interfaces;
+using MixServer.Domain.Streams.Caches;
 
 namespace MixServer.Application.FileExplorer.Queries.GetNode;
 
@@ -10,7 +11,7 @@ public interface IFileMetadataResponseConverter
 {
 }
 
-public class FileMetadataResponseConverter : IFileMetadataResponseConverter
+public class FileMetadataResponseConverter(ITranscodeCache transcodeCache) : IFileMetadataResponseConverter
 {
     public FileMetadataResponse Convert(IFileMetadata value)
     {
@@ -31,6 +32,8 @@ public class FileMetadataResponseConverter : IFileMetadataResponseConverter
             MimeType = value.MimeType,
             Duration = FormatTimespan(value.Duration),
             Bitrate = value.Bitrate,
+            FileHash = value.FileHash,
+            TranscodeState = transcodeCache.GetTranscodeStatus(value.FileHash),
             Tracklist = value.Tracklist
         };
     }

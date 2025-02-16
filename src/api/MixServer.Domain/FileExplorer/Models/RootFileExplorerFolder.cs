@@ -44,8 +44,8 @@ public class RootFileExplorerFolder : FileExplorerFolder, IRootFileExplorerFolde
         foreach (var folder in _rootFolderSettings.Value.ChildrenSplit)
         {
             var directoryInfo = new DirectoryInfo(folder);
-            ChildNodes.Add(new FileExplorerFolderNode(directoryInfo.Name, directoryInfo.FullName,
-                FileExplorerNodeType.Folder, directoryInfo.Exists, directoryInfo.CreationTimeUtc, true, false, Node));
+            ChildNodes[directoryInfo.Name] = new FileExplorerFolderNode(directoryInfo.Name, directoryInfo.FullName,
+                FileExplorerNodeType.Folder, directoryInfo.Exists, directoryInfo.CreationTimeUtc, true, false, Node);
         }
     }
 }

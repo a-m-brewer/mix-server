@@ -12,6 +12,7 @@ using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
 using MixServer.Domain.Sessions.Models;
+using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Enums;
 using MixServer.Domain.Users.Models;
@@ -242,6 +243,17 @@ public class SignalRCallbackService(
         return context.Clients
             .All
             .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto(fileExplorerResponseConverter.Convert(parentNode), absolutePath));
+    }
+
+    public Task TranscodeStatusUpdated(string hash, TranscodeState state)
+    {
+        return context.Clients
+            .All
+            .TranscodeStatusUpdated(new TranscodeStatusUpdatedDto
+            {
+                FileHash = hash,
+                TranscodeState = state
+            });
     }
 
     public async Task UserDeleted(string userId)
