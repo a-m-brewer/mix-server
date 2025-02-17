@@ -27,7 +27,7 @@ public class TranscodeService(
         Directory.CreateDirectory(GetTranscodeFolder(metadata.FileHash));
         logger.LogDebug("Transcode requested for {AbsoluteFilePath} ({Hash})", absoluteFilePath, metadata.FileHash);
         
-        Task.Run(() => ProcessTranscode(absoluteFilePath, metadata));
+        _ = Task.Run(() => ProcessTranscode(absoluteFilePath, metadata));
     }
 
     private async Task ProcessTranscode(string absoluteFilePath, IMediaMetadata metadata)
