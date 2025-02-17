@@ -1,30 +1,35 @@
 import { Injectable } from '@angular/core';
 import {DeviceRepositoryService} from "../repositories/device-repository.service";
 import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
-import {combineLatestWith, distinctUntilChanged, map, Observable} from "rxjs";
+import {combineLatestWith, distinctUntilChanged, map, Observable, pipe} from "rxjs";
 import {Device} from "../repositories/models/device";
 import {AuthenticationService} from "../auth/authentication.service";
+import {PlaybackDeviceRepositoryService} from "../repositories/playback-device-repository.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlaybackDeviceService {
-  public requestPlaybackDevice: Device | null | undefined;
-
   constructor(private _authenticationService: AuthenticationService,
               private _deviceRepository: DeviceRepositoryService,
+              private _playbackDeviceRepository: PlaybackDeviceRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
-    this.requestPlaybackDevice$.subscribe(requestedDevice => {
-      this.requestPlaybackDevice = requestedDevice;
-    });
-  }
-
-  public get requestPlaybackDevice$(): Observable<Device | null | undefined> {
-    return this.currentPlaybackDevice$
+    this.currentPlaybackDevice$
       .pipe(combineLatestWith(this._deviceRepository.currentDevice$))
       .pipe(map(([currentPlaybackDevice, currentDevice]) => {
         return currentPlaybackDevice ?? currentDevice;
       }))
+      .subscribe(device => {
+        _playbackDeviceRepository.requestPlaybackDevice = device;
+      })
+  }
+
+  public get requestPlaybackDevice(): Device | null | undefined {
+    return this._playbackDeviceRepository.requestPlaybackDevice;
+  }
+
+  public get requestPlaybackDevice$(): Observable<Device | null | undefined> {
+    return this._playbackDeviceRepository.requestPlaybackDevice$
       .pipe(distinctUntilChanged((prev, next) => this.devicesMatch(prev, next)));
   }
 

@@ -14,8 +14,6 @@ import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-p
 import {QueueRepositoryService} from "../repositories/queue-repository.service";
 import {QueueConverterService} from "../converters/queue-converter.service";
 import {AuthenticationService} from "../auth/authentication.service";
-import {DeviceRepositoryService} from "../repositories/device-repository.service";
-import {PlaybackSession} from "../repositories/models/playback-session";
 
 @Injectable({
   providedIn: 'root'

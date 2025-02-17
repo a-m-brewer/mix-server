@@ -37,6 +37,6 @@ public class RequestTranscodeCommandHandler(
             throw new InvalidRequestException(nameof(request.AbsoluteFilePath), $"{request.AbsoluteFilePath} is already being transcoded");
         }
         
-        transcodeService.RequestTranscode(file.AbsolutePath, mediaMetadata);
+        await transcodeService.RequestTranscodeAsync(file.AbsolutePath, mediaMetadata);
     }
 }

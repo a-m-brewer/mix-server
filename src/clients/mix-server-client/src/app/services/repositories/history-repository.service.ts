@@ -82,6 +82,10 @@ export class HistoryRepositoryService {
       session.currentNode.updateCanPlay(device);
     })
 
+    this._sessions$.value.forEach(session => {
+      session.destroy();
+    });
+
     this._sessions$.next(sessions)
   }
 }

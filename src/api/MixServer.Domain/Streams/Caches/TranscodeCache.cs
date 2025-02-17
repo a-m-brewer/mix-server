@@ -9,6 +9,7 @@ using MixServer.Domain.Settings;
 using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Streams.Events;
 using MixServer.Domain.Streams.Models;
+using Newtonsoft.Json;
 
 
 namespace MixServer.Domain.Streams.Caches;
@@ -17,10 +18,10 @@ public interface ITranscodeCache : IDisposable
 {
     event EventHandler<TranscodeStatusUpdatedEventArgs>? TranscodeStatusUpdated;
     
-    void Initialize();
+    Task InitializeAsync();
     TranscodeState GetTranscodeStatus(string hash);
     void CalculateHasCompletePlaylist(string hash);
-    void AddTranscodeMapping(string hash, string absoluteFilePath);
+    Task AddTranscodeMappingAsync(string hash, string absoluteFilePath);
 }
 
 public class TranscodeCache(
@@ -36,13 +37,15 @@ public class TranscodeCache(
     public event EventHandler<TranscodeStatusUpdatedEventArgs>? TranscodeStatusUpdated;
 
     [MemberNotNullWhen(true, nameof(_cacheFolder))]
-    public void Initialize()
+    public async Task InitializeAsync()
     {
         var transcodeFolder = dataFolderSettings.Value.TranscodesFolder;
         if (!Directory.Exists(transcodeFolder))
         {
             Directory.CreateDirectory(transcodeFolder);
         }
+        
+        await LoadTranscodeMappingsAsync();
 
         _cacheFolder = new FolderCacheItem(transcodeFolder, loggerFactory.CreateLogger<FolderCacheItem>(), fileExplorerConverter);
 
@@ -78,9 +81,43 @@ public class TranscodeCache(
         transcode.CalculateHasCompletePlaylist();
     }
 
-    public void AddTranscodeMapping(string hash, string absoluteFilePath)
+    public async Task AddTranscodeMappingAsync(string hash, string absoluteFilePath)
     {
         _transcodeHashToFileMappings[hash] = absoluteFilePath;
+        await SaveTranscodeMappingsAsync();
+    }
+
+    private async Task SaveTranscodeMappingsAsync()
+    {
+        await using var streamWriter = File.CreateText(Path.Join(dataFolderSettings.Value.TranscodesFolder, "transcode-mappings.json"));
+        JsonSerializer serializer = new();
+        serializer.Serialize(streamWriter, _transcodeHashToFileMappings);
+    }
+
+    private async Task LoadTranscodeMappingsAsync()
+    {
+        if (!File.Exists(Path.Join(dataFolderSettings.Value.TranscodesFolder, "transcode-mappings.json")))
+        {
+            _transcodeHashToFileMappings.Clear();
+            return;
+        }
+        
+        using var streamReader = File.OpenText(Path.Join(dataFolderSettings.Value.TranscodesFolder, "transcode-mappings.json"));
+        await using var jsonReader = new JsonTextReader(streamReader);
+        JsonSerializer serializer = new();
+        var mappings = serializer.Deserialize<Dictionary<string, string>>(jsonReader);
+        
+        _transcodeHashToFileMappings.Clear();
+        
+        if (mappings is null)
+        {
+            return;
+        }
+        
+        foreach (var (key, value) in mappings)
+        {
+            _transcodeHashToFileMappings[key] = value;
+        }
     }
 
     private async void CacheFolderOnItemAdded(object? sender, IFileExplorerNode e)

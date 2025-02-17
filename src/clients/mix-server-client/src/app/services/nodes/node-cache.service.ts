@@ -18,6 +18,7 @@ import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file
 import {FileExplorerNode} from "../../main-content/file-explorer/models/file-explorer-node";
 import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/file-explorer-folder-node";
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
+import {PlaybackDeviceRepositoryService} from "../repositories/playback-device-repository.service";
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +30,7 @@ export class NodeCacheService {
               private _folderSignalRClient: FolderSignalrClientService,
               private _loadingRepository: LoadingRepositoryService,
               private _nodeClient: NodeClient,
-              private _playbackDeviceService: PlaybackDeviceService,
+              private _playbackDeviceService: PlaybackDeviceRepositoryService,
               private _toastService: ToastService) {
     this._playbackDeviceService.requestPlaybackDevice$
       .subscribe(device => {
@@ -81,6 +82,31 @@ export class NodeCacheService {
     return this._folders$
       .pipe(combineLatestWith(query$))
       .pipe(map(([folders, absolutePath]) => folders[absolutePath] ?? FileExplorerFolder.Default));
+  }
+
+  getFileByNode$(initialNode: FileExplorerFileNode): Observable<FileExplorerFileNode> {
+    const existingFolder = this._folders$.value[initialNode.parent.absolutePath];
+
+    const nodeIndex = !!existingFolder
+      ? existingFolder.children.findIndex(n => n.absolutePath === initialNode.absolutePath)
+      : -1;
+
+    if (existingFolder && nodeIndex !== -1) {
+      const nextFolder = existingFolder.copy();
+      nextFolder.children.splice(nodeIndex, 1, initialNode);
+    }
+
+    return this._folders$
+      .pipe(map(folders => {
+        const folder = folders[initialNode.parent.absolutePath];
+        const node = folder?.children.find(n => n.absolutePath === initialNode.absolutePath);
+
+        if (!node || !(node instanceof FileExplorerFileNode)) {
+          return initialNode;
+        }
+
+        return node;
+      }));
   }
 
   public async loadDirectory(absolutePath: string): Promise<string> {

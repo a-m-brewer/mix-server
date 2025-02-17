@@ -35,7 +35,7 @@ public class Bootstrapper(
         await firstUserInitializationService.AddFirstUserIfNotExistsAsync();
         fileNotificationService.Initialize();
         
-        transcodeCache.Initialize();
+        await transcodeCache.InitializeAsync();
         await sessionDirectoryCacheInitializationService.LoadUsersCurrentPlaybackSessionDirectoriesAsync();
     }
 }

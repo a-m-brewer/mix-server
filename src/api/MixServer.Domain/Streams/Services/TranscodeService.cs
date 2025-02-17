@@ -9,7 +9,7 @@ namespace MixServer.Domain.Streams.Services;
 
 public interface ITranscodeService
 {
-    void RequestTranscode(string absoluteFilePath, IMediaMetadata metadata);
+    Task RequestTranscodeAsync(string absoluteFilePath, IMediaMetadata metadata);
 }
 
 public class TranscodeService(
@@ -20,9 +20,9 @@ public class TranscodeService(
     private const int HlsTime = 4;
     private const int DefaultBitrate = 192;
     
-    public void RequestTranscode(string absoluteFilePath, IMediaMetadata metadata)
+    public async Task RequestTranscodeAsync(string absoluteFilePath, IMediaMetadata metadata)
     {
-        transcodeCache.AddTranscodeMapping(metadata.FileHash, absoluteFilePath);
+        await transcodeCache.AddTranscodeMappingAsync(metadata.FileHash, absoluteFilePath);
         
         Directory.CreateDirectory(GetTranscodeFolder(metadata.FileHash));
         logger.LogDebug("Transcode requested for {AbsoluteFilePath} ({Hash})", absoluteFilePath, metadata.FileHash);

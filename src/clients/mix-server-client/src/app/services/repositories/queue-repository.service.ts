@@ -5,7 +5,7 @@ import {
   QueueClient, QueueSnapshotDto,
   RemoveFromQueueCommand
 } from "../../generated-clients/mix-server-clients";
-import {BehaviorSubject, firstValueFrom, map, Observable} from "rxjs";
+import {BehaviorSubject, firstValueFrom, map, Observable, Subject} from "rxjs";
 import {Queue} from "./models/queue";
 import {QueueConverterService} from "../converters/queue-converter.service";
 import {ToastService} from "../toasts/toast-service";
@@ -176,6 +176,8 @@ export class QueueRepositoryService {
     queue.items.forEach(item => {
       item.file.updateCanPlay(requestPlaybackDevice);
     });
+
+    this._queueBehaviourSubject$.value.destroy();
 
     this._queueBehaviourSubject$.next(queue);
   }

@@ -91,6 +91,10 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public set currentSession(value: PlaybackSession | null) {
+    if (this._currentSession$.value) {
+      this._currentSession$.value.destroy();
+    }
+
     this._currentSession$.next(value);
   }
 
