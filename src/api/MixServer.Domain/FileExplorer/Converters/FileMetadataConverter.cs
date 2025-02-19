@@ -13,7 +13,6 @@ namespace MixServer.Domain.FileExplorer.Converters;
 public interface IFileMetadataConverter : IConverter<FileInfo, IFileMetadata>;
 
 public partial class FileMetadataConverter(
-    IHashService hashService,
     ILogger<FileMetadataConverter> logger,
     ITagBuilderFactory tagBuilderFactory,
     ITracklistTagService tracklistTagService,
@@ -48,7 +47,6 @@ public partial class FileMetadataConverter(
             return new MediaMetadata(mimeType,
                 tagBuilder.Duration,
                 tagBuilder.Bitrate,
-                hashService.Hash(file.FullName),
                 tracklist);
         }
         catch (Exception e)

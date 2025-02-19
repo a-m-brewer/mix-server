@@ -1,15 +1,18 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Caching;
 using MixServer.Domain.Settings;
+using MixServer.Domain.Streams.Entities;
 using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Streams.Events;
 using MixServer.Domain.Streams.Models;
-using Newtonsoft.Json;
+using MixServer.Domain.Streams.Repositories;
 
 
 namespace MixServer.Domain.Streams.Caches;
@@ -17,107 +20,107 @@ namespace MixServer.Domain.Streams.Caches;
 public interface ITranscodeCache : IDisposable
 {
     event EventHandler<TranscodeStatusUpdatedEventArgs>? TranscodeStatusUpdated;
-    
+
     Task InitializeAsync();
-    TranscodeState GetTranscodeStatus(string hash);
-    void CalculateHasCompletePlaylist(string hash);
-    Task AddTranscodeMappingAsync(string hash, string absoluteFilePath);
+    TranscodeState GetTranscodeStatus(Guid transcodeId);
+    TranscodeState GetTranscodeStatus(string absoluteFilePath);
+    void CalculateHasCompletePlaylist(Guid transcodeId);
+    HlsPlaylistStreamFile GetPlaylistOrThrowAsync(Guid transcodeId);
+    HlsSegmentStreamFile GetSegmentOrThrow(string segment);
 }
 
 public class TranscodeCache(
     IOptions<DataFolderSettings> dataFolderSettings,
     IFileExplorerConverter fileExplorerConverter,
     ILogger<TranscodeCache> logger,
-    ILoggerFactory loggerFactory) : ITranscodeCache
+    ILoggerFactory loggerFactory,
+    IServiceProvider serviceProvider) : ITranscodeCache
 {
     private FolderCacheItem? _cacheFolder;
-    private readonly ConcurrentDictionary<string, string> _transcodeHashToFileMappings = new();
-    private readonly ConcurrentDictionary<string, Transcode> _transcodeFolders = new();
+    private readonly ConcurrentDictionary<Guid, TranscodeCacheItem> _transcodeFolders = new();
 
     public event EventHandler<TranscodeStatusUpdatedEventArgs>? TranscodeStatusUpdated;
 
     [MemberNotNullWhen(true, nameof(_cacheFolder))]
-    public async Task InitializeAsync()
+    public Task InitializeAsync()
     {
         var transcodeFolder = dataFolderSettings.Value.TranscodesFolder;
         if (!Directory.Exists(transcodeFolder))
         {
             Directory.CreateDirectory(transcodeFolder);
         }
-        
-        await LoadTranscodeMappingsAsync();
 
-        _cacheFolder = new FolderCacheItem(transcodeFolder, loggerFactory.CreateLogger<FolderCacheItem>(), fileExplorerConverter);
+        _cacheFolder = new FolderCacheItem(transcodeFolder, loggerFactory.CreateLogger<FolderCacheItem>(),
+            fileExplorerConverter);
 
         foreach (var child in _cacheFolder.Folder.Children)
         {
             CacheFolderOnItemAdded(this, child);
         }
-        
+
         _cacheFolder.ItemAdded += CacheFolderOnItemAdded;
         _cacheFolder.ItemUpdated += CacheFolderOnItemUpdated;
         _cacheFolder.ItemRemoved += CacheFolderOnItemRemoved;
+
+        return Task.CompletedTask;
     }
 
-    public TranscodeState GetTranscodeStatus(string hash)
+    public TranscodeState GetTranscodeStatus(Guid transcodeId)
     {
-        if (!_transcodeFolders.TryGetValue(hash, out var transcode))
+        if (!_transcodeFolders.TryGetValue(transcodeId, out var transcode))
         {
             return TranscodeState.None;
         }
-        
+
         return transcode.HasCompletePlaylist
-            ? TranscodeState.Completed 
+            ? TranscodeState.Completed
             : TranscodeState.InProgress;
     }
 
-    public void CalculateHasCompletePlaylist(string hash)
+    public TranscodeState GetTranscodeStatus(string absoluteFilePath)
     {
-        if (!_transcodeFolders.TryGetValue(hash, out var transcode))
+        var transcode = _transcodeFolders.Values.SingleOrDefault(s => s.AbsoluteFilePath == absoluteFilePath);
+
+        if (transcode is null)
+        {
+            return TranscodeState.None;
+        }
+
+        return transcode.HasCompletePlaylist
+            ? TranscodeState.Completed
+            : TranscodeState.InProgress;
+    }
+
+    public void CalculateHasCompletePlaylist(Guid transcodeId)
+    {
+        if (!_transcodeFolders.TryGetValue(transcodeId, out var transcode))
         {
             return;
         }
-        
+
         transcode.CalculateHasCompletePlaylist();
     }
 
-    public async Task AddTranscodeMappingAsync(string hash, string absoluteFilePath)
+    public HlsPlaylistStreamFile GetPlaylistOrThrowAsync(Guid transcodeId)
     {
-        _transcodeHashToFileMappings[hash] = absoluteFilePath;
-        await SaveTranscodeMappingsAsync();
+        var transcode = _transcodeFolders.TryGetValue(transcodeId, out var value)
+            ? value
+            : throw new NotFoundException(nameof(Transcode), transcodeId);
+        
+        return transcode.GetPlaylistOrThrow();
     }
 
-    private async Task SaveTranscodeMappingsAsync()
+    public HlsSegmentStreamFile GetSegmentOrThrow(string segment)
     {
-        await using var streamWriter = File.CreateText(Path.Join(dataFolderSettings.Value.TranscodesFolder, "transcode-mappings.json"));
-        JsonSerializer serializer = new();
-        serializer.Serialize(streamWriter, _transcodeHashToFileMappings);
-    }
+        var split = segment.Split("_");
 
-    private async Task LoadTranscodeMappingsAsync()
-    {
-        if (!File.Exists(Path.Join(dataFolderSettings.Value.TranscodesFolder, "transcode-mappings.json")))
+        if (!Guid.TryParse(split[0], out var transcodeId) ||
+            !_transcodeFolders.TryGetValue(transcodeId, out var transcode))
         {
-            _transcodeHashToFileMappings.Clear();
-            return;
+            throw new NotFoundException(nameof(Transcode), split[0]);
         }
         
-        using var streamReader = File.OpenText(Path.Join(dataFolderSettings.Value.TranscodesFolder, "transcode-mappings.json"));
-        await using var jsonReader = new JsonTextReader(streamReader);
-        JsonSerializer serializer = new();
-        var mappings = serializer.Deserialize<Dictionary<string, string>>(jsonReader);
-        
-        _transcodeHashToFileMappings.Clear();
-        
-        if (mappings is null)
-        {
-            return;
-        }
-        
-        foreach (var (key, value) in mappings)
-        {
-            _transcodeHashToFileMappings[key] = value;
-        }
+        return transcode.GetSegmentOrThrow(segment);
     }
 
     private async void CacheFolderOnItemAdded(object? sender, IFileExplorerNode e)
@@ -127,86 +130,92 @@ public class TranscodeCache(
             return;
         }
 
-        var hash = e.Name;
+        var transcodeIdString = e.Name;
 
-        if (string.IsNullOrWhiteSpace(hash))
+        if (string.IsNullOrWhiteSpace(transcodeIdString))
         {
             logger.LogWarning("Missing directory name for {Path}", e.AbsolutePath);
             return;
         }
         
-        if (_transcodeFolders.ContainsKey(hash))
+        if (!Guid.TryParse(transcodeIdString, out var transcodeId))
         {
-            logger.LogWarning("Duplicate directory name for {Hash}", hash);
+            logger.LogWarning("Invalid directory name for {Hash}", transcodeIdString);
             return;
         }
-        
-        if (!_transcodeHashToFileMappings.TryGetValue(hash, out var absoluteFilePath))
+
+        if (_transcodeFolders.ContainsKey(transcodeId))
         {
-            logger.LogWarning("Missing file path for {Hash}", hash);
+            logger.LogWarning("Duplicate directory name for {Hash}", transcodeIdString);
             return;
         }
-        
-        var folder = new FolderCacheItem(e.AbsolutePath, loggerFactory.CreateLogger<FolderCacheItem>(), fileExplorerConverter, LogLevel.None);
-        folder.ItemAdded += TranscodeFolderOnItemAdded;
-        folder.ItemUpdated += TranscodeFolderOnItemUpdated;
-        folder.ItemRemoved += TranscodeFolderOnItemRemoved;
-        var transcode = new Transcode(loggerFactory.CreateLogger<Transcode>())
-        {
-            FileHash = hash,
-            TranscodeFolder = folder,
-            AbsoluteFilePath = absoluteFilePath
-        };
 
         try
         {
+            using var scope = serviceProvider.CreateScope();
+            var transcodeRepository = scope.ServiceProvider.GetRequiredService<ITranscodeRepository>();
+            var transcodeEntity = await transcodeRepository.GetAsync(transcodeId);
+
+            var folder = new FolderCacheItem(e.AbsolutePath, loggerFactory.CreateLogger<FolderCacheItem>(),
+                fileExplorerConverter, LogLevel.None);
+            folder.ItemAdded += TranscodeFolderOnItemAdded;
+            folder.ItemUpdated += TranscodeFolderOnItemUpdated;
+            folder.ItemRemoved += TranscodeFolderOnItemRemoved;
+            var transcode = new TranscodeCacheItem(loggerFactory.CreateLogger<TranscodeCacheItem>())
+            {
+                TranscodeId = transcodeId,
+                TranscodeFolder = folder,
+                AbsoluteFilePath = transcodeEntity.AbsolutePath
+            };
+
             await transcode.InitializeAsync();
-            
+
             SendTranscodeStatusUpdated(transcode.AbsoluteFilePath);
+
+            transcode.HasCompletePlaylistChanged += TranscodeOnHasCompletePlaylistChanged;
+            
+            _transcodeFolders[transcodeId] = transcode;
+            logger.LogInformation("Added transcode folder {Hash}", transcodeIdString);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Failed to initialize transcode folder {Hash}", hash);
-            return;
+            logger.LogError(exception, "Failed to initialize transcode folder {Hash}", transcodeIdString);
         }
-        
-        transcode.HasCompletePlaylistChanged += TranscodeOnHasCompletePlaylistChanged;
-        
-        _transcodeFolders[hash] = transcode;
-        logger.LogInformation("Added transcode folder {Hash}", hash);
     }
 
     private void CacheFolderOnItemRemoved(object? sender, string absolutePath)
     {
         var hash = Path.GetFileName(absolutePath);
 
-        if (string.IsNullOrWhiteSpace(hash) || !_transcodeFolders.TryRemove(hash, out var transcode))
+        if (string.IsNullOrWhiteSpace(hash) ||
+            !Guid.TryParse(hash, out var transcodeId) ||
+            !_transcodeFolders.TryRemove(transcodeId, out var transcode))
         {
             return;
         }
-        
+
         transcode.HasCompletePlaylistChanged -= TranscodeOnHasCompletePlaylistChanged;
 
         var folder = transcode.TranscodeFolder;
-        
+
         folder.ItemAdded -= TranscodeFolderOnItemAdded;
         folder.ItemUpdated -= TranscodeFolderOnItemUpdated;
         folder.ItemRemoved -= TranscodeFolderOnItemRemoved;
         folder.Dispose();
         logger.LogInformation("Removed transcode folder {Hash}", absolutePath);
     }
-    
+
     private void CacheFolderOnItemUpdated(object? sender, FolderItemUpdatedEventArgs e)
     {
         if (e.Item is not IFileExplorerFolderNode)
         {
             return;
         }
-        
+
         CacheFolderOnItemRemoved(sender, e.OldFullPath);
         CacheFolderOnItemAdded(sender, e.Item);
     }
-    
+
     private void TranscodeFolderOnItemRemoved(object? sender, string absolutePath)
     {
         CalculateHasCompletePlaylistFromPath(absolutePath);
@@ -221,10 +230,10 @@ public class TranscodeCache(
     {
         CalculateHasCompletePlaylistFromPath(e.AbsolutePath);
     }
-    
+
     private void TranscodeOnHasCompletePlaylistChanged(object? sender, EventArgs e)
     {
-        if (sender is not Transcode transcode)
+        if (sender is not TranscodeCacheItem transcode)
         {
             return;
         }
@@ -240,34 +249,36 @@ public class TranscodeCache(
         {
             TranscodeFolderOnItemRemoved(this, transcodeFolder.TranscodeFolder.Folder.Node.AbsolutePath);
         }
+
         _transcodeFolders.Clear();
 
         if (_cacheFolder is null)
         {
             return;
         }
-        
+
         _cacheFolder.ItemAdded -= CacheFolderOnItemAdded;
         _cacheFolder.ItemUpdated -= CacheFolderOnItemUpdated;
         _cacheFolder.ItemRemoved -= CacheFolderOnItemRemoved;
         _cacheFolder.Dispose();
         _cacheFolder = null;
     }
-    
+
     private void CalculateHasCompletePlaylistFromPath(string absolutePath)
     {
         var hash = Path.GetDirectoryName(absolutePath);
         var fileName = Path.GetFileName(absolutePath);
-        
-        if (string.IsNullOrWhiteSpace(hash) || 
-            !fileName.EndsWith(".m3u8"))
+
+        if (string.IsNullOrWhiteSpace(hash) ||
+            !fileName.EndsWith(".m3u8") ||
+            !Guid.TryParse(hash, out var transcodeId))
         {
             return;
         }
-        
-        CalculateHasCompletePlaylist(hash);
+
+        CalculateHasCompletePlaylist(transcodeId);
     }
-    
+
     private void SendTranscodeStatusUpdated(string absoluteFilePath)
     {
         _ = Task.Run(() =>

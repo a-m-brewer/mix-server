@@ -31,8 +31,6 @@ public class MediaMetadataResponse : FileMetadataResponse
     
     public required int Bitrate { get; init; }
     
-    public required string FileHash { get; init; }
-    
     public required TranscodeState TranscodeState { get; init; }
 
     public required ImportTracklistDto Tracklist { get; init; }

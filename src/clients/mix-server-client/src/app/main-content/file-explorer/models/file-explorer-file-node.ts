@@ -33,12 +33,14 @@ export class FileExplorerFileNode implements FileExplorerNode {
 
     this._requestedPlaybackDevicePlaybackSupported = clientPlaybackSupported || this.hasCompletedTranscode;
 
+    this.directPlaybackSupported = clientPlaybackSupported;
     this.playbackSupported = serverPlaybackSupported && this._requestedPlaybackDevicePlaybackSupported;
     this.disabled = this._fileInvalid || !this.playbackSupported;
   }
 
   public disabled: boolean;
   public playbackSupported: boolean;
+  public directPlaybackSupported: boolean = true;
   public readonly hasTranscode: boolean;
   public readonly hasCompletedTranscode: boolean;
 
@@ -107,7 +109,8 @@ export class FileExplorerFileNode implements FileExplorerNode {
   }
 
   updateCanPlay(device: Device | null | undefined) {
-    this._requestedPlaybackDevicePlaybackSupported = device?.canPlay(this) ?? this.hasCompletedTranscode;
+    this.directPlaybackSupported =  device?.canPlay(this) ?? false;
+    this._requestedPlaybackDevicePlaybackSupported = this.directPlaybackSupported || this.hasCompletedTranscode;
     this.playbackSupported = this.serverPlaybackSupported && this._requestedPlaybackDevicePlaybackSupported;
     this.disabled = this._fileInvalid || !this.playbackSupported;
   }

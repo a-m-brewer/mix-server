@@ -38,6 +38,8 @@ export class AudioPlayerService {
   private _clientDurationBehaviourSubject$ = new BehaviorSubject<number>(this.getSanitizedClientDuration());
   private _serverDurationBehaviourSubject$ = new BehaviorSubject<number>(0);
 
+  private _streamUrl: string = '';
+  private _transcode: boolean = false;
   private _playbackGranted: boolean = false;
 
   private _previousFile: FileExplorerFileNode | null | undefined;
@@ -329,7 +331,7 @@ export class AudioPlayerService {
   private async playInternal(): Promise<void> {
     try {
       this._playbackGranted = true;
-      await this._audioElementRepository.playFromTime(this.currentTime);
+      await this._audioElementRepository.playFromTime(this.currentTime, this._streamUrl, this._transcode);
       this.setDevicePlaying(true);
       this._audioSession
         .createMetadata()
@@ -402,7 +404,10 @@ export class AudioPlayerService {
       : 0;
     this._serverDurationBehaviourSubject$.next(serverDuration);
 
-    this.audio.src = this._streamUrlService.getStreamUrl(session.id);
+    this._streamUrl = this._streamUrlService.getStreamUrl(session.id);
+    this._transcode = !session.currentNode.directPlaybackSupported;
+
+    this._audioElementRepository.attachHls(this._streamUrl, this._transcode);
 
     this._timeChangedBehaviourSubject$.next(session.state.currentTime);
 

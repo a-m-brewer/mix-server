@@ -11,10 +11,12 @@ using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Domain.Sessions.Validators;
 
 namespace MixServer.Application.Sessions.Commands.SetNextSession;
 
 public class SetNextSessionCommandHandler(
+    ICanPlayOnDeviceValidator canPlayOnDeviceValidator,
     IPlaybackSessionDtoConverter converter,
     IQueueService queueService,
     IPlaybackTrackingService playbackTrackingService,
@@ -45,10 +47,7 @@ public class SetNextSessionCommandHandler(
             case PlaylistIncrementResult.PreviousOutOfBounds:
                 throw new InvalidRequestException(nameof(request.Offset),"Next file can not be before the start of the playlist");
             case PlaylistIncrementResult.Success:
-                if (!requestedPlaybackDeviceAccessor.DeviceState.CanPlay(queueItem!.File))
-                {
-                    throw new InvalidRequestException(nameof(request.Offset), "Device cannot play the next file");
-                }
+                canPlayOnDeviceValidator.ValidateCanPlayOrThrow(requestedPlaybackDeviceAccessor.DeviceState, queueItem!.File);
 
                 queueSnapshot = await queueService.SetQueuePositionAsync(queueItem);
                 

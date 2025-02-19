@@ -8,6 +8,7 @@ using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Repositories;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Domain.Utilities;
@@ -17,6 +18,7 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Infrastructure.Sessions.Services;
 
 public class SessionService(
+    ICanPlayOnDeviceValidator canPlayOnDeviceValidator,
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
     IDateTimeProvider dateTimeProvider,
@@ -57,10 +59,7 @@ public class SessionService(
         
         var file = folderCacheService.GetFile(request.AbsoluteFilePath);
 
-        if (!device.CanPlay(file))
-        {
-            throw new InvalidRequestException($"{device.DeviceId} cannot play {file.Metadata.MimeType}");
-        }
+        canPlayOnDeviceValidator.ValidateCanPlayOrThrow(device, file);
 
         await currentUserRepository.LoadPlaybackSessionAsync(request.AbsoluteFilePath);
         var session = user.PlaybackSessions.SingleOrDefault(s => s.AbsolutePath == request.AbsoluteFilePath);

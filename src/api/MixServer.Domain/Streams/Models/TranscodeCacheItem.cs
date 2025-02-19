@@ -1,17 +1,20 @@
+using System.Diagnostics.CodeAnalysis;
 using DebounceThrottle;
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Caching;
 
 namespace MixServer.Domain.Streams.Models;
 
-public class Transcode(ILogger<Transcode> logger)
+public class TranscodeCacheItem(ILogger<TranscodeCacheItem> logger)
 {
     private readonly DebounceDispatcher _calculateHasCompletePlaylistDebounceThrottle = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5));
     private bool _hasCompletePlaylist;
     
     public event EventHandler? HasCompletePlaylistChanged;
 
-    public required string FileHash { get; init; }
+    public required Guid TranscodeId { get; init; }
     
     public required string AbsoluteFilePath { get; init; }
 
@@ -25,7 +28,7 @@ public class Transcode(ILogger<Transcode> logger)
                 return;
             }
 
-            logger.LogInformation("{FileHash} HasCompletePlaylist changed from {PreviousHasCompletePlaylist} to {HasCompletePlaylist}", FileHash, _hasCompletePlaylist, value);
+            logger.LogInformation("{TranscodeId} HasCompletePlaylist changed from {PreviousHasCompletePlaylist} to {HasCompletePlaylist}", TranscodeId, _hasCompletePlaylist, value);
             
             _hasCompletePlaylist = value;
             HasCompletePlaylistChanged?.Invoke(this, EventArgs.Empty);
@@ -56,9 +59,7 @@ public class Transcode(ILogger<Transcode> logger)
 
     private async Task<bool> HasCompletePlaylistAsync()
     {
-        var playlistFile = TranscodeFolder.Folder.Children.SingleOrDefault(s => s.Name.EndsWith(".m3u8"));
-        
-        if (playlistFile is null || !playlistFile.Exists)
+        if (!TryGetPlaylistFile(out var playlistFile))
         {
             return false;
         }
@@ -66,5 +67,39 @@ public class Transcode(ILogger<Transcode> logger)
         var lines = await File.ReadAllLinesAsync(playlistFile.AbsolutePath);
         
         return lines.LastOrDefault()?.StartsWith("#EXT-X-ENDLIST") ?? false;
+    }
+
+    public HlsPlaylistStreamFile GetPlaylistOrThrow()
+    {
+        if (!TryGetPlaylistFile(out var playlistFile))
+        {
+            throw new NotFoundException(TranscodeId.ToString(), "m3u8");
+        }
+
+        return new HlsPlaylistStreamFile
+        {
+            FilePath = playlistFile.AbsolutePath
+        };
+    }
+    
+    private bool TryGetPlaylistFile([MaybeNullWhen(false)] out IFileExplorerNode playlistFile)
+    {
+        playlistFile = TranscodeFolder.Folder.Children.SingleOrDefault(s => s.Name.EndsWith(".m3u8"));
+        return playlistFile is not null && playlistFile.Exists;
+    }
+
+    public HlsSegmentStreamFile GetSegmentOrThrow(string segment)
+    {
+        var segmentFile = TranscodeFolder.Folder.Children.SingleOrDefault(s => s.Name == segment);
+        
+        if (segmentFile is null || !segmentFile.Exists)
+        {
+            throw new NotFoundException(TranscodeId.ToString(), segment);
+        }
+        
+        return new HlsSegmentStreamFile
+        {
+            FilePath = segmentFile.AbsolutePath
+        };
     }
 }

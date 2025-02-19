@@ -7,6 +7,7 @@ using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Streams.Services;
 using MixServer.Domain.Tracklists.Services;
@@ -28,6 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ITracklistTagService, TracklistTagService>();
         services.AddSingleton<ITranscodeCache, TranscodeCache>();
         services.AddTransient<ITranscodeService, TranscodeService>();
+        services.AddTransient<ICanPlayOnDeviceValidator, CanPlayOnDeviceValidator>();
 
         services.AddDomainInterfaces();
         services.AddDomainUtilities();

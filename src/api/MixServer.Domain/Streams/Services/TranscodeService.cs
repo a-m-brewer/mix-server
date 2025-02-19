@@ -2,48 +2,59 @@ using CliWrap;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MixServer.Domain.FileExplorer.Models.Metadata;
+using MixServer.Domain.Persistence;
 using MixServer.Domain.Settings;
 using MixServer.Domain.Streams.Caches;
+using MixServer.Domain.Streams.Entities;
+using MixServer.Domain.Streams.Repositories;
 
 namespace MixServer.Domain.Streams.Services;
 
 public interface ITranscodeService
 {
-    Task RequestTranscodeAsync(string absoluteFilePath, IMediaMetadata metadata);
+    Task RequestTranscodeAsync(string absoluteFilePath, int bitrate);
 }
 
 public class TranscodeService(
     IOptions<DataFolderSettings> dataFolderSettings,
     ILogger<TranscodeService> logger,
-    ITranscodeCache transcodeCache) : ITranscodeService
+    ITranscodeCache transcodeCache,
+    ITranscodeRepository transcodeRepository,
+    IUnitOfWork unitOfWork) : ITranscodeService
 {
     private const int HlsTime = 4;
     private const int DefaultBitrate = 192;
     
-    public async Task RequestTranscodeAsync(string absoluteFilePath, IMediaMetadata metadata)
+    public async Task RequestTranscodeAsync(string absoluteFilePath, int bitrate)
     {
-        await transcodeCache.AddTranscodeMappingAsync(metadata.FileHash, absoluteFilePath);
+        var transcode = await transcodeRepository.GetOrAddAsync(absoluteFilePath);
+
+        await unitOfWork.SaveChangesAsync();
         
-        Directory.CreateDirectory(GetTranscodeFolder(metadata.FileHash));
-        logger.LogDebug("Transcode requested for {AbsoluteFilePath} ({Hash})", absoluteFilePath, metadata.FileHash);
+        var transcodeIdString = transcode.Id.ToString();
         
-        _ = Task.Run(() => ProcessTranscode(absoluteFilePath, metadata));
+        Directory.CreateDirectory(GetTranscodeFolder(transcode.Id.ToString()));
+        logger.LogDebug("Transcode requested for {AbsoluteFilePath} ({Hash})", absoluteFilePath, transcodeIdString);
+        
+        _ = Task.Run(() => ProcessTranscode(transcode, bitrate));
     }
 
-    private async Task ProcessTranscode(string absoluteFilePath, IMediaMetadata metadata)
+    private async Task ProcessTranscode(Transcode transcode, int requestedBitrate)
     {
-        var transcodeFolder = GetTranscodeFolder(metadata.FileHash);
+        var transcodeIdString = transcode.Id.ToString();
+
+        var transcodeFolder = GetTranscodeFolder(transcodeIdString);
         
-        var bitrate = metadata.Bitrate == 0 ? DefaultBitrate : metadata.Bitrate;
+        var bitrate = requestedBitrate == 0 ? DefaultBitrate : requestedBitrate;
         
-        logger.LogInformation("Starting transcode for {AbsoluteFilePath} ({Hash})",
-            absoluteFilePath,
-            metadata.FileHash);
+        logger.LogInformation("Starting transcode for {AbsoluteFilePath} ({TranscodeId})",
+            transcode.AbsolutePath,
+            transcodeIdString);
         
         var result = await Cli.Wrap("ffmpeg")
             .WithValidation(CommandResultValidation.None)
             .WithArguments([
-                "-i", $"{absoluteFilePath}",
+                "-i", $"{transcode.AbsolutePath}",
                 "-c:a", "aac",
                 "-b:a", $"{bitrate}k",
                 "-vn",
@@ -51,17 +62,17 @@ public class TranscodeService(
                 "-hls_time", $"{HlsTime}",
                 "-hls_list_size", "0",
                 "-hls_flags", "append_list+program_date_time+independent_segments",
-                "-hls_segment_filename", $"{metadata.FileHash}_%06d.ts",
-                $"{metadata.FileHash}.m3u8"
+                "-hls_segment_filename", $"{transcodeIdString}_%06d.ts",
+                $"{transcodeIdString}.m3u8"
             ])
             .WithWorkingDirectory(transcodeFolder)
-            .WithStandardOutputPipe(PipeTarget.ToDelegate(line => logger.LogTrace("[{Hash}] {StdOutLine}", metadata.FileHash, line)))
-            .WithStandardErrorPipe(PipeTarget.ToDelegate(line => logger.LogDebug("[{Hash}] {StdErrLine}", metadata.FileHash, line)))
+            .WithStandardOutputPipe(PipeTarget.ToDelegate(line => logger.LogTrace("[{Hash}] {StdOutLine}", transcodeIdString, line)))
+            .WithStandardErrorPipe(PipeTarget.ToDelegate(line => logger.LogDebug("[{Hash}] {StdErrLine}", transcodeIdString, line)))
             .ExecuteAsync();
         
         logger.LogInformation("Transcode {AbsoluteFilePath} ({Hash}) finished after {RunTime} ({StartTime}-{ExitTime}) with exit code {ExitCode}",
-            absoluteFilePath,
-            metadata.FileHash,
+            transcode.AbsolutePath,
+            transcodeIdString,
             result.RunTime,
             result.StartTime,
             result.ExitTime,
@@ -69,13 +80,13 @@ public class TranscodeService(
 
         if (result.IsSuccess)
         {
-            transcodeCache.CalculateHasCompletePlaylist(metadata.FileHash);
+            transcodeCache.CalculateHasCompletePlaylist(transcode.Id);
         }
         else
         {
             logger.LogError("Transcode of {AbsoluteFilePath} ({Hash}) failed cleaning up resources", 
-                absoluteFilePath,
-                metadata.FileHash);
+                transcode.AbsolutePath,
+                transcodeIdString);
             Directory.Delete(transcodeFolder, true);
         }
     }

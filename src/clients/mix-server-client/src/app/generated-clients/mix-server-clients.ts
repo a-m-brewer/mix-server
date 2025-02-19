@@ -1569,7 +1569,7 @@ export class SessionClient implements ISessionClient {
 }
 
 export interface IStreamClient {
-    getStream(playbackSessionId: string, access_token?: string | null | undefined): Observable<FileResponse | null>;
+    getStream(id: string, access_token?: string | null | undefined): Observable<FileResponse | null>;
 }
 
 @Injectable({
@@ -1585,11 +1585,11 @@ export class StreamClient implements IStreamClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getStream(playbackSessionId: string, access_token?: string | null | undefined): Observable<FileResponse | null> {
-        let url_ = this.baseUrl + "/api/stream/{playbackSessionId}?";
-        if (playbackSessionId === undefined || playbackSessionId === null)
-            throw new Error("The parameter 'playbackSessionId' must be defined.");
-        url_ = url_.replace("{playbackSessionId}", encodeURIComponent("" + playbackSessionId));
+    getStream(id: string, access_token?: string | null | undefined): Observable<FileResponse | null> {
+        let url_ = this.baseUrl + "/api/stream/{id}?";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
         if (access_token !== undefined && access_token !== null)
             url_ += "access_token=" + encodeURIComponent("" + access_token) + "&";
         url_ = url_.replace(/[?&]$/, "");
@@ -3004,7 +3004,6 @@ export interface IFileMetadataResponse {
 export class MediaMetadataResponse extends FileMetadataResponse implements IMediaMetadataResponse {
     duration!: string;
     bitrate!: number;
-    fileHash!: string;
     transcodeState!: TranscodeState;
     tracklist!: ImportTracklistDto;
 
@@ -3021,7 +3020,6 @@ export class MediaMetadataResponse extends FileMetadataResponse implements IMedi
         if (_data) {
             this.duration = _data["duration"];
             this.bitrate = _data["bitrate"];
-            this.fileHash = _data["fileHash"];
             this.transcodeState = _data["transcodeState"];
             this.tracklist = _data["tracklist"] ? ImportTracklistDto.fromJS(_data["tracklist"]) : new ImportTracklistDto();
         }
@@ -3038,7 +3036,6 @@ export class MediaMetadataResponse extends FileMetadataResponse implements IMedi
         data = typeof data === 'object' ? data : {};
         data["duration"] = this.duration;
         data["bitrate"] = this.bitrate;
-        data["fileHash"] = this.fileHash;
         data["transcodeState"] = this.transcodeState;
         data["tracklist"] = this.tracklist ? this.tracklist.toJSON() : <any>undefined;
         super.toJSON(data);
@@ -3049,7 +3046,6 @@ export class MediaMetadataResponse extends FileMetadataResponse implements IMedi
 export interface IMediaMetadataResponse extends IFileMetadataResponse {
     duration: string;
     bitrate: number;
-    fileHash: string;
     transcodeState: TranscodeState;
     tracklist: ImportTracklistDto;
 }

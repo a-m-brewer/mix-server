@@ -9,7 +9,8 @@ public class EfPlaybackSessionRepository(MixServerDbContext context) : IPlayback
 {
     public async Task<PlaybackSession> GetAsync(Guid id)
     {
-        return await context.PlaybackSessions.SingleOrDefaultAsync(s => s.Id == id)
+        return await context.PlaybackSessions
+                   .SingleOrDefaultAsync(s => s.Id == id)
                ?? throw new NotFoundException(nameof(context.PlaybackSessions), id);
     }
 

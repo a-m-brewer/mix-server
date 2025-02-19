@@ -7,6 +7,7 @@ using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Models;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.Users.Repository;
@@ -16,6 +17,7 @@ namespace MixServer.Application.Sessions.Commands.RequestPlayback;
 public class RequestPlaybackCommandHandler(
     IPlaybackStateConverter converter,
     ICallbackService callbackService,
+    ICanPlayOnDeviceValidator canPlayOnDeviceValidator,
     IConnectionManager connectionManager,
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
@@ -32,10 +34,7 @@ public class RequestPlaybackCommandHandler(
         var deviceState = deviceTrackingService.GetDeviceStateOrThrow(request.DeviceId);
         var file = folderCacheService.GetFile(playbackState.AbsolutePath);
 
-        if (!deviceState.CanPlay(file))
-        {
-            throw new InvalidRequestException(nameof(request.DeviceId), $"Device {request.DeviceId} can not play {file.Metadata.MimeType}");
-        }
+        canPlayOnDeviceValidator.ValidateCanPlayOrThrow(deviceState, file);
 
         if (!playbackState.HasDevice)
         {
