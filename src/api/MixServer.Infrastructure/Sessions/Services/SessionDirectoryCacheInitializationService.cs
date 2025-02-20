@@ -27,8 +27,7 @@ public class SessionDirectoryCacheInitializationService(
             .Where(w => !string.IsNullOrWhiteSpace(w) && Directory.Exists(w))
             .Select(s => s!);
         
-        var cacheTasks = existingPaths.Select(folderCacheService.GetOrAddAsync);
-        
+        var cacheTasks = existingPaths.Select(s => Task.Run(() => folderCacheService.GetOrAdd(s)));        
         await Task.WhenAll(cacheTasks);
     }
 }
