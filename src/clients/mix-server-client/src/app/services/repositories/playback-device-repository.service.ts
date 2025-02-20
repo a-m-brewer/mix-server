@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {BehaviorSubject, Observable} from "rxjs";
 import {Device} from "./models/device";
+import sameCapabilities from "../audio-player/same-capabilities";
 
 @Injectable({
   providedIn: 'root'
@@ -34,15 +35,6 @@ export class PlaybackDeviceRepositoryService {
       return false;
     }
 
-    return prev.id === next.id && this.sameCapabilities(prev.capabilities, next.capabilities);
-  }
-
-  private sameCapabilities(prev: { [mimeType: string]: boolean }, next: { [mimeType: string]: boolean }) {
-    const prevKeys = Object.keys(prev);
-    const nextKeys = Object.keys(next);
-
-    if (prevKeys.length !== nextKeys.length) return false;
-
-    return prevKeys.every(key => key in next && prev[key] === next[key]);
+    return prev.id === next.id && sameCapabilities(prev.capabilities, next.capabilities);
   }
 }
