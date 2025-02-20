@@ -2,19 +2,21 @@ import { Injectable } from '@angular/core';
 import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
 import {QueueRepositoryService} from "../repositories/queue-repository.service";
 import {AudioElementRepositoryService} from "./audio-element-repository.service";
-import {firstValueFrom} from "rxjs";
+import {distinctUntilChanged, firstValueFrom, Subject} from "rxjs";
 import {HistoryRepositoryService} from "../repositories/history-repository.service";
 import {DeviceClient, UpdateDevicePlaybackCapabilitiesCommand} from "../../generated-clients/mix-server-clients";
 import {ToastService} from "../toasts/toast-service";
 import {FileExplorerNodeRepositoryService} from "../repositories/file-explorer-node-repository.service";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {AuthenticationService} from "../auth/authentication.service";
+import sameCapabilities from "./same-capabilities";
 
 @Injectable({
   providedIn: 'root'
 })
 export class AudioPlayerCapabilitiesService {
   private _capabilitiesCache: { [mimeType: string]: boolean } = {};
+  private _requests$ = new Subject<{[mimeType: string]: boolean}>();
 
   constructor(private authenticationService: AuthenticationService,
               private _audioElementRepository: AudioElementRepositoryService,
@@ -27,6 +29,19 @@ export class AudioPlayerCapabilitiesService {
   }
 
   public initialize() {
+    this._requests$
+      .pipe(distinctUntilChanged((prev, next) => sameCapabilities(prev, next)))
+      .subscribe(capabilities => {
+        firstValueFrom(this._devicesClient.updateDeviceCapabilities(new UpdateDevicePlaybackCapabilitiesCommand({
+          capabilities
+        })))
+          .catch(
+            e => this._toastService.logServerError(
+              e, 'Failed to update device capabilities'
+            )
+          );
+      })
+
     this.authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
@@ -75,14 +90,6 @@ export class AudioPlayerCapabilitiesService {
       return
     }
 
-    firstValueFrom(this._devicesClient.updateDeviceCapabilities(new UpdateDevicePlaybackCapabilitiesCommand({
-      capabilities: this._capabilitiesCache
-    })))
-      .then(() => this._capabilitiesCache = {})
-      .catch(
-      e => this._toastService.logServerError(
-        e, 'Failed to update device capabilities'
-      )
-    )
+    this._requests$.next(this._capabilitiesCache);
   }
 }
