@@ -19,7 +19,7 @@ public class FileService(
 {
     public async Task<IFileExplorerFolder> GetFolderAsync(string absolutePath)
     {
-        var cacheItem = await folderCacheService.GetOrAddAsync(absolutePath);
+        var cacheItem = folderCacheService.GetOrAdd(absolutePath);
 
         var folder = cacheItem.Folder;
 

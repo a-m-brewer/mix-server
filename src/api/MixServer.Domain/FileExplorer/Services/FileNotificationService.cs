@@ -63,7 +63,7 @@ public class FileNotificationService(
     
     private async Task TranscodeCacheOnTranscodeStatusUpdated(object? sender, IServiceProvider sp, TranscodeStatusUpdatedEventArgs e)
     {
-        var (parent, file) = await folderCacheService.GetFileAndFolderAsync(e.AbsoluteFilePath);
+        var (parent, file) = folderCacheService.GetFileAndFolder(e.AbsoluteFilePath);
         
         var expectedIndexes = await GetExpectedIndexesAsync(sp, parent, file);
         
