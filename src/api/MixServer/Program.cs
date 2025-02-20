@@ -22,6 +22,7 @@ using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.FileExplorer.Settings;
 using MixServer.Domain.Settings;
+using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Users.Enums;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure;
@@ -182,6 +183,8 @@ builder.Services.Configure<InitialUserSettings>(builder.Configuration.GetSection
 builder.Services.Configure<FolderCacheSettings>(builder.Configuration.GetSection(ConfigSection.FolderCache));
 
 builder.Services.Configure<DataFolderSettings>(builder.Configuration.GetSection(ConfigSection.DataSettings));
+
+builder.Services.Configure<FfmpegSettings>(builder.Configuration.GetSection(ConfigSection.Ffmpeg));
 
 // NSwag
 builder.Services.AddSwaggerDocument(settings =>

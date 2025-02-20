@@ -37,7 +37,6 @@ public class TagLibSharpTagBuilder : ITagBuilder
     {
         if (_id3Tag is null)
         {
-            _logger.LogWarning("No ID3v2 tag found in file");
             return this;
         }
 
@@ -89,7 +88,6 @@ public class TagLibSharpTagBuilder : ITagBuilder
     {
         if (_id3Tag is null)
         {
-            _logger.LogWarning("No ID3v2 tag found in file");
             return;
         }
         
@@ -114,7 +112,6 @@ public class TagLibSharpTagBuilder : ITagBuilder
     private ICollection<Chapter> GetChapters()
     {
         if (_id3Tag is not null) return _id3Tag.GetFrames<ChapterFrame>().Select(ToChapter).ToList();
-        _logger.LogWarning("No ID3v2 tag found in file");
         return new List<Chapter>();
 
     }

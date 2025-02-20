@@ -6,6 +6,7 @@ using MixServer.Domain.Persistence;
 using MixServer.Domain.Settings;
 using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Streams.Entities;
+using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Streams.Repositories;
 
 namespace MixServer.Domain.Streams.Services;
@@ -17,6 +18,7 @@ public interface ITranscodeService
 
 public class TranscodeService(
     IOptions<DataFolderSettings> dataFolderSettings,
+    IOptions<FfmpegSettings> ffmpegSettings,
     ILogger<TranscodeService> logger,
     ITranscodeCache transcodeCache,
     ITranscodeRepository transcodeRepository,
@@ -51,7 +53,7 @@ public class TranscodeService(
             transcode.AbsolutePath,
             transcodeIdString);
         
-        var result = await Cli.Wrap("ffmpeg")
+        var result = await Cli.Wrap(ffmpegSettings.Value.Path)
             .WithValidation(CommandResultValidation.None)
             .WithArguments([
                 "-i", $"{transcode.AbsolutePath}",
