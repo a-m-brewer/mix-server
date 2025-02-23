@@ -46,13 +46,13 @@ export class DeviceRepositoryService {
       .subscribe(state => {
         const devices = cloneDeep(this._devicesBehaviourSubject$.value);
 
-        const deviceIndex = devices.findIndex(f => f.id === state.deviceId);
+        const device = devices.find(f => f.id === state.deviceId);
 
-        if (deviceIndex === -1) {
+        if (!device) {
           return;
         }
 
-        devices[deviceIndex].updateFromState(state, _authenticationService.accessToken?.userId);
+        device.updateFromState(state, _authenticationService.accessToken?.userId);
 
         this.next(devices);
       })

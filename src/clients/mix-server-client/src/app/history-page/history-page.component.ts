@@ -1,9 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subject, takeUntil} from "rxjs";
 import {PlaybackSession} from "../services/repositories/models/playback-session";
-import {
-  CurrentPlaybackSessionRepositoryService
-} from "../services/repositories/current-playback-session-repository.service";
 import {HistoryRepositoryService} from "../services/repositories/history-repository.service";
 import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../services/repositories/models/loading-node-status";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
@@ -82,6 +79,4 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
   public onScrollDown() {
     this._historyRepository.loadMoreItems().then();
   }
-
-  protected readonly MediaMetadata = MediaMetadata;
 }

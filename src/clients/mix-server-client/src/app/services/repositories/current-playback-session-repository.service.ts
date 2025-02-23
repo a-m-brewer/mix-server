@@ -178,7 +178,7 @@ export class CurrentPlaybackSessionRepositoryService {
 
     firstValueFrom(this._sessionClient.requestPause())
       .catch(err => this._toastService.logServerError(err, 'Failed to request pause'))
-      .finally(() => this._loadingRepository.startLoadingAction('RequestPause'));
+      .finally(() => this._loadingRepository.stopLoadingAction('RequestPause'));
   }
 
   public updatePlaybackState(currentTime: number): void {
@@ -209,7 +209,7 @@ export class CurrentPlaybackSessionRepositoryService {
 
   public updateCurrentSessionTracklist(tracklist: ImportTracklistDto, dirty: boolean): void {
     const previousSession = this.currentSession;
-    if (!previousSession || !(previousSession.currentNode.metadata instanceof MediaMetadata)) {
+    if (!previousSession || !(previousSession.currentNode.metadata.isMedia)) {
       return;
     }
 

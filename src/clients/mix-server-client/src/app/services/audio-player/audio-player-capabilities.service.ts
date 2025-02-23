@@ -57,7 +57,7 @@ export class AudioPlayerCapabilitiesService {
 
     this._playbackSessionRepository.currentSession$
       .subscribe(session => {
-        if (session && session.currentNode.metadata instanceof MediaMetadata) {
+        if (session && session.currentNode.metadata.isMedia) {
           this.updateAudioCapabilities([session.currentNode.metadata.mimeType]);
         }
       });

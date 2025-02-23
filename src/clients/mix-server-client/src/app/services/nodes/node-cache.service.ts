@@ -91,7 +91,6 @@ export class NodeCacheService {
 
             return acc;
           }, {} as { [absolutePath: string]: MediaInfoUpdatedEventItem[] });
-        console.log('event', event, 'groupedUpdates', groupedUpdates);
 
         const updatedFolders: { [absolutePath: string]: FileExplorerFolder } = {};
 
@@ -189,6 +188,10 @@ export class NodeCacheService {
 
     const loadingKey = absolutePath === "" ? "root" : absolutePath;
 
+    if (this._loadingRepository.isLoading(loadingKey)) {
+      return absolutePath;
+    }
+
     this._loadingRepository.startLoading(loadingKey);
 
     try {
@@ -229,11 +232,11 @@ export class NodeCacheService {
     this._loadingRepository.startLoading(absolutePath)
 
     try {
-      this._nodeClient.setFolderSortMode(new SetFolderSortCommand({
+      await firstValueFrom(this._nodeClient.setFolderSortMode(new SetFolderSortCommand({
         absoluteFolderPath: absolutePath,
         sortMode: this.toFolderSortMode(sortMode),
         descending: descending
-      }));
+      })));
     } catch (e) {
       this._toastService.logServerError(e, 'Failed to update folder sort');
     } finally {
@@ -268,7 +271,6 @@ export class NodeCacheService {
 
     const existingFolders = cloneDeep(this._folders$.value);
     const nextFolders = {...existingFolders, ...updates};
-    console.log('nextFolders', nextFolders);
     this._folders$.next(nextFolders);
   }
 

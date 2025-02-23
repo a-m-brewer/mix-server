@@ -27,8 +27,8 @@ export class FileExplorerFileNode implements FileExplorerNode {
               public parent: FileExplorerFolderNode) {
     this._fileInvalid = absolutePath.trim() === '' || !exists;
 
-    this.hasTranscode = metadata instanceof MediaMetadata && metadata.transcodeState !== TranscodeState.None;
-    this.hasCompletedTranscode = metadata instanceof MediaMetadata && metadata.transcodeState === TranscodeState.Completed;
+    this.hasTranscode = metadata.isMedia && metadata.transcodeState !== TranscodeState.None;
+    this.hasCompletedTranscode = metadata.isMedia && metadata.transcodeState === TranscodeState.Completed;
 
     this._requestedPlaybackDevicePlaybackSupported = clientPlaybackSupported || this.hasCompletedTranscode;
 

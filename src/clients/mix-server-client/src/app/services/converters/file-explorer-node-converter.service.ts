@@ -75,6 +75,7 @@ export class FileExplorerNodeConverterService {
   }
 
   private fromFolderSortDto(dto: FolderSortDto): FolderSort {
+    console.log(dto);
     return new FolderSort(dto.descending, this.fromFolderSortMode(dto.sortMode));
   }
 
