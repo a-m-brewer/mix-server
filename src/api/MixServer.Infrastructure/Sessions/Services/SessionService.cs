@@ -55,7 +55,7 @@ public class SessionService(
     {
         var user = currentUserRepository.CurrentUser;
         
-        var device = requestedPlaybackDeviceAccessor.DeviceState;
+        var device = requestedPlaybackDeviceAccessor.PlaybackDevice;
         
         var file = folderCacheService.GetFile(request.AbsoluteFilePath);
 

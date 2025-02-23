@@ -56,7 +56,10 @@ public class GetStreamQueryHandler(
             throw new NotFoundException(nameof(PlaybackSession), session.AbsolutePath);
         }
 
-        if (!requestedPlaybackDeviceAccessor.DeviceState.CanPlay(session.File))
+        // Specifically use the RequestDevice to determine if the file can be played
+        // Because if playback device is switched we want the client to be seeing what version they can play
+        // Rather than what the playback device can play e.g. switching from Transcode to DirectStream
+        if (!requestedPlaybackDeviceAccessor.RequestDevice.CanPlay(session.File))
         {
             var transcode = await transcodeRepository.GetAsync(session.File.AbsolutePath);
             return transcodeCache.GetPlaylistOrThrowAsync(transcode.Id);

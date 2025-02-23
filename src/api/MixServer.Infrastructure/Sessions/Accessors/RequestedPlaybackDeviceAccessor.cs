@@ -13,7 +13,7 @@ public class RequestedPlaybackDeviceAccessor(
     ICurrentDeviceRepository currentDeviceRepository,
     IDeviceTrackingService deviceTrackingService) : IRequestedPlaybackDeviceAccessor
 {
-    public IDeviceState DeviceState
+    public IDeviceState PlaybackDevice
     {
         get
         {
@@ -26,4 +26,6 @@ public class RequestedPlaybackDeviceAccessor(
             return deviceTrackingService.GetDeviceStateOrThrow(requestedDeviceId);
         }
     }
+
+    public IDeviceState RequestDevice => deviceTrackingService.GetDeviceStateOrThrow(currentDeviceRepository.DeviceId);
 }

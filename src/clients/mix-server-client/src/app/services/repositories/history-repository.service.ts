@@ -49,9 +49,10 @@ export class HistoryRepositoryService {
       return;
     }
 
-    this._loadingRepository.startLoadingAction('LoadMoreHistoryItems');
-
     const previousSessionHistory = cloneDeep(this._sessions$.value);
+
+    const loadingId = `LoadMoreHistoryItems-${previousSessionHistory.length}`;
+    this._loadingRepository.startLoading(loadingId);
 
     const pageSize = 15;
     const history = await firstValueFrom(this._sessionClient.history(previousSessionHistory.length, pageSize))
@@ -70,7 +71,7 @@ export class HistoryRepositoryService {
       this.next(nextSessionHistory);
     }
 
-    this._loadingRepository.stopLoadingAction('LoadMoreHistoryItems');
+    this._loadingRepository.stopLoading(loadingId);
   }
 
   private next(sessions: PlaybackSession[]) {

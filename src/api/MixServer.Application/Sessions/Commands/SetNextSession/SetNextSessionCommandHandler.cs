@@ -47,7 +47,7 @@ public class SetNextSessionCommandHandler(
             case PlaylistIncrementResult.PreviousOutOfBounds:
                 throw new InvalidRequestException(nameof(request.Offset),"Next file can not be before the start of the playlist");
             case PlaylistIncrementResult.Success:
-                canPlayOnDeviceValidator.ValidateCanPlayOrThrow(requestedPlaybackDeviceAccessor.DeviceState, queueItem!.File);
+                canPlayOnDeviceValidator.ValidateCanPlayOrThrow(requestedPlaybackDeviceAccessor.PlaybackDevice, queueItem!.File);
 
                 queueSnapshot = await queueService.SetQueuePositionAsync(queueItem);
                 

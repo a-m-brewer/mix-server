@@ -4,5 +4,6 @@ namespace MixServer.Domain.Sessions.Accessors;
 
 public interface IRequestedPlaybackDeviceAccessor
 { 
-    IDeviceState DeviceState { get; }
+    IDeviceState PlaybackDevice { get; }
+    IDeviceState RequestDevice { get; }
 }

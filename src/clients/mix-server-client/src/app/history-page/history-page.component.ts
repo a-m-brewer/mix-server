@@ -63,8 +63,6 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
       .subscribe(status => {
         this.loadingStatus = status;
       });
-
-    this._historyRepository.loadMoreItems().then();
   }
 
   public ngOnDestroy(): void {

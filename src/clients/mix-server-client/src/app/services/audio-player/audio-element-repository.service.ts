@@ -6,9 +6,11 @@ import Hls from "hls.js";
 })
 export class AudioElementRepositoryService {
   private readonly _audio: HTMLAudioElement;
+  private readonly _hls: Hls;
 
   constructor() {
     this._audio = new Audio();
+    this._hls = new Hls();
   }
 
   public get audio(): HTMLAudioElement {
@@ -40,11 +42,14 @@ export class AudioElementRepositoryService {
 
   public attachHls(streamUrl: string, transcode: boolean) {
     if (transcode && Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(streamUrl);
-      hls.attachMedia(this.audio);
+      this._hls.loadSource(streamUrl);
+      this._hls.attachMedia(this.audio);
+      console.log("HLS attached");
     } else{
-      this.audio.src = streamUrl
+      this._hls.detachMedia();
+      this.audio.src = streamUrl;
+      console.log("HLS detached", streamUrl);
     }
   }
+
 }
