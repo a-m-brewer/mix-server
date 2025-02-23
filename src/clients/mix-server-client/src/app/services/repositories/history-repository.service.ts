@@ -9,6 +9,7 @@ import {PlaybackSessionConverterService} from "../converters/playback-session-co
 import {cloneDeep} from "lodash";
 import {PlaybackDeviceService} from "../audio-player/playback-device.service";
 import {Device} from "./models/device";
+import {NodeCacheService} from "../nodes/node-cache.service";
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,7 @@ export class HistoryRepositoryService {
 
   constructor(authenticationService: AuthenticationService,
               private _loadingRepository: LoadingRepositoryService,
-              private _playbackDeviceService: PlaybackDeviceService,
+              private _nodeCache: NodeCacheService,
               private _playbackSessionConverter: PlaybackSessionConverterService,
               private _sessionClient: SessionClient,
               private _toastService: ToastService) {
@@ -28,11 +29,6 @@ export class HistoryRepositoryService {
         if (connected) {
           this.loadMoreItems().then();
         }
-      })
-
-    this._playbackDeviceService.requestPlaybackDevice$
-      .subscribe(requestedPlaybackDevice => {
-        this.nextWithDevice(cloneDeep(this._sessions$.value), requestedPlaybackDevice);
       });
   }
 
@@ -75,12 +71,9 @@ export class HistoryRepositoryService {
   }
 
   private next(sessions: PlaybackSession[]) {
-    this.nextWithDevice(sessions, this._playbackDeviceService.requestPlaybackDevice);
-  }
-
-  private nextWithDevice(sessions: PlaybackSession[], device: Device | null | undefined) {
-    sessions.forEach(session => {
-      session.currentNode.updateCanPlay(device);
+    const folders = [...new Set(sessions.map(session => session.currentNode.parent.absolutePath))];
+    folders.forEach(folder => {
+      void this._nodeCache.loadDirectory(folder)
     })
 
     this._sessions$.value.forEach(session => {

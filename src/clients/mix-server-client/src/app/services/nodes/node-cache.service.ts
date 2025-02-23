@@ -91,6 +91,7 @@ export class NodeCacheService {
 
             return acc;
           }, {} as { [absolutePath: string]: MediaInfoUpdatedEventItem[] });
+        console.log('event', event, 'groupedUpdates', groupedUpdates);
 
         const updatedFolders: { [absolutePath: string]: FileExplorerFolder } = {};
 
@@ -182,6 +183,10 @@ export class NodeCacheService {
   }
 
   public async loadDirectory(absolutePath: string): Promise<string> {
+    if (this._folders$.value[absolutePath]) {
+      return absolutePath;
+    }
+
     const loadingKey = absolutePath === "" ? "root" : absolutePath;
 
     this._loadingRepository.startLoading(loadingKey);
@@ -263,6 +268,7 @@ export class NodeCacheService {
 
     const existingFolders = cloneDeep(this._folders$.value);
     const nextFolders = {...existingFolders, ...updates};
+    console.log('nextFolders', nextFolders);
     this._folders$.next(nextFolders);
   }
 

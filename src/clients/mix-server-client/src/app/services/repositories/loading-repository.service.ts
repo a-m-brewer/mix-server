@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {BehaviorSubject, Observable} from "rxjs";
 import {LoadingAction, LoadingNodeStatus, LoadingNodeStatusImpl} from "./models/loading-node-status";
+import {cloneDeep} from "lodash";
 
 @Injectable({
   providedIn: 'root'
@@ -44,27 +45,25 @@ export class LoadingRepositoryService {
   }
 
   public nextLoading(loading: boolean, id: string): void {
-    const loadingIds = this._status$.value.loadingIds;
-    if (!loading && id && !loadingIds.includes(id)) {
-      return
-    }
+    const loadingIds = cloneDeep(this._status$.value.loadingIds);
 
     const change = loading ? 1 : -1;
     const nextCount = Math.max(0, this._loadingCount + change);
 
     const nextLoading = 0 < nextCount;
 
-    let nextLoadingIds = [...loadingIds];
     if (id) {
-      if (loading) {
-        nextLoadingIds.push(id);
+      const nextValue = Math.max(0, (loadingIds[id] || 0) + change);
+
+      if (nextValue === 0 && loadingIds[id]) {
+        delete loadingIds[id];
       } else {
-        nextLoadingIds = nextLoadingIds.filter(x => x !== id);
+        loadingIds[id] = nextValue;
       }
     }
-    nextLoadingIds = [...new Set(nextLoadingIds)];
 
     this._loadingCount = nextCount;
-    this._status$.next(new LoadingNodeStatusImpl(nextLoading, nextLoadingIds));
+    console.log('Loading count:', this._loadingCount, loadingIds);
+    this._status$.next(new LoadingNodeStatusImpl(nextLoading, loadingIds));
   }
 }

@@ -7,7 +7,6 @@ import {FileMetadata} from "../../../../../../main-content/file-explorer/models/
   selector: 'app-file-metadata-subtitle',
   standalone: true,
     imports: [
-        InstanceOfPipe,
         NgIf
     ],
   templateUrl: './file-metadata-subtitle.component.html',

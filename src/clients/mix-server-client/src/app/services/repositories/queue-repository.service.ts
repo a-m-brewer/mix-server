@@ -18,6 +18,7 @@ import {LoadingRepositoryService} from "./loading-repository.service";
 import {PlaybackDeviceService} from "../audio-player/playback-device.service";
 import {cloneDeep} from "lodash";
 import {Device} from "./models/device";
+import {NodeCacheService} from "../nodes/node-cache.service";
 
 @Injectable({
   providedIn: 'root'
@@ -27,7 +28,7 @@ export class QueueRepositoryService {
 
 
   constructor(private _loadingRepository: LoadingRepositoryService,
-              private _playbackDeviceService: PlaybackDeviceService,
+              private _nodeCache: NodeCacheService,
               private _queueConverter: QueueConverterService,
               private _queueSignalRClient: QueueSignalrClientService,
               private _queueClient: QueueClient,
@@ -50,14 +51,6 @@ export class QueueRepositoryService {
             .finally(() => this._loadingRepository.stopLoadingAction('GetQueue'));
         }
       });
-
-    this._playbackDeviceService.requestPlaybackDevice$
-      .subscribe(requestedPlaybackDevice => {
-        const queue = cloneDeep(this.queue);
-
-        this.setNextQueueWithDevice(queue, requestedPlaybackDevice);
-      });
-
 
     this.initializeSignalR();
   }
@@ -156,7 +149,14 @@ export class QueueRepositoryService {
   }
 
   public setNextQueue(queue: Queue) {
-    this.setNextQueueWithDevice(queue, this._playbackDeviceService.requestPlaybackDevice);
+    const folders = [...new Set(queue.items.map(item => item.file.parent.absolutePath))];
+    folders.forEach(folder => {
+      void this._nodeCache.loadDirectory(folder)
+    })
+
+    this._queueBehaviourSubject$.value.destroy();
+
+    this._queueBehaviourSubject$.next(queue);
   }
 
   private initializeSignalR(): void {
@@ -170,15 +170,5 @@ export class QueueRepositoryService {
 
   private nextQueue(dto: QueueSnapshotDto): void {
     this.setNextQueue(this._queueConverter.fromDto(dto));
-  }
-
-  private setNextQueueWithDevice(queue: Queue, requestPlaybackDevice: Device | null | undefined): void {
-    queue.items.forEach(item => {
-      item.file.updateCanPlay(requestPlaybackDevice);
-    });
-
-    this._queueBehaviourSubject$.value.destroy();
-
-    this._queueBehaviourSubject$.next(queue);
   }
 }
