@@ -8,7 +8,6 @@ import {ToastService} from "../toasts/toast-service";
 import {firstValueFrom, Observable} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
 import {TracklistConverterService} from "../converters/tracklist-converter.service";
-import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Injectable({
   providedIn: 'root'
@@ -40,8 +39,8 @@ export class TracklistFormService {
 
 
   public async saveTracklist(): Promise<void> {
-    const currentTracklist = this._sessionRepository.currentSession?.currentNode?.metadata instanceof MediaMetadata
-      ? this._sessionRepository.currentSession.currentNode.metadata.tracklist
+    const currentTracklist = !!this._sessionRepository.currentSession?.currentNode?.metadata.mediaInfo
+      ? this._sessionRepository.currentSession.currentNode.metadata.mediaInfo.tracklist
       : undefined;
     if (!currentTracklist) {
       return;

@@ -1,37 +1,15 @@
-using System.Runtime.Serialization;
-using JetBrains.Annotations;
+using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.Streams.Enums;
-using MixServer.Domain.Tracklists.Dtos.Import;
-using MixServer.Infrastructure.Files.Constants;
-using Newtonsoft.Json;
-using NJsonSchema.NewtonsoftJson.Converters;
 
 namespace MixServer.Application.FileExplorer.Queries.GetNode;
 
-[KnownType(nameof(GetKnownTypes))]
-[JsonConverter(typeof(JsonInheritanceConverter), "discriminator")]
 public class FileMetadataResponse
 {
-    public string MimeType { get; init; } = MimeTypeConstants.DefaultMimeType;
+    public required string MimeType { get; init; }
     
-    [UsedImplicitly]
-    public static IEnumerable<Type> GetKnownTypes()
-    {
-        return
-        [
-            typeof(FileMetadataResponse),
-            typeof(MediaMetadataResponse)
-        ];
-    }
-}
-
-public class MediaMetadataResponse : FileMetadataResponse
-{
-    public required string Duration { get; init; }
+    public required bool IsMedia { get; init; }
     
-    public required int Bitrate { get; init; }
+    public required MediaInfoDto? MediaInfo { get; init; }
     
-    public required TranscodeState TranscodeState { get; init; }
-
-    public required ImportTracklistDto Tracklist { get; init; }
+    public required TranscodeState TranscodeStatus { get; init; }
 }

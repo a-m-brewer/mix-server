@@ -99,10 +99,11 @@ public class DeviceTrackingService(
         using var scope = serviceProvider.CreateScope();
         var callbackService = scope.ServiceProvider.GetRequiredService<ICallbackService>();
         
-        logger.LogInformation("Device: {DeviceId} online: {Online} interaction state: {InteractedWith}",
+        logger.LogInformation("Device: {DeviceId} online: {Online} interaction state: {InteractedWith} capabilities: {Capabilities}",
             deviceState.DeviceId,
             deviceState.Online,
-            deviceState.InteractedWith);
+            deviceState.InteractedWith,
+            string.Join(", ", deviceState.Capabilities));
         await callbackService.DeviceStateUpdated(deviceState);
     }
 }

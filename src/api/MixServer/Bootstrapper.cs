@@ -19,7 +19,6 @@ public class Bootstrapper(
     MixServerDbContext context,
     IFileNotificationService fileNotificationService,
     IFirstUserInitializationService firstUserInitializationService,
-    ISessionDirectoryCacheInitializationService sessionDirectoryCacheInitializationService,
     ITranscodeCache transcodeCache,
     IUserRoleService userRoleService)
     : IBootstrapper
@@ -36,6 +35,5 @@ public class Bootstrapper(
         fileNotificationService.Initialize();
         
         await transcodeCache.InitializeAsync();
-        await sessionDirectoryCacheInitializationService.LoadUsersCurrentPlaybackSessionDirectoriesAsync();
     }
 }

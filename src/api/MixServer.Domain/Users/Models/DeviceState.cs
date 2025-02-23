@@ -60,7 +60,7 @@ public class DeviceState(Guid deviceId) : IDeviceState
         foreach (var (mimeType, supported) in capabilities)
         {
             var hasCapability = Capabilities.ContainsKey(mimeType);
-            var capabilityChanged = hasCapability && Capabilities[mimeType] != supported;
+            var capabilityChanged = !hasCapability || Capabilities[mimeType] != supported;
 
             if (capabilityChanged)
             {

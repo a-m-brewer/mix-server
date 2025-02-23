@@ -6,6 +6,7 @@ import {DeviceClient, SetDeviceInteractionCommand, UserClient} from "../../gener
 import {ToastService} from "../toasts/toast-service";
 import {DeviceConverterService} from "../converters/device-converter.service";
 import {DevicesSignalrClientService} from "../signalr/devices-signalr-client.service";
+import {cloneDeep} from "lodash";
 
 @Injectable({
   providedIn: 'root'
@@ -34,7 +35,7 @@ export class DeviceRepositoryService {
 
     _deviceSignalRClient.deviceUpdated$
       .subscribe(device => {
-        const devices = [...this._devicesBehaviourSubject$.getValue()].filter(f => f.id !== device.id);
+        const devices = cloneDeep(this._devicesBehaviourSubject$.value).filter(f => f.id !== device.id);
 
         devices.unshift(device);
 
@@ -43,7 +44,7 @@ export class DeviceRepositoryService {
 
     _deviceSignalRClient.deviceStateUpdated$
       .subscribe(state => {
-        const devices = [...this._devicesBehaviourSubject$.getValue()];
+        const devices = cloneDeep(this._devicesBehaviourSubject$.value);
 
         const deviceIndex = devices.findIndex(f => f.id === state.deviceId);
 
@@ -51,15 +52,14 @@ export class DeviceRepositoryService {
           return;
         }
 
-        devices[deviceIndex].online = state.online && _authenticationService.accessToken?.userId === state.lastInteractedWith;
-        devices[deviceIndex].interactedWith = state.interactedWith && _authenticationService.accessToken?.userId === state.lastInteractedWith;
+        devices[deviceIndex].updateFromState(state, _authenticationService.accessToken?.userId);
 
         this.next(devices);
       })
 
     _deviceSignalRClient.deviceDeleted$
       .subscribe(deviceId => {
-        const devices = [...this._devicesBehaviourSubject$.getValue()].filter(f => f.id !== deviceId);
+        const devices = cloneDeep(this._devicesBehaviourSubject$.value).filter(f => f.id !== deviceId);
 
         this.next(devices);
 

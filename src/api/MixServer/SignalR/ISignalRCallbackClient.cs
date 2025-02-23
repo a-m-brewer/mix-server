@@ -24,4 +24,6 @@ public interface ISignalRCallbackClient
     Task UserDeleted(UserDeletedDto dto);
     Task FileExplorerNodeUpdated(FileExplorerNodeUpdatedDto dto);
     Task FileExplorerNodeDeleted(FileExplorerNodeDeletedDto dto);
+    Task MediaInfoUpdated(MediaInfoUpdatedDto dto);
+    Task MediaInfoRemoved(MediaInfoRemovedDto dto);
 }

@@ -13,7 +13,6 @@ import {
 import {AudioPlayerStateService} from "../services/audio-player/audio-player-state.service";
 import {AudioPlayerStateModel} from "../services/audio-player/models/audio-player-state-model";
 import {SessionService} from "../services/sessions/session.service";
-import {MediaMetadata} from "../main-content/file-explorer/models/media-metadata";
 
 @Component({
   selector: 'app-history-page',

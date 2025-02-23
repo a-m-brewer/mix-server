@@ -36,11 +36,11 @@ public class FileExplorerNodeResponse
 
 public class FileExplorerFileNodeResponse : FileExplorerNodeResponse
 {
-    public FileMetadataResponse Metadata { get; init; } = new ();
+    public required FileMetadataResponse Metadata { get; init; }
 
-    public bool PlaybackSupported { get; init; }
+    public required bool PlaybackSupported { get; init; }
 
-    public FileExplorerFolderNodeResponse Parent { get; init; } = new ();
+    public required FileExplorerFolderNodeResponse Parent { get; init; }
 }
 
 public class FileExplorerFolderNodeResponse : FileExplorerNodeResponse

@@ -4,12 +4,14 @@ import {HubConnection} from "@microsoft/signalr";
 import {Observable, Subject} from "rxjs";
 import {
   FileExplorerFolderResponse,
-  FileExplorerNodeDeletedDto, FileExplorerNodeUpdatedDto
+  FileExplorerNodeDeletedDto, FileExplorerNodeUpdatedDto, MediaInfoRemovedDto, MediaInfoUpdatedDto
 } from "../../generated-clients/mix-server-clients";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {NodeUpdatedEvent} from "./models/node-updated-event";
 import {NodeDeletedEvent} from "./models/node-deleted-event";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
+import {MediaInfoRemovedEvent, MediaInfoUpdatedEvent} from "./models/media-info-event";
+import {FileMetadataConverterService} from "../converters/file-metadata-converter.service";
 
 @Injectable({
   providedIn: 'root'
@@ -19,8 +21,11 @@ export class FolderSignalrClientService implements ISignalrClient {
   private _folderSortedSubject$ = new Subject<FileExplorerFolder>();
   private _nodeUpdatedSubject$ = new Subject<NodeUpdatedEvent>();
   private _nodeDeletedSubject$ = new Subject<NodeDeletedEvent>();
+  private _mediaInfoUpdatedSubject$ = new Subject<MediaInfoUpdatedEvent>();
+  private _mediaInfoRemovedSubject$ = new Subject<MediaInfoRemovedEvent>();
 
-  constructor(private _folderNodeConverter: FileExplorerNodeConverterService) {
+  constructor(private _fileMetadataConverter: FileMetadataConverterService,
+              private _folderNodeConverter: FileExplorerNodeConverterService) {
   }
 
   public folderRefreshed$(): Observable<FileExplorerFolder> {
@@ -37,6 +42,14 @@ export class FolderSignalrClientService implements ISignalrClient {
 
   public nodeDeleted$(): Observable<NodeDeletedEvent> {
     return this._nodeDeletedSubject$.asObservable();
+  }
+
+  public mediaInfoUpdated$(): Observable<MediaInfoUpdatedEvent> {
+    return this._mediaInfoUpdatedSubject$.asObservable();
+  }
+
+  public mediaInfoRemoved$(): Observable<MediaInfoRemovedEvent> {
+    return this._mediaInfoRemovedSubject$.asObservable();
   }
 
   registerMethods(connection: HubConnection): void {
@@ -56,7 +69,17 @@ export class FolderSignalrClientService implements ISignalrClient {
     connection.on(
       'FileExplorerNodeDeleted',
       (obj: object) => this.handleFileExplorerNodeDeleted(FileExplorerNodeDeletedDto.fromJS(obj))
-    )
+    );
+
+    connection.on(
+      'MediaInfoUpdated',
+      (obj: object) => this.handleMediaInfoUpdated(MediaInfoUpdatedDto.fromJS(obj))
+    );
+
+    connection.on(
+      'MediaInfoRemoved',
+      (obj: object) => this.handleMediaInfoRemoved(MediaInfoRemovedDto.fromJS(obj))
+    );
   }
 
   private handleFolderRefreshed(dto: FileExplorerFolderResponse): void {
@@ -73,12 +96,32 @@ export class FolderSignalrClientService implements ISignalrClient {
 
   private handleFileExplorerNodeUpdated(dto: FileExplorerNodeUpdatedDto): void {
     const node = this._folderNodeConverter.fromFileExplorerNode(dto.node);
-    console.log('updated node', node);
     this._nodeUpdatedSubject$.next(new NodeUpdatedEvent(node, dto.index, dto.oldAbsolutePath));
   }
 
   private handleFileExplorerNodeDeleted(dto: FileExplorerNodeDeletedDto): void {
     const parent = this._folderNodeConverter.fromFileExplorerFolderNode(dto.parent);
     this._nodeDeletedSubject$.next(new NodeDeletedEvent(parent, dto.absolutePath));
+  }
+
+  private handleMediaInfoUpdated(dto: MediaInfoUpdatedDto): void {
+    const event: MediaInfoUpdatedEvent = {
+      mediaInfo: dto.mediaInfo.map(item => {
+        return {
+          nodePath: this._fileMetadataConverter.fromNodePathDto(item.nodePath),
+          info: this._fileMetadataConverter.fromMediaInfoDto(item)
+        }
+      })
+    };
+    this._mediaInfoUpdatedSubject$.next(event);
+  }
+
+  private handleMediaInfoRemoved(dto: MediaInfoRemovedDto): void {
+    const event: MediaInfoRemovedEvent = {
+      nodePaths: dto.nodePaths.map(item => {
+        return this._fileMetadataConverter.fromNodePathDto(item)
+      })
+    };
+    this._mediaInfoRemovedSubject$.next(event);
   }
 }

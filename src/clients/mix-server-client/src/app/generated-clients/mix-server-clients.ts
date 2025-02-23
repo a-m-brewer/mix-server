@@ -2958,8 +2958,9 @@ export interface IFileExplorerFileNodeResponse extends IFileExplorerNodeResponse
 
 export class FileMetadataResponse implements IFileMetadataResponse {
     mimeType!: string;
-
-    protected _discriminator: string;
+    isMedia!: boolean;
+    mediaInfo?: MediaInfoDto | undefined;
+    transcodeStatus!: TranscodeState;
 
     constructor(data?: IFileMetadataResponse) {
         if (data) {
@@ -2968,22 +2969,19 @@ export class FileMetadataResponse implements IFileMetadataResponse {
                     (<any>this)[property] = (<any>data)[property];
             }
         }
-        this._discriminator = "FileMetadataResponse";
     }
 
     init(_data?: any) {
         if (_data) {
             this.mimeType = _data["mimeType"];
+            this.isMedia = _data["isMedia"];
+            this.mediaInfo = _data["mediaInfo"] ? MediaInfoDto.fromJS(_data["mediaInfo"]) : <any>undefined;
+            this.transcodeStatus = _data["transcodeStatus"];
         }
     }
 
     static fromJS(data: any): FileMetadataResponse {
         data = typeof data === 'object' ? data : {};
-        if (data["discriminator"] === "MediaMetadataResponse") {
-            let result = new MediaMetadataResponse();
-            result.init(data);
-            return result;
-        }
         let result = new FileMetadataResponse();
         result.init(data);
         return result;
@@ -2991,69 +2989,115 @@ export class FileMetadataResponse implements IFileMetadataResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["discriminator"] = this._discriminator;
         data["mimeType"] = this.mimeType;
+        data["isMedia"] = this.isMedia;
+        data["mediaInfo"] = this.mediaInfo ? this.mediaInfo.toJSON() : <any>undefined;
+        data["transcodeStatus"] = this.transcodeStatus;
         return data;
     }
 }
 
 export interface IFileMetadataResponse {
     mimeType: string;
+    isMedia: boolean;
+    mediaInfo?: MediaInfoDto | undefined;
+    transcodeStatus: TranscodeState;
 }
 
-export class MediaMetadataResponse extends FileMetadataResponse implements IMediaMetadataResponse {
-    duration!: string;
+export class MediaInfoDto implements IMediaInfoDto {
+    nodePath!: NodePathDto;
     bitrate!: number;
-    transcodeState!: TranscodeState;
+    duration!: string;
     tracklist!: ImportTracklistDto;
 
-    constructor(data?: IMediaMetadataResponse) {
-        super(data);
+    constructor(data?: IMediaInfoDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
         if (!data) {
+            this.nodePath = new NodePathDto();
             this.tracklist = new ImportTracklistDto();
         }
-        this._discriminator = "MediaMetadataResponse";
     }
 
-    override init(_data?: any) {
-        super.init(_data);
+    init(_data?: any) {
         if (_data) {
-            this.duration = _data["duration"];
+            this.nodePath = _data["nodePath"] ? NodePathDto.fromJS(_data["nodePath"]) : new NodePathDto();
             this.bitrate = _data["bitrate"];
-            this.transcodeState = _data["transcodeState"];
+            this.duration = _data["duration"];
             this.tracklist = _data["tracklist"] ? ImportTracklistDto.fromJS(_data["tracklist"]) : new ImportTracklistDto();
         }
     }
 
-    static override fromJS(data: any): MediaMetadataResponse {
+    static fromJS(data: any): MediaInfoDto {
         data = typeof data === 'object' ? data : {};
-        let result = new MediaMetadataResponse();
+        let result = new MediaInfoDto();
         result.init(data);
         return result;
     }
 
-    override toJSON(data?: any) {
+    toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["duration"] = this.duration;
+        data["nodePath"] = this.nodePath ? this.nodePath.toJSON() : <any>undefined;
         data["bitrate"] = this.bitrate;
-        data["transcodeState"] = this.transcodeState;
+        data["duration"] = this.duration;
         data["tracklist"] = this.tracklist ? this.tracklist.toJSON() : <any>undefined;
-        super.toJSON(data);
         return data;
     }
 }
 
-export interface IMediaMetadataResponse extends IFileMetadataResponse {
-    duration: string;
+export interface IMediaInfoDto {
+    nodePath: NodePathDto;
     bitrate: number;
-    transcodeState: TranscodeState;
+    duration: string;
     tracklist: ImportTracklistDto;
 }
 
-export enum TranscodeState {
-    None = "None",
-    InProgress = "InProgress",
-    Completed = "Completed",
+export class NodePathDto implements INodePathDto {
+    parentAbsolutePath!: string;
+    fileName!: string;
+    absolutePath!: string;
+
+    constructor(data?: INodePathDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.parentAbsolutePath = _data["parentAbsolutePath"];
+            this.fileName = _data["fileName"];
+            this.absolutePath = _data["absolutePath"];
+        }
+    }
+
+    static fromJS(data: any): NodePathDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new NodePathDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["parentAbsolutePath"] = this.parentAbsolutePath;
+        data["fileName"] = this.fileName;
+        data["absolutePath"] = this.absolutePath;
+        return data;
+    }
+}
+
+export interface INodePathDto {
+    parentAbsolutePath: string;
+    fileName: string;
+    absolutePath: string;
 }
 
 export class ImportTracklistDto implements IImportTracklistDto {
@@ -3274,6 +3318,12 @@ export enum TracklistPlayerType {
     Spotify = "Spotify",
     Hearthis = "Hearthis",
     Affiliate = "Affiliate",
+}
+
+export enum TranscodeState {
+    None = "None",
+    InProgress = "InProgress",
+    Completed = "Completed",
 }
 
 export class FolderSortDto implements IFolderSortDto {
@@ -5320,6 +5370,100 @@ export class FileExplorerNodeDeletedDto implements IFileExplorerNodeDeletedDto {
 export interface IFileExplorerNodeDeletedDto {
     parent: FileExplorerFolderNodeResponse;
     absolutePath: string;
+}
+
+export class MediaInfoUpdatedDto implements IMediaInfoUpdatedDto {
+    mediaInfo!: MediaInfoDto[];
+
+    constructor(data?: IMediaInfoUpdatedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.mediaInfo = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["mediaInfo"])) {
+                this.mediaInfo = [] as any;
+                for (let item of _data["mediaInfo"])
+                    this.mediaInfo!.push(MediaInfoDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): MediaInfoUpdatedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MediaInfoUpdatedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.mediaInfo)) {
+            data["mediaInfo"] = [];
+            for (let item of this.mediaInfo)
+                data["mediaInfo"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IMediaInfoUpdatedDto {
+    mediaInfo: MediaInfoDto[];
+}
+
+export class MediaInfoRemovedDto implements IMediaInfoRemovedDto {
+    nodePaths!: NodePathDto[];
+
+    constructor(data?: IMediaInfoRemovedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.nodePaths = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["nodePaths"])) {
+                this.nodePaths = [] as any;
+                for (let item of _data["nodePaths"])
+                    this.nodePaths!.push(NodePathDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): MediaInfoRemovedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MediaInfoRemovedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.nodePaths)) {
+            data["nodePaths"] = [];
+            for (let item of this.nodePaths)
+                data["nodePaths"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IMediaInfoRemovedDto {
+    nodePaths: NodePathDto[];
 }
 
 export class SignalRUpdatePlaybackStateCommand implements ISignalRUpdatePlaybackStateCommand {

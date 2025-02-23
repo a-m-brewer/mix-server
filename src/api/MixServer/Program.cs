@@ -34,6 +34,7 @@ using MixServer.Infrastructure.Users.Services;
 using MixServer.Infrastructure.Users.Settings;
 using MixServer.Middleware;
 using MixServer.NSwag;
+using MixServer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -146,6 +147,8 @@ builder.Services
 
 builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
+
+builder.Services.AddHostedService<MediaInfoService>();
 
 // API Controllers
 builder.Services.AddControllers()

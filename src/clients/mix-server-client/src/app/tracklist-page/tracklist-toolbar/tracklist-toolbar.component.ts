@@ -1,6 +1,4 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {MatButton} from "@angular/material/button";
-import {TracklistFormService} from "../../services/tracklist/tracklist-form.service";
 import {ImportTracklistFormComponent} from "./import-tracklist-form/import-tracklist-form.component";
 import {SaveTracklistFormComponent} from "./save-tracklist-form/save-tracklist-form.component";
 import {NgIf} from "@angular/common";
@@ -10,7 +8,6 @@ import {
 import {Subject, takeUntil} from "rxjs";
 import { FormGroup } from '@angular/forms';
 import {TracklistForm} from "../../services/tracklist/models/tracklist-form.interface";
-import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Component({
   selector: 'app-tracklist-toolbar',
@@ -35,8 +32,8 @@ export class TracklistToolbarComponent implements OnInit, OnDestroy {
     this._sessionRepository.currentSessionTracklistChanged$
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(session => {
-        if (session?.currentNode && session.currentNode.metadata instanceof MediaMetadata) {
-          this.form = session.currentNode.metadata.tracklist;
+        if (session?.currentNode && session.currentNode.metadata.mediaInfo) {
+          this.form = session.currentNode.metadata.mediaInfo.tracklist;
         } else {
           this.form = undefined;
         }

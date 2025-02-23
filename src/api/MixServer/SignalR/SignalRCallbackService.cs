@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using MixServer.Application.Devices.Responses;
+using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Converters;
@@ -7,12 +8,12 @@ using MixServer.Application.Sessions.Responses;
 using MixServer.Application.Users.Dtos;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
 using MixServer.Domain.Sessions.Models;
-using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Enums;
 using MixServer.Domain.Users.Models;
@@ -24,6 +25,7 @@ public class SignalRCallbackService(
     IConverter<IDevice, DeviceDto> deviceDtoConverter,
     IConverter<IDeviceState, DeviceStateDto> deviceStateConverter,
     IFileExplorerResponseConverter fileExplorerResponseConverter,
+    IMediaInfoDtoConverter mediaInfoDtoConverter,
     IConverter<IPlaybackSession, bool, PlaybackSessionDto> playbackSessionConverter,
     IPlaybackStateConverter playbackStateConverter,
     IHubContext<SignalRCallbackHub, ISignalRCallbackClient> context,
@@ -228,6 +230,26 @@ public class SignalRCallbackService(
         return context.Clients
             .All
             .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto(fileExplorerResponseConverter.Convert(parentNode), absolutePath));
+    }
+
+    public Task MediaInfoUpdated(IReadOnlyCollection<MediaInfo> mediaInfo)
+    {
+        var eventDto = new MediaInfoUpdatedDto
+        {
+            MediaInfo = mediaInfo.Select(mediaInfoDtoConverter.Convert).ToList()
+        };
+        
+        return context.Clients.All.MediaInfoUpdated(eventDto);
+    }
+
+    public Task MediaInfoRemoved(IReadOnlyCollection<NodePath> removedItems)
+    {
+        var eventDto = new MediaInfoRemovedDto
+        {
+            NodePaths = removedItems.Select(mediaInfoDtoConverter.Convert).ToList()
+        };
+        
+        return context.Clients.All.MediaInfoRemoved(eventDto);
     }
 
     public async Task UserDeleted(string userId)

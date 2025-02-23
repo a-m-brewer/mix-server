@@ -1,4 +1,5 @@
 ﻿using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
@@ -30,4 +31,6 @@ public interface ICallbackService
     Task UserUpdated(IUser user);
     Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string? oldAbsolutePath);
     Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath);
+    Task MediaInfoUpdated(IReadOnlyCollection<MediaInfo> mediaInfo);
+    Task MediaInfoRemoved(IReadOnlyCollection<NodePath> removedItems);
 }

@@ -1,6 +1,7 @@
 namespace MixServer.Domain.FileExplorer.Models.Metadata;
 
-public class FileMetadata(string mimeType) : IFileMetadata
+public class FileMetadata : IFileMetadata
 {
-    public string MimeType { get; } = mimeType;
+    public required string MimeType { get; init; }
+    public required bool IsMedia { get; init; }
 }

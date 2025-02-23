@@ -15,7 +15,6 @@ import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/fi
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {FileMetadataConverterService} from "./file-metadata-converter.service";
 import {AudioElementRepositoryService} from "../audio-player/audio-element-repository.service";
-import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Injectable({
   providedIn: 'root'
@@ -47,8 +46,7 @@ export class FileExplorerNodeConverterService {
 
   public fromFileExplorerFileNode(dto: FileExplorerFileNodeResponse): FileExplorerFileNode {
     const metadata = this._fileMetadataConverter.fromResponse(dto.metadata);
-    const mediaMetadata = metadata instanceof MediaMetadata ? metadata : null;
-    const clientPlaybackSupported = !!mediaMetadata && this._audioElementRepository.audio.canPlayType(mediaMetadata.mimeType) !== '';
+    const clientPlaybackSupported = this._audioElementRepository.audio.canPlayType(metadata.mimeType) !== '';
 
     return new FileExplorerFileNode(
       dto.name,

@@ -1,9 +1,11 @@
-using System.Text;
+using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
+using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Streams.Caches;
+using MixServer.Domain.Streams.Enums;
 
 namespace MixServer.Application.FileExplorer.Queries.GetNode;
 
@@ -16,7 +18,10 @@ public interface IFileExplorerResponseConverter
 {
 }
 
-public class FileExplorerResponseConverter(ITranscodeCache transcodeCache) : IFileExplorerResponseConverter
+public class FileExplorerResponseConverter(
+    IMediaInfoCache mediaInfoCache,
+    IMediaInfoDtoConverter mediaInfoDtoConverter,
+    ITranscodeCache transcodeCache) : IFileExplorerResponseConverter
 {
     public FileExplorerNodeResponse Convert(IFileExplorerNode value)
     {
@@ -82,55 +87,18 @@ public class FileExplorerResponseConverter(ITranscodeCache transcodeCache) : IFi
         };
     }
 
-    private FileMetadataResponse Convert(IFileMetadata value, string absoluteFilePath)
+    private FileMetadataResponse Convert(IFileMetadata value, string absolutePath)
     {
-        return value switch
+        return new FileMetadataResponse
         {
-            IMediaMetadata mediaMetadata => Convert(mediaMetadata, absoluteFilePath),
-            _ => new FileMetadataResponse
-            {
-                MimeType = value.MimeType,
-            }
-        };
-    }
-
-    private MediaMetadataResponse Convert(IMediaMetadata value, string absoluteFilePath)
-    {
-        return new MediaMetadataResponse
-        {
+            MediaInfo = value.IsMedia && mediaInfoCache.TryGet(absolutePath, out var mediaInfo)
+                ? mediaInfoDtoConverter.Convert(mediaInfo)
+                : null,
+            IsMedia = value.IsMedia,
             MimeType = value.MimeType,
-            Duration = FormatTimespan(value.Duration),
-            Bitrate = value.Bitrate,
-            TranscodeState = transcodeCache.GetTranscodeStatus(absoluteFilePath),
-            Tracklist = value.Tracklist
+            TranscodeStatus = value.IsMedia
+                ? transcodeCache.GetTranscodeStatus(absolutePath)
+                : TranscodeState.None
         };
-    }
-
-    private static string FormatTimespan(TimeSpan duration)
-    {
-        var sb = new StringBuilder();
-
-        var previousAdded = false;
-
-        if (duration.Days > 0)
-        {
-            sb.Append($"{duration.Days:D1}.");
-            previousAdded = true;
-        }
-
-        if (duration.Hours > 0 || previousAdded)
-        {
-            sb.Append($"{duration.Hours:D2}:");
-            previousAdded = true;
-        }
-
-        if (duration.Minutes > 0 || previousAdded)
-        {
-            sb.Append($"{duration.Minutes:D2}:");
-        }
-
-        sb.Append($"{duration.Seconds:D2}");
-
-        return sb.ToString();
     }
 }

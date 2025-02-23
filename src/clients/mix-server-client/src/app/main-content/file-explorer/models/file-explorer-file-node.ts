@@ -3,7 +3,6 @@ import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
 import {FileExplorerFolderNode} from "./file-explorer-folder-node";
 import {FileMetadata} from "./file-metadata";
 import {Device} from "../../../services/repositories/models/device";
-import {MediaMetadata} from "./media-metadata";
 import {TranscodeState} from "../../../generated-clients/mix-server-clients";
 
 export interface FileExplorerFileNodeNameParts {

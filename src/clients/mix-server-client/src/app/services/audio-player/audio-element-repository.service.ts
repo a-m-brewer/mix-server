@@ -44,11 +44,9 @@ export class AudioElementRepositoryService {
     if (transcode && Hls.isSupported()) {
       this._hls.loadSource(streamUrl);
       this._hls.attachMedia(this.audio);
-      console.log("HLS attached");
     } else{
       this._hls.detachMedia();
       this.audio.src = streamUrl;
-      console.log("HLS detached", streamUrl);
     }
   }
 

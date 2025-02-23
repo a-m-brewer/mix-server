@@ -1,28 +1,18 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {TracklistFormService} from "../../services/tracklist/tracklist-form.service";
-import {FormArray, FormGroup, ReactiveFormsModule} from "@angular/forms";
-import {
-  MatList,
-  MatListItem,
-  MatListItemLine, MatListItemMeta,
-  MatListItemTitle,
-  MatListSubheaderCssMatStyler
-} from "@angular/material/list";
+import {FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {MatDivider} from "@angular/material/divider";
 import {NgClass, NgIf} from "@angular/common";
 import {MatAnchor, MatIconButton} from "@angular/material/button";
 import {ControlDirtyMarkerComponent} from "../../components/forms/control-dirty-marker/control-dirty-marker.component";
 import {AudioPlayerService} from "../../services/audio-player/audio-player.service";
-import {combineLatestWith, Subject, takeUntil} from "rxjs";
+import {Subject, takeUntil} from "rxjs";
 import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
 import {
   CurrentPlaybackSessionRepositoryService
 } from "../../services/repositories/current-playback-session-repository.service";
 import {TracklistCueForm, TracklistForm} from "../../services/tracklist/models/tracklist-form.interface";
-import {PlaybackSession} from "../../services/repositories/models/playback-session";
 import {MatIcon} from "@angular/material/icon";
 import {MatTooltip} from "@angular/material/tooltip";
-import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Component({
   selector: 'app-tracklist-form',
@@ -55,8 +45,8 @@ export class TracklistFormComponent implements OnInit, OnDestroy {
     this._sessionRepository.currentSessionTracklistChanged$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(session => {
-        if (session?.currentNode && session.currentNode.metadata instanceof MediaMetadata) {
-          this.tracklistForm = session.currentNode.metadata.tracklist;
+        if (session?.currentNode && session.currentNode.metadata.mediaInfo) {
+          this.tracklistForm = session.currentNode.metadata.mediaInfo.tracklist;
         } else {
           this.tracklistForm = undefined;
         }

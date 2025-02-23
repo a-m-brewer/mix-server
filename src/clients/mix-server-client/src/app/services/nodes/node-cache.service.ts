@@ -12,13 +12,15 @@ import {ToastService} from "../toasts/toast-service";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {cloneDeep} from "lodash";
 import {FolderSignalrClientService} from "../signalr/folder-signalr-client.service";
-import {PlaybackDeviceService} from "../audio-player/playback-device.service";
 import {Device} from "../repositories/models/device";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {FileExplorerNode} from "../../main-content/file-explorer/models/file-explorer-node";
 import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/file-explorer-folder-node";
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
 import {PlaybackDeviceRepositoryService} from "../repositories/playback-device-repository.service";
+import {MediaInfoUpdatedEventItem} from "../signalr/models/media-info-event";
+import {MediaInfo} from "../../main-content/file-explorer/models/media-info";
+import {NodePath} from "../repositories/models/node-path";
 
 @Injectable({
   providedIn: 'root'
@@ -76,6 +78,76 @@ export class NodeCacheService {
 
         this.updateFolder(nextFolder);
       });
+
+    this._folderSignalRClient.mediaInfoUpdated$()
+      .subscribe(event => {
+        const groupedUpdates = event.mediaInfo
+          .reduce((acc, item) => {
+            if (!(item.nodePath.parentAbsolutePath in acc)) {
+              acc[item.nodePath.parentAbsolutePath] = [];
+            }
+
+            acc[item.nodePath.parentAbsolutePath].push(item);
+
+            return acc;
+          }, {} as { [absolutePath: string]: MediaInfoUpdatedEventItem[] });
+
+        const updatedFolders: { [absolutePath: string]: FileExplorerFolder } = {};
+
+        Object.entries(groupedUpdates).forEach(([absolutePath, mediaInfos]) => {
+          const parent = this._folders$.value[absolutePath];
+          if (!parent) {
+            return;
+          }
+
+          const nextFolder = parent.copy();
+          mediaInfos.forEach(f => {
+            const node = nextFolder.children.find(n => n.name === f.nodePath.fileName);
+            if (node instanceof FileExplorerFileNode) {
+              node.metadata.mediaInfo = f.info;
+            }
+          });
+
+          updatedFolders[absolutePath] = nextFolder;
+        });
+
+        this.updateFolders(updatedFolders);
+      });
+
+    this._folderSignalRClient.mediaInfoRemoved$()
+      .subscribe(event => {
+        const groupedUpdates = event.nodePaths
+          .reduce((acc, item) => {
+            if (!(item.parentAbsolutePath in acc)) {
+              acc[item.parentAbsolutePath] = [];
+            }
+
+            acc[item.parentAbsolutePath].push(item);
+
+            return acc;
+          }, {} as { [absolutePath: string]: NodePath[] });
+
+        const updatedFolders: { [absolutePath: string]: FileExplorerFolder } = {};
+
+        Object.entries(groupedUpdates).forEach(([absolutePath, mediaInfos]) => {
+          const parent = this._folders$.value[absolutePath];
+          if (!parent) {
+            return;
+          }
+
+          const nextFolder = parent.copy();
+          mediaInfos.forEach(f => {
+            const node = nextFolder.children.find(n => n.name === f.fileName);
+            if (node instanceof FileExplorerFileNode) {
+              node.metadata.mediaInfo = null;
+            }
+          });
+
+          updatedFolders[absolutePath] = nextFolder;
+        });
+
+        this.updateFolders(updatedFolders);
+      });
   }
 
   public getFolder$(query$: Observable<string>): Observable<FileExplorerFolder> {
@@ -117,6 +189,7 @@ export class NodeCacheService {
     try {
       const folderResponse = await firstValueFrom(this._nodeClient.getNode(absolutePath))
       const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(folderResponse);
+
       this.updateFolder(folder);
 
       return folder.node.absolutePath;

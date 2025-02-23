@@ -32,28 +32,11 @@ public partial class FileMetadataConverter(
                       AudioVideoMimeTypeRegex().IsMatch(mimeType) &&
                       !ExcludedMediaMimeTypes.Contains(mimeType);
 
-        var defaultMetadata = new FileMetadata(mimeType);
-        
-        if (!isMedia || !file.Exists)
+        return new FileMetadata
         {
-            return defaultMetadata;
-        }
-
-        try
-        {
-            using var tagBuilder = tagBuilderFactory.CreateReadOnly(file.FullName);
-            var tracklist = tracklistTagService.GetTracklist(tagBuilder);
-            
-            return new MediaMetadata(mimeType,
-                tagBuilder.Duration,
-                tagBuilder.Bitrate,
-                tracklist);
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "Failed to get media metadata for {File}", file.FullName);
-            return defaultMetadata;
-        }
+            MimeType = mimeType,
+            IsMedia = isMedia
+        };
     }
     
     [GeneratedRegex(@"^(audio|video)\/(.*)")]

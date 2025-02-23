@@ -31,7 +31,6 @@ import {AudioElementRepositoryService} from "../audio-player/audio-element-repos
 import {PlaybackGrantedEvent} from "./models/playback-granted-event";
 import {TracklistConverterService} from "../converters/tracklist-converter.service";
 import {markAllAsDirty} from "../../utils/form-utils";
-import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Injectable({
   providedIn: 'root'
@@ -221,8 +220,8 @@ export class CurrentPlaybackSessionRepositoryService {
 
     const nextSession = PlaybackSession.copy(previousSession, previousSession.state);
 
-    if (nextSession.currentNode.metadata instanceof MediaMetadata) {
-      nextSession.currentNode.metadata.tracklist = form;
+    if (nextSession.currentNode.metadata.mediaInfo) {
+      nextSession.currentNode.metadata.mediaInfo.tracklist = form;
     }
 
     this.currentSession = nextSession;

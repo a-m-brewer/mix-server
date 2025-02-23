@@ -2,6 +2,7 @@ using FluentValidation;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.FileExplorer.Services;
+using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Streams.Caches;
@@ -13,6 +14,7 @@ namespace MixServer.Application.Streams.Commands;
 
 public class RequestTranscodeCommandHandler(
     IFileService fileService,
+    IMediaInfoCache mediaInfoCache,
     ITranscodeService transcodeService,
     ITranscodeCache transcodeCache,
     ITranscodeRepository transcodeRepository,
@@ -30,7 +32,7 @@ public class RequestTranscodeCommandHandler(
             throw new NotFoundException(nameof(request.AbsoluteFilePath), request.AbsoluteFilePath);
         }
 
-        if (!file.PlaybackSupported || file.Metadata is not IMediaMetadata mediaMetadata)
+        if (!file.PlaybackSupported || !file.Metadata.IsMedia)
         {
             throw new InvalidRequestException(nameof(request.AbsoluteFilePath), $"{request.AbsoluteFilePath} is not supported for transcoding");
         }
@@ -42,6 +44,7 @@ public class RequestTranscodeCommandHandler(
             throw new InvalidRequestException(nameof(request.AbsoluteFilePath), $"{request.AbsoluteFilePath} is already being transcoded");
         }
         
-        await transcodeService.RequestTranscodeAsync(file.AbsolutePath, mediaMetadata.Bitrate);
+        var bitrate = mediaInfoCache.TryGet(file.AbsolutePath, out var mediaInfo) ? mediaInfo.Bitrate : 0;
+        await transcodeService.RequestTranscodeAsync(file.AbsolutePath, bitrate);
     }
 }

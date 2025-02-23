@@ -23,8 +23,6 @@ import {SessionService} from "../sessions/session.service";
 import {PlaybackGrantedEvent} from "../repositories/models/playback-granted-event";
 import {Mutex} from "async-mutex";
 import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
-import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
-import {AudioPlayerCapabilitiesService} from "./audio-player-capabilities.service";
 import {PlaybackDeviceService} from "./playback-device.service";
 
 @Injectable({
@@ -209,9 +207,9 @@ export class AudioPlayerService {
     return this.sampleCurrentTime$(500, false)
       .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
       .pipe(map(([currentTime, session]) => {
-        if (session?.currentNode.metadata instanceof MediaMetadata) {
-          for (let i = session.currentNode.metadata.tracklist.controls.cues.controls.length - 1; i >= 0; i--) {
-            const cue = session.currentNode.metadata.tracklist.controls.cues.controls[i].value.cue;
+        if (session?.currentNode.metadata.mediaInfo) {
+          for (let i = session.currentNode.metadata.mediaInfo.tracklist.controls.cues.controls.length - 1; i >= 0; i--) {
+            const cue = session.currentNode.metadata.mediaInfo.tracklist.controls.cues.controls[i].value.cue;
             if (!cue) {
               continue;
             }
@@ -232,8 +230,8 @@ export class AudioPlayerService {
     return this.currentCueIndex$
       .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
       .pipe(map(([cueIndex, session]) => {
-        if (session?.currentNode.metadata instanceof MediaMetadata) {
-          return session.currentNode.metadata.tracklist.controls.cues.controls[cueIndex]?.value;
+        if (session?.currentNode.metadata.mediaInfo) {
+          return session.currentNode.metadata.mediaInfo.tracklist.controls.cues.controls[cueIndex]?.value;
         }
 
         return null;
@@ -400,8 +398,8 @@ export class AudioPlayerService {
   }
 
   private setCurrentSession(session: PlaybackSession): void {
-    const serverDuration = session.currentNode.metadata instanceof MediaMetadata
-      ? timespanToTotalSeconds(session.currentNode.metadata.duration)
+    const serverDuration = session.currentNode.metadata.mediaInfo
+      ? timespanToTotalSeconds(session.currentNode.metadata.mediaInfo.duration)
       : 0;
     this._serverDurationBehaviourSubject$.next(serverDuration);
 

@@ -46,7 +46,6 @@ public static class ServiceCollectionExtensions
 
         services.AddTransient<ISessionService, SessionService>();
         services.AddSingleton<IPlaybackTrackingService, PlaybackTrackingService>();
-        services.AddTransient<ISessionDirectoryCacheInitializationService, SessionDirectoryCacheInitializationService>();
         
         services.Scan(s => s.FromAssemblyOf<IRateLimiter>()
             .AddClasses(c => c.AssignableTo<IRateLimiter>())

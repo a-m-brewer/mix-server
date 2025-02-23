@@ -1,5 +1,6 @@
 import {ClientType, DeviceType} from "../../../generated-clients/mix-server-clients";
 import {FileExplorerFileNode} from "../../../main-content/file-explorer/models/file-explorer-file-node";
+import {DeviceState} from "./device-state";
 
 export class Device {
   constructor(public id: string,
@@ -27,5 +28,11 @@ export class Device {
 
   canPlay(file?: FileExplorerFileNode | null): boolean {
     return !!file && (file.hasCompletedTranscode || (this.capabilities[file.metadata.mimeType] ?? false));
+  }
+
+  updateFromState(state: DeviceState, currentUserId: string | null | undefined) {
+    this.interactedWith = state.interactedWith && state.lastInteractedWith === currentUserId;
+    this.online = state.online && state.lastInteractedWith === currentUserId;
+    this.capabilities = state.capabilities;
   }
 }
