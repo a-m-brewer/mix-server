@@ -17,7 +17,7 @@ public interface ITranscodeService
 }
 
 public class TranscodeService(
-    IOptions<DataFolderSettings> dataFolderSettings,
+    IOptions<CacheFolderSettings> cacheFolderSettings,
     IOptions<FfmpegSettings> ffmpegSettings,
     ILogger<TranscodeService> logger,
     ITranscodeCache transcodeCache,
@@ -95,6 +95,6 @@ public class TranscodeService(
 
     private string GetTranscodeFolder(string fileHash)
     {
-        return Path.Join(dataFolderSettings.Value.TranscodesFolder, fileHash);
+        return Path.Join(cacheFolderSettings.Value.TranscodesFolder, fileHash);
     }
 }

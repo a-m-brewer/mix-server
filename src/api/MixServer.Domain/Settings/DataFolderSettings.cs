@@ -1,6 +1,6 @@
 namespace MixServer.Domain.Settings;
 
-public class DataFolderSettings
+public class CacheFolderSettings
 {
     public string Directory { get; set; } = "./data";
     

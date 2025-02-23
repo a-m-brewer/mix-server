@@ -185,7 +185,7 @@ builder.Services.Configure<InitialUserSettings>(builder.Configuration.GetSection
 
 builder.Services.Configure<FolderCacheSettings>(builder.Configuration.GetSection(ConfigSection.FolderCache));
 
-builder.Services.Configure<DataFolderSettings>(builder.Configuration.GetSection(ConfigSection.DataSettings));
+builder.Services.Configure<CacheFolderSettings>(builder.Configuration.GetSection(ConfigSection.CacheSettings));
 
 builder.Services.Configure<FfmpegSettings>(builder.Configuration.GetSection(ConfigSection.Ffmpeg));
 

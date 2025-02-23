@@ -30,7 +30,7 @@ public interface ITranscodeCache : IDisposable
 }
 
 public class TranscodeCache(
-    IOptions<DataFolderSettings> dataFolderSettings,
+    IOptions<CacheFolderSettings> cacheFolderSettings,
     IFileExplorerConverter fileExplorerConverter,
     ILogger<TranscodeCache> logger,
     ILoggerFactory loggerFactory,
@@ -44,7 +44,7 @@ public class TranscodeCache(
     [MemberNotNullWhen(true, nameof(_cacheFolder))]
     public Task InitializeAsync()
     {
-        var transcodeFolder = dataFolderSettings.Value.TranscodesFolder;
+        var transcodeFolder = cacheFolderSettings.Value.TranscodesFolder;
         if (!Directory.Exists(transcodeFolder))
         {
             Directory.CreateDirectory(transcodeFolder);

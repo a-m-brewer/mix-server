@@ -56,12 +56,14 @@ services:
       - MIX_SERVER_RootFolder__Children=/media
     volumes:
       - mix-server-media:/media
+      - mix-server-cache:/cache
       - mix-server-data:/data
 
 networks:
   mix-server-network:
 
 volumes:
+  mix-server-cache:
   mix-server-data:
   mix-server-media:
 ```
