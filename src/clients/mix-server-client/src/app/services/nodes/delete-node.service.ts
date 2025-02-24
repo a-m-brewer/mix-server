@@ -15,7 +15,7 @@ export class DeleteNodeService {
               private _loading: LoadingRepositoryService) { }
 
   async delete(file: FileExplorerFileNode) {
-    this._loading.startLoadingId(file.absolutePath);
+    this._loading.startLoading(file.absolutePath);
 
     try {
       await firstValueFrom(this._nodeManagementClient.deleteNode(new DeleteNodeCommand({
@@ -24,7 +24,7 @@ export class DeleteNodeService {
     } catch (e) {
       this._toast.logServerError(e, 'Failed to delete node');
     } finally {
-      this._loading.stopLoadingId(file.absolutePath);
+      this._loading.stopLoading(file.absolutePath);
     }
   }
 }

@@ -1,12 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Services;
+using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Persistence;
+using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Repositories;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Users.Repositories;
+using MixServer.Domain.Users.Services;
 using MixServer.Domain.Utilities;
 using MixServer.Infrastructure.EF.Entities;
 using MixServer.Infrastructure.Users.Repository;
@@ -14,12 +18,15 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Infrastructure.Sessions.Services;
 
 public class SessionService(
+    ICanPlayOnDeviceValidator canPlayOnDeviceValidator,
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
     IDateTimeProvider dateTimeProvider,
+    IFolderCacheService folderCacheService,
     ILogger<SessionService> logger,
     IPlaybackSessionRepository playbackSessionRepository,
     IPlaybackTrackingService playbackTrackingService,
+    IRequestedPlaybackDeviceAccessor requestedPlaybackDeviceAccessor,
     ISessionHydrationService sessionHydrationService,
     IUserRepository userRepository,
     IUnitOfWork unitOfWork)
@@ -46,9 +53,15 @@ public class SessionService(
 
     public async Task<PlaybackSession> AddOrUpdateSessionAsync(IAddOrUpdateSessionRequest request)
     {
-        await currentUserRepository.LoadAllPlaybackSessionsAsync();
         var user = currentUserRepository.CurrentUser;
         
+        var device = requestedPlaybackDeviceAccessor.PlaybackDevice;
+        
+        var file = folderCacheService.GetFile(request.AbsoluteFilePath);
+
+        canPlayOnDeviceValidator.ValidateCanPlayOrThrow(device, file);
+
+        await currentUserRepository.LoadPlaybackSessionAsync(request.AbsoluteFilePath);
         var session = user.PlaybackSessions.SingleOrDefault(s => s.AbsolutePath == request.AbsoluteFilePath);
 
         if (session == null)
@@ -70,9 +83,7 @@ public class SessionService(
             session.LastPlayed = dateTimeProvider.UtcNow;
         }
 
-        session.DeviceId = playbackTrackingService.TryGet(user.Id, out var state) && state.HasDevice
-            ? state.DeviceId
-            : currentDeviceRepository.DeviceId;
+        session.DeviceId = device.DeviceId;
 
         playbackTrackingService.UpdateSessionState(session);
         

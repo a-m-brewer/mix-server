@@ -1,8 +1,10 @@
 ﻿using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
 using MixServer.Domain.Sessions.Models;
+using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Models;
 
@@ -27,7 +29,8 @@ public interface ICallbackService
     Task UserDeleted(string userId);
     Task UserAdded(IUser user);
     Task UserUpdated(IUser user);
-    Task FileExplorerNodeAdded(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node);
-    Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string oldAbsolutePath);
+    Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string? oldAbsolutePath);
     Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath);
+    Task MediaInfoUpdated(IReadOnlyCollection<MediaInfo> mediaInfo);
+    Task MediaInfoRemoved(IReadOnlyCollection<NodePath> removedItems);
 }

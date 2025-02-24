@@ -9,6 +9,7 @@ public class DeviceDto
     public ClientType ClientType { get; set; }
     public DeviceType DeviceType { get; set; }
     public bool InteractedWith { get; set; }
+    public Dictionary<string, bool> Capabilities { get; set; } = new();
     public bool Online { get; set; }
     public string? BrowserName { get; set; }
     public string? Model { get; set; }

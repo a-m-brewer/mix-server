@@ -19,6 +19,7 @@ import {Device} from "../../services/repositories/models/device";
 import {DeviceRepositoryService} from "../../services/repositories/device-repository.service";
 import {LoadingFabIconComponent} from "../../components/controls/loading-fab-icon/loading-fab-icon.component";
 import {LoadingRepositoryService} from "../../services/repositories/loading-repository.service";
+import {PlaybackDeviceService} from "../../services/audio-player/playback-device.service";
 
 @Component({
   selector: 'app-audio-control-mobile',
@@ -52,6 +53,7 @@ export class AudioControlMobileComponent implements OnInit, OnDestroy {
   constructor(public audioPlayer: AudioPlayerService,
               private _deviceRepository: DeviceRepositoryService,
               private _loadingRepository: LoadingRepositoryService,
+              public playbackDeviceService: PlaybackDeviceService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService) {
   }
 
@@ -62,7 +64,7 @@ export class AudioControlMobileComponent implements OnInit, OnDestroy {
         this.playbackSession = playbackSession;
       });
 
-    this.audioPlayer.currentPlaybackDevice$
+    this.playbackDeviceService.currentPlaybackDevice$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(currentPlaybackDevice => {
         this.currentPlaybackDevice = currentPlaybackDevice;

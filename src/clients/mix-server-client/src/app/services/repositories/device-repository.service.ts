@@ -6,6 +6,7 @@ import {DeviceClient, SetDeviceInteractionCommand, UserClient} from "../../gener
 import {ToastService} from "../toasts/toast-service";
 import {DeviceConverterService} from "../converters/device-converter.service";
 import {DevicesSignalrClientService} from "../signalr/devices-signalr-client.service";
+import {cloneDeep} from "lodash";
 
 @Injectable({
   providedIn: 'root'
@@ -34,7 +35,7 @@ export class DeviceRepositoryService {
 
     _deviceSignalRClient.deviceUpdated$
       .subscribe(device => {
-        const devices = [...this._devicesBehaviourSubject$.getValue()].filter(f => f.id !== device.id);
+        const devices = cloneDeep(this._devicesBehaviourSubject$.value).filter(f => f.id !== device.id);
 
         devices.unshift(device);
 
@@ -43,23 +44,22 @@ export class DeviceRepositoryService {
 
     _deviceSignalRClient.deviceStateUpdated$
       .subscribe(state => {
-        const devices = [...this._devicesBehaviourSubject$.getValue()];
+        const devices = cloneDeep(this._devicesBehaviourSubject$.value);
 
-        const deviceIndex = devices.findIndex(f => f.id === state.deviceId);
+        const device = devices.find(f => f.id === state.deviceId);
 
-        if (deviceIndex === -1) {
+        if (!device) {
           return;
         }
 
-        devices[deviceIndex].online = state.online && _authenticationService.accessToken?.userId === state.lastInteractedWith;
-        devices[deviceIndex].interactedWith = state.interactedWith && _authenticationService.accessToken?.userId === state.lastInteractedWith;
+        device.updateFromState(state, _authenticationService.accessToken?.userId);
 
         this.next(devices);
       })
 
     _deviceSignalRClient.deviceDeleted$
       .subscribe(deviceId => {
-        const devices = [...this._devicesBehaviourSubject$.getValue()].filter(f => f.id !== deviceId);
+        const devices = cloneDeep(this._devicesBehaviourSubject$.value).filter(f => f.id !== deviceId);
 
         this.next(devices);
 
@@ -76,7 +76,7 @@ export class DeviceRepositoryService {
   public get onlineDevices$(): Observable<Device[]> {
     return this._devicesBehaviourSubject$
       // Require the device is interacted with unless its this device because to do anything they would have to interact anyway
-      .pipe(map(m => m.filter(f => (f.online && f.interactedWith) || f.id === this._authenticationService.deviceId)));
+      .pipe(map(m => this.filterOnlineDevices(m)));
   }
 
   public get currentDevice$(): Observable<Device | null | undefined> {
@@ -122,5 +122,9 @@ export class DeviceRepositoryService {
 
   private next(devices: Device[]): void {
     this._devicesBehaviourSubject$.next(devices);
+  }
+
+  private filterOnlineDevices(devices: Device[]): Device[] {
+    return devices.filter(f => (f.online && (f.interactedWith || f.isCurrentDevice)) || f.id === this._authenticationService.deviceId);
   }
 }

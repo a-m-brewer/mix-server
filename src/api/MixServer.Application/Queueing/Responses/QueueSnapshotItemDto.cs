@@ -5,8 +5,7 @@ namespace MixServer.Application.Queueing.Responses;
 
 public class QueueSnapshotItemDto
 {
-    public Guid Id { get; set; }
-
-    public QueueSnapshotItemType Type { get; set; }
-    public FileExplorerFileNodeResponse File { get; set; } = new();
+    public required Guid Id { get; init; }
+    public required QueueSnapshotItemType Type { get; init; }
+    public required FileExplorerFileNodeResponse File { get; init; }
 }

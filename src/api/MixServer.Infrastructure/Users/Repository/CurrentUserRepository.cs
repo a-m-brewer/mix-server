@@ -19,6 +19,7 @@ public interface ICurrentUserRepository
     Task LoadUserAsync(string userId);
     Task LoadCurrentPlaybackSessionAsync();
     Task LoadAllPlaybackSessionsAsync();
+    Task LoadPlaybackSessionAsync(string absolutePath);
     Task LoadPagedPlaybackSessionsAsync(int sessionStartIndex, int sessionPageSize);
     Task LoadAllFileSortsAsync();
     Task LoadFileSortByAbsolutePathAsync(string absoluteFolderPath);
@@ -94,6 +95,15 @@ public class CurrentUserRepository(
             .Collection(u => u.PlaybackSessions)
             .Query()
             .OrderByDescending(o => o.LastPlayed)
+            .LoadAsync();
+    }
+
+    public async Task LoadPlaybackSessionAsync(string absolutePath)
+    {
+        await context.Entry(CurrentUser)
+            .Collection(u => u.PlaybackSessions)
+            .Query()
+            .Where(w => w.AbsolutePath == absolutePath)
             .LoadAsync();
     }
 

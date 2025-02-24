@@ -5,18 +5,22 @@ import {FileExplorerNodeConverterService} from "./file-explorer-node-converter.s
 import {PlaybackState} from "../repositories/models/playback-state";
 import {PlaybackGranted} from "../repositories/models/playback-granted";
 import {TracklistConverterService} from "./tracklist-converter.service";
+import {NodeCacheService} from "../nodes/node-cache.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlaybackSessionConverterService {
 
-  constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService) { }
+  constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
+              private _nodeCache: NodeCacheService) { }
 
   public fromDto(dto: PlaybackSessionDto): PlaybackSession {
+    const initialNode = this._fileExplorerNodeConverter.fromFileExplorerFileNode(dto.file)
     return new PlaybackSession(
       dto.id,
-      this._fileExplorerNodeConverter.fromFileExplorerFileNode(dto.file),
+      initialNode,
+      this._nodeCache.getFileByNode$(initialNode),
       dto.lastPlayed,
       this.stateFromSessionDto(dto),
       dto.autoPlay);

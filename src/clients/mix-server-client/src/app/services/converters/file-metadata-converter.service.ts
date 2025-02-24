@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import {FileMetadataResponse, MediaMetadataResponse} from "../../generated-clients/mix-server-clients";
+import {FileMetadataResponse, MediaInfoDto, NodePathDto} from "../../generated-clients/mix-server-clients";
 import {FileMetadata} from "../../main-content/file-explorer/models/file-metadata";
 import {TracklistConverterService} from "./tracklist-converter.service";
-import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
+import {MediaInfo} from "../../main-content/file-explorer/models/media-info";
+import {NodePath} from "../repositories/models/node-path";
 
 @Injectable({
   providedIn: 'root'
@@ -12,15 +13,27 @@ export class FileMetadataConverterService {
   constructor(private _tracklistConverter: TracklistConverterService) { }
 
   public fromResponse(dto: FileMetadataResponse): FileMetadata {
-    if (!(dto instanceof MediaMetadataResponse)) {
-      return new FileMetadata(dto.mimeType);
-    }
-
-    return new MediaMetadata(
+    return new FileMetadata(
       dto.mimeType,
+      dto.isMedia,
+      !!dto.mediaInfo ? this.fromMediaInfoDto(dto.mediaInfo) : null,
+      dto.transcodeStatus
+    )
+  }
+
+  public fromMediaInfoDto(dto: MediaInfoDto): MediaInfo {
+    return new MediaInfo(
       dto.duration,
       dto.bitrate,
       this._tracklistConverter.createTracklistForm(dto.tracklist)
     )
+  }
+
+  public fromNodePathDto(dto: NodePathDto): NodePath {
+    return {
+      parentAbsolutePath: dto.parentAbsolutePath,
+      fileName: dto.fileName,
+      absolutePath: dto.absolutePath
+    }
   }
 }

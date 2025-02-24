@@ -19,6 +19,7 @@ import {FileExplorerFolder} from "./main-content/file-explorer/models/file-explo
 import {LoadingNodeStatus, LoadingNodeStatusImpl} from "./services/repositories/models/loading-node-status";
 import {LoadingRepositoryService} from "./services/repositories/loading-repository.service";
 import {WindowSizeRepositoryService} from "./services/repositories/window-size-repository.service";
+import {AudioPlayerCapabilitiesService} from "./services/audio-player/audio-player-capabilities.service";
 
 @Component({
   selector: 'app-root',
@@ -54,7 +55,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('bottomBar')
   public bottomBar?: ElementRef;
 
-  constructor(private _authenticationService: AuthenticationService,
+  constructor(private _audioPlayerCapabilitiesService: AudioPlayerCapabilitiesService,
+              private _authenticationService: AuthenticationService,
               private _deviceRepository: DeviceRepositoryService,
               private _initializationRepository: InitializationRepositoryService,
               private _loadingRepository: LoadingRepositoryService,
@@ -70,6 +72,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public ngOnInit(): void {
     this._titleService.initialize();
+    this._audioPlayerCapabilitiesService.initialize();
 
     combineLatest([
       this._initializationRepository.initialized$,

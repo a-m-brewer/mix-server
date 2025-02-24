@@ -19,6 +19,7 @@ export interface IDeviceClient {
     devices(): Observable<GetUsersDevicesQueryResponse>;
     deleteDevice(deviceId: string): Observable<void>;
     setDeviceInteracted(command: SetDeviceInteractionCommand): Observable<void>;
+    updateDeviceCapabilities(command: UpdateDevicePlaybackCapabilitiesCommand): Observable<void>;
 }
 
 @Injectable({
@@ -173,6 +174,61 @@ export class DeviceClient implements IDeviceClient {
     }
 
     protected processSetDeviceInteracted(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    updateDeviceCapabilities(command: UpdateDevicePlaybackCapabilitiesCommand): Observable<void> {
+        let url_ = this.baseUrl + "/api/device/capabilities";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(command);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processUpdateDeviceCapabilities(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdateDeviceCapabilities(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processUpdateDeviceCapabilities(response: HttpResponseBase): Observable<void> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -1513,7 +1569,7 @@ export class SessionClient implements ISessionClient {
 }
 
 export interface IStreamClient {
-    getStream(playbackSessionId: string, access_token?: string | null | undefined): Observable<FileResponse | null>;
+    getStream(id: string, access_token?: string | null | undefined): Observable<FileResponse | null>;
 }
 
 @Injectable({
@@ -1529,11 +1585,11 @@ export class StreamClient implements IStreamClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getStream(playbackSessionId: string, access_token?: string | null | undefined): Observable<FileResponse | null> {
-        let url_ = this.baseUrl + "/api/stream/{playbackSessionId}?";
-        if (playbackSessionId === undefined || playbackSessionId === null)
-            throw new Error("The parameter 'playbackSessionId' must be defined.");
-        url_ = url_.replace("{playbackSessionId}", encodeURIComponent("" + playbackSessionId));
+    getStream(id: string, access_token?: string | null | undefined): Observable<FileResponse | null> {
+        let url_ = this.baseUrl + "/api/stream/{id}?";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
         if (access_token !== undefined && access_token !== null)
             url_ += "access_token=" + encodeURIComponent("" + access_token) + "&";
         url_ = url_.replace(/[?&]$/, "");
@@ -1731,6 +1787,86 @@ export class TracklistClient implements ITracklistClient {
             let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
             return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+}
+
+export interface ITranscodeClient {
+    requestTranscode(command: RequestTranscodeCommand): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class TranscodeClient implements ITranscodeClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(MIXSERVER_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    requestTranscode(command: RequestTranscodeCommand): Observable<void> {
+        let url_ = this.baseUrl + "/api/transcode";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(command);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processRequestTranscode(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processRequestTranscode(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processRequestTranscode(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 202) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -2308,6 +2444,7 @@ export class DeviceDto implements IDeviceDto {
     clientType!: ClientType;
     deviceType!: DeviceType;
     interactedWith!: boolean;
+    capabilities!: { [key: string]: boolean; };
     online!: boolean;
     browserName?: string | undefined;
     model?: string | undefined;
@@ -2322,6 +2459,9 @@ export class DeviceDto implements IDeviceDto {
                     (<any>this)[property] = (<any>data)[property];
             }
         }
+        if (!data) {
+            this.capabilities = {};
+        }
     }
 
     init(_data?: any) {
@@ -2331,6 +2471,13 @@ export class DeviceDto implements IDeviceDto {
             this.clientType = _data["clientType"];
             this.deviceType = _data["deviceType"];
             this.interactedWith = _data["interactedWith"];
+            if (_data["capabilities"]) {
+                this.capabilities = {} as any;
+                for (let key in _data["capabilities"]) {
+                    if (_data["capabilities"].hasOwnProperty(key))
+                        (<any>this.capabilities)![key] = _data["capabilities"][key];
+                }
+            }
             this.online = _data["online"];
             this.browserName = _data["browserName"];
             this.model = _data["model"];
@@ -2354,6 +2501,13 @@ export class DeviceDto implements IDeviceDto {
         data["clientType"] = this.clientType;
         data["deviceType"] = this.deviceType;
         data["interactedWith"] = this.interactedWith;
+        if (this.capabilities) {
+            data["capabilities"] = {};
+            for (let key in this.capabilities) {
+                if (this.capabilities.hasOwnProperty(key))
+                    (<any>data["capabilities"])[key] = (<any>this.capabilities)[key];
+            }
+        }
         data["online"] = this.online;
         data["browserName"] = this.browserName;
         data["model"] = this.model;
@@ -2370,6 +2524,7 @@ export interface IDeviceDto {
     clientType: ClientType;
     deviceType: DeviceType;
     interactedWith: boolean;
+    capabilities: { [key: string]: boolean; };
     online: boolean;
     browserName?: string | undefined;
     model?: string | undefined;
@@ -2523,6 +2678,57 @@ export class SetDeviceInteractionCommand implements ISetDeviceInteractionCommand
 
 export interface ISetDeviceInteractionCommand {
     interacted: boolean;
+}
+
+export class UpdateDevicePlaybackCapabilitiesCommand implements IUpdateDevicePlaybackCapabilitiesCommand {
+    capabilities!: { [key: string]: boolean; };
+
+    constructor(data?: IUpdateDevicePlaybackCapabilitiesCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.capabilities = {};
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (_data["capabilities"]) {
+                this.capabilities = {} as any;
+                for (let key in _data["capabilities"]) {
+                    if (_data["capabilities"].hasOwnProperty(key))
+                        (<any>this.capabilities)![key] = _data["capabilities"][key];
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): UpdateDevicePlaybackCapabilitiesCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateDevicePlaybackCapabilitiesCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (this.capabilities) {
+            data["capabilities"] = {};
+            for (let key in this.capabilities) {
+                if (this.capabilities.hasOwnProperty(key))
+                    (<any>data["capabilities"])[key] = (<any>this.capabilities)[key];
+            }
+        }
+        return data;
+    }
+}
+
+export interface IUpdateDevicePlaybackCapabilitiesCommand {
+    capabilities: { [key: string]: boolean; };
 }
 
 export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
@@ -2752,8 +2958,9 @@ export interface IFileExplorerFileNodeResponse extends IFileExplorerNodeResponse
 
 export class FileMetadataResponse implements IFileMetadataResponse {
     mimeType!: string;
-
-    protected _discriminator: string;
+    isMedia!: boolean;
+    mediaInfo?: MediaInfoDto | undefined;
+    transcodeStatus!: TranscodeState;
 
     constructor(data?: IFileMetadataResponse) {
         if (data) {
@@ -2762,22 +2969,19 @@ export class FileMetadataResponse implements IFileMetadataResponse {
                     (<any>this)[property] = (<any>data)[property];
             }
         }
-        this._discriminator = "FileMetadataResponse";
     }
 
     init(_data?: any) {
         if (_data) {
             this.mimeType = _data["mimeType"];
+            this.isMedia = _data["isMedia"];
+            this.mediaInfo = _data["mediaInfo"] ? MediaInfoDto.fromJS(_data["mediaInfo"]) : <any>undefined;
+            this.transcodeStatus = _data["transcodeStatus"];
         }
     }
 
     static fromJS(data: any): FileMetadataResponse {
         data = typeof data === 'object' ? data : {};
-        if (data["discriminator"] === "MediaMetadataResponse") {
-            let result = new MediaMetadataResponse();
-            result.init(data);
-            return result;
-        }
         let result = new FileMetadataResponse();
         result.init(data);
         return result;
@@ -2785,59 +2989,115 @@ export class FileMetadataResponse implements IFileMetadataResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["discriminator"] = this._discriminator;
         data["mimeType"] = this.mimeType;
+        data["isMedia"] = this.isMedia;
+        data["mediaInfo"] = this.mediaInfo ? this.mediaInfo.toJSON() : <any>undefined;
+        data["transcodeStatus"] = this.transcodeStatus;
         return data;
     }
 }
 
 export interface IFileMetadataResponse {
     mimeType: string;
+    isMedia: boolean;
+    mediaInfo?: MediaInfoDto | undefined;
+    transcodeStatus: TranscodeState;
 }
 
-export class MediaMetadataResponse extends FileMetadataResponse implements IMediaMetadataResponse {
-    duration!: string;
+export class MediaInfoDto implements IMediaInfoDto {
+    nodePath!: NodePathDto;
     bitrate!: number;
+    duration!: string;
     tracklist!: ImportTracklistDto;
 
-    constructor(data?: IMediaMetadataResponse) {
-        super(data);
+    constructor(data?: IMediaInfoDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
         if (!data) {
+            this.nodePath = new NodePathDto();
             this.tracklist = new ImportTracklistDto();
         }
-        this._discriminator = "MediaMetadataResponse";
     }
 
-    override init(_data?: any) {
-        super.init(_data);
+    init(_data?: any) {
         if (_data) {
-            this.duration = _data["duration"];
+            this.nodePath = _data["nodePath"] ? NodePathDto.fromJS(_data["nodePath"]) : new NodePathDto();
             this.bitrate = _data["bitrate"];
+            this.duration = _data["duration"];
             this.tracklist = _data["tracklist"] ? ImportTracklistDto.fromJS(_data["tracklist"]) : new ImportTracklistDto();
         }
     }
 
-    static override fromJS(data: any): MediaMetadataResponse {
+    static fromJS(data: any): MediaInfoDto {
         data = typeof data === 'object' ? data : {};
-        let result = new MediaMetadataResponse();
+        let result = new MediaInfoDto();
         result.init(data);
         return result;
     }
 
-    override toJSON(data?: any) {
+    toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["duration"] = this.duration;
+        data["nodePath"] = this.nodePath ? this.nodePath.toJSON() : <any>undefined;
         data["bitrate"] = this.bitrate;
+        data["duration"] = this.duration;
         data["tracklist"] = this.tracklist ? this.tracklist.toJSON() : <any>undefined;
-        super.toJSON(data);
         return data;
     }
 }
 
-export interface IMediaMetadataResponse extends IFileMetadataResponse {
-    duration: string;
+export interface IMediaInfoDto {
+    nodePath: NodePathDto;
     bitrate: number;
+    duration: string;
     tracklist: ImportTracklistDto;
+}
+
+export class NodePathDto implements INodePathDto {
+    parentAbsolutePath!: string;
+    fileName!: string;
+    absolutePath!: string;
+
+    constructor(data?: INodePathDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.parentAbsolutePath = _data["parentAbsolutePath"];
+            this.fileName = _data["fileName"];
+            this.absolutePath = _data["absolutePath"];
+        }
+    }
+
+    static fromJS(data: any): NodePathDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new NodePathDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["parentAbsolutePath"] = this.parentAbsolutePath;
+        data["fileName"] = this.fileName;
+        data["absolutePath"] = this.absolutePath;
+        return data;
+    }
+}
+
+export interface INodePathDto {
+    parentAbsolutePath: string;
+    fileName: string;
+    absolutePath: string;
 }
 
 export class ImportTracklistDto implements IImportTracklistDto {
@@ -3058,6 +3318,12 @@ export enum TracklistPlayerType {
     Spotify = "Spotify",
     Hearthis = "Hearthis",
     Affiliate = "Affiliate",
+}
+
+export enum TranscodeState {
+    None = "None",
+    InProgress = "InProgress",
+    Completed = "Completed",
 }
 
 export class FolderSortDto implements IFolderSortDto {
@@ -4285,6 +4551,42 @@ export interface IImportTracklistResponse {
     tracklist: ImportTracklistDto;
 }
 
+export class RequestTranscodeCommand implements IRequestTranscodeCommand {
+    absoluteFilePath!: string;
+
+    constructor(data?: IRequestTranscodeCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.absoluteFilePath = _data["absoluteFilePath"];
+        }
+    }
+
+    static fromJS(data: any): RequestTranscodeCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new RequestTranscodeCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["absoluteFilePath"] = this.absoluteFilePath;
+        return data;
+    }
+}
+
+export interface IRequestTranscodeCommand {
+    absoluteFilePath: string;
+}
+
 export class GetAllUsersResponse implements IGetAllUsersResponse {
     users!: UserDto[];
 
@@ -4846,6 +5148,7 @@ export class DeviceStateDto implements IDeviceStateDto {
     lastInteractedWith!: string;
     interactedWith!: boolean;
     online!: boolean;
+    capabilities!: { [key: string]: boolean; };
 
     constructor(data?: IDeviceStateDto) {
         if (data) {
@@ -4853,6 +5156,9 @@ export class DeviceStateDto implements IDeviceStateDto {
                 if (data.hasOwnProperty(property))
                     (<any>this)[property] = (<any>data)[property];
             }
+        }
+        if (!data) {
+            this.capabilities = {};
         }
     }
 
@@ -4862,6 +5168,13 @@ export class DeviceStateDto implements IDeviceStateDto {
             this.lastInteractedWith = _data["lastInteractedWith"];
             this.interactedWith = _data["interactedWith"];
             this.online = _data["online"];
+            if (_data["capabilities"]) {
+                this.capabilities = {} as any;
+                for (let key in _data["capabilities"]) {
+                    if (_data["capabilities"].hasOwnProperty(key))
+                        (<any>this.capabilities)![key] = _data["capabilities"][key];
+                }
+            }
         }
     }
 
@@ -4878,6 +5191,13 @@ export class DeviceStateDto implements IDeviceStateDto {
         data["lastInteractedWith"] = this.lastInteractedWith;
         data["interactedWith"] = this.interactedWith;
         data["online"] = this.online;
+        if (this.capabilities) {
+            data["capabilities"] = {};
+            for (let key in this.capabilities) {
+                if (this.capabilities.hasOwnProperty(key))
+                    (<any>data["capabilities"])[key] = (<any>this.capabilities)[key];
+            }
+        }
         return data;
     }
 }
@@ -4887,6 +5207,7 @@ export interface IDeviceStateDto {
     lastInteractedWith: string;
     interactedWith: boolean;
     online: boolean;
+    capabilities: { [key: string]: boolean; };
 }
 
 export class DeviceDeletedDto implements IDeviceDeletedDto {
@@ -4961,53 +5282,10 @@ export interface IUserDeletedDto {
     userId: string;
 }
 
-export class FileExplorerNodeAddedDto implements IFileExplorerNodeAddedDto {
-    node!: FileExplorerNodeResponse;
-    index!: number;
-
-    constructor(data?: IFileExplorerNodeAddedDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.node = new FileExplorerNodeResponse();
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.node = _data["node"] ? FileExplorerNodeResponse.fromJS(_data["node"]) : new FileExplorerNodeResponse();
-            this.index = _data["index"];
-        }
-    }
-
-    static fromJS(data: any): FileExplorerNodeAddedDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new FileExplorerNodeAddedDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["node"] = this.node ? this.node.toJSON() : <any>undefined;
-        data["index"] = this.index;
-        return data;
-    }
-}
-
-export interface IFileExplorerNodeAddedDto {
-    node: FileExplorerNodeResponse;
-    index: number;
-}
-
 export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
     node!: FileExplorerNodeResponse;
     index!: number;
-    oldAbsolutePath!: string;
+    oldAbsolutePath?: string | undefined;
 
     constructor(data?: IFileExplorerNodeUpdatedDto) {
         if (data) {
@@ -5048,7 +5326,7 @@ export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
 export interface IFileExplorerNodeUpdatedDto {
     node: FileExplorerNodeResponse;
     index: number;
-    oldAbsolutePath: string;
+    oldAbsolutePath?: string | undefined;
 }
 
 export class FileExplorerNodeDeletedDto implements IFileExplorerNodeDeletedDto {
@@ -5092,6 +5370,100 @@ export class FileExplorerNodeDeletedDto implements IFileExplorerNodeDeletedDto {
 export interface IFileExplorerNodeDeletedDto {
     parent: FileExplorerFolderNodeResponse;
     absolutePath: string;
+}
+
+export class MediaInfoUpdatedDto implements IMediaInfoUpdatedDto {
+    mediaInfo!: MediaInfoDto[];
+
+    constructor(data?: IMediaInfoUpdatedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.mediaInfo = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["mediaInfo"])) {
+                this.mediaInfo = [] as any;
+                for (let item of _data["mediaInfo"])
+                    this.mediaInfo!.push(MediaInfoDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): MediaInfoUpdatedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MediaInfoUpdatedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.mediaInfo)) {
+            data["mediaInfo"] = [];
+            for (let item of this.mediaInfo)
+                data["mediaInfo"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IMediaInfoUpdatedDto {
+    mediaInfo: MediaInfoDto[];
+}
+
+export class MediaInfoRemovedDto implements IMediaInfoRemovedDto {
+    nodePaths!: NodePathDto[];
+
+    constructor(data?: IMediaInfoRemovedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.nodePaths = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["nodePaths"])) {
+                this.nodePaths = [] as any;
+                for (let item of _data["nodePaths"])
+                    this.nodePaths!.push(NodePathDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): MediaInfoRemovedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MediaInfoRemovedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.nodePaths)) {
+            data["nodePaths"] = [];
+            for (let item of this.nodePaths)
+                data["nodePaths"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IMediaInfoRemovedDto {
+    nodePaths: NodePathDto[];
 }
 
 export class SignalRUpdatePlaybackStateCommand implements ISignalRUpdatePlaybackStateCommand {

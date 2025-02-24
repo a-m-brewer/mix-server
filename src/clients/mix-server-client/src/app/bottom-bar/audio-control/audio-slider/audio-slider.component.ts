@@ -18,8 +18,6 @@ import {
   CurrentPlaybackSessionRepositoryService
 } from "../../../services/repositories/current-playback-session-repository.service";
 import {timespanToTotalSeconds} from "../../../utils/timespan-helpers";
-import {WindowSizeRepositoryService} from "../../../services/repositories/window-size-repository.service";
-import {MediaMetadata} from "../../../main-content/file-explorer/models/media-metadata";
 
 export interface SliderMarker {
   positionSeconds: number;
@@ -87,8 +85,8 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
         this._currentTime = currentTime;
         this.duration = duration;
 
-        const cues = session?.currentNode.metadata instanceof MediaMetadata
-          ? session.currentNode.metadata.tracklist.value.cues
+        const cues = session?.currentNode.metadata.mediaInfo
+          ? session.currentNode.metadata.mediaInfo.tracklist.value.cues
           : null;
         if (cues) {
           const markers: SliderMarker[] = cues.map(cue => ({
@@ -254,7 +252,7 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
   onSliderHover(e: MouseEvent | TouchEvent) {
     const sliderContainer = e.currentTarget as HTMLElement;
     const rect = sliderContainer.getBoundingClientRect();
-    const clientX = (e instanceof TouchEvent) ? e.touches[0].clientX : e.clientX;
+    const clientX = ('touches' in e) ? e.touches[0].clientX : e.clientX;
     const positionRaw = ((clientX - rect.left) / rect.width) * 100;
     const position = Math.min(100, Math.max(0, positionRaw));
 

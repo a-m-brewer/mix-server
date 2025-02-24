@@ -12,7 +12,6 @@ namespace MixServer.Infrastructure.Files.Services;
 
 public class FileService(
     ICurrentUserRepository currentUserRepository,
-    IFileExplorerConverter fileExplorerConverter,
     IFolderCacheService folderCacheService,
     IFolderSortRepository folderSortRepository,
     IRootFileExplorerFolder rootFolder)
@@ -20,7 +19,7 @@ public class FileService(
 {
     public async Task<IFileExplorerFolder> GetFolderAsync(string absolutePath)
     {
-        var cacheItem = await folderCacheService.GetOrAddAsync(absolutePath);
+        var cacheItem = folderCacheService.GetOrAdd(absolutePath);
 
         var folder = cacheItem.Folder;
 
@@ -68,7 +67,7 @@ public class FileService(
 
     public IFileExplorerFileNode GetFile(string fileAbsolutePath)
     {
-        return fileExplorerConverter.Convert(fileAbsolutePath);
+        return folderCacheService.GetFile(fileAbsolutePath);
     }
 
     public void CopyNode(

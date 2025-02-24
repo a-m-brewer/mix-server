@@ -128,7 +128,6 @@ public class TracklistTagService(
                 
                 if (string.IsNullOrWhiteSpace(title))
                 {
-                    logger.LogWarning("Skipping track with no title");
                     continue;
                 }
 

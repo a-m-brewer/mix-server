@@ -31,7 +31,6 @@ import {AudioElementRepositoryService} from "../audio-player/audio-element-repos
 import {PlaybackGrantedEvent} from "./models/playback-granted-event";
 import {TracklistConverterService} from "../converters/tracklist-converter.service";
 import {markAllAsDirty} from "../../utils/form-utils";
-import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Injectable({
   providedIn: 'root'
@@ -55,7 +54,7 @@ export class CurrentPlaybackSessionRepositoryService {
       .subscribe(serverConnectionStatus => {
         if (serverConnectionStatus === ServerConnectionState.Connected) {
           const currentSession = this.currentSession;
-          this._loadingRepository.startLoading();
+          this._loadingRepository.startLoadingAction('SyncPlaybackSession');
           firstValueFrom(this._sessionClient.syncPlaybackSession(new SyncPlaybackSessionCommand({
             playbackSessionId: currentSession?.id,
             playing: audioElementRepository.audio.duration > 0 && !audioElementRepository.audio.paused,
@@ -75,7 +74,7 @@ export class CurrentPlaybackSessionRepositoryService {
                 this._toastService.logServerError(err, 'Failed to fetch current session');
               }
             })
-            .finally(() => this._loadingRepository.stopLoading());
+            .finally(() => this._loadingRepository.stopLoadingAction('SyncPlaybackSession'));
         }
 
         if (serverConnectionStatus === ServerConnectionState.Unauthorized) {
@@ -91,6 +90,10 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public set currentSession(value: PlaybackSession | null) {
+    if (this._currentSession$.value) {
+      this._currentSession$.value.destroy();
+    }
+
     this._currentSession$.next(value);
   }
 
@@ -171,11 +174,11 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public requestPause(): void {
-    this._loadingRepository.startLoading();
+    this._loadingRepository.startLoadingAction('RequestPause');
 
     firstValueFrom(this._sessionClient.requestPause())
       .catch(err => this._toastService.logServerError(err, 'Failed to request pause'))
-      .finally(() => this._loadingRepository.stopLoading());
+      .finally(() => this._loadingRepository.stopLoadingAction('RequestPause'));
   }
 
   public updatePlaybackState(currentTime: number): void {
@@ -206,7 +209,7 @@ export class CurrentPlaybackSessionRepositoryService {
 
   public updateCurrentSessionTracklist(tracklist: ImportTracklistDto, dirty: boolean): void {
     const previousSession = this.currentSession;
-    if (!previousSession || !(previousSession.currentNode.metadata instanceof MediaMetadata)) {
+    if (!previousSession || !(previousSession.currentNode.metadata.isMedia)) {
       return;
     }
 
@@ -217,8 +220,8 @@ export class CurrentPlaybackSessionRepositoryService {
 
     const nextSession = PlaybackSession.copy(previousSession, previousSession.state);
 
-    if (nextSession.currentNode.metadata instanceof MediaMetadata) {
-      nextSession.currentNode.metadata.tracklist = form;
+    if (nextSession.currentNode.metadata.mediaInfo) {
+      nextSession.currentNode.metadata.mediaInfo.tracklist = form;
     }
 
     this.currentSession = nextSession;

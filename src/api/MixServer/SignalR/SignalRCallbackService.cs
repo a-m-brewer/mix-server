@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using MixServer.Application.Devices.Responses;
+using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Converters;
@@ -7,6 +8,7 @@ using MixServer.Application.Sessions.Responses;
 using MixServer.Application.Users.Dtos;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
@@ -23,6 +25,7 @@ public class SignalRCallbackService(
     IConverter<IDevice, DeviceDto> deviceDtoConverter,
     IConverter<IDeviceState, DeviceStateDto> deviceStateConverter,
     IFileExplorerResponseConverter fileExplorerResponseConverter,
+    IMediaInfoDtoConverter mediaInfoDtoConverter,
     IConverter<IPlaybackSession, bool, PlaybackSessionDto> playbackSessionConverter,
     IPlaybackStateConverter playbackStateConverter,
     IHubContext<SignalRCallbackHub, ISignalRCallbackClient> context,
@@ -200,35 +203,20 @@ public class SignalRCallbackService(
             .Clients(connections)
             .UserUpdated(userDtoConverter.Convert(user));
     }
-
-    public Task FileExplorerNodeAdded(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node)
-    {
-        var tasks = new List<Task>();
-        var nodeDto = fileExplorerResponseConverter.Convert(node);
-        foreach (var user in  userManager.ConnectedUsers)
-        {
-            var index = expectedNodeIndexes.TryGetValue(user.SignalRUserId.Id, out var i) ? i : -1;
-            var dto = new FileExplorerNodeAddedDto
-            {
-                Node = nodeDto,
-                Index = index
-            };
-            var connections = user.GetConnections();
-            var task = context.Clients.Clients(connections).FileExplorerNodeAdded(dto);
-            tasks.Add(task);
-        }
-        
-        return Task.WhenAll(tasks);
-    }
     
-    public Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string oldAbsolutePath)
+    public Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string? oldAbsolutePath)
     {
         var tasks = new List<Task>();
         var nodeDto = fileExplorerResponseConverter.Convert(node);
         foreach (var user in  userManager.ConnectedUsers)
         {
             var index = expectedNodeIndexes.TryGetValue(user.SignalRUserId.Id, out var i) ? i : -1;
-            var dto = new FileExplorerNodeUpdatedDto(nodeDto, oldAbsolutePath, index);
+            var dto = new FileExplorerNodeUpdatedDto
+            {
+                Index = index,
+                Node = nodeDto,
+                OldAbsolutePath = oldAbsolutePath
+            };
             var connections = user.GetConnections();
             var task = context.Clients.Clients(connections).FileExplorerNodeUpdated(dto);
             tasks.Add(task);
@@ -242,6 +230,26 @@ public class SignalRCallbackService(
         return context.Clients
             .All
             .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto(fileExplorerResponseConverter.Convert(parentNode), absolutePath));
+    }
+
+    public Task MediaInfoUpdated(IReadOnlyCollection<MediaInfo> mediaInfo)
+    {
+        var eventDto = new MediaInfoUpdatedDto
+        {
+            MediaInfo = mediaInfo.Select(mediaInfoDtoConverter.Convert).ToList()
+        };
+        
+        return context.Clients.All.MediaInfoUpdated(eventDto);
+    }
+
+    public Task MediaInfoRemoved(IReadOnlyCollection<NodePath> removedItems)
+    {
+        var eventDto = new MediaInfoRemovedDto
+        {
+            NodePaths = removedItems.Select(mediaInfoDtoConverter.Convert).ToList()
+        };
+        
+        return context.Clients.All.MediaInfoRemoved(eventDto);
     }
 
     public async Task UserDeleted(string userId)

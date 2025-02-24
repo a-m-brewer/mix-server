@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MixServer.Application.Devices.Commands.DeleteDevice;
 using MixServer.Application.Devices.Commands.SetDeviceInteraction;
+using MixServer.Application.Devices.Commands.UpdateDevicePlaybackCapabilities;
 using MixServer.Application.Devices.Queries.GetUsersDevices;
 using MixServer.Domain.Interfaces;
 
@@ -12,7 +13,8 @@ namespace MixServer.Controllers;
 public class DeviceController(    
     ICommandHandler<DeleteDeviceCommand> deleteDeviceCommandHandler,
     IQueryHandler<GetUsersDevicesQueryResponse> getUsersDevicesQueryHandler,
-    ICommandHandler<SetDeviceInteractionCommand> setDeviceInteractionCommandHandler)
+    ICommandHandler<SetDeviceInteractionCommand> setDeviceInteractionCommandHandler,
+    ICommandHandler<UpdateDevicePlaybackCapabilitiesCommand> updateDevicePlaybackCapabilitiesCommandHandler)
     : ControllerBase
 {
     [HttpGet]
@@ -42,6 +44,16 @@ public class DeviceController(
     public async Task<IActionResult> SetDeviceInteracted([FromBody] SetDeviceInteractionCommand command)
     {
         await setDeviceInteractionCommandHandler.HandleAsync(command);
+        
+        return NoContent();
+    }
+    
+    [HttpPost("capabilities")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateDeviceCapabilities([FromBody] UpdateDevicePlaybackCapabilitiesCommand command)
+    {
+        await updateDevicePlaybackCapabilitiesCommandHandler.HandleAsync(command);
         
         return NoContent();
     }

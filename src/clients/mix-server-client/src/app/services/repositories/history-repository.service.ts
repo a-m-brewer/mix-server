@@ -6,6 +6,10 @@ import {AuthenticationService} from "../auth/authentication.service";
 import {LoadingRepositoryService} from "./loading-repository.service";
 import {ToastService} from "../toasts/toast-service";
 import {PlaybackSessionConverterService} from "../converters/playback-session-converter.service";
+import {cloneDeep} from "lodash";
+import {PlaybackDeviceService} from "../audio-player/playback-device.service";
+import {Device} from "./models/device";
+import {NodeCacheService} from "../nodes/node-cache.service";
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +20,7 @@ export class HistoryRepositoryService {
 
   constructor(authenticationService: AuthenticationService,
               private _loadingRepository: LoadingRepositoryService,
+              private _nodeCache: NodeCacheService,
               private _playbackSessionConverter: PlaybackSessionConverterService,
               private _sessionClient: SessionClient,
               private _toastService: ToastService) {
@@ -24,7 +29,7 @@ export class HistoryRepositoryService {
         if (connected) {
           this.loadMoreItems().then();
         }
-      })
+      });
   }
 
   public get sessions$(): Observable<Array<PlaybackSession>> {
@@ -40,9 +45,10 @@ export class HistoryRepositoryService {
       return;
     }
 
-    this._loadingRepository.startLoading();
+    const previousSessionHistory = cloneDeep(this._sessions$.value);
 
-    const previousSessionHistory = this._sessions$.value;
+    const loadingId = `LoadMoreHistoryItems-${previousSessionHistory.length}`;
+    this._loadingRepository.startLoading(loadingId);
 
     const pageSize = 15;
     const history = await firstValueFrom(this._sessionClient.history(previousSessionHistory.length, pageSize))
@@ -58,9 +64,22 @@ export class HistoryRepositoryService {
         ...previousSessionHistory,
         ...history.sessions.map(m => this._playbackSessionConverter.fromDto(m))
       ];
-      this._sessions$.next(nextSessionHistory);
+      this.next(nextSessionHistory);
     }
 
-    this._loadingRepository.stopLoading();
+    this._loadingRepository.stopLoading(loadingId);
+  }
+
+  private next(sessions: PlaybackSession[]) {
+    const folders = [...new Set(sessions.map(session => session.currentNode.parent.absolutePath))];
+    folders.forEach(folder => {
+      void this._nodeCache.loadDirectory(folder)
+    })
+
+    this._sessions$.value.forEach(session => {
+      session.destroy();
+    });
+
+    this._sessions$.next(sessions)
   }
 }

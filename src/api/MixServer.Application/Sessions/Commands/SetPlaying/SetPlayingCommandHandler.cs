@@ -7,12 +7,9 @@ namespace MixServer.Application.Sessions.Commands.SetPlaying;
 
 public class SetPlayingCommandHandler(
     ICurrentUserRepository currentUserRepository,
-    ICurrentDeviceRepository currentDeviceRepository,
     IPlaybackTrackingService playbackTrackingService)
     : ICommandHandler<SetPlayingCommand>
 {
-    public ICurrentDeviceRepository CurrentDeviceRepository { get; } = currentDeviceRepository;
-
     public Task HandleAsync(SetPlayingCommand request)
     {
         playbackTrackingService.SetPlaying(

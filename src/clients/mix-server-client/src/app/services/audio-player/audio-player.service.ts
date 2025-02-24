@@ -6,7 +6,7 @@ import {
   filter, firstValueFrom,
   map,
   Observable,
-  sampleTime, Subject, takeUntil
+  sampleTime
 } from "rxjs";
 import {StreamUrlService} from "../converters/stream-url.service";
 import {AudioSessionService} from "./audio-session.service";
@@ -19,12 +19,11 @@ import {AudioPlayerStateService} from "./audio-player-state.service";
 import {AuthenticationService} from "../auth/authentication.service";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {DeviceRepositoryService} from "../repositories/device-repository.service";
-import {Device} from "../repositories/models/device";
 import {SessionService} from "../sessions/session.service";
 import {PlaybackGrantedEvent} from "../repositories/models/playback-granted-event";
 import {Mutex} from "async-mutex";
 import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
-import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
+import {PlaybackDeviceService} from "./playback-device.service";
 
 @Injectable({
   providedIn: 'root'
@@ -33,8 +32,12 @@ export class AudioPlayerService {
   private _playMutex = new Mutex();
 
   private _timeChangedBehaviourSubject$ = new BehaviorSubject<number>(0);
-  private _durationBehaviourSubject$ = new Subject<void>();
 
+  private _clientDurationBehaviourSubject$ = new BehaviorSubject<number>(this.getSanitizedClientDuration());
+  private _serverDurationBehaviourSubject$ = new BehaviorSubject<number>(0);
+
+  private _streamUrl: string = '';
+  private _transcode: boolean = false;
   private _playbackGranted: boolean = false;
 
   private _previousFile: FileExplorerFileNode | null | undefined;
@@ -46,6 +49,7 @@ export class AudioPlayerService {
               private _authenticationService: AuthenticationService,
               private _deviceRepository: DeviceRepositoryService,
               private _loadingRepository: LoadingRepositoryService,
+              private _playbackDeviceService: PlaybackDeviceService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _queueRepository: QueueRepositoryService,
               private _sessionService: SessionService,
@@ -60,7 +64,7 @@ export class AudioPlayerService {
     }
 
     this.audio.ondurationchange = () => {
-      this._durationBehaviourSubject$.next();
+      this._clientDurationBehaviourSubject$.next(this.getSanitizedClientDuration());
     }
 
     this._playbackSessionRepository
@@ -134,53 +138,46 @@ export class AudioPlayerService {
       }));
   }
 
-  public get currentPlaybackDevice$(): Observable<Device | null | undefined> {
-    return this._playbackSessionRepository.currentPlaybackDevice$
-      .pipe(combineLatestWith(this._deviceRepository.devices$))
-      .pipe(map(([currentPlaybackDeviceId, devices]) => {
-        return devices.find(d => d.id === currentPlaybackDeviceId);
-      }));
-  }
-
-  public get otherValidPlaybackDevices$(): Observable<Array<Device>> {
-    return this._deviceRepository.onlineDevices$
-      .pipe(combineLatestWith(this._playbackSessionRepository.currentPlaybackDevice$))
-      .pipe(map(([devices, currentPlaybackDeviceId]) => {
-        if (!currentPlaybackDeviceId) {
-          return devices.filter(f => f.id !== this._authenticationService.deviceId);
-        }
-
-        return devices.filter(d => d.id !== currentPlaybackDeviceId);
-      }));
-  }
-
   public get audioControlsDisabled$(): Observable<boolean> {
-    return combineLatest([this.currentPlaybackDevice$, this._authenticationService.connected$,  this._loadingRepository.status$()])
+    return combineLatest(
+      [
+        this._playbackDeviceService.requestPlaybackDevice$,
+        this._authenticationService.connected$,
+        this._loadingRepository.status$()
+      ])
       .pipe(map(([device, connected, loadingStatus]) => {
-        return !connected || (!!device && !device.interactedWith) || loadingStatus.loading;
+        return !connected || (!!device && !(device.interactedWith || device.isCurrentDevice)) || loadingStatus.loading;
       }));
   }
 
   public get playbackDisabled$(): Observable<boolean> {
-    return combineLatest([this.audioControlsDisabled$, this._playbackSessionRepository.currentSession$])
-      .pipe(map(([disabled, session]) => {
-        return disabled || !session || session.currentNode.playbackDisabled;
+    return combineLatest([
+      this.audioControlsDisabled$,
+      this._playbackSessionRepository.currentSession$,
+      this._playbackDeviceService.requestPlaybackDevice$
+    ])
+      .pipe(map(([disabled, session, device]) => {
+        return disabled || !session || !device || !device.canPlay(session.currentNode);
       }));
   }
 
   public get previousItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._queueRepository.previousQueueItem$()))
-      .pipe(map(([disabled, previousItem]) => {
-        return disabled || !previousItem || previousItem.disabled;
+      .pipe(combineLatestWith(this._queueRepository.queue$()))
+      .pipe(map(([disabled, queue]) => {
+        return disabled ||
+          !queue ||
+          !queue.hasValidOffset(-1);
       }));
   }
 
   public get nextItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._queueRepository.nextQueueItem$()))
-      .pipe(map(([disabled, nextItem]) => {
-        return disabled || !nextItem || nextItem.disabled;
+      .pipe(combineLatestWith(this._queueRepository.queue$()))
+      .pipe(map(([disabled, queue]) => {
+        return disabled ||
+          !queue ||
+          !queue.hasValidOffset(1);
       }));
   }
 
@@ -206,18 +203,13 @@ export class AudioPlayerService {
       }));
   }
 
-  public get requestingPlayback$(): Observable<boolean> {
-    return this._loadingRepository.status$()
-      .pipe(map(status => status.isLoadingAction('RequestPlayback')));
-  }
-
   public get currentCueIndex$(): Observable<number> {
     return this.sampleCurrentTime$(500, false)
       .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
       .pipe(map(([currentTime, session]) => {
-        if (session?.currentNode.metadata instanceof MediaMetadata) {
-          for (let i = session.currentNode.metadata.tracklist.controls.cues.controls.length - 1; i >= 0; i--) {
-            const cue = session.currentNode.metadata.tracklist.controls.cues.controls[i].value.cue;
+        if (session?.currentNode.metadata.mediaInfo) {
+          for (let i = session.currentNode.metadata.mediaInfo.tracklist.controls.cues.controls.length - 1; i >= 0; i--) {
+            const cue = session.currentNode.metadata.mediaInfo.tracklist.controls.cues.controls[i].value.cue;
             if (!cue) {
               continue;
             }
@@ -238,8 +230,8 @@ export class AudioPlayerService {
     return this.currentCueIndex$
       .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
       .pipe(map(([cueIndex, session]) => {
-        if (session?.currentNode.metadata instanceof MediaMetadata) {
-          return session.currentNode.metadata.tracklist.controls.cues.controls[cueIndex]?.value;
+        if (session?.currentNode.metadata.mediaInfo) {
+          return session.currentNode.metadata.mediaInfo.tracklist.controls.cues.controls[cueIndex]?.value;
         }
 
         return null;
@@ -268,12 +260,13 @@ export class AudioPlayerService {
   }
 
   public get duration$(): Observable<number> {
-    return this._durationBehaviourSubject$.asObservable()
-      .pipe(map(() => isNaN(this.audio.duration) ? 0 : this.audio.duration));
+    return this._serverDurationBehaviourSubject$
+      .pipe(combineLatestWith(this._clientDurationBehaviourSubject$))
+      .pipe(map(([serverDuration, clientDuration]) => this.getDuration(serverDuration, clientDuration)));
   }
 
   public get duration(): number {
-    return this.audio.duration;
+    return this.getDuration(this._serverDurationBehaviourSubject$.value, this._clientDurationBehaviourSubject$.value);
   }
 
   public get volume(): number {
@@ -298,11 +291,6 @@ export class AudioPlayerService {
 
   public async requestPlayback(deviceId?: string): Promise<void> {
     await this._playbackSessionRepository.requestPlayback(deviceId);
-  }
-
-  public retriggerCurrentTimeAndDuration(): void {
-    this._timeChangedBehaviourSubject$.next(this.currentTime);
-    this._durationBehaviourSubject$.next();
   }
 
   public requestPause(): void {
@@ -341,7 +329,7 @@ export class AudioPlayerService {
   private async playInternal(): Promise<void> {
     try {
       this._playbackGranted = true;
-      await this._audioElementRepository.playFromTime(this.currentTime);
+      await this._audioElementRepository.playFromTime(this.currentTime, this._streamUrl, this._transcode);
       this.setDevicePlaying(true);
       this._audioSession
         .createMetadata()
@@ -388,6 +376,7 @@ export class AudioPlayerService {
         if (err.name === 'NotSupportedError') {
           this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name} unsupported`, 'Not Supported');
           this._sessionService.clearSession();
+          this._loadingRepository.stopLoadingAction('RequestPlayback');
         } else {
           console.error(err);
           this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name}: ${err.message}`, err.name);
@@ -409,7 +398,15 @@ export class AudioPlayerService {
   }
 
   private setCurrentSession(session: PlaybackSession): void {
-    this.audio.src = this._streamUrlService.getStreamUrl(session.id);
+    const serverDuration = session.currentNode.metadata.mediaInfo
+      ? timespanToTotalSeconds(session.currentNode.metadata.mediaInfo.duration)
+      : 0;
+    this._serverDurationBehaviourSubject$.next(serverDuration);
+
+    this._streamUrl = this._streamUrlService.getStreamUrl(session.id);
+    this._transcode = !session.currentNode.clientPlaybackSupported;
+
+    this._audioElementRepository.attachHls(this._streamUrl, this._transcode);
 
     this._timeChangedBehaviourSubject$.next(session.state.currentTime);
 
@@ -442,6 +439,8 @@ export class AudioPlayerService {
     this.audio.load();
     this.updateTimeChangedBehaviourSubject();
     this._audioPlayerState.clear();
+    this._serverDurationBehaviourSubject$.next(0);
+    this._clientDurationBehaviourSubject$.next(0);
   }
 
   private updatePlaybackState(currentTime: number): void {
@@ -468,7 +467,7 @@ export class AudioPlayerService {
     this.internalPause();
 
     this._playbackSessionRepository.setDevicePlaying(this.currentTime, false);
-    this._loadingRepository.stopLoading();
+    this._loadingRepository.stopLoadingAction('PauseRequested');
   }
 
   private handlePlaybackGranted(playbackGranted: PlaybackGrantedEvent): void {
@@ -487,5 +486,13 @@ export class AudioPlayerService {
 
   private setDevicePlaying(playing: boolean) {
     this._playbackSessionRepository.setDevicePlaying(this.currentTime, playing);
+  }
+
+  private getSanitizedClientDuration(): number {
+    return !!this.audio && !isNaN(this.audio.duration) ? this.audio.duration : 0
+  }
+
+  private getDuration(serverDuration: number, clientDuration: number): number {
+    return Math.max(serverDuration, clientDuration, 0)
   }
 }

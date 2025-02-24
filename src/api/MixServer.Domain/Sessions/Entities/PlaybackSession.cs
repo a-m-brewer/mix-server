@@ -2,14 +2,13 @@
 using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Sessions.Models;
-using MixServer.Domain.Tracklists.Dtos.Import;
 
 namespace MixServer.Domain.Sessions.Entities;
 
 public interface IPlaybackSession : IPlaybackState
 {
     Guid Id { get; set; }
-    string AbsolutePath { get; set; }
+    new string AbsolutePath { get; set; }
     DateTime LastPlayed { get; set; }
     IFileExplorerFileNode? File { get; set; }
     string GetParentFolderPathOrThrow();

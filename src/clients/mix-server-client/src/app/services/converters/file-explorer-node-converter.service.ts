@@ -14,12 +14,14 @@ import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file
 import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/file-explorer-folder-node";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {FileMetadataConverterService} from "./file-metadata-converter.service";
+import {AudioElementRepositoryService} from "../audio-player/audio-element-repository.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FileExplorerNodeConverterService {
-  constructor(private _fileMetadataConverter: FileMetadataConverterService) {
+  constructor(private _fileMetadataConverter: FileMetadataConverterService,
+              private _audioElementRepository: AudioElementRepositoryService) {
   }
 
   public fromFileExplorerFolder(dto: FileExplorerFolderResponse): FileExplorerFolder {
@@ -43,14 +45,18 @@ export class FileExplorerNodeConverterService {
   }
 
   public fromFileExplorerFileNode(dto: FileExplorerFileNodeResponse): FileExplorerFileNode {
+    const metadata = this._fileMetadataConverter.fromResponse(dto.metadata);
+    const clientPlaybackSupported = this._audioElementRepository.audio.canPlayType(metadata.mimeType) !== '';
+
     return new FileExplorerFileNode(
       dto.name,
       dto.absolutePath,
       dto.type,
       dto.exists,
       dto.creationTimeUtc,
-      this._fileMetadataConverter.fromResponse(dto.metadata),
+      metadata,
       dto.playbackSupported,
+      clientPlaybackSupported,
       this.fromFileExplorerFolderNode(dto.parent)
     );
   }
@@ -69,6 +75,7 @@ export class FileExplorerNodeConverterService {
   }
 
   private fromFolderSortDto(dto: FolderSortDto): FolderSort {
+    console.log(dto);
     return new FolderSort(dto.descending, this.fromFolderSortMode(dto.sortMode));
   }
 

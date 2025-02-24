@@ -33,6 +33,7 @@ public class FolderCacheItem : IFolderCacheItem
     private readonly string _absolutePath;
     private readonly ILogger<FolderCacheItem> _logger;
     private readonly IFileExplorerConverter _fileExplorerConverter;
+    private readonly LogLevel _logLevel;
 
     private readonly FileSystemWatcher? _watcher;
     private readonly FileExplorerFolder _folder;
@@ -40,11 +41,13 @@ public class FolderCacheItem : IFolderCacheItem
     public FolderCacheItem(
         string absolutePath,
         ILogger<FolderCacheItem> logger,
-        IFileExplorerConverter fileExplorerConverter)
+        IFileExplorerConverter fileExplorerConverter,
+        LogLevel logLevel = LogLevel.Information)
     {
         _absolutePath = absolutePath;
         _logger = logger;
         _fileExplorerConverter = fileExplorerConverter;
+        _logLevel = logLevel;
 
         var directoryInfo = new DirectoryInfo(absolutePath);
         
@@ -109,8 +112,6 @@ public class FolderCacheItem : IFolderCacheItem
     
     private void SubmitCacheUpdate(string fullName, ChangeType changeType, WatcherChangeTypes watcherChangeType, string oldFullName = "")
     {
-        _logger.LogDebug("Submitting cache update for {FullName} with ChangeType: {ChangeType} and WatcherChangeType: {WatcherChangeType}",
-            fullName, changeType, watcherChangeType);
         _events.Add(new FolderChangeEvent(fullName, changeType, watcherChangeType, oldFullName));
     }
     
@@ -138,12 +139,6 @@ public class FolderCacheItem : IFolderCacheItem
 
     private void UpdateCache(FolderChangeEvent e)
     {
-        _logger.LogInformation("[{FolderAbsolutePath}]: File: {FileAbsolutePath} Change: {ChangeType} Watcher Change: {WatcherChangeType}",
-            _absolutePath,
-            e.fullName,
-            e.changeType,
-            e.watcherChangeType);
-        
         var directoryExists = Directory.Exists(e.fullName);
         var fileExists = File.Exists(e.fullName);
         var isFile = fileExists && !directoryExists;
@@ -153,7 +148,6 @@ public class FolderCacheItem : IFolderCacheItem
             case ChangeType.Created:
                 if (Folder.Children.Any(a => a.AbsolutePath == e.fullName))
                 {
-                    _logger.LogTrace("Item already exists in cache, skipping: {FullName}", e.fullName);
                     return;
                 }
                 var newItem = Create(isFile, e.fullName);
@@ -178,7 +172,11 @@ public class FolderCacheItem : IFolderCacheItem
 
     private IFileExplorerNode Replace(bool isFile, string fullName, string oldFullName)
     {
-        Delete(oldFullName);
+        Delete(fullName);
+        if (oldFullName != fullName)
+        {
+            Delete(oldFullName);
+        }
         
         return Create(isFile, fullName);
     }
@@ -189,23 +187,16 @@ public class FolderCacheItem : IFolderCacheItem
             ? _fileExplorerConverter.Convert(new FileInfo(fullName), _folder.Node)
             : _fileExplorerConverter.Convert(new DirectoryInfo(fullName));
         _folder.AddChild(info);
-        _logger.LogDebug("Added: {AbsolutePath} to {CurrentFolder}", fullName, _absolutePath);
+        _logger.Log(_logLevel, "Added: {AbsolutePath} to {CurrentFolder}", fullName, _absolutePath);
 
         return info;
     }
 
     private void Delete(string fullName)
     {
-        var item = Folder.Children.FirstOrDefault(x => x.AbsolutePath == fullName);
-        if (item is not null)
-        {
-            _folder.RemoveChild(item);
-            _logger.LogDebug("Removed: {AbsolutePath} from {CurrentFolder}", fullName, _absolutePath);
-        }
-        else
-        {
-            _logger.LogTrace("Could not remove: {AbsolutePath} as it was not found in {CurrentFolder}", fullName, _absolutePath);
-        }
+        var name = Path.GetFileName(fullName);
+        _folder.RemoveChild(name);
+        _logger.Log(_logLevel, "Removed: {AbsolutePath} from {CurrentFolder}", fullName, _absolutePath);
     }
 
     private enum ChangeType

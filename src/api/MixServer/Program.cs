@@ -21,6 +21,8 @@ using MixServer.Domain.Exceptions;
 using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.FileExplorer.Settings;
+using MixServer.Domain.Settings;
+using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Users.Enums;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure;
@@ -32,6 +34,7 @@ using MixServer.Infrastructure.Users.Services;
 using MixServer.Infrastructure.Users.Settings;
 using MixServer.Middleware;
 using MixServer.NSwag;
+using MixServer.Services;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -145,6 +148,8 @@ builder.Services
 builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
 
+builder.Services.AddHostedService<MediaInfoService>();
+
 // API Controllers
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options => { options.SerializerSettings.Converters.Add(new StringEnumConverter()); });
@@ -179,6 +184,10 @@ builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true
 builder.Services.Configure<InitialUserSettings>(builder.Configuration.GetSection(ConfigSection.InitialUser));
 
 builder.Services.Configure<FolderCacheSettings>(builder.Configuration.GetSection(ConfigSection.FolderCache));
+
+builder.Services.Configure<CacheFolderSettings>(builder.Configuration.GetSection(ConfigSection.CacheSettings));
+
+builder.Services.Configure<FfmpegSettings>(builder.Configuration.GetSection(ConfigSection.Ffmpeg));
 
 // NSwag
 builder.Services.AddSwaggerDocument(settings =>

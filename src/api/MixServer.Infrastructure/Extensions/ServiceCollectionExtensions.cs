@@ -4,17 +4,17 @@ using Microsoft.Extensions.DependencyInjection;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Services;
+using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Services;
-using MixServer.Domain.Tracklists.Builders;
 using MixServer.Domain.Tracklists.Factories;
 using MixServer.Domain.Users.Services;
+using MixServer.Domain.Utilities;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.Files.Services;
 using MixServer.Infrastructure.Queueing.Repositories;
 using MixServer.Infrastructure.Queueing.Services;
+using MixServer.Infrastructure.Sessions.Accessors;
 using MixServer.Infrastructure.Sessions.Services;
-using MixServer.Infrastructure.Tracklist;
-using MixServer.Infrastructure.Tracklist.Builders;
 using MixServer.Infrastructure.Tracklist.Factories;
 using MixServer.Infrastructure.Users.Repository;
 using MixServer.Infrastructure.Users.Services;
@@ -61,6 +61,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IDeviceService, DeviceService>();
         services.AddTransient<IDeviceDetectionService, DeviceDetectionService>();
         services.AddSingleton<IDeviceTrackingService, DeviceTrackingService>();
+        services.AddTransient<IRequestedPlaybackDeviceAccessor, RequestedPlaybackDeviceAccessor>();
 
         services.AddTransient<ITagBuilderFactory, TagLibSharpTagBuilderFactory>();
         

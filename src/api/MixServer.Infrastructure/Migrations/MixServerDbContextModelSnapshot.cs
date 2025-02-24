@@ -214,6 +214,24 @@ namespace MixServer.Infrastructure.Migrations
                     b.ToTable("PlaybackSessions");
                 });
 
+            modelBuilder.Entity("MixServer.Domain.Streams.Entities.Transcode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AbsolutePath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AbsolutePath")
+                        .IsUnique();
+
+                    b.ToTable("Transcodes");
+                });
+
             modelBuilder.Entity("MixServer.Domain.Users.Entities.Device", b =>
                 {
                     b.Property<Guid>("Id")

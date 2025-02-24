@@ -1,18 +1,17 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {ISignalrClient} from "./signalr-client.interface";
 import {HubConnection} from "@microsoft/signalr";
 import {Observable, Subject} from "rxjs";
 import {
-  FileExplorerFolderResponse, FileExplorerNodeAddedDto,
-  FileExplorerNodeDeletedDto, FileExplorerNodeResponse,
-  FileExplorerNodeUpdatedDto
+  FileExplorerFolderResponse,
+  FileExplorerNodeDeletedDto, FileExplorerNodeUpdatedDto, MediaInfoRemovedDto, MediaInfoUpdatedDto
 } from "../../generated-clients/mix-server-clients";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {NodeUpdatedEvent} from "./models/node-updated-event";
 import {NodeDeletedEvent} from "./models/node-deleted-event";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
-import {FileExplorerNode} from "../../main-content/file-explorer/models/file-explorer-node";
-import {NodeAddedEvent} from "./models/node-added-event";
+import {MediaInfoRemovedEvent, MediaInfoUpdatedEvent} from "./models/media-info-event";
+import {FileMetadataConverterService} from "../converters/file-metadata-converter.service";
 
 @Injectable({
   providedIn: 'root'
@@ -20,11 +19,14 @@ import {NodeAddedEvent} from "./models/node-added-event";
 export class FolderSignalrClientService implements ISignalrClient {
   private _folderRefreshed$ = new Subject<FileExplorerFolder>();
   private _folderSortedSubject$ = new Subject<FileExplorerFolder>();
-  private _nodeAddedSubject$ = new Subject<NodeAddedEvent>();
   private _nodeUpdatedSubject$ = new Subject<NodeUpdatedEvent>();
   private _nodeDeletedSubject$ = new Subject<NodeDeletedEvent>();
+  private _mediaInfoUpdatedSubject$ = new Subject<MediaInfoUpdatedEvent>();
+  private _mediaInfoRemovedSubject$ = new Subject<MediaInfoRemovedEvent>();
 
-  constructor(private _folderNodeConverter: FileExplorerNodeConverterService) { }
+  constructor(private _fileMetadataConverter: FileMetadataConverterService,
+              private _folderNodeConverter: FileExplorerNodeConverterService) {
+  }
 
   public folderRefreshed$(): Observable<FileExplorerFolder> {
     return this._folderRefreshed$.asObservable();
@@ -34,16 +36,20 @@ export class FolderSignalrClientService implements ISignalrClient {
     return this._folderSortedSubject$.asObservable();
   }
 
-  public nodeAdded$(): Observable<NodeAddedEvent> {
-    return this._nodeAddedSubject$.asObservable();
-  }
-
   public nodeUpdated$(): Observable<NodeUpdatedEvent> {
     return this._nodeUpdatedSubject$.asObservable();
   }
 
   public nodeDeleted$(): Observable<NodeDeletedEvent> {
     return this._nodeDeletedSubject$.asObservable();
+  }
+
+  public mediaInfoUpdated$(): Observable<MediaInfoUpdatedEvent> {
+    return this._mediaInfoUpdatedSubject$.asObservable();
+  }
+
+  public mediaInfoRemoved$(): Observable<MediaInfoRemovedEvent> {
+    return this._mediaInfoRemovedSubject$.asObservable();
   }
 
   registerMethods(connection: HubConnection): void {
@@ -56,11 +62,6 @@ export class FolderSignalrClientService implements ISignalrClient {
       (dtoObject: object) => this.handleFolderSorted(FileExplorerFolderResponse.fromJS(dtoObject)));
 
     connection.on(
-      'FileExplorerNodeAdded',
-      (obj: object) => this.handleFileExplorerNodeAdded(FileExplorerNodeAddedDto.fromJS(obj))
-    )
-
-    connection.on(
       'FileExplorerNodeUpdated',
       (obj: object) => this.handleFileExplorerNodeUpdated(FileExplorerNodeUpdatedDto.fromJS(obj))
     );
@@ -68,7 +69,17 @@ export class FolderSignalrClientService implements ISignalrClient {
     connection.on(
       'FileExplorerNodeDeleted',
       (obj: object) => this.handleFileExplorerNodeDeleted(FileExplorerNodeDeletedDto.fromJS(obj))
-    )
+    );
+
+    connection.on(
+      'MediaInfoUpdated',
+      (obj: object) => this.handleMediaInfoUpdated(MediaInfoUpdatedDto.fromJS(obj))
+    );
+
+    connection.on(
+      'MediaInfoRemoved',
+      (obj: object) => this.handleMediaInfoRemoved(MediaInfoRemovedDto.fromJS(obj))
+    );
   }
 
   private handleFolderRefreshed(dto: FileExplorerFolderResponse): void {
@@ -83,11 +94,6 @@ export class FolderSignalrClientService implements ISignalrClient {
     this._folderSortedSubject$.next(converted);
   }
 
-  private handleFileExplorerNodeAdded(dto: FileExplorerNodeAddedDto): void {
-    const node = this._folderNodeConverter.fromFileExplorerNode(dto.node);
-    this._nodeAddedSubject$.next(new NodeAddedEvent(node, dto.index));
-  }
-
   private handleFileExplorerNodeUpdated(dto: FileExplorerNodeUpdatedDto): void {
     const node = this._folderNodeConverter.fromFileExplorerNode(dto.node);
     this._nodeUpdatedSubject$.next(new NodeUpdatedEvent(node, dto.index, dto.oldAbsolutePath));
@@ -96,5 +102,26 @@ export class FolderSignalrClientService implements ISignalrClient {
   private handleFileExplorerNodeDeleted(dto: FileExplorerNodeDeletedDto): void {
     const parent = this._folderNodeConverter.fromFileExplorerFolderNode(dto.parent);
     this._nodeDeletedSubject$.next(new NodeDeletedEvent(parent, dto.absolutePath));
+  }
+
+  private handleMediaInfoUpdated(dto: MediaInfoUpdatedDto): void {
+    const event: MediaInfoUpdatedEvent = {
+      mediaInfo: dto.mediaInfo.map(item => {
+        return {
+          nodePath: this._fileMetadataConverter.fromNodePathDto(item.nodePath),
+          info: this._fileMetadataConverter.fromMediaInfoDto(item)
+        }
+      })
+    };
+    this._mediaInfoUpdatedSubject$.next(event);
+  }
+
+  private handleMediaInfoRemoved(dto: MediaInfoRemovedDto): void {
+    const event: MediaInfoRemovedEvent = {
+      nodePaths: dto.nodePaths.map(item => {
+        return this._fileMetadataConverter.fromNodePathDto(item)
+      })
+    };
+    this._mediaInfoRemovedSubject$.next(event);
   }
 }

@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -7,7 +7,6 @@ using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Caching;
-using MixServer.Domain.Utilities;
 
 namespace MixServer.Domain.FileExplorer.Services.Caching;
 
@@ -19,19 +18,22 @@ public interface IFolderCacheService
 
     event EventHandler<FolderCacheServiceItemRemovedEventArgs> ItemRemoved;
 
-    Task<ICacheFolder> GetOrAddAsync(string absolutePath);
+    event EventHandler<IFileExplorerFolder> FolderAdded;
+    
+    event EventHandler<IFileExplorerFolder> FolderRemoved;
+
+    ICacheFolder GetOrAdd(string absolutePath);
+    IFileExplorerFileNode GetFile(string fileAbsolutePath);
+    (IFileExplorerFolder Parent, IFileExplorerFileNode File) GetFileAndFolder(string absoluteFilePath);
     void InvalidateFolder(string absolutePath);
 }
 
 public class FolderCacheService(
-    IReadWriteLock readWriteLock,
     ILogger<FolderCacheService> logger,
     ILoggerFactory loggerFactory,
     IOptions<FolderCacheSettings> options,
     IFileExplorerConverter fileExplorerConverter) : IFolderCacheService
 {
-    private readonly ConcurrentDictionary<object, SemaphoreSlim> _cacheKeySemaphores = new();
-
     private readonly MemoryCache _cache = new(new MemoryCacheOptions
     {
         SizeLimit = options.Value.MaxCachedDirectories
@@ -42,84 +44,130 @@ public class FolderCacheService(
     public event EventHandler<FolderCacheServiceItemUpdatedEventArgs>? ItemUpdated;
 
     public event EventHandler<FolderCacheServiceItemRemovedEventArgs>? ItemRemoved;
+    public event EventHandler<IFileExplorerFolder>? FolderAdded;
+    public event EventHandler<IFileExplorerFolder>? FolderRemoved;
 
-    public async Task<ICacheFolder> GetOrAddAsync(string absolutePath)
+    public ICacheFolder GetOrAdd(string absolutePath)
     {
-        return await readWriteLock.ForUpgradeableRead(async () =>
+        var maxDirectories = options.Value.MaxCachedDirectories;
+        if (maxDirectories > 0 && _cache.Count >= maxDirectories)
         {
-            if (!Directory.Exists(absolutePath))
+            // Try and only remove one item, but memory cache only allows to specify in percentage
+            var percentage = 1d / maxDirectories;
+            logger.LogInformation("Cache is full, compacting by {Percentage}", percentage);
+            _cache.Compact(percentage);
+        }
+
+        var cacheMiss = false;
+        var cacheItem = _cache.GetOrCreate<IFolderCacheItem>(absolutePath, entry =>
+        {
+            return new Lazy<IFolderCacheItem>(() =>
             {
-                readWriteLock.ForWrite(() => _cache.Remove(absolutePath));
+                cacheMiss = true;
+                entry.Size = 1;
+                entry.RegisterPostEvictionCallback(PostEvictionCallback);
+
+                IFolderCacheItem item =
+                    new FolderCacheItem(absolutePath,
+                        loggerFactory.CreateLogger<FolderCacheItem>(),
+                        fileExplorerConverter);
+                item.ItemAdded += OnItemAdded;
+                item.ItemUpdated += OnItemUpdated;
+                item.ItemRemoved += OnItemRemoved;
+
+                return item;
+            }, LazyThreadSafetyMode.ExecutionAndPublication).Value;
+        }) ?? throw new NotFoundException(nameof(FolderCacheService), absolutePath);
+
+        if (cacheItem.Folder.Node.Exists)
+        {
+            if (cacheMiss)
+            {
+                Task.Run(() => FolderAdded?.Invoke(this, cacheItem.Folder));
             }
-            
-            var maxDirectories = options.Value.MaxCachedDirectories;
-            if (maxDirectories > 0 && _cache.Count >= maxDirectories)
+        }
+        else
+        {
+            // We don't want to keep missing folders in the cache.
+            _cache.Remove(absolutePath);
+        }
+
+        return cacheItem;
+    }
+
+    public IFileExplorerFileNode GetFile(string fileAbsolutePath)
+    {
+        var directoryAbsolutePath = Path.GetDirectoryName(fileAbsolutePath);
+
+        if (string.IsNullOrWhiteSpace(directoryAbsolutePath))
+        {
+            throw new InvalidRequestException(nameof(directoryAbsolutePath), "Directory Absolute Path is Null");
+        }
+
+        var dir = _cache.TryGetValue<IFolderCacheItem>(directoryAbsolutePath, out var cacheItem) ? cacheItem : null;
+
+        if (dir is null)
+        {
+            logger.LogWarning("Directory {DirectoryAbsolutePath} not found in cache when retrieving file",
+                directoryAbsolutePath);
+
+            return fileExplorerConverter.Convert(fileAbsolutePath);
+        }
+
+        var file = dir.Folder.Children.OfType<IFileExplorerFileNode>()
+            .FirstOrDefault(f => f.AbsolutePath == fileAbsolutePath);
+
+        if (file is null)
+        {
+            logger.LogWarning("File {FileAbsolutePath} not found in cache", fileAbsolutePath);
+
+            if (Debugger.IsAttached && File.Exists(fileAbsolutePath))
             {
-                readWriteLock.ForWrite(() =>
-                {
-                    // Try and only remove one item, but memory cache only allows to specify in percentage
-                    var percentage = 1d / maxDirectories;
-                    logger.LogInformation("Cache is full, compacting by {Percentage}", percentage);
-                    _cache.Compact(percentage);
-                });
-            }
-            
-            var cacheItem =  await _cache.GetOrCreateAsync<IFolderCacheItem>(absolutePath, async entry =>
-            {
-                var semaphore = GetOrAddCacheKeySemaphore(absolutePath);
-
-                await semaphore.WaitAsync();
-
-                try
-                {
-                    logger.LogInformation("Cache miss for {AbsolutePath} creating new cache entry", absolutePath);
-                    entry.Size = 1;
-                    entry.RegisterPostEvictionCallback(PostEvictionCallback);
-
-                    IFolderCacheItem item =
-                        new FolderCacheItem(absolutePath,
-                            loggerFactory.CreateLogger<FolderCacheItem>(),
-                            fileExplorerConverter);
-                    item.ItemAdded += OnItemAdded;
-                    item.ItemUpdated += OnItemUpdated;
-                    item.ItemRemoved += OnItemRemoved;
-
-                    return item;
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            }) ?? throw new NotFoundException(nameof(FolderCacheService), absolutePath);
-
-            if (!cacheItem.Folder.Node.Exists)
-            {
-                // We don't want to keep missing folders in the cache.
-                readWriteLock.ForWrite(() => _cache.Remove(absolutePath));
+                Debugger.Break();
             }
 
-            return cacheItem;
-        });
+            return fileExplorerConverter.Convert(new FileInfo(fileAbsolutePath), dir.Folder.Node);
+        }
+
+        return file;
+    }
+
+    public (IFileExplorerFolder Parent, IFileExplorerFileNode File) GetFileAndFolder(string absoluteFilePath)
+    {
+        var directoryAbsolutePath = Path.GetDirectoryName(absoluteFilePath);
+
+        if (string.IsNullOrWhiteSpace(directoryAbsolutePath))
+        {
+            throw new InvalidRequestException(nameof(directoryAbsolutePath), "Directory Absolute Path is Null");
+        }
+
+        var folder = GetOrAdd(directoryAbsolutePath);
+
+        var file = folder.Folder.Children
+                       .OfType<IFileExplorerFileNode>()
+                       .SingleOrDefault(f => f.AbsolutePath == absoluteFilePath) ??
+                   throw new NotFoundException(directoryAbsolutePath, Path.GetFileName(absoluteFilePath));
+
+        return (folder.Folder, file);
     }
 
     public void InvalidateFolder(string absolutePath)
     {
-        readWriteLock.ForWrite(() =>
-        {
-            _cache.Remove(absolutePath);
-        });
+        _cache.Remove(absolutePath);
     }
 
     private void PostEvictionCallback(object key, object? value, EvictionReason reason, object? state)
     {
         logger.LogInformation("Cache entry for {Key} has been evicted. Reason: {Reason}", key, reason);
         if (!IsFolderCacheItem(value, out var item)) return;
-        
+
         item.ItemAdded -= OnItemAdded;
         item.ItemUpdated -= OnItemUpdated;
         item.ItemRemoved -= OnItemRemoved;
-        
+
         item.Dispose();
+        
+        FolderRemoved?.Invoke(this, item.Folder);
     }
 
     private void OnItemAdded(object? sender, IFileExplorerNode e)
@@ -153,7 +201,4 @@ public class FolderCacheService(
         parent = folderCacheItem;
         return true;
     }
-    
-    private SemaphoreSlim GetOrAddCacheKeySemaphore(object key) =>
-        _cacheKeySemaphores.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
 }

@@ -8,7 +8,6 @@ import {ToastService} from "../toasts/toast-service";
 import {firstValueFrom, Observable} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
 import {TracklistConverterService} from "../converters/tracklist-converter.service";
-import {MediaMetadata} from "../../main-content/file-explorer/models/media-metadata";
 
 @Injectable({
   providedIn: 'root'
@@ -22,7 +21,7 @@ export class TracklistFormService {
   }
 
   public async importTracklistFile(file: File): Promise<void> {
-    this._loading.startLoading();
+    this._loading.startLoadingAction('ImportTracklist');
 
     try {
       const dto = await firstValueFrom(this._client.importTracklist({
@@ -34,20 +33,20 @@ export class TracklistFormService {
     } catch (err) {
       this._toastService.logServerError(err, 'Failed to import tracklist file');
     } finally {
-      this._loading.stopLoading();
+      this._loading.stopLoadingAction('ImportTracklist');
     }
   }
 
 
   public async saveTracklist(): Promise<void> {
-    const currentTracklist = this._sessionRepository.currentSession?.currentNode?.metadata instanceof MediaMetadata
-      ? this._sessionRepository.currentSession.currentNode.metadata.tracklist
+    const currentTracklist = !!this._sessionRepository.currentSession?.currentNode?.metadata.mediaInfo
+      ? this._sessionRepository.currentSession.currentNode.metadata.mediaInfo.tracklist
       : undefined;
     if (!currentTracklist) {
       return;
     }
 
-    this._loading.startLoading();
+    this._loading.startLoadingAction('SaveTracklist')
 
     try {
       const dto = await firstValueFrom(this._client.saveTracklist(new SaveTracklistCommand({
@@ -57,7 +56,7 @@ export class TracklistFormService {
     } catch (err) {
       this._toastService.logServerError(err, 'Failed to save tracklist');
     } finally {
-      this._loading.stopLoading();
+      this._loading.stopLoadingAction('SaveTracklist');
     }
   }
 }

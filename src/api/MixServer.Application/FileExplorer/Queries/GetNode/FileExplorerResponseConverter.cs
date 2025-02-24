@@ -1,6 +1,11 @@
+using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Models.Metadata;
+using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
+using MixServer.Domain.Streams.Caches;
+using MixServer.Domain.Streams.Enums;
 
 namespace MixServer.Application.FileExplorer.Queries.GetNode;
 
@@ -13,7 +18,10 @@ public interface IFileExplorerResponseConverter
 {
 }
 
-public class FileExplorerResponseConverter(IFileMetadataResponseConverter metadataConverter) : IFileExplorerResponseConverter
+public class FileExplorerResponseConverter(
+    IMediaInfoCache mediaInfoCache,
+    IMediaInfoDtoConverter mediaInfoDtoConverter,
+    ITranscodeCache transcodeCache) : IFileExplorerResponseConverter
 {
     public FileExplorerNodeResponse Convert(IFileExplorerNode value)
     {
@@ -34,7 +42,7 @@ public class FileExplorerResponseConverter(IFileMetadataResponseConverter metada
             Name = value.Name,
             Type = value.Type,
             CreationTimeUtc = value.CreationTimeUtc,
-            Metadata = metadataConverter.Convert(value.Metadata),
+            Metadata = Convert(value.Metadata, value.AbsolutePath),
             PlaybackSupported = value.PlaybackSupported,
             Parent = Convert(value.Parent)
         };
@@ -76,6 +84,21 @@ public class FileExplorerResponseConverter(IFileMetadataResponseConverter metada
             Node = Convert(value.Node),
             Children = value.Children.Select(Convert).ToList(),
             Sort = new FolderSortDto(value.Sort)
+        };
+    }
+
+    private FileMetadataResponse Convert(IFileMetadata value, string absolutePath)
+    {
+        return new FileMetadataResponse
+        {
+            MediaInfo = value.IsMedia && mediaInfoCache.TryGet(absolutePath, out var mediaInfo)
+                ? mediaInfoDtoConverter.Convert(mediaInfo)
+                : null,
+            IsMedia = value.IsMedia,
+            MimeType = value.MimeType,
+            TranscodeStatus = value.IsMedia
+                ? transcodeCache.GetTranscodeStatus(absolutePath)
+                : TranscodeState.None
         };
     }
 }

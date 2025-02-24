@@ -4,18 +4,23 @@ using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
+using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Enums;
 using MixServer.Domain.Queueing.Services;
+using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Domain.Sessions.Validators;
 
 namespace MixServer.Application.Sessions.Commands.SetNextSession;
 
 public class SetNextSessionCommandHandler(
+    ICanPlayOnDeviceValidator canPlayOnDeviceValidator,
     IPlaybackSessionDtoConverter converter,
     IQueueService queueService,
     IPlaybackTrackingService playbackTrackingService,
+    IRequestedPlaybackDeviceAccessor requestedPlaybackDeviceAccessor,
     ISessionService sessionService,
     IValidator<SetNextSessionCommand> validator,
     IUnitOfWork unitOfWork)
@@ -33,26 +38,30 @@ public class SetNextSessionCommandHandler(
             playbackTrackingService.ClearSession(currentSession.UserId);
         }
 
-        var (result, snapshot) = await queueService.IncrementQueuePositionAsync(request.Offset);
+        var (result, queueItem) = await queueService.GetQueueSnapshotItemAsync(request.Offset);
 
         IPlaybackSession? nextSession = null;
+        QueueSnapshot queueSnapshot;
         switch (result)
         {
             case PlaylistIncrementResult.PreviousOutOfBounds:
                 throw new InvalidRequestException(nameof(request.Offset),"Next file can not be before the start of the playlist");
             case PlaylistIncrementResult.Success:
-                var nextFile = snapshot.CurrentQueuePositionItem?.File;
-                if (nextFile != null)
+                canPlayOnDeviceValidator.ValidateCanPlayOrThrow(requestedPlaybackDeviceAccessor.PlaybackDevice, queueItem!.File);
+
+                queueSnapshot = await queueService.SetQueuePositionAsync(queueItem);
+                
+                var nextFile = queueItem.File;
+                
+                nextSession = await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
                 {
-                    nextSession = await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
-                    {
-                        ParentAbsoluteFilePath = nextFile.Parent.AbsolutePath,
-                        FileName = nextFile.Name
-                    });
-                }
+                    ParentAbsoluteFilePath = nextFile.Parent.AbsolutePath,
+                    FileName = nextFile.Name
+                });
                 break;
             case PlaylistIncrementResult.NextOutOfBounds:
                 sessionService.ClearUsersCurrentSession();
+                queueSnapshot = QueueSnapshot.Empty;
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -60,6 +69,6 @@ public class SetNextSessionCommandHandler(
         
         await unitOfWork.SaveChangesAsync();
 
-        return converter.Convert(nextSession, snapshot, true);
+        return converter.Convert(nextSession, queueSnapshot, true);
     }
 }

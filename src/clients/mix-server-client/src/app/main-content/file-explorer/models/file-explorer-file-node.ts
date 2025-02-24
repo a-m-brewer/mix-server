@@ -2,6 +2,8 @@ import {FileExplorerNode} from "./file-explorer-node";
 import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
 import {FileExplorerFolderNode} from "./file-explorer-folder-node";
 import {FileMetadata} from "./file-metadata";
+import {Device} from "../../../services/repositories/models/device";
+import {TranscodeState} from "../../../generated-clients/mix-server-clients";
 
 export interface FileExplorerFileNodeNameParts {
   nameWithoutExtension: string;
@@ -11,18 +13,33 @@ export interface FileExplorerFileNodeNameParts {
 }
 
 export class FileExplorerFileNode implements FileExplorerNode {
+  private readonly _fileInvalid: boolean;
+  private _requestedPlaybackDevicePlaybackSupported: boolean;
+
   constructor(public name: string,
               public absolutePath: string,
               public type: FileExplorerNodeType,
               public exists: boolean,
               public creationTimeUtc: Date,
               public metadata: FileMetadata,
-              public playbackSupported: boolean,
+              public serverPlaybackSupported: boolean,
+              public clientPlaybackSupported: boolean,
               public parent: FileExplorerFolderNode) {
-    this.disabled = absolutePath.trim() === '' || !exists || !playbackSupported;
+    this._fileInvalid = absolutePath.trim() === '' || !exists;
+
+    this.hasTranscode = metadata.isMedia && metadata.transcodeState !== TranscodeState.None;
+    this.hasCompletedTranscode = metadata.isMedia && metadata.transcodeState === TranscodeState.Completed;
+
+    this._requestedPlaybackDevicePlaybackSupported = clientPlaybackSupported || this.hasCompletedTranscode;
+
+    this.playbackSupported = serverPlaybackSupported && this._requestedPlaybackDevicePlaybackSupported;
+    this.disabled = this._fileInvalid || !this.playbackSupported;
   }
 
   public disabled: boolean;
+  public playbackSupported: boolean;
+  public readonly hasTranscode: boolean;
+  public readonly hasCompletedTranscode: boolean;
 
   public mdIcon: string = 'description';
 
@@ -69,6 +86,11 @@ export class FileExplorerFileNode implements FileExplorerNode {
       !this.exists
   }
 
+  public get serverPlaybackDisabled(): boolean {
+    return !this.serverPlaybackSupported ||
+      !this.exists
+  }
+
   public copy(): FileExplorerFileNode {
     return new FileExplorerFileNode(
       this.name,
@@ -77,8 +99,16 @@ export class FileExplorerFileNode implements FileExplorerNode {
       this.exists,
       this.creationTimeUtc,
       this.metadata.copy(),
-      this.playbackSupported,
+      this.serverPlaybackSupported,
+      this.clientPlaybackSupported,
       this.parent.copy()
     );
+  }
+
+  updateCanPlay(device: Device | null | undefined) {
+    const directPlaybackSupported = device?.canPlay(this) ?? false;
+    this._requestedPlaybackDevicePlaybackSupported = directPlaybackSupported || this.hasCompletedTranscode;
+    this.playbackSupported = this.serverPlaybackSupported && this._requestedPlaybackDevicePlaybackSupported;
+    this.disabled = this._fileInvalid || !this.playbackSupported;
   }
 }

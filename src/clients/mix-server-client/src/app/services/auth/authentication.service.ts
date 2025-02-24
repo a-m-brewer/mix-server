@@ -64,6 +64,10 @@ export class AuthenticationService {
       .pipe(distinctUntilChanged());
   }
 
+  public get connected(): boolean {
+    return this.serverConnectionStatus === ServerConnectionState.Connected;
+  }
+
   private get unauthorized$(): Observable<boolean> {
     return this._connectionStatusBehaviourSubject$
       .pipe(map(s => s.state === ServerConnectionState.Unauthorized))
@@ -294,6 +298,7 @@ export class AuthenticationService {
       ? accessTokenExpiration.getTime() - Date.now() - (30 * 1000)
       : 5 * 1000;
 
+    // @ts-ignore
     this._refreshScheduleTimeout = setTimeout(async () => {
       const result = await this.performTokenRefresh()
       this.setServerConnectionStatus(result.state, result.reason);

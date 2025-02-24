@@ -25,6 +25,6 @@ public class FileExplorerFileNode(
 
     public bool PlaybackSupported => Parent.BelongsToRootChild &&
                                      Exists && 
-                                     Metadata is IMediaMetadata;
+                                     Metadata.IsMedia;
     public IFileExplorerFolderNode Parent { get; } = parent;
 }
