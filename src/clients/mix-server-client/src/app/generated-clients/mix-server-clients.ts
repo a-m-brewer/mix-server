@@ -1569,7 +1569,8 @@ export class SessionClient implements ISessionClient {
 }
 
 export interface IStreamClient {
-    getStream(id: string, access_token?: string | null | undefined): Observable<FileResponse | null>;
+    getStream(id: string, key?: string | undefined, expires?: number | undefined, deviceId?: string | undefined): Observable<FileResponse | null>;
+    generateStreamKey(playbackSessionId: string): Observable<GenerateStreamKeyResponse>;
 }
 
 @Injectable({
@@ -1585,13 +1586,23 @@ export class StreamClient implements IStreamClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getStream(id: string, access_token?: string | null | undefined): Observable<FileResponse | null> {
+    getStream(id: string, key?: string | undefined, expires?: number | undefined, deviceId?: string | undefined): Observable<FileResponse | null> {
         let url_ = this.baseUrl + "/api/stream/{id}?";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        if (access_token !== undefined && access_token !== null)
-            url_ += "access_token=" + encodeURIComponent("" + access_token) + "&";
+        if (key === null)
+            throw new Error("The parameter 'key' cannot be null.");
+        else if (key !== undefined)
+            url_ += "Key=" + encodeURIComponent("" + key) + "&";
+        if (expires === null)
+            throw new Error("The parameter 'expires' cannot be null.");
+        else if (expires !== undefined)
+            url_ += "Expires=" + encodeURIComponent("" + expires) + "&";
+        if (deviceId === null)
+            throw new Error("The parameter 'deviceId' cannot be null.");
+        else if (deviceId !== undefined)
+            url_ += "DeviceId=" + encodeURIComponent("" + deviceId) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -1634,6 +1645,65 @@ export class StreamClient implements IStreamClient {
                 fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
             }
             return _observableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: _headers });
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    generateStreamKey(playbackSessionId: string): Observable<GenerateStreamKeyResponse> {
+        let url_ = this.baseUrl + "/api/stream/key/{playbackSessionId}";
+        if (playbackSessionId === undefined || playbackSessionId === null)
+            throw new Error("The parameter 'playbackSessionId' must be defined.");
+        url_ = url_.replace("{playbackSessionId}", encodeURIComponent("" + playbackSessionId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGenerateStreamKey(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGenerateStreamKey(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<GenerateStreamKeyResponse>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<GenerateStreamKeyResponse>;
+        }));
+    }
+
+    protected processGenerateStreamKey(response: HttpResponseBase): Observable<GenerateStreamKeyResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = GenerateStreamKeyResponse.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -4432,6 +4502,46 @@ export class SeekRequest implements ISeekRequest {
 
 export interface ISeekRequest {
     time: number;
+}
+
+export class GenerateStreamKeyResponse implements IGenerateStreamKeyResponse {
+    key!: string;
+    expires!: number;
+
+    constructor(data?: IGenerateStreamKeyResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.key = _data["key"];
+            this.expires = _data["expires"];
+        }
+    }
+
+    static fromJS(data: any): GenerateStreamKeyResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new GenerateStreamKeyResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["key"] = this.key;
+        data["expires"] = this.expires;
+        return data;
+    }
+}
+
+export interface IGenerateStreamKeyResponse {
+    key: string;
+    expires: number;
 }
 
 export class SaveTracklistResponse implements ISaveTracklistResponse {

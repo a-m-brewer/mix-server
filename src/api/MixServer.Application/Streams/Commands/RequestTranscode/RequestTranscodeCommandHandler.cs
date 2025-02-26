@@ -1,16 +1,14 @@
 using FluentValidation;
 using MixServer.Domain.Exceptions;
-using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
-using MixServer.Domain.Persistence;
 using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Streams.Repositories;
 using MixServer.Domain.Streams.Services;
 
-namespace MixServer.Application.Streams.Commands;
+namespace MixServer.Application.Streams.Commands.RequestTranscode;
 
 public class RequestTranscodeCommandHandler(
     IFileService fileService,

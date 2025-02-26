@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MixServer.Application.Streams.Commands;
+using MixServer.Application.Streams.Commands.RequestTranscode;
 using MixServer.Domain.Interfaces;
 
 namespace MixServer.Controllers;

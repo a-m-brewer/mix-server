@@ -71,7 +71,7 @@ export class AudioPlayerService {
       .currentSession$
       .subscribe(session => {
         if (session) {
-          this.setCurrentSession(session);
+          this.setCurrentSession(session).then();
         } else {
           this.clearSession();
         }
@@ -397,13 +397,19 @@ export class AudioPlayerService {
     return this._audioElementRepository.audio;
   }
 
-  private setCurrentSession(session: PlaybackSession): void {
+  private async setCurrentSession(session: PlaybackSession): Promise<void> {
     const serverDuration = session.currentNode.metadata.mediaInfo
       ? timespanToTotalSeconds(session.currentNode.metadata.mediaInfo.duration)
       : 0;
     this._serverDurationBehaviourSubject$.next(serverDuration);
 
-    this._streamUrl = this._streamUrlService.getStreamUrl(session.id);
+    const url = await this._streamUrlService.getStreamUrl(session.id);
+
+    if (!url) {
+      return;
+    }
+
+    this._streamUrl = url;
     this._transcode = !session.currentNode.clientPlaybackSupported;
 
     this._audioElementRepository.attachHls(this._streamUrl, this._transcode);
@@ -413,7 +419,7 @@ export class AudioPlayerService {
     this._audioPlayerState.node = session.currentNode;
 
     if (session.deviceId === this._authenticationService.deviceId) {
-      this.play().then();
+      await this.play();
     }
   }
 

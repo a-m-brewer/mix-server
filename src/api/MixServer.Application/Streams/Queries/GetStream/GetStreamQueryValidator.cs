@@ -11,8 +11,8 @@ public class GetStreamQueryValidator : AbstractValidator<GetStreamQuery>
 
         When(w => Guid.TryParse(w.Id, out _), () =>
         {
-            RuleFor(r => r.AccessToken)
-                .NotEmpty();
+            RuleFor(r => r.SecurityParameters)
+                .SetValidator(new StreamSecurityParametersDtoValidator());
         });
     }
 }

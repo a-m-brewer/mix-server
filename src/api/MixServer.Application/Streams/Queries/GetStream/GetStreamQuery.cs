@@ -3,6 +3,6 @@
 public class GetStreamQuery
 {
     public required string Id { get; init; }
-
-    public required string AccessToken { get; init; }
+    
+    public required StreamSecurityParametersDto SecurityParameters { get; init; }
 }

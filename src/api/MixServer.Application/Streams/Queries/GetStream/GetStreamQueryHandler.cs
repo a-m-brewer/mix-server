@@ -8,14 +8,13 @@ using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Streams.Repositories;
-using MixServer.Domain.Streams.Services;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.Users.Services;
 
 namespace MixServer.Application.Streams.Queries.GetStream;
 
 public class GetStreamQueryHandler(
-    IRequestedPlaybackDeviceAccessor requestedPlaybackDeviceAccessor,
+    IDeviceTrackingService deviceTrackingService,
     IJwtService jwtService,
     IMimeTypeService mimeTypeService,
     ISessionService sessionService,
@@ -29,7 +28,7 @@ public class GetStreamQueryHandler(
         await validator.ValidateAndThrowAsync(query);
 
         var file = Guid.TryParse(query.Id, out var playbackSessionId)
-            ? await GetPlaybackSessionAsync(playbackSessionId, query.AccessToken)
+            ? await GetPlaybackSessionAsync(playbackSessionId, query.SecurityParameters)
             : GetSegment(query.Id);
 
         return file;
@@ -45,11 +44,11 @@ public class GetStreamQueryHandler(
         return transcodeCache.GetSegmentOrThrow(segment);
     }
 
-    private async Task<StreamFile> GetPlaybackSessionAsync(Guid playbackSessionId, string accessToken)
+    private async Task<StreamFile> GetPlaybackSessionAsync(Guid playbackSessionId, StreamSecurityParametersDto securityParameters)
     {
-        var username = await jwtService.GetUsernameFromTokenAsync(accessToken);
+        jwtService.ValidateKeyOrThrow(playbackSessionId.ToString(), securityParameters.Key, securityParameters.Expires);
         
-        var session = await sessionService.GetPlaybackSessionByIdAsync(playbackSessionId, username);
+        var session = await sessionService.GetPlaybackSessionByIdAsync(playbackSessionId);
 
         if (session.File is null || !session.File.Exists)
         {
@@ -59,7 +58,7 @@ public class GetStreamQueryHandler(
         // Specifically use the RequestDevice to determine if the file can be played
         // Because if playback device is switched we want the client to be seeing what version they can play
         // Rather than what the playback device can play e.g. switching from Transcode to DirectStream
-        if (!requestedPlaybackDeviceAccessor.RequestDevice.CanPlay(session.File))
+        if (!deviceTrackingService.GetDeviceStateOrThrow(securityParameters.DeviceId).CanPlay(session.File))
         {
             var transcode = await transcodeRepository.GetAsync(session.File.AbsolutePath);
             return transcodeCache.GetPlaylistOrThrowAsync(transcode.Id);

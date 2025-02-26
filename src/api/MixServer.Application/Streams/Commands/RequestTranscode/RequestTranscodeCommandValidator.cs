@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace MixServer.Application.Streams.Commands;
+namespace MixServer.Application.Streams.Commands.RequestTranscode;
 
 public class RequestTranscodeCommandValidator : AbstractValidator<RequestTranscodeCommand>
 {

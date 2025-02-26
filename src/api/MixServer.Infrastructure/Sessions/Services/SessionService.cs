@@ -113,12 +113,19 @@ public class SessionService(
     {
         var user = await userRepository.GetUserAsync(username);
 
-        var session = await playbackSessionRepository.GetAsync(id);
-
+        var session = await GetPlaybackSessionByIdAsync(id);
+            
         if (session.UserId != user.Id)
         {
             throw new ForbiddenRequestException();
         }
+        
+        return session;
+    }
+
+    public async Task<PlaybackSession> GetPlaybackSessionByIdAsync(Guid id)
+    {
+        var session = await playbackSessionRepository.GetAsync(id);
 
         sessionHydrationService.Hydrate(session);
         

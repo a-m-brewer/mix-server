@@ -14,6 +14,8 @@ namespace MixServer.Infrastructure.Users.Services;
 public interface IJwtService
 {
     SigningCredentials GetSigningCredentials();
+    
+    (string Key, double Expires) GenerateKey(string value);
 
     JwtSecurityToken GenerateTokenOptions(
         string audience,
@@ -27,6 +29,7 @@ public interface IJwtService
     Task<string> GetUsernameFromTokenAsync(string token);
 
     Task<IReadOnlyCollection<Claim>> GetClaimsFromTokenAsync(string token);
+    void ValidateKeyOrThrow(string key, string signedKey, double expires);
 }
 
 public class JwtService(
@@ -40,6 +43,8 @@ public class JwtService(
 
         return new SigningCredentials(secret, SecurityAlgorithms.HmacSha256);
     }
+
+    public (string Key, double Expires) GenerateKey(string value) => GenerateKey(value, GetUnixEpoch(DateTime.UtcNow.AddDays(1)));
 
     public JwtSecurityToken GenerateTokenOptions(
         string audience,
@@ -105,7 +110,22 @@ public class JwtService(
         
         return GetClaimsFromToken(claimsPrincipal);
     }
-    
+
+    public void ValidateKeyOrThrow(string key, string signedKey, double expires)
+    {
+        var now = GetUnixEpoch(DateTime.UtcNow);
+        if (now > expires)
+        {
+            throw new UnauthorizedRequestException();
+        }
+        
+        var expectedKey = GenerateKey(key, expires).Key;
+        if (expectedKey != signedKey)
+        {
+            throw new UnauthorizedRequestException();
+        }
+    }
+
     private IReadOnlyCollection<Claim> GetClaimsFromToken(ClaimsIdentity claimsIdentity)
     {
         return claimsIdentity.Claims
@@ -174,5 +194,19 @@ public class JwtService(
         var secret = new SymmetricSecurityKey(key);
 
         return secret;
+    }
+
+    private double GetUnixEpoch(DateTime dateTime)
+    {
+        return Math.Floor((dateTime - new DateTime(1970, 1, 1)).TotalMilliseconds);
+    }
+    
+    private (string Key, double Expires) GenerateKey(string value, double expires)
+    {
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(jwtSettings.Value.SecurityKey));
+        var data = $"{value}{expires}";
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+        var streamKey = Convert.ToBase64String(hash);
+        return (streamKey, expires);
     }
 }

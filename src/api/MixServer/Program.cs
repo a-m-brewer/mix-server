@@ -243,16 +243,13 @@ builder.Services
                 var accessToken = context.Request.Query["access_token"];
 
                 // If the request is for our hub...
-                var method = context.HttpContext.Request.Method;
+
                 var path = context.HttpContext.Request.Path;
 
                 var hasAccessToken = !string.IsNullOrEmpty(accessToken);
                 var isSignalRHub = path.StartsWithSegments("/callbacks");
-                var isGetStream = path.StartsWithSegments("/api/stream") && method == "GET";
                     
-                if (hasAccessToken &&
-                    (isSignalRHub ||
-                     isGetStream))
+                if (hasAccessToken && isSignalRHub)
                 {
                     // Read the token out of the query string
                     context.Token = accessToken;
