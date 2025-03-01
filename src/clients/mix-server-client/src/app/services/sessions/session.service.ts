@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {firstValueFrom} from "rxjs";
 import {
-  CurrentSessionUpdatedDto, QueueClient,
-  SessionClient,
-  SetCurrentSessionCommand,
-  SetNextSessionCommand, SetQueuePositionCommand
+    CurrentSessionUpdatedDto, QueueClient,
+    SessionClient,
+    SetCurrentSessionCommand,
+    SetNextSessionCommand, SetQueuePositionCommand
 } from "../../generated-clients/mix-server-clients";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {PlaybackSessionConverterService} from "../converters/playback-session-converter.service";
@@ -14,126 +14,121 @@ import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-p
 import {QueueRepositoryService} from "../repositories/queue-repository.service";
 import {QueueConverterService} from "../converters/queue-converter.service";
 import {AuthenticationService} from "../auth/authentication.service";
+import {ApiService} from "../api.service";
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class SessionService {
 
-  constructor(
-    private _authenticationService: AuthenticationService,
-    private _loadingRepository: LoadingRepositoryService,
-    private _playbackSessionConverter: PlaybackSessionConverterService,
-    private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
-    private _sessionClient: SessionClient,
-    private _toastService: ToastService,
-    private _queueClient: QueueClient,
-    private _queueConverter: QueueConverterService,
-    private _queueRepository: QueueRepositoryService) { }
-
-  public setFile(file: FileExplorerFileNode): void  {
-    this._loadingRepository.startLoading(file.absolutePath);
-
-    firstValueFrom(this._sessionClient.setCurrentSession(new SetCurrentSessionCommand({
-      absoluteFolderPath: file.parent.absolutePath,
-      fileName: file.name
-    })))
-      .then(dto => this.next(dto))
-      .catch(err => this._toastService.logServerError(err, 'Failed to set current session'))
-      .finally(() => this._loadingRepository.stopLoading(file.absolutePath));
-  }
-
-  public setQueuePosition(queueItemId: string): void {
-    this._loadingRepository.startLoading(queueItemId);
-    firstValueFrom(this._queueClient.setQueuePosition(new SetQueuePositionCommand({
-      queueItemId
-    })))
-      .then(dto => this.next(dto))
-      .catch(err => this._toastService.logServerError(err, 'Failed to set queue position'))
-      .finally(() => this._loadingRepository.stopLoading(queueItemId));
-  }
-
-  public clearSession(): void {
-    this._loadingRepository.startLoadingAction('ClearSession');
-    firstValueFrom(this._sessionClient.clearCurrentSession())
-      .then(dto => this.next(dto))
-      .catch(err => this._toastService.logServerError(err, 'Failed to clear current session'))
-      .finally(() => this._loadingRepository.stopLoadingAction('ClearSession'));
-  }
-
-  public back(): void {
-    const currentSession = this._playbackSessionRepository.currentSession;
-    if (!currentSession) {
-      return;
+    constructor(
+        private _authenticationService: AuthenticationService,
+        private _loadingRepository: LoadingRepositoryService,
+        private _playbackSessionConverter: PlaybackSessionConverterService,
+        private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
+        private _sessionClient: ApiService<SessionClient>,
+        private _queueClient: ApiService<QueueClient>,
+        private _queueConverter: QueueConverterService,
+        private _queueRepository: QueueRepositoryService) {
     }
 
-    const offset = this._queueRepository.queue.findNextValidOffset(-1);
-    if (!offset) {
-      return;
+    public setFile(file: FileExplorerFileNode): void {
+        this._sessionClient.request(file.absolutePath,
+            client => client.setCurrentSession(new SetCurrentSessionCommand({
+                absoluteFolderPath: file.parent.absolutePath,
+                fileName: file.name
+            })), 'Failed to set current session')
+            .then(dto => this.next(dto));
     }
 
-    this._loadingRepository.startLoadingAction('Back');
-    this.setNextSession(new SetNextSessionCommand({
-      offset,
-      resetSessionState: false
-    }))
-      .finally(() => this._loadingRepository.stopLoadingAction('Back'));
-  }
-
-  public skip(): void {
-    const currentSession = this._playbackSessionRepository.currentSession;
-    if (!currentSession) {
-      return;
+    public setQueuePosition(queueItemId: string): void {
+        this._queueClient.request(queueItemId,
+            client => client.setQueuePosition(new SetQueuePositionCommand({
+                queueItemId
+            })), 'Failed to set queue position')
+            .then(dto => this.next(dto));
     }
 
-    const offset = this._queueRepository.queue.findNextValidOffset(1);
-    if (!offset) {
-      return;
+    public clearSession(): void {
+        this._sessionClient.request('ClearSession',
+            client => client.clearCurrentSession(),
+            'Failed to clear current session')
+            .then(dto => this.next(dto));
     }
 
-    this._loadingRepository.startLoadingAction('Skip');
+    public back(): void {
+        const currentSession = this._playbackSessionRepository.currentSession;
+        if (!currentSession) {
+            return;
+        }
 
-    this.setNextSession(new SetNextSessionCommand({
-      offset,
-      resetSessionState: false
-    }))
-      .finally(() => this._loadingRepository.stopLoadingAction('Skip'));
-  }
+        const offset = this._queueRepository.queue.findNextValidOffset(-1);
+        if (!offset) {
+            return;
+        }
 
-  public setSessionEnded(): void {
-    const currentSession = this._playbackSessionRepository.currentSession;
-    if (!currentSession || currentSession.state.deviceId !== this._authenticationService.deviceId) {
-      return;
+        this._loadingRepository.startLoadingAction('Back');
+        this.setNextSession(new SetNextSessionCommand({
+            offset,
+            resetSessionState: false
+        }))
+            .finally(() => this._loadingRepository.stopLoadingAction('Back'));
     }
 
-    const offset = this._queueRepository.queue.findNextValidOffset(1);
-    if (!offset) {
-      return;
+    public skip(): void {
+        const currentSession = this._playbackSessionRepository.currentSession;
+        if (!currentSession) {
+            return;
+        }
+
+        const offset = this._queueRepository.queue.findNextValidOffset(1);
+        if (!offset) {
+            return;
+        }
+
+        this._loadingRepository.startLoadingAction('Skip');
+
+        this.setNextSession(new SetNextSessionCommand({
+            offset,
+            resetSessionState: false
+        }))
+            .finally(() => this._loadingRepository.stopLoadingAction('Skip'));
     }
 
-    this.setNextSession(new SetNextSessionCommand({
-      offset,
-      resetSessionState: true
-    })).then();
-  }
+    public setSessionEnded(): void {
+        const currentSession = this._playbackSessionRepository.currentSession;
+        if (!currentSession || currentSession.state.deviceId !== this._authenticationService.deviceId) {
+            return;
+        }
 
-  private async setNextSession(command: SetNextSessionCommand): Promise<void> {
-    this._loadingRepository.startLoadingAction('SetNextSession');
-    try {
-      let dto = await firstValueFrom(this._sessionClient.setNextSession(command));
-      return this.next(dto);
-    } catch (err) {
-      return this._toastService.logServerError(err, 'Failed to set next session');
-    } finally {
-      this._loadingRepository.stopLoadingAction('SetNextSession');
+        const offset = this._queueRepository.queue.findNextValidOffset(1);
+        if (!offset) {
+            return;
+        }
+
+        this.setNextSession(new SetNextSessionCommand({
+            offset,
+            resetSessionState: true
+        })).then();
     }
-  }
 
-  private next(dto: CurrentSessionUpdatedDto): void {
-    const session = dto.session ? this._playbackSessionConverter.fromDto(dto.session) : null;
-    const queue = this._queueConverter.fromDto(dto.queue);
+    private async setNextSession(command: SetNextSessionCommand): Promise<void> {
+        try {
+            const dto = await this._sessionClient.request('SetNextSession',
+                    client => client.setNextSession(command),
+                'Failed to set next session')
+            this.next(dto);
+        }
+        catch (e) {
+            //
+        }
+    }
 
-    this._playbackSessionRepository.currentSession = session;
-    this._queueRepository.setNextQueue(queue);
-  }
+    private next(dto: CurrentSessionUpdatedDto): void {
+        const session = dto.session ? this._playbackSessionConverter.fromDto(dto.session) : null;
+        const queue = this._queueConverter.fromDto(dto.queue);
+
+        this._playbackSessionRepository.currentSession = session;
+        this._queueRepository.setNextQueue(queue);
+    }
 }
