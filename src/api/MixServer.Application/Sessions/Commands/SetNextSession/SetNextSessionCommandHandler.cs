@@ -18,7 +18,6 @@ public interface ISetNextSessionCommandHandler : ICommandHandler
 }
 
 public class SetNextSessionCommandHandler(
-    ICanPlayOnDeviceValidator canPlayOnDeviceValidator,
     IPlaybackSessionDtoConverter converter,
     IQueueService queueService,
     IPlaybackTrackingService playbackTrackingService,
