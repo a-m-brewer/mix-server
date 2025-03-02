@@ -232,7 +232,6 @@ export class CurrentPlaybackSessionRepositoryService {
     this._sessionSignalRClient.currentPlaybackSessionUpdated$()
       .subscribe({
         next: playbackSession => {
-          console.log('current playback session updated', playbackSession);
           this.currentSession = playbackSession;
         }
       });
@@ -240,7 +239,6 @@ export class CurrentPlaybackSessionRepositoryService {
     this._sessionSignalRClient.playbackState$
       .subscribe({
         next: state => {
-          console.log('playback state updated', state);
           this.nextState(state);
         }
       });

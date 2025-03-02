@@ -70,7 +70,6 @@ export class AudioPlayerService {
     this._playbackSessionRepository
       .currentSession$
       .subscribe(session => {
-        console.log('Current session changed', session);
         if (session) {
           this.setCurrentSession(session);
         } else {
@@ -81,21 +80,18 @@ export class AudioPlayerService {
     this._queueRepository
       .queuePosition$()
       .subscribe(item => {
-        console.log('Queue position changed', item);
         this._audioPlayerState.queueItemId = item?.id;
       });
 
     this._queueRepository
       .nextQueueItem$()
       .subscribe(item => {
-        console.log('Next queue item changed', item);
         this._nextFile = item?.file;
       });
 
     this._queueRepository
       .previousQueueItem$()
       .subscribe(item => {
-        console.log('Previous queue item changed', item);
         this._previousFile = item?.file;
       })
 
@@ -106,21 +102,18 @@ export class AudioPlayerService {
         if (this.isCurrentPlaybackDevice && delta === 0) {
           return;
         }
-        console.log('Current state changed', state, this.isCurrentPlaybackDevice, delta);
         this.currentTime = state.currentTime;
       });
 
     this._playbackSessionRepository
       .pauseRequested$
       .subscribe(_ => {
-        console.log('Pause requested');
         this.handlePauseRequested();
       });
 
     this._playbackSessionRepository
       .playbackGranted$
       .subscribe(playbackGranted => {
-        console.log('Playback granted', playbackGranted);
         this.handlePlaybackGranted(playbackGranted);
       });
 

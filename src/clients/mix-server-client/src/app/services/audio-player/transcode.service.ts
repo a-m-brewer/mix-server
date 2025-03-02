@@ -4,27 +4,18 @@ import {RequestTranscodeCommand, TranscodeClient} from "../../generated-clients/
 import {ToastService} from "../toasts/toast-service";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {firstValueFrom} from "rxjs";
+import {TranscodeApiService} from "../api.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class TranscodeService {
 
-  constructor(private _loading: LoadingRepositoryService,
-              private _toastService: ToastService,
-              private _transcodeClient: TranscodeClient) { }
+  constructor(private _transcodeClient: TranscodeApiService) { }
 
   public async requestTranscode(file: FileExplorerFileNode): Promise<void> {
-    this._loading.startLoading(file.absolutePath);
-
-    try {
-      await firstValueFrom(this._transcodeClient.requestTranscode(new RequestTranscodeCommand({
-        absoluteFilePath: file.absolutePath
-      })))
-    } catch (err) {
-      this._toastService.logServerError(err, 'Failed to request transcode file');
-    } finally {
-      this._loading.stopLoading(file.absolutePath);
-    }
+    await this._transcodeClient.request(file.absolutePath, client => client.requestTranscode(new RequestTranscodeCommand({
+      absoluteFilePath: file.absolutePath
+    })), 'Failed to request transcode file');
   }
 }
