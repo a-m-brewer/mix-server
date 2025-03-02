@@ -961,7 +961,9 @@ export interface ISessionClient {
     syncPlaybackSession(command: SyncPlaybackSessionCommand): Observable<SyncPlaybackSessionResponse>;
     setCurrentSession(command: SetCurrentSessionCommand): Observable<CurrentSessionUpdatedDto>;
     clearCurrentSession(): Observable<CurrentSessionUpdatedDto>;
-    setNextSession(command: SetNextSessionCommand): Observable<CurrentSessionUpdatedDto>;
+    back(): Observable<CurrentSessionUpdatedDto>;
+    skip(): Observable<CurrentSessionUpdatedDto>;
+    end(): Observable<CurrentSessionUpdatedDto>;
     history(startIndex?: number | undefined, pageSize?: number | undefined): Observable<GetUsersSessionsResponse>;
     requestPlayback(command: RequestPlaybackCommand): Observable<PlaybackGrantedDto>;
     requestPause(): Observable<void>;
@@ -1155,28 +1157,24 @@ export class SessionClient implements ISessionClient {
         return _observableOf(null as any);
     }
 
-    setNextSession(command: SetNextSessionCommand): Observable<CurrentSessionUpdatedDto> {
-        let url_ = this.baseUrl + "/api/session/next";
+    back(): Observable<CurrentSessionUpdatedDto> {
+        let url_ = this.baseUrl + "/api/session/back";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(command);
-
         let options_ : any = {
-            body: content_,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
-                "Content-Type": "application/json",
                 "Accept": "application/json"
             })
         };
 
         return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processSetNextSession(response_);
+            return this.processBack(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processSetNextSession(response_ as any);
+                    return this.processBack(response_ as any);
                 } catch (e) {
                     return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
                 }
@@ -1185,7 +1183,131 @@ export class SessionClient implements ISessionClient {
         }));
     }
 
-    protected processSetNextSession(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
+    protected processBack(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CurrentSessionUpdatedDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ValidationProblemDetails.fromJS(resultData400);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    skip(): Observable<CurrentSessionUpdatedDto> {
+        let url_ = this.baseUrl + "/api/session/skip";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processSkip(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processSkip(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<CurrentSessionUpdatedDto>;
+        }));
+    }
+
+    protected processSkip(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = CurrentSessionUpdatedDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result400 = ValidationProblemDetails.fromJS(resultData400);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    end(): Observable<CurrentSessionUpdatedDto> {
+        let url_ = this.baseUrl + "/api/session/end";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processEnd(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processEnd(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<CurrentSessionUpdatedDto>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<CurrentSessionUpdatedDto>;
+        }));
+    }
+
+    protected processEnd(response: HttpResponseBase): Observable<CurrentSessionUpdatedDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -4215,46 +4337,6 @@ export class SetCurrentSessionCommand implements ISetCurrentSessionCommand {
 export interface ISetCurrentSessionCommand {
     absoluteFolderPath: string;
     fileName: string;
-}
-
-export class SetNextSessionCommand implements ISetNextSessionCommand {
-    offset!: number;
-    resetSessionState!: boolean;
-
-    constructor(data?: ISetNextSessionCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.offset = _data["offset"];
-            this.resetSessionState = _data["resetSessionState"];
-        }
-    }
-
-    static fromJS(data: any): SetNextSessionCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new SetNextSessionCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["offset"] = this.offset;
-        data["resetSessionState"] = this.resetSessionState;
-        return data;
-    }
-}
-
-export interface ISetNextSessionCommand {
-    offset: number;
-    resetSessionState: boolean;
 }
 
 export class GetUsersSessionsResponse implements IGetUsersSessionsResponse {

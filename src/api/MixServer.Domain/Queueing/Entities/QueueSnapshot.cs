@@ -1,3 +1,5 @@
+using MixServer.Domain.Users.Models;
+
 namespace MixServer.Domain.Queueing.Entities;
 
 public class QueueSnapshot(Guid? currentQueuePosition, List<QueueSnapshotItem> items) : IEquatable<QueueSnapshot>
@@ -23,7 +25,7 @@ public class QueueSnapshot(Guid? currentQueuePosition, List<QueueSnapshotItem> i
         {
             return false;
         }
-        
+
         for (var i = 0; i < Items.Count; i++)
         {
             if (Items[i].Id != other.Items[i].Id)

@@ -124,17 +124,34 @@ public class QueueService(
         return queueSnapshot;
     }
 
-    public async Task<QueueSnapshot> SetQueuePositionAsync(QueueSnapshotItem item)
+    public async Task<(PlaylistIncrementResult Result, QueueSnapshot Snapshot)> IncrementQueuePositionAsync(int offset)
     {
         var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
+        var queueOrder = queue.QueueOrder;
         
-        queue.SetQueuePosition(item.Id);
+        var currentQueueItemIndex = queueOrder.FindIndex(id => id == queue.CurrentQueuePositionId);
+
+        var nextIndex = currentQueueItemIndex + offset;
+
+        if (nextIndex < 0)
+        {
+            return (PlaylistIncrementResult.PreviousOutOfBounds, QueueSnapshot.Empty);
+        }
+
+        if (queueOrder.Count <= nextIndex)
+        {
+            return (PlaylistIncrementResult.NextOutOfBounds, QueueSnapshot.Empty);
+        }
+
+        var nextQueuePositionId = queueOrder[nextIndex];
+
+        queue.SetQueuePosition(nextQueuePositionId);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
         unitOfWork.InvokeCallbackOnSaved(c =>
             c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
-
-        return queueSnapshot;
+        
+        return (PlaylistIncrementResult.Success, queueSnapshot);
     }
 
     public async Task ResortQueueAsync()
@@ -154,32 +171,6 @@ public class QueueService(
         queueRepository.Remove(currentUserRepository.CurrentUserId);
         unitOfWork.InvokeCallbackOnSaved(c =>
             c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, QueueSnapshot.Empty));
-    }
-
-    public async Task<(PlaylistIncrementResult Result, QueueSnapshotItem? Snapshot)> GetQueueSnapshotItemAsync(int offset)
-    {
-        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
-        var queueOrder = queue.QueueOrder;
-        
-        var currentQueueItemIndex = queueOrder.FindIndex(id => id == queue.CurrentQueuePositionId);
-
-        var nextIndex = currentQueueItemIndex + offset;
-
-        if (nextIndex < 0)
-        {
-            return (PlaylistIncrementResult.PreviousOutOfBounds, null);
-        }
-
-        if (queueOrder.Count <= nextIndex)
-        {
-            return (PlaylistIncrementResult.NextOutOfBounds, null);
-        }
-
-        var nextQueuePositionId = queueOrder[nextIndex];
-        
-        var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
-        
-        return (PlaylistIncrementResult.Success, queueSnapshot.Items.Single(f => f.Id == nextQueuePositionId));
     }
 
     public async Task<IFileExplorerFileNode> GetCurrentPositionFileOrThrowAsync()

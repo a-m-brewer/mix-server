@@ -1,20 +1,16 @@
 import {Injectable} from '@angular/core';
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
-import {firstValueFrom} from "rxjs";
 import {
     CurrentSessionUpdatedDto, QueueClient,
     SessionClient,
     SetCurrentSessionCommand,
-    SetNextSessionCommand, SetQueuePositionCommand
+    SetQueuePositionCommand
 } from "../../generated-clients/mix-server-clients";
-import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {PlaybackSessionConverterService} from "../converters/playback-session-converter.service";
-import {ToastService} from "../toasts/toast-service";
 import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
 import {QueueRepositoryService} from "../repositories/queue-repository.service";
 import {QueueConverterService} from "../converters/queue-converter.service";
-import {AuthenticationService} from "../auth/authentication.service";
-import {ApiService} from "../api.service";
+import {QueueApiService, SessionApiService} from "../api.service";
 
 @Injectable({
     providedIn: 'root'
@@ -22,12 +18,10 @@ import {ApiService} from "../api.service";
 export class SessionService {
 
     constructor(
-        private _authenticationService: AuthenticationService,
-        private _loadingRepository: LoadingRepositoryService,
         private _playbackSessionConverter: PlaybackSessionConverterService,
         private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
-        private _sessionClient: ApiService<SessionClient>,
-        private _queueClient: ApiService<QueueClient>,
+        private _sessionClient: SessionApiService,
+        private _queueClient: QueueApiService,
         private _queueConverter: QueueConverterService,
         private _queueRepository: QueueRepositoryService) {
     }
@@ -57,71 +51,21 @@ export class SessionService {
     }
 
     public back(): void {
-        const currentSession = this._playbackSessionRepository.currentSession;
-        if (!currentSession) {
-            return;
-        }
-
-        const offset = this._queueRepository.queue.findNextValidOffset(-1);
-        if (!offset) {
-            return;
-        }
-
-        this._loadingRepository.startLoadingAction('Back');
-        this.setNextSession(new SetNextSessionCommand({
-            offset,
-            resetSessionState: false
-        }))
-            .finally(() => this._loadingRepository.stopLoadingAction('Back'));
+        this._sessionClient.request('Back',
+            client => client.back(), 'Failed to go back')
+            .then(dto => this.next(dto));
     }
 
     public skip(): void {
-        const currentSession = this._playbackSessionRepository.currentSession;
-        if (!currentSession) {
-            return;
-        }
-
-        const offset = this._queueRepository.queue.findNextValidOffset(1);
-        if (!offset) {
-            return;
-        }
-
-        this._loadingRepository.startLoadingAction('Skip');
-
-        this.setNextSession(new SetNextSessionCommand({
-            offset,
-            resetSessionState: false
-        }))
-            .finally(() => this._loadingRepository.stopLoadingAction('Skip'));
+        this._sessionClient.request('Skip',
+            client => client.skip(), 'Failed to skip')
+            .then(dto => this.next(dto));
     }
 
     public setSessionEnded(): void {
-        const currentSession = this._playbackSessionRepository.currentSession;
-        if (!currentSession || currentSession.state.deviceId !== this._authenticationService.deviceId) {
-            return;
-        }
-
-        const offset = this._queueRepository.queue.findNextValidOffset(1);
-        if (!offset) {
-            return;
-        }
-
-        this.setNextSession(new SetNextSessionCommand({
-            offset,
-            resetSessionState: true
-        })).then();
-    }
-
-    private async setNextSession(command: SetNextSessionCommand): Promise<void> {
-        try {
-            const dto = await this._sessionClient.request('SetNextSession',
-                    client => client.setNextSession(command),
-                'Failed to set next session')
-            this.next(dto);
-        }
-        catch (e) {
-            //
-        }
+        this._sessionClient.request('SessionEnded',
+            client => client.end(), 'Failed to end session')
+            .then(dto => this.next(dto));
     }
 
     private next(dto: CurrentSessionUpdatedDto): void {

@@ -1,17 +1,14 @@
-import {Injectable} from '@angular/core';
+import {Injectable, InjectionToken, Injector} from '@angular/core';
 import {ToastService} from "./toasts/toast-service";
 import {LoadingRepositoryService} from "./repositories/loading-repository.service";
-import {LoadingAction} from "./repositories/models/loading-node-status";
 import {firstValueFrom, Observable} from "rxjs";
+import {QueueClient, SessionClient} from "../generated-clients/mix-server-clients";
 
-@Injectable({
-  providedIn: 'root'
-})
-export class ApiService<TClient> {
+export abstract class ApiService<TClient> {
 
-  constructor(private _client: TClient,
-              private _loadingRepository: LoadingRepositoryService,
-              private _toastService: ToastService) {
+  protected constructor(private _client: TClient,
+                        private _loadingRepository: LoadingRepositoryService,
+                        private _toastService: ToastService) {
   }
 
   public async request<TResponse>(action: string,
@@ -27,4 +24,26 @@ export class ApiService<TClient> {
       this._loadingRepository.stopLoading(action);
     }
   }
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class SessionApiService extends ApiService<SessionClient> {
+    constructor(_client: SessionClient,
+                _toastService: ToastService,
+                _loadingRepository: LoadingRepositoryService) {
+        super(_client, _loadingRepository, _toastService);
+    }
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class QueueApiService extends ApiService<QueueClient> {
+    constructor(_client: QueueClient,
+                _toastService: ToastService,
+                _loadingRepository: LoadingRepositoryService) {
+        super(_client, _loadingRepository, _toastService);
+    }
 }

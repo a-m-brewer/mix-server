@@ -25,7 +25,7 @@ public class SessionController(
     ICommandHandler<SeekCommand> seekCommandHandler,
     ICommandHandler<SetCurrentSessionCommand, CurrentSessionUpdatedDto> setCurrentSessionCommandHandler,
     ICommandHandler<SetPlayingCommand> setPlayingCommandHandler,
-    ICommandHandler<SetNextSessionCommand, CurrentSessionUpdatedDto> setNextSessionCommandHandler,
+    ISetNextSessionCommandHandler setNextSessionCommandHandler,
     ICommandHandler<SyncPlaybackSessionCommand, SyncPlaybackSessionResponse> syncPlaybackSessionCommandHandler)
     : ControllerBase
 {
@@ -46,13 +46,31 @@ public class SessionController(
         return Ok(await setCurrentSessionCommandHandler.HandleAsync(command));
     }
 
-    [HttpPost("next")]
+    [HttpPost("back")]
     [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> SetNextSession([FromBody] SetNextSessionCommand command)
+    public async Task<IActionResult> Back()
     { 
-        return Ok(await setNextSessionCommandHandler.HandleAsync(command));
+        return Ok(await setNextSessionCommandHandler.BackAsync());
+    }
+    
+    [HttpPost("skip")]
+    [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Skip()
+    { 
+        return Ok(await setNextSessionCommandHandler.SkipAsync());
+    }
+    
+    [HttpPost("end")]
+    [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> End()
+    { 
+        return Ok(await setNextSessionCommandHandler.EndAsync());
     }
 
     [HttpDelete]
