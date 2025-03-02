@@ -7,6 +7,7 @@ import {ToastService} from "../toasts/toast-service";
 import {DeviceConverterService} from "../converters/device-converter.service";
 import {DevicesSignalrClientService} from "../signalr/devices-signalr-client.service";
 import {cloneDeep} from "lodash";
+import {DeviceApiService} from "../api.service";
 
 @Injectable({
   providedIn: 'root'
@@ -16,19 +17,15 @@ export class DeviceRepositoryService {
 
   constructor(private _authenticationService: AuthenticationService,
               _deviceConverter: DeviceConverterService,
-              private  _deviceClient: DeviceClient,
-              private _deviceSignalRClient: DevicesSignalrClientService,
-              private _toastService: ToastService) {
+              private  _deviceClient: DeviceApiService,
+              private _deviceSignalRClient: DevicesSignalrClientService) {
     _authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
-          this._deviceClient.devices()
-            .subscribe({
-              next: dto => {
-                const devices = _deviceConverter.fromDtoList(dto.devices);
-                this.next(devices);
-              },
-              error: err => this._toastService.logServerError(err, 'Failed to fetch user devices')
+          this._deviceClient.request('GetDevices', c => c.devices(), 'Failed to fetch user devices')
+            .then(dto => {
+              const devices = _deviceConverter.fromDtoList(dto.devices);
+              this.next(devices);
             });
         }
       });
@@ -91,10 +88,10 @@ export class DeviceRepositoryService {
   }
 
   public delete(device: Device): void {
-    this._deviceClient.deleteDevice(device.id)
-      .subscribe({
-        error: err => this._toastService.logServerError(err, `Failed to delete device: ${device.displayName}`)
-      })
+    this._deviceClient.request('DeleteDevice',
+        client => client.deleteDevice(device.id),
+      `Failed to delete device: ${device.displayName}`)
+      .then()
   }
 
   public setUserInteractedWithPage(interacted: boolean): void {
@@ -110,10 +107,11 @@ export class DeviceRepositoryService {
     }
 
     if (interacted) {
-      firstValueFrom(this._deviceClient.setDeviceInteracted(new SetDeviceInteractionCommand({
-        interacted
-      })))
-        .catch(err => this._toastService.logServerError(err, 'Failed to set device interacted'));
+      this._deviceClient.request('SetDeviceInteraction',
+        client => client.setDeviceInteracted(new SetDeviceInteractionCommand({
+          interacted
+        })), 'Failed to set device interaction')
+        .then();
     }
     else {
       this._deviceSignalRClient.pageClosed();

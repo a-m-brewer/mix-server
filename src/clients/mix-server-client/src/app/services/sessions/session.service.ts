@@ -1,8 +1,7 @@
 import {Injectable} from '@angular/core';
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {
-    CurrentSessionUpdatedDto, QueueClient,
-    SessionClient,
+    CurrentSessionUpdatedDto,
     SetCurrentSessionCommand,
     SetQueuePositionCommand
 } from "../../generated-clients/mix-server-clients";

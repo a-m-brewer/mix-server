@@ -2,7 +2,7 @@ import {Injectable, InjectionToken, Injector} from '@angular/core';
 import {ToastService} from "./toasts/toast-service";
 import {LoadingRepositoryService} from "./repositories/loading-repository.service";
 import {firstValueFrom, Observable} from "rxjs";
-import {QueueClient, SessionClient, TranscodeClient} from "../generated-clients/mix-server-clients";
+import {DeviceClient, QueueClient, SessionClient, TranscodeClient} from "../generated-clients/mix-server-clients";
 
 export abstract class ApiService<TClient> {
 
@@ -23,6 +23,17 @@ export abstract class ApiService<TClient> {
     } finally {
       this._loadingRepository.stopLoading(action);
     }
+  }
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class DeviceApiService extends ApiService<DeviceClient> {
+  constructor(_client: DeviceClient,
+              _toastService: ToastService,
+              _loadingRepository: LoadingRepositoryService) {
+    super(_client, _loadingRepository, _toastService);
   }
 }
 
