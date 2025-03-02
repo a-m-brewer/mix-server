@@ -21,9 +21,8 @@ export class PlaybackSessionConverterService {
       dto.id,
       initialNode,
       this._nodeCache.getFileByNode$(initialNode),
-      dto.lastPlayed,
       this.stateFromSessionDto(dto),
-      dto.autoPlay);
+      dto.streamKey);
   }
 
   public stateFromSessionDto(dto: PlaybackSessionDto): PlaybackState {

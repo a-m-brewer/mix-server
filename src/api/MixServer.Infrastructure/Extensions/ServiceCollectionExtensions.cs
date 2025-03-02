@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IIdentityUserAuthenticationService, IdentityUserAuthenticationService>();
         services.AddTransient<IFirstUserInitializationService, FirstUserInitializationService>();
         services.AddScoped<IJwtService, JwtService>();
+        services.AddScoped<IStreamKeyService>(i => i.GetRequiredService<IJwtService>());
         services.AddTransient<IUserRoleService, IdentityUserUserRoleService>();
         services.AddTransient<IIdentityUserRoleService, IdentityUserUserRoleService>();
         services.AddTransient<IPasswordGeneratorService, PasswordGeneratorService>();

@@ -6,5 +6,5 @@ public class SyncPlaybackSessionResponse
 {
     public bool UseClientState { get; set; }
 
-    public PlaybackSessionDto? Session { get; set; } = new();
+    public PlaybackSessionDto? Session { get; set; }
 }

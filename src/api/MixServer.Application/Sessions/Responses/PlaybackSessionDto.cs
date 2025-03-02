@@ -1,5 +1,4 @@
 ﻿using MixServer.Application.FileExplorer.Queries.GetNode;
-using MixServer.Domain.Tracklists.Dtos.Import;
 
 namespace MixServer.Application.Sessions.Responses;
 
@@ -9,7 +8,9 @@ public class PlaybackSessionDto
 
     public string FileDirectory { get; set; } = string.Empty;
 
-    public FileExplorerFileNodeResponse File { get; set; } = null!;
+    public required FileExplorerFileNodeResponse File { get; init; }
+    
+    public required StreamKeyDto StreamKey { get; init; }
     
     public DateTime LastPlayed { get; set; }
 

@@ -11,6 +11,7 @@ public interface IPlaybackSession : IPlaybackState
     new string AbsolutePath { get; set; }
     DateTime LastPlayed { get; set; }
     IFileExplorerFileNode? File { get; set; }
+    StreamKey StreamKey { get; set; }
     string GetParentFolderPathOrThrow();
     string? GetParentFolderPathOrDefault();
     void PopulateState(IPlaybackState playingItem);
@@ -41,7 +42,10 @@ public class PlaybackSession : IPlaybackSession
 
     [NotMapped]
     public IFileExplorerFileNode? File { get; set; }
-    
+
+    [NotMapped]
+    public StreamKey StreamKey { get; set; } = new () { Expires = 0, Key = string.Empty };
+
     public string GetParentFolderPathOrThrow()
     {
         return AbsolutePath.GetParentFolderPathOrThrow();

@@ -3,34 +3,15 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
+using System.Web;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.Sessions.Models;
 using MixServer.Infrastructure.Server.Settings;
 using MixServer.Infrastructure.Users.Settings;
 
 namespace MixServer.Infrastructure.Users.Services;
-
-public interface IJwtService
-{
-    SigningCredentials GetSigningCredentials();
-    
-    (string Key, double Expires) GenerateKey(string value);
-
-    JwtSecurityToken GenerateTokenOptions(
-        string audience,
-        SigningCredentials signingCredentials,
-        IEnumerable<Claim> claims);
-
-    string GenerateRefreshToken();
-    
-    Task<(string Username, IReadOnlyCollection<Claim> Claims)> GetUsernameAndClaimsFromTokenAsync(string token);
-    
-    Task<string> GetUsernameFromTokenAsync(string token);
-
-    Task<IReadOnlyCollection<Claim>> GetClaimsFromTokenAsync(string token);
-    void ValidateKeyOrThrow(string key, string signedKey, double expires);
-}
 
 public class JwtService(
     IOptions<HostSettings> hostSettings,
@@ -44,7 +25,7 @@ public class JwtService(
         return new SigningCredentials(secret, SecurityAlgorithms.HmacSha256);
     }
 
-    public (string Key, double Expires) GenerateKey(string value) => GenerateKey(value, GetUnixEpoch(DateTime.UtcNow.AddDays(1)));
+    public StreamKey GenerateKey(string value) => GenerateKey(value, GetUnixEpoch(DateTime.UtcNow.AddDays(1)));
 
     public JwtSecurityToken GenerateTokenOptions(
         string audience,
@@ -201,12 +182,16 @@ public class JwtService(
         return Math.Floor((dateTime - new DateTime(1970, 1, 1)).TotalMilliseconds);
     }
     
-    private (string Key, double Expires) GenerateKey(string value, double expires)
+    private StreamKey GenerateKey(string value, double expires)
     {
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(jwtSettings.Value.SecurityKey));
         var data = $"{value}{expires}";
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
         var streamKey = Convert.ToBase64String(hash);
-        return (streamKey, expires);
+        return new StreamKey
+        {
+            Key = streamKey,
+            Expires = expires
+        };
     }
 }
