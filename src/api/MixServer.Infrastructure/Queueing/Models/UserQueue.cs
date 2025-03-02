@@ -137,14 +137,12 @@ public class UserQueue(string userId, IReadWriteLock readWriteLock)
         return readWriteLock.ForRead(() => ids.All(id => UserQueueSortItems.Any(a => a.Id == id)));
     }
 
-    public QueueSnapshot GenerateQueueSnapshot(Dictionary<string, IFileExplorerFileNode> files) =>
+    public List<QueueSnapshotItem> GenerateQueueSnapshotItems(Dictionary<string, IFileExplorerFileNode> files) =>
         readWriteLock.ForRead(() =>
         {
-            var finalQueue = GenerateQueueOrder()
+            return GenerateQueueOrder()
                 .Select(i => GenerateSnapshotQueueItem(i, files))
                 .ToList();
-
-            return new QueueSnapshot(CurrentQueuePositionId, finalQueue);
         });
 
     public List<Guid> QueueOrder => readWriteLock.ForRead(() => GenerateQueueOrder().Select(s => s.Id).ToList());

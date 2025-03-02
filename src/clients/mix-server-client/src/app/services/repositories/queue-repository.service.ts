@@ -24,7 +24,7 @@ import {NodeCacheService} from "../nodes/node-cache.service";
   providedIn: 'root'
 })
 export class QueueRepositoryService {
-  private _queueBehaviourSubject$ = new BehaviorSubject<Queue>(new Queue(null, []));
+  private _queueBehaviourSubject$ = new BehaviorSubject<Queue>(new Queue(null, null, null, []));
 
 
   constructor(private _loadingRepository: LoadingRepositoryService,

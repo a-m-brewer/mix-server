@@ -8,6 +8,7 @@ using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Enums;
 using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Entities;
+using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Queueing.Models;
 using MixServer.Infrastructure.Queueing.Repositories;
@@ -16,6 +17,7 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Infrastructure.Queueing.Services;
 
 public class QueueService(
+    ICanPlayOnDeviceValidator canPlayOnDeviceValidator,
     ICallbackService callbackService,
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
@@ -209,10 +211,19 @@ public class QueueService(
 
         var distinctFiles = allFiles
             .Where(w => !string.IsNullOrWhiteSpace(w.AbsolutePath))
-            .DistinctBy(d => d.AbsolutePath!)
-            .ToDictionary(k => k.AbsolutePath!, v => v);
+            .DistinctBy(d => d.AbsolutePath)
+            .ToDictionary(k => k.AbsolutePath, v => v);
 
-        return userQueue.GenerateQueueSnapshot(distinctFiles);
+        var items = userQueue.GenerateQueueSnapshotItems(distinctFiles);
+        
+        var previousValidOffset = userQueue.CurrentQueuePositionId.HasValue
+            ? GetNextValidQueuePosition(userQueue.CurrentQueuePositionId.Value, false, items)
+            : null;
+        var nextValidOffset = userQueue.CurrentQueuePositionId.HasValue
+            ? GetNextValidQueuePosition(userQueue.CurrentQueuePositionId.Value, true, items)
+            : null;
+        
+        return new QueueSnapshot(userQueue.CurrentQueuePositionId, previousValidOffset, nextValidOffset, items);
     }
 
     private async Task<List<IFileExplorerFileNode>> GetPlayableFilesInFolderAsync(string? absoluteFolderPath)
@@ -227,5 +238,30 @@ public class QueueService(
         return folder.GenerateSortedChildren<IFileExplorerFileNode>()
             .Where(w => w.PlaybackSupported)
             .ToList();
+    }
+    
+    private Guid? GetNextValidQueuePosition(
+        Guid currentQueuePosition,
+        bool skip,
+        List<QueueSnapshotItem> queueItems)
+    {
+        var requestedOffset = skip ? 1 : -1;
+        
+        var currentIndex = queueItems.FindIndex(f => f.Id == currentQueuePosition);
+        var offsetIndex = currentIndex + requestedOffset;
+
+        while (offsetIndex >= 0 && offsetIndex < queueItems.Count)
+        {
+            var item = queueItems[offsetIndex];
+            if (canPlayOnDeviceValidator.CanPlay(item.File))
+            {
+                return item.Id;
+            }
+
+            var increment = requestedOffset < 0 ? -1 : 1;
+            offsetIndex += increment;
+        }
+
+        return null;
     }
 }

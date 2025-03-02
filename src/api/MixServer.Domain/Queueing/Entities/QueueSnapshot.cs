@@ -2,9 +2,15 @@ using MixServer.Domain.Users.Models;
 
 namespace MixServer.Domain.Queueing.Entities;
 
-public class QueueSnapshot(Guid? currentQueuePosition, List<QueueSnapshotItem> items) : IEquatable<QueueSnapshot>
+public class QueueSnapshot(
+    Guid? currentQueuePosition,
+    Guid? previousQueuePosition,
+    Guid? nextQueuePosition,
+    List<QueueSnapshotItem> items) : IEquatable<QueueSnapshot>
 {
     public Guid? CurrentQueuePosition { get; } = currentQueuePosition;
+    public Guid? PreviousQueuePosition { get; } = previousQueuePosition;
+    public Guid? NextQueuePosition { get; } = nextQueuePosition;
 
     public QueueSnapshotItem? CurrentQueuePositionItem => CurrentQueuePosition.HasValue
         ? Items.FirstOrDefault(f => f.Id == CurrentQueuePosition)
@@ -12,7 +18,7 @@ public class QueueSnapshot(Guid? currentQueuePosition, List<QueueSnapshotItem> i
 
     public List<QueueSnapshotItem> Items { get; } = items;
 
-    public static QueueSnapshot Empty => new(null, []);
+    public static QueueSnapshot Empty => new(null, null, null, []);
 
     public bool Equals(QueueSnapshot? other)
     {

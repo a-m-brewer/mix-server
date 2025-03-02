@@ -3881,6 +3881,8 @@ export interface IDeleteNodeCommand {
 
 export class QueueSnapshotDto implements IQueueSnapshotDto {
     currentQueuePosition?: string | undefined;
+    previousQueuePosition?: string | undefined;
+    nextQueuePosition?: string | undefined;
     items!: QueueSnapshotItemDto[];
 
     constructor(data?: IQueueSnapshotDto) {
@@ -3898,6 +3900,8 @@ export class QueueSnapshotDto implements IQueueSnapshotDto {
     init(_data?: any) {
         if (_data) {
             this.currentQueuePosition = _data["currentQueuePosition"];
+            this.previousQueuePosition = _data["previousQueuePosition"];
+            this.nextQueuePosition = _data["nextQueuePosition"];
             if (Array.isArray(_data["items"])) {
                 this.items = [] as any;
                 for (let item of _data["items"])
@@ -3916,6 +3920,8 @@ export class QueueSnapshotDto implements IQueueSnapshotDto {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["currentQueuePosition"] = this.currentQueuePosition;
+        data["previousQueuePosition"] = this.previousQueuePosition;
+        data["nextQueuePosition"] = this.nextQueuePosition;
         if (Array.isArray(this.items)) {
             data["items"] = [];
             for (let item of this.items)
@@ -3927,6 +3933,8 @@ export class QueueSnapshotDto implements IQueueSnapshotDto {
 
 export interface IQueueSnapshotDto {
     currentQueuePosition?: string | undefined;
+    previousQueuePosition?: string | undefined;
+    nextQueuePosition?: string | undefined;
     items: QueueSnapshotItemDto[];
 }
 

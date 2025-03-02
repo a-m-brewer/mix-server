@@ -19,6 +19,8 @@ export class QueueConverterService {
     const unsubscribe$ = new Subject<void>();
     return new Queue(
       dto.currentQueuePosition,
+      dto.previousQueuePosition,
+      dto.nextQueuePosition,
       dto.items.map(item => this.fromQueueItemDto(dto.currentQueuePosition, item, unsubscribe$)),
       unsubscribe$
     );

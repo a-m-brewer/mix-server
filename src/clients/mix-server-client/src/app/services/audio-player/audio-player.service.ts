@@ -167,7 +167,7 @@ export class AudioPlayerService {
       .pipe(map(([disabled, queue]) => {
         return disabled ||
           !queue ||
-          !queue.hasValidOffset(-1);
+          !queue.previousQueuePosition;
       }));
   }
 
@@ -177,7 +177,7 @@ export class AudioPlayerService {
       .pipe(map(([disabled, queue]) => {
         return disabled ||
           !queue ||
-          !queue.hasValidOffset(1);
+          !queue.nextQueuePosition;
       }));
   }
 

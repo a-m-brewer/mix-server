@@ -28,7 +28,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
   protected readonly UserItemType = QueueSnapshotItemType.User;
 
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
-  public queue: Queue = new Queue(null, []);
+  public queue: Queue = new Queue(null, null, null, []);
   public editQueueForm: EditQueueFormModel = new EditQueueFormModel();
   public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
 
