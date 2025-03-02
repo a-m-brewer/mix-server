@@ -4468,7 +4468,7 @@ export enum AudioPlayerStateUpdateType {
 }
 
 export class RequestPlaybackCommand implements IRequestPlaybackCommand {
-    deviceId!: string;
+    deviceId?: string | undefined;
 
     constructor(data?: IRequestPlaybackCommand) {
         if (data) {
@@ -4500,7 +4500,7 @@ export class RequestPlaybackCommand implements IRequestPlaybackCommand {
 }
 
 export interface IRequestPlaybackCommand {
-    deviceId: string;
+    deviceId?: string | undefined;
 }
 
 export class SetPlayingCommand implements ISetPlayingCommand {

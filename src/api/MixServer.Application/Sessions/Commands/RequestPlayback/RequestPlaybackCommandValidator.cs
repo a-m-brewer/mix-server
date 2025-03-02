@@ -6,7 +6,9 @@ public class RequestPlaybackCommandValidator : AbstractValidator<RequestPlayback
 {
     public RequestPlaybackCommandValidator()
     {
-        RuleFor(r => r.DeviceId)
-            .NotEmpty();
+        When(w => w.DeviceId.HasValue, () =>
+        {
+            RuleFor(w => w.DeviceId).NotEmpty();
+        });
     }
 }

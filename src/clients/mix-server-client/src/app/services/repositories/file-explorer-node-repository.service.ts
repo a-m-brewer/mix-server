@@ -84,7 +84,7 @@ export class FileExplorerNodeRepositoryService {
   }
 
   public refreshFolder(): void {
-    this._nodeCache.refreshFolder(this._currentFolderAbsolutePath$.value).then();
+    this._nodeCache.refreshFolder(this._currentFolderAbsolutePath$.value)
   }
 
   public setFolderSort(sortMode: FileExplorerFolderSortMode, descending: boolean) {

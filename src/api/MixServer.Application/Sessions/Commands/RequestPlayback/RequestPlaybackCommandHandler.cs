@@ -30,19 +30,21 @@ public class RequestPlaybackCommandHandler(
     public async Task<PlaybackGrantedDto> HandleAsync(RequestPlaybackCommand request)
     {
         var playbackState = playbackTrackingService.GetOrThrow(currentUserRepository.CurrentUserId);
+
+        var requestDeviceId = request.DeviceId ?? currentDeviceRepository.DeviceId;
         
-        var deviceState = deviceTrackingService.GetDeviceStateOrThrow(request.DeviceId);
+        var deviceState = deviceTrackingService.GetDeviceStateOrThrow(requestDeviceId);
         var file = folderCacheService.GetFile(playbackState.AbsolutePath);
 
         canPlayOnDeviceValidator.ValidateCanPlayOrThrow(deviceState, file);
 
         if (!playbackState.HasDevice)
         {
-            logger.LogInformation("Current session is not currently playing on any device. Granting Playback to: {DeviceId}", request.DeviceId);
-            return await UpdatePlaybackDeviceAsync(null, request.DeviceId);
+            logger.LogInformation("Current session is not currently playing on any device. Granting Playback to: {DeviceId}", requestDeviceId);
+            return await UpdatePlaybackDeviceAsync(null, requestDeviceId);
         }
 
-        if (playbackState.DeviceId == request.DeviceId)
+        if (playbackState.DeviceId == requestDeviceId)
         {
             logger.LogInformation("Requesting playback device: {DeviceId} is current playback device. Starting Playback",
                 playbackState.DeviceId);
@@ -57,7 +59,7 @@ public class RequestPlaybackCommandHandler(
 
         if (!connectionManager.DeviceConnected(playbackState.DeviceIdOrThrow))
         {
-            return await UpdatePlaybackDeviceAsync(playbackState.DeviceIdOrThrow, request.DeviceId);
+            return await UpdatePlaybackDeviceAsync(playbackState.DeviceIdOrThrow, requestDeviceId);
         }
 
         playbackTrackingService.SetWaitingForPause(currentUserRepository.CurrentUserId);
@@ -69,7 +71,7 @@ public class RequestPlaybackCommandHandler(
         
         playbackState = playbackTrackingService.GetOrThrow(currentUserRepository.CurrentUserId);
 
-        return await UpdatePlaybackDeviceAsync(playbackState.DeviceIdOrThrow, request.DeviceId);
+        return await UpdatePlaybackDeviceAsync(playbackState.DeviceIdOrThrow, requestDeviceId);
     }
 
     private async Task<PlaybackGrantedDto> UpdatePlaybackDeviceAsync(Guid? currentDeviceId, Guid requestedPlaybackDevice)
@@ -85,7 +87,7 @@ public class RequestPlaybackCommandHandler(
         return await SendPlaybackGrantedAsync(newPlaybackState, false);
     }
 
-    private async Task<PlaybackGrantedDto> SendPlaybackGrantedAsync(IPlaybackState state, bool useDeviceCurrentTime)
+    private async Task<PlaybackGrantedDto> SendPlaybackGrantedAsync(PlaybackState state, bool useDeviceCurrentTime)
     {
         var currentDeviceId = currentDeviceRepository.DeviceId;
         

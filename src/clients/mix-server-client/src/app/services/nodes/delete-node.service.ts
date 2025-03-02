@@ -1,30 +1,19 @@
 import { Injectable } from '@angular/core';
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
-import {DeleteNodeCommand, NodeManagementClient} from "../../generated-clients/mix-server-clients";
-import {ToastService} from "../toasts/toast-service";
-import {LoadingRepositoryService} from "../repositories/loading-repository.service";
-import {firstValueFrom} from "rxjs";
+import {DeleteNodeCommand} from "../../generated-clients/mix-server-clients";
+import {NodeManagementApiService} from "../api.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class DeleteNodeService {
 
-  constructor(private _nodeManagementClient: NodeManagementClient,
-              private _toast: ToastService,
-              private _loading: LoadingRepositoryService) { }
+  constructor(private _nodeManagementClient: NodeManagementApiService) { }
 
   async delete(file: FileExplorerFileNode) {
-    this._loading.startLoading(file.absolutePath);
-
-    try {
-      await firstValueFrom(this._nodeManagementClient.deleteNode(new DeleteNodeCommand({
+    await this._nodeManagementClient.request(file.absolutePath,
+      client => client.deleteNode(new DeleteNodeCommand({
         absolutePath: file.absolutePath
-      })));
-    } catch (e) {
-      this._toast.logServerError(e, 'Failed to delete node');
-    } finally {
-      this._loading.stopLoading(file.absolutePath);
-    }
+      })), `Error deleting ${file.name}`);
   }
 }

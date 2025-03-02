@@ -1,9 +1,6 @@
 import { Injectable } from '@angular/core';
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
-import {RequestTranscodeCommand, TranscodeClient} from "../../generated-clients/mix-server-clients";
-import {ToastService} from "../toasts/toast-service";
-import {LoadingRepositoryService} from "../repositories/loading-repository.service";
-import {firstValueFrom} from "rxjs";
+import {RequestTranscodeCommand} from "../../generated-clients/mix-server-clients";
 import {TranscodeApiService} from "../api.service";
 
 @Injectable({

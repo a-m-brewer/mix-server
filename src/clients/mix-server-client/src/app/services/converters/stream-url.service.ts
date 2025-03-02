@@ -1,8 +1,6 @@
 import {Inject, Injectable} from '@angular/core';
-import {MIXSERVER_BASE_URL, StreamClient} from "../../generated-clients/mix-server-clients";
+import {MIXSERVER_BASE_URL} from "../../generated-clients/mix-server-clients";
 import {AuthenticationService} from "../auth/authentication.service";
-import {firstValueFrom} from "rxjs";
-import {ToastService} from "../toasts/toast-service";
 
 @Injectable({
   providedIn: 'root'

@@ -31,7 +31,7 @@ export class SessionService {
                 absoluteFolderPath: file.parent.absolutePath,
                 fileName: file.name
             })), 'Failed to set current session')
-            .then(dto => this.next(dto));
+            .then(result => result.success(dto => this.next(dto)));
     }
 
     public setQueuePosition(queueItemId: string): void {
@@ -39,32 +39,32 @@ export class SessionService {
             client => client.setQueuePosition(new SetQueuePositionCommand({
                 queueItemId
             })), 'Failed to set queue position')
-            .then(dto => this.next(dto));
+            .then(result => result.success(dto => this.next(dto)));
     }
 
     public clearSession(): void {
         this._sessionClient.request('ClearSession',
             client => client.clearCurrentSession(),
             'Failed to clear current session')
-            .then(dto => this.next(dto));
+            .then(result => result.success(dto => this.next(dto)));
     }
 
     public back(): void {
         this._sessionClient.request('Back',
             client => client.back(), 'Failed to go back')
-            .then(dto => this.next(dto));
+            .then(result => result.success(dto => this.next(dto)));
     }
 
     public skip(): void {
         this._sessionClient.request('Skip',
             client => client.skip(), 'Failed to skip')
-            .then(dto => this.next(dto));
+            .then(result => result.success(dto => this.next(dto)));
     }
 
     public setSessionEnded(): void {
         this._sessionClient.request('SessionEnded',
             client => client.end(), 'Failed to end session')
-            .then(dto => this.next(dto));
+            .then(result => result.success(dto => this.next(dto)));
     }
 
     private next(dto: CurrentSessionUpdatedDto): void {

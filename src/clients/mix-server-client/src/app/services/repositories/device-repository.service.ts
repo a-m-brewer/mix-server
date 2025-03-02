@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
-import {BehaviorSubject, filter, firstValueFrom, map, Observable} from "rxjs";
+import {BehaviorSubject, map, Observable} from "rxjs";
 import {Device} from "./models/device";
 import {AuthenticationService} from "../auth/authentication.service";
-import {DeviceClient, SetDeviceInteractionCommand, UserClient} from "../../generated-clients/mix-server-clients";
-import {ToastService} from "../toasts/toast-service";
+import {SetDeviceInteractionCommand} from "../../generated-clients/mix-server-clients";
 import {DeviceConverterService} from "../converters/device-converter.service";
 import {DevicesSignalrClientService} from "../signalr/devices-signalr-client.service";
 import {cloneDeep} from "lodash";
@@ -23,10 +22,10 @@ export class DeviceRepositoryService {
       .subscribe(connected => {
         if (connected) {
           this._deviceClient.request('GetDevices', c => c.devices(), 'Failed to fetch user devices')
-            .then(dto => {
+            .then(result => result.success(dto => {
               const devices = _deviceConverter.fromDtoList(dto.devices);
               this.next(devices);
-            });
+            }));
         }
       });
 

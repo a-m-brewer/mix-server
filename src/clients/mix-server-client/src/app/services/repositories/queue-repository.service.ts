@@ -1,24 +1,19 @@
 import {Injectable} from '@angular/core';
 import {
   AddToQueueCommand,
-  ProblemDetails,
-  QueueClient, QueueSnapshotDto,
+  QueueSnapshotDto,
   RemoveFromQueueCommand
 } from "../../generated-clients/mix-server-clients";
-import {BehaviorSubject, firstValueFrom, map, Observable, Subject} from "rxjs";
+import {BehaviorSubject, map, Observable} from "rxjs";
 import {Queue} from "./models/queue";
 import {QueueConverterService} from "../converters/queue-converter.service";
-import {ToastService} from "../toasts/toast-service";
 import {QueueSignalrClientService} from "../signalr/queue-signalr-client.service";
 import {AuthenticationService} from "../auth/authentication.service";
 import {QueueItem} from "./models/queue-item";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {QueueEditFormRepositoryService} from "./queue-edit-form-repository.service";
-import {LoadingRepositoryService} from "./loading-repository.service";
-import {PlaybackDeviceService} from "../audio-player/playback-device.service";
-import {cloneDeep} from "lodash";
-import {Device} from "./models/device";
 import {NodeCacheService} from "../nodes/node-cache.service";
+import {QueueApiService} from "../api.service";
 
 @Injectable({
   providedIn: 'root'
@@ -27,28 +22,17 @@ export class QueueRepositoryService {
   private _queueBehaviourSubject$ = new BehaviorSubject<Queue>(new Queue(null, null, null, []));
 
 
-  constructor(private _loadingRepository: LoadingRepositoryService,
-              private _nodeCache: NodeCacheService,
+  constructor(private _nodeCache: NodeCacheService,
               private _queueConverter: QueueConverterService,
               private _queueSignalRClient: QueueSignalrClientService,
-              private _queueClient: QueueClient,
-              private _toastService: ToastService,
+              private _queueClient: QueueApiService,
               private _authenticationService: AuthenticationService,
               private _queueEditFormRepository: QueueEditFormRepositoryService) {
     this._authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
-          this._loadingRepository.startLoadingAction('GetQueue');
-          firstValueFrom(this._queueClient.queue())
-            .then(dto => {
-              this.nextQueue(dto);
-            })
-            .catch(err => {
-              if ((err as ProblemDetails)?.status !== 404) {
-                this._toastService.logServerError(err, 'Failed to fetch current session');
-              }
-            })
-            .finally(() => this._loadingRepository.stopLoadingAction('GetQueue'));
+          this._queueClient.request('GetQueue', client => client.queue(), 'Failed to get queue', [404])
+            .then(result => result.success(dto => this.nextQueue(dto)))
         }
       });
 
@@ -77,7 +61,7 @@ export class QueueRepositoryService {
     return this.getPreviousQueueItem(this.queue);
   }
 
-  private getPreviousQueueItem(queue: Queue) : QueueItem | null | undefined {
+  private getPreviousQueueItem(queue: Queue): QueueItem | null | undefined {
     const currentItemIndex = queue.items.findIndex(f => f.id === queue.currentQueuePosition);
 
     return currentItemIndex == -1 || currentItemIndex <= 0
@@ -94,7 +78,7 @@ export class QueueRepositoryService {
     return this.getNextQueueItem(this.queue);
   }
 
-  private getNextQueueItem(queue: Queue) : QueueItem | null | undefined {
+  private getNextQueueItem(queue: Queue): QueueItem | null | undefined {
     const currentItemIndex = queue.items.findIndex(f => f.id === queue.currentQueuePosition);
 
     if (currentItemIndex == -1) {
@@ -110,14 +94,12 @@ export class QueueRepositoryService {
   }
 
   public addToQueue(file: FileExplorerFileNode): void {
-    this._loadingRepository.startLoading(file.absolutePath);
-    firstValueFrom(this._queueClient.addToQueue(new AddToQueueCommand({
-      absoluteFolderPath: file.parent.absolutePath ?? '',
-      fileName: file.name
-    })))
-      .then(dto => this.nextQueue(dto))
-      .catch(err => this._toastService.logServerError(err, 'Failed to add item to queue'))
-      .finally(() => this._loadingRepository.stopLoading(file.absolutePath));
+    this._queueClient.request(file.absolutePath,
+      client => client.addToQueue(new AddToQueueCommand({
+        absoluteFolderPath: file.parent.absolutePath ?? '',
+        fileName: file.name
+      })), 'Failed to add item to queue')
+      .then(result => result.success(dto => this.nextQueue(dto)));
   }
 
   public removeFromQueue(item: QueueItem | null | undefined): void {
@@ -125,11 +107,8 @@ export class QueueRepositoryService {
       return;
     }
 
-    this._loadingRepository.startLoading(item.id);
-    firstValueFrom(this._queueClient.removeFromQueue(item.id))
-      .then(dto => this.nextQueue(dto))
-      .catch(err => this._toastService.logServerError(err, 'Failed to remove item from queue'))
-      .finally(() => this._loadingRepository.stopLoading(item.id));
+    this._queueClient.request(item.id, client => client.removeFromQueue(item.id), 'Failed to remove item from queue')
+      .then(result => result.success(dto => this.nextQueue(dto)));
   }
 
   public removeRangeFromQueue(queueItems: Array<string>): void {
@@ -137,15 +116,12 @@ export class QueueRepositoryService {
       return;
     }
 
-    this._loadingRepository.startLoadingIds(queueItems);
-
-    firstValueFrom(this._queueClient.removeFromQueue2(new RemoveFromQueueCommand({queueItems})))
-      .then(value => {
-        this.nextQueue(value);
+    this._queueClient.request(queueItems,
+      client => client.removeFromQueue2(new RemoveFromQueueCommand({queueItems})), 'Failed to remove items from queue')
+      .then(result => result.success(dto => {
+        this.nextQueue(dto);
         this._queueEditFormRepository.updateEditForm(f => f.selectedItems = {});
-      })
-      .catch(err => this._toastService.logServerError(err, 'Failed to remove items from queue'))
-      .finally(() => this._loadingRepository.stopLoadingItems(queueItems));
+      }));
   }
 
   public setNextQueue(queue: Queue) {
