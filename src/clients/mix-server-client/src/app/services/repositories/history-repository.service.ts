@@ -1,15 +1,11 @@
 import { Injectable } from '@angular/core';
 import {PlaybackSession} from "./models/playback-session";
-import {BehaviorSubject, firstValueFrom, Observable} from "rxjs";
-import {GetUsersSessionsResponse, SessionClient} from "../../generated-clients/mix-server-clients";
+import {BehaviorSubject, Observable} from "rxjs";
 import {AuthenticationService} from "../auth/authentication.service";
-import {LoadingRepositoryService} from "./loading-repository.service";
-import {ToastService} from "../toasts/toast-service";
 import {PlaybackSessionConverterService} from "../converters/playback-session-converter.service";
 import {cloneDeep} from "lodash";
-import {PlaybackDeviceService} from "../audio-player/playback-device.service";
-import {Device} from "./models/device";
 import {NodeCacheService} from "../nodes/node-cache.service";
+import {SessionApiService} from "../api.service";
 
 @Injectable({
   providedIn: 'root'
@@ -19,11 +15,9 @@ export class HistoryRepositoryService {
   private _moreItemsAvailable$ = new BehaviorSubject<boolean>(true);
 
   constructor(authenticationService: AuthenticationService,
-              private _loadingRepository: LoadingRepositoryService,
               private _nodeCache: NodeCacheService,
               private _playbackSessionConverter: PlaybackSessionConverterService,
-              private _sessionClient: SessionClient,
-              private _toastService: ToastService) {
+              private _sessionClient: SessionApiService) {
     authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
@@ -48,14 +42,16 @@ export class HistoryRepositoryService {
     const previousSessionHistory = cloneDeep(this._sessions$.value);
 
     const loadingId = `LoadMoreHistoryItems-${previousSessionHistory.length}`;
-    this._loadingRepository.startLoading(loadingId);
-
     const pageSize = 15;
-    const history = await firstValueFrom(this._sessionClient.history(previousSessionHistory.length, pageSize))
-      .catch(err => {
-        this._toastService.logServerError(err, 'Failed to fetch history');
-        return new GetUsersSessionsResponse();
-      });
+    const result = await this._sessionClient.request(
+      loadingId,
+        c => c.history(previousSessionHistory.length, pageSize),
+      'Failed to fetch history');
+
+    const history = result.result;
+    if (!history) {
+      return;
+    }
 
     this._moreItemsAvailable$.next(history.sessions.length === pageSize);
 
@@ -66,8 +62,6 @@ export class HistoryRepositoryService {
       ];
       this.next(nextSessionHistory);
     }
-
-    this._loadingRepository.stopLoading(loadingId);
   }
 
   private next(sessions: PlaybackSession[]) {

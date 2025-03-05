@@ -4,7 +4,6 @@ import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-e
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {
   FolderSortMode,
-  NodeClient,
   RefreshFolderCommand,
   SetFolderSortCommand
 } from "../../generated-clients/mix-server-clients";
@@ -19,8 +18,8 @@ import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/fi
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
 import {PlaybackDeviceRepositoryService} from "../repositories/playback-device-repository.service";
 import {MediaInfoUpdatedEventItem} from "../signalr/models/media-info-event";
-import {MediaInfo} from "../../main-content/file-explorer/models/media-info";
 import {NodePath} from "../repositories/models/node-path";
+import {NodeApiService} from "../api.service";
 
 @Injectable({
   providedIn: 'root'
@@ -31,9 +30,8 @@ export class NodeCacheService {
   constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
               private _folderSignalRClient: FolderSignalrClientService,
               private _loadingRepository: LoadingRepositoryService,
-              private _nodeClient: NodeClient,
-              private _playbackDeviceService: PlaybackDeviceRepositoryService,
-              private _toastService: ToastService) {
+              private _nodeClient: NodeApiService,
+              private _playbackDeviceService: PlaybackDeviceRepositoryService) {
     this._playbackDeviceService.requestPlaybackDevice$
       .subscribe(device => {
         const folders = cloneDeep(this._folders$.value);
@@ -192,56 +190,38 @@ export class NodeCacheService {
       return absolutePath;
     }
 
-    this._loadingRepository.startLoading(loadingKey);
+    const result = await this._nodeClient.request(loadingKey,
+      client => client.getNode(absolutePath), 'Error loading directory');
 
-    try {
-      const folderResponse = await firstValueFrom(this._nodeClient.getNode(absolutePath))
-      const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(folderResponse);
+    if (result.result) {
+      const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(result.result);
 
       this.updateFolder(folder);
 
       return folder.node.absolutePath;
-    } catch (e) {
-      this._toastService.logServerError(e);
-
-      return "";
-    } finally {
-      this._loadingRepository.stopLoading(loadingKey);
     }
+
+    return "";
   }
 
-  public async refreshFolder(absolutePath: string): Promise<void> {
-    this._loadingRepository.startLoading(absolutePath);
-
-    try {
-      const response = await firstValueFrom(this._nodeClient.refreshFolder(new RefreshFolderCommand({
+  public refreshFolder(absolutePath: string): void {
+    this._nodeClient.request(absolutePath,
+      client => client.refreshFolder(new RefreshFolderCommand({
         absolutePath: absolutePath
-      })));
-
-      const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(response);
-
-      this.updateFolder(folder);
-    } catch (e) {
-      this._toastService.logServerError(e, 'Failed to refresh folder');
-    } finally {
-      this._loadingRepository.stopLoading(absolutePath);
-    }
+      })), 'Failed to refresh folder')
+      .then(result => result.success(dto => {
+        const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(dto);
+        this.updateFolder(folder);
+      }))
   }
 
   public async setFolderSort(absolutePath: string, sortMode: FileExplorerFolderSortMode, descending: boolean): Promise<void> {
-    this._loadingRepository.startLoading(absolutePath)
-
-    try {
-      await firstValueFrom(this._nodeClient.setFolderSortMode(new SetFolderSortCommand({
+    await this._nodeClient.request(absolutePath,
+      client => client.setFolderSortMode(new SetFolderSortCommand({
         absoluteFolderPath: absolutePath,
         sortMode: this.toFolderSortMode(sortMode),
         descending: descending
-      })));
-    } catch (e) {
-      this._toastService.logServerError(e, 'Failed to update folder sort');
-    } finally {
-      this._loadingRepository.stopLoading(absolutePath);
-    }
+      })), 'Failed to update folder sort');
   }
 
   private copyOrCreateParentFromNode(node: FileExplorerNode) {

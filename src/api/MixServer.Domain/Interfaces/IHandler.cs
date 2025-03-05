@@ -1,10 +1,10 @@
 ﻿namespace MixServer.Domain.Interfaces;
 
-public interface IHandler
-{
-}
+public interface IHandler;
 
-public interface ICommandHandler<in TRequest, TResponse> : IHandler
+public interface ICommandHandler : IHandler;
+
+public interface ICommandHandler<in TRequest, TResponse> : ICommandHandler
 {
     Task<TResponse> HandleAsync(TRequest request);
 }

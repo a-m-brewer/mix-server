@@ -4,11 +4,10 @@ import {AuthenticationService} from "../auth/authentication.service";
 import {BehaviorSubject, combineLatestWith, Observable} from "rxjs";
 import {User} from "./models/user";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
-import {UserClient} from "../../generated-clients/mix-server-clients";
 import {UserConverterService} from "../converters/user-converter.service";
-import {ToastService} from "../toasts/toast-service";
 import {Role} from "../../generated-clients/mix-server-clients";
 import {UserSignalrClientService} from "../signalr/user-signalr-client.service";
+import {UserApiService} from "../api.service";
 
 @Injectable({
   providedIn: 'root'
@@ -19,26 +18,22 @@ export class UserRepositoryService {
   constructor(
     authService: AuthenticationService,
     roleRepository: RoleRepositoryService,
-    toastService: ToastService,
     userConverter: UserConverterService,
-    userClient: UserClient,
+    userClient: UserApiService,
     userSignalrClient: UserSignalrClientService) {
 
     authService.serverConnectionStatus$
       .pipe(combineLatestWith(roleRepository.inRole$(Role.Administrator)))
       .subscribe(([serverConnectionState, isAdmin]) => {
         if (serverConnectionState === ServerConnectionState.Connected && isAdmin) {
-          userClient.getAll()
-            .subscribe({
-              next: response => {
+          userClient.request('GetAllUsers', client => client.getAll(), 'Failed to fetch users')
+            .then(result =>
+              result.success(response => {
                 const users = userConverter.fromGetAllResponse(response)
                 this._usersBehaviourSubject$.next(users);
-              },
-              error: err => {
-                toastService.logServerError(err, 'Failed to fetch users')
+              }).error(() => {
                 this._usersBehaviourSubject$.next([]);
-              }
-            });
+              }));
         }
         else {
           this._usersBehaviourSubject$.next([]);

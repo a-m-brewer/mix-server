@@ -1,46 +1,30 @@
 import {Injectable} from '@angular/core';
-import {UserClient} from "../../generated-clients/mix-server-clients";
-import {firstValueFrom} from "rxjs";
 import {AddUserCommand, Role, UpdateUserCommand} from "../../generated-clients/mix-server-clients";
-import {ToastService} from "../toasts/toast-service";
+import {UserApiService} from "../api.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
 
-  constructor(private _toastService: ToastService,
-              private _userClient: UserClient) {
+  constructor(private _userClient: UserApiService) {
   }
 
   public async addUser(username: string, roles: Role[]): Promise<string | null> {
-    const result = await firstValueFrom(this._userClient.addUser(new AddUserCommand({
-      username,
-      roles
-    })))
-      .catch(err => {
-        this._toastService.logServerError(err, 'Failed to add user');
-        return null;
-      });
+    const result = await this._userClient.request('AddUser',
+      client => client.addUser(new AddUserCommand({
+        username,
+        roles
+      })), 'Failed to add user');
 
-    if (!result) {
-      return null;
-    }
-
-    return result.temporaryPassword;
+    return result.result?.temporaryPassword ?? null;
   }
 
   public async deleteUser(userId: string): Promise<void> {
-    await firstValueFrom(this._userClient.deleteUser(userId))
-      .catch(err => {
-        this._toastService.logServerError(err, 'Failed to delete user');
-      });
+    await this._userClient.request('DeleteUser', client => client.deleteUser(userId), 'Failed to delete user');
   }
 
   public async updateUser(id: string, roles: Role[]): Promise<void> {
-    await firstValueFrom(this._userClient.updateUser(id, new UpdateUserCommand({ roles })))
-      .catch(err => {
-        this._toastService.logServerError(err, 'Failed to update user roles');
-      });
+    await this._userClient.request('UpdateUser', client => client.updateUser(id, new UpdateUserCommand({ roles })), 'Failed to update user');
   }
 }

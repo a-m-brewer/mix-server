@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
-import {BehaviorSubject, firstValueFrom, Subscription} from "rxjs";
-import {CopyNodeCommand, NodeManagementClient} from "../../generated-clients/mix-server-clients";
+import {BehaviorSubject, Subscription} from "rxjs";
+import {CopyNodeCommand} from "../../generated-clients/mix-server-clients";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {ToastService} from "../toasts/toast-service";
+import {NodeManagementApiService} from "../api.service";
 
 interface CopyNodeForm {
   sourceNode: FormControl<FileExplorerFileNode | null>;
@@ -23,9 +24,7 @@ export class CopyNodeService {
   private _form: FormGroup<CopyNodeForm>;
 
   constructor(private _formBuilder: FormBuilder,
-              private _loading: LoadingRepositoryService,
-              private _toast: ToastService,
-              private _nodeManagementClient: NodeManagementClient) {
+              private _nodeManagementClient: NodeManagementApiService) {
     this._form = this.createForm();
   }
 
@@ -61,21 +60,16 @@ export class CopyNodeService {
       return;
     }
 
-    this._loading.startLoading(sourceNode.absolutePath)
-    try {
-      await firstValueFrom(this._nodeManagementClient.copyNode(new CopyNodeCommand({
+    await this._nodeManagementClient.request(sourceNode.absolutePath,
+      client => client.copyNode(new CopyNodeCommand({
         sourceAbsolutePath: sourceNode.absolutePath,
         destinationFolder: destinationNode.parent.absolutePath,
         destinationName: destinationNode.name,
         overwrite,
         move: move ?? false
-      })));
-    } catch (err) {
-      this._toast.logServerError(err, 'Failed to copy node');
-    } finally {
-      this._loading.stopLoading(sourceNode.absolutePath);
-      this._form = this.createForm();
-    }
+      })), 'Failed to copy node');
+
+    this._form = this.createForm();
   }
 
   private createForm(): FormGroup<CopyNodeForm> {

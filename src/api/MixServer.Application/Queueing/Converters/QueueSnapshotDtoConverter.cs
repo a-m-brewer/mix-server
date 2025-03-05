@@ -18,6 +18,8 @@ public class QueueSnapshotDtoConverter(
         return new QueueSnapshotDto
         {
             CurrentQueuePosition = value.CurrentQueuePosition,
+            PreviousQueuePosition = value.PreviousQueuePosition,
+            NextQueuePosition = value.NextQueuePosition,
             Items = value.Items.Select(Convert).ToList()
         };
     }

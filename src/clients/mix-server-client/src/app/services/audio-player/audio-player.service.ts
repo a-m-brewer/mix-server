@@ -71,7 +71,7 @@ export class AudioPlayerService {
       .currentSession$
       .subscribe(session => {
         if (session) {
-          this.setCurrentSession(session).then();
+          this.setCurrentSession(session);
         } else {
           this.clearSession();
         }
@@ -98,7 +98,7 @@ export class AudioPlayerService {
     this._playbackSessionRepository
       .currentState$
       .subscribe(state => {
-        const delta =  this.currentTime - state.currentTime;
+        const delta = this.currentTime - state.currentTime;
         if (this.isCurrentPlaybackDevice && delta === 0) {
           return;
         }
@@ -167,7 +167,7 @@ export class AudioPlayerService {
       .pipe(map(([disabled, queue]) => {
         return disabled ||
           !queue ||
-          !queue.hasValidOffset(-1);
+          !queue.previousQueuePosition;
       }));
   }
 
@@ -177,7 +177,7 @@ export class AudioPlayerService {
       .pipe(map(([disabled, queue]) => {
         return disabled ||
           !queue ||
-          !queue.hasValidOffset(1);
+          !queue.nextQueuePosition;
       }));
   }
 
@@ -397,13 +397,13 @@ export class AudioPlayerService {
     return this._audioElementRepository.audio;
   }
 
-  private async setCurrentSession(session: PlaybackSession): Promise<void> {
+  private setCurrentSession(session: PlaybackSession): void {
     const serverDuration = session.currentNode.metadata.mediaInfo
       ? timespanToTotalSeconds(session.currentNode.metadata.mediaInfo.duration)
       : 0;
     this._serverDurationBehaviourSubject$.next(serverDuration);
 
-    const url = await this._streamUrlService.getStreamUrl(session.id);
+    const url = this._streamUrlService.getStreamUrl(session.id, session.streamKey.key, session.streamKey.expires);
 
     if (!url) {
       return;
@@ -419,7 +419,7 @@ export class AudioPlayerService {
     this._audioPlayerState.node = session.currentNode;
 
     if (session.deviceId === this._authenticationService.deviceId) {
-      await this.play();
+      this.play().then();
     }
   }
 
@@ -483,8 +483,7 @@ export class AudioPlayerService {
 
     if (playbackGranted.granted) {
       this.play().then();
-    }
-    else {
+    } else {
       this.internalPause();
       this.currentTime = playbackGranted.currentTime;
     }

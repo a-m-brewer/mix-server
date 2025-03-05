@@ -1,6 +1,6 @@
 import {FileExplorerFileNode} from "../../../main-content/file-explorer/models/file-explorer-file-node";
 import {PlaybackState} from "./playback-state";
-import {ImportTracklistDto} from "../../../generated-clients/mix-server-clients";
+import {ImportTracklistDto, StreamKeyDto} from "../../../generated-clients/mix-server-clients";
 import {TracklistCueForm, TracklistForm} from "../../tracklist/models/tracklist-form.interface";
 import {FormArray, FormGroup} from "@angular/forms";
 import {Observable, Subject, takeUntil} from "rxjs";
@@ -9,9 +9,8 @@ export interface IPlaybackSession {
   id: string;
   currentNode: FileExplorerFileNode,
   currentNode$: Observable<FileExplorerFileNode>
-  lastPlayed: Date,
   deviceId: string | null | undefined,
-  autoPlay: boolean
+  streamKey: StreamKeyDto,
 }
 
 export class PlaybackSession implements IPlaybackSession {
@@ -20,9 +19,8 @@ export class PlaybackSession implements IPlaybackSession {
   constructor(public id: string,
               initialNode: FileExplorerFileNode,
               public currentNode$: Observable<FileExplorerFileNode>,
-              public lastPlayed: Date,
               public state: PlaybackState,
-              public autoPlay: boolean) {
+              public streamKey: StreamKeyDto) {
     this.currentNode = initialNode;
     currentNode$.pipe(takeUntil(this._unsubscribe$)).subscribe(node => {
       this.currentNode = node;
@@ -42,9 +40,11 @@ export class PlaybackSession implements IPlaybackSession {
       session.id,
       session.currentNode,
       session.currentNode$,
-      session.lastPlayed,
       state,
-      session.autoPlay);
+      new StreamKeyDto({
+        key: session.streamKey.key,
+        expires: session.streamKey.expires
+      }));
   }
 
   public get deviceId(): string | null | undefined {

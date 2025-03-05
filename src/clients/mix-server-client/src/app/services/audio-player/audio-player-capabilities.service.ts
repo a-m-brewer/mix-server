@@ -2,14 +2,15 @@ import { Injectable } from '@angular/core';
 import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-playback-session-repository.service";
 import {QueueRepositoryService} from "../repositories/queue-repository.service";
 import {AudioElementRepositoryService} from "./audio-element-repository.service";
-import {distinctUntilChanged, firstValueFrom, Subject} from "rxjs";
+import {distinctUntilChanged, Subject} from "rxjs";
 import {HistoryRepositoryService} from "../repositories/history-repository.service";
-import {DeviceClient, UpdateDevicePlaybackCapabilitiesCommand} from "../../generated-clients/mix-server-clients";
+import {UpdateDevicePlaybackCapabilitiesCommand} from "../../generated-clients/mix-server-clients";
 import {ToastService} from "../toasts/toast-service";
 import {FileExplorerNodeRepositoryService} from "../repositories/file-explorer-node-repository.service";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {AuthenticationService} from "../auth/authentication.service";
 import sameCapabilities from "./same-capabilities";
+import {DeviceApiService} from "../api.service";
 
 @Injectable({
   providedIn: 'root'
@@ -20,7 +21,7 @@ export class AudioPlayerCapabilitiesService {
 
   constructor(private authenticationService: AuthenticationService,
               private _audioElementRepository: AudioElementRepositoryService,
-              private _devicesClient: DeviceClient,
+              private _devicesClient: DeviceApiService,
               private _fileExplorer: FileExplorerNodeRepositoryService,
               private _historyRepository: HistoryRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
@@ -32,14 +33,11 @@ export class AudioPlayerCapabilitiesService {
     this._requests$
       .pipe(distinctUntilChanged((prev, next) => sameCapabilities(prev, next)))
       .subscribe(capabilities => {
-        firstValueFrom(this._devicesClient.updateDeviceCapabilities(new UpdateDevicePlaybackCapabilitiesCommand({
-          capabilities
-        })))
-          .catch(
-            e => this._toastService.logServerError(
-              e, 'Failed to update device capabilities'
-            )
-          );
+        this._devicesClient.request('UpdateDevicePlaybackCapabilities',
+          client => client.updateDeviceCapabilities(new UpdateDevicePlaybackCapabilitiesCommand({
+            capabilities
+          })), 'Error updating device capabilities')
+          .then();
       })
 
     this.authenticationService.connected$

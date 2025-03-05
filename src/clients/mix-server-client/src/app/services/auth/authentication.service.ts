@@ -1,8 +1,8 @@
 import {Injectable} from '@angular/core';
 import {Router} from "@angular/router";
 import {PageRoutes} from "../../page-routes.enum";
-import {ApiException, UserClient} from "../../generated-clients/mix-server-clients";
-import {BehaviorSubject, distinctUntilChanged, firstValueFrom, map, Observable} from "rxjs";
+import {ApiException} from "../../generated-clients/mix-server-clients";
+import {BehaviorSubject, distinctUntilChanged, map, Observable} from "rxjs";
 import {JwtToken} from "./models/jwt-token";
 import {
   LoginCommandResponse,
@@ -15,6 +15,7 @@ import {ToastService} from "../toasts/toast-service";
 import {ServerConnectionState} from "./enums/ServerConnectionState";
 import {RoleRepositoryService} from "../repositories/role-repository.service";
 import {ServerConnectionStateEvent} from "./models/server-connection-state-event";
+import {UserApiService} from "../api.service";
 
 @Injectable({
   providedIn: 'root'
@@ -31,7 +32,7 @@ export class AuthenticationService {
   constructor(private rolesRepository: RoleRepositoryService,
               private _router: Router,
               private _toastService: ToastService,
-              private _userClient: UserClient) {
+              private _userClient: UserApiService) {
     this.unauthorized$.subscribe(unauthorized => {
       if (unauthorized) {
         this._router.navigate([PageRoutes.Login])
@@ -103,13 +104,14 @@ export class AuthenticationService {
   public async login(username: string, password: string): Promise<void> {
     const deviceId = this.deviceId ?? undefined;
 
-    const response = await firstValueFrom(this._userClient.login(new LoginUserCommand({
-      username,
-      password,
-      deviceId
-    }))).catch(err => {
-      return this.handleAuthError(err);
-    });
+    const result = await this._userClient.request('Login',
+      client => client.login(new LoginUserCommand({
+        username,
+        password,
+        deviceId
+      })), 'Failed to login');
+
+    const response = result.result ?? this.handleAuthError(result.err);
 
     if (response instanceof LoginCommandResponse) {
       this.accessToken = new JwtToken(response.accessToken);
@@ -140,17 +142,14 @@ export class AuthenticationService {
   public async resetPassword(currentPassword: string,
                              newPassword: string,
                              newPasswordConfirmation: string): Promise<boolean> {
-    const success = await firstValueFrom(this._userClient.resetPassword(new ResetPasswordCommand({
-      currentPassword,
-      newPassword,
-      newPasswordConfirmation
-    })))
-      .then(() => {
-        return true;
-      })
-      .catch(() => {
-        return false;
-      });
+    const result = await this._userClient.request('ResetPassword',
+      client => client.resetPassword(new ResetPasswordCommand({
+        currentPassword,
+        newPassword,
+        newPasswordConfirmation
+      })), 'Failed to reset password');
+
+    const success = !result.err
 
     if (success) {
       this.setServerConnectionStatus(ServerConnectionState.Connected, 'Password Reset')
@@ -239,17 +238,21 @@ export class AuthenticationService {
   }
 
   private async performTokenRefresh(): Promise<ServerConnectionStateEvent> {
-    if (!this.accessToken || !this.refreshToken || !this.deviceId) {
+    const accessToken = this.accessToken;
+    const refreshToken = this.refreshToken;
+    const deviceId = this.deviceId;
+    if (!accessToken || !refreshToken|| !deviceId) {
       return new ServerConnectionStateEvent(ServerConnectionState.Unauthorized, 'No Access Token, Refresh Token, or Device Id');
     }
 
-    const refreshResponse = await firstValueFrom(this._userClient.refresh(new RefreshUserCommand({
-      accessToken: this.accessToken.value,
-      refreshToken: this.refreshToken,
-      deviceId: this.deviceId,
-    }))).catch(err => {
-      return this.handleAuthError(err);
-    });
+    const result = await this._userClient.request('RefreshUser',
+     client => client.refresh(new RefreshUserCommand({
+       accessToken: accessToken.value,
+       refreshToken: refreshToken,
+       deviceId: deviceId,
+     })));
+
+    const refreshResponse = result.result ?? this.handleAuthError(result.err);
 
     if (refreshResponse instanceof RefreshUserResponse) {
       const stringAccessToken = refreshResponse?.accessToken;
