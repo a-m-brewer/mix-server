@@ -28,7 +28,7 @@ FROM build AS publish
 RUN dotnet publish "src/api/MixServer/MixServer.csproj" -c Release -o /app/publish -a "$TARGETARCH"
 
 # Use official node image as the base image
-FROM node:20.11.1 as build_client
+FROM node:20.18.3 as build_client
 
 # Set the working directory
 WORKDIR /usr/local/app
@@ -38,7 +38,7 @@ COPY src/clients/mix-server-client/ /usr/local/app/
 
 # Install all the dependencies
 RUN npm install -g @angular/cli
-RUN npm install
+RUN npm ci
 
 # Generate the build of the application
 RUN npx ng build --configuration production
