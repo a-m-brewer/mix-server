@@ -30,9 +30,19 @@ internal class FileSystemScannerService(FileSystemIndexerChannelStore channelSto
             return;
         }
         
+        if (children.Count == 0)
+        {
+            return;
+        }
+        
         await channelStore.FileSystemInfoChannel.Writer.WriteAsync((root, children), cancellationToken).ConfigureAwait(false);
         
         var folders = children.OfType<DirectoryInfo>().ToList();
+        
+        if (folders.Count == 0)
+        {
+            return;
+        }
 
         var actionBlock = new ActionBlock<int>(async i =>
             {
