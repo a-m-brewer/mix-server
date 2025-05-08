@@ -4,6 +4,7 @@ using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
+using MixServer.Domain.FileExplorer.Services.Indexing;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Services;
@@ -34,6 +35,7 @@ public static class ServiceCollectionExtensions
 
         services.AddDomainInterfaces();
         services.AddDomainUtilities();
+        services.AddDomainFileSystemIndexingServices();
         
         return services;
     }
@@ -85,6 +87,14 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IDateTimeProvider, DateTimeProvider>();
         services.AddTransient<IReadWriteLock, ReadWriteLock>();
 
+        return services;
+    }
+
+    private static IServiceCollection AddDomainFileSystemIndexingServices(this IServiceCollection services)
+    {
+        services.AddTransient<IFileSystemScannerService, FileSystemScannerService>();
+        services.AddSingleton<FileSystemIndexerChannelStore>();
+        
         return services;
     }
 }

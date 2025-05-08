@@ -149,6 +149,8 @@ builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
 
 builder.Services.AddHostedService<MediaInfoService>();
+builder.Services.AddHostedService<FieSystemIndexerPersistenceBackgroundService>();
+builder.Services.AddHostedService<FileSystemIndexerBackgroundService>();
 
 // API Controllers
 builder.Services.AddControllers()
