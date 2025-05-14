@@ -1,9 +1,16 @@
 using System.Threading.Channels;
 
-namespace MixServer.Domain.FileExplorer.Services.Indexing;
+namespace MixServer.FolderIndexer.Persistence.InMemory;
 
-public class FileSystemIndexerChannelStore
+internal class FileSystemIndexerChannelStore
 {
+    public Channel<string> ScannerChannel { get; } = Channel.CreateBounded<string>(new BoundedChannelOptions(1)
+    {
+        SingleReader = false,
+        SingleWriter = false,
+        AllowSynchronousContinuations = false
+    });
+    
     public Channel<(DirectoryInfo Parent, ICollection<FileSystemInfo> Children)> FileSystemInfoChannel { get; } = Channel.CreateUnbounded<(DirectoryInfo Parent, ICollection<FileSystemInfo> Children)>(new UnboundedChannelOptions
     {
         SingleReader = false,

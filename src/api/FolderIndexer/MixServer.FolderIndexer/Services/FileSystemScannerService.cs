@@ -1,8 +1,9 @@
 using System.Threading.Tasks.Dataflow;
+using MixServer.FolderIndexer.Persistence.InMemory;
 
-namespace MixServer.Domain.FileExplorer.Services.Indexing;
+namespace MixServer.FolderIndexer.Services;
 
-public interface IFileSystemScannerService
+internal interface IFileSystemScannerService
 {
     Task ScanAsync(string path, CancellationToken cancellationToken);
 }

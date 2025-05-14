@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <ItemGroup>
+        <ProjectReference Include="..\FolderIndexer\MixServer.FolderIndexer\MixServer.FolderIndexer.csproj" />
         <ProjectReference Include="..\MixServer.Application\MixServer.Application.csproj"/>
     </ItemGroup>
 

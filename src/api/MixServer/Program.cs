@@ -25,6 +25,8 @@ using MixServer.Domain.Settings;
 using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Users.Enums;
 using MixServer.Domain.Users.Services;
+using MixServer.FolderIndexer.Extensions;
+using MixServer.FolderIndexer.HostedServices;
 using MixServer.Infrastructure;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.EF.Entities;
@@ -149,8 +151,7 @@ builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
 
 builder.Services.AddHostedService<MediaInfoService>();
-builder.Services.AddHostedService<FieSystemIndexerPersistenceBackgroundService>();
-builder.Services.AddHostedService<FileSystemIndexerBackgroundService>();
+builder.Services.AddHostedService<MixServerFileIndexerStartupService>();
 
 // API Controllers
 builder.Services.AddControllers()
@@ -162,6 +163,8 @@ builder.Services.AddResponseCompression(options =>
     options.MimeTypes =
         ResponseCompressionDefaults.MimeTypes.Concat(["text/plain", "application/json" ]);
 });
+
+builder.Services.AddFolderIndexer();
 
 // Configuration
 const string environmentVariablePrefix = "MIX_SERVER_";

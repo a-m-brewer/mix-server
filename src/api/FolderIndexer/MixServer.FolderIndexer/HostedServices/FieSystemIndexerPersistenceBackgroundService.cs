@@ -1,8 +1,10 @@
-using MixServer.Domain.FileExplorer.Services.Indexing;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using MixServer.FolderIndexer.Persistence.InMemory;
 
-namespace MixServer.Services;
+namespace MixServer.FolderIndexer.HostedServices;
 
-public class FieSystemIndexerPersistenceBackgroundService(
+internal class FieSystemIndexerPersistenceBackgroundService(
     FileSystemIndexerChannelStore channelStore,
     ILogger<FieSystemIndexerPersistenceBackgroundService> logger) : BackgroundService
 {
