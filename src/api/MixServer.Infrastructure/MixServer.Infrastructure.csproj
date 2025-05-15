@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+      <ProjectReference Include="..\FolderIndexer\MixServer.FolderIndexer.Data\MixServer.FolderIndexer.Data.csproj" />
       <ProjectReference Include="..\MixServer.Domain\MixServer.Domain.csproj" />
     </ItemGroup>
 
