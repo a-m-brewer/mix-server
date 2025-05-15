@@ -12,4 +12,8 @@
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\MixServer.FolderIndexer.Domain\MixServer.FolderIndexer.Domain.csproj" />
+    </ItemGroup>
+
 </Project>

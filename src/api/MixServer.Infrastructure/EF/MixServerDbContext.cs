@@ -6,13 +6,14 @@ using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Streams.Entities;
 using MixServer.Domain.Users.Entities;
+using MixServer.FolderIndexer.Data.EF;
 using MixServer.FolderIndexer.Data.EF.Configuration;
 using MixServer.FolderIndexer.Domain.Entities;
 using MixServer.Infrastructure.EF.Entities;
 
 namespace MixServer.Infrastructure.EF;
 
-public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : IdentityDbContext<DbUser>(options)
+public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : IdentityDbContext<DbUser>(options), IFileIndexerDbContext
 {
     public DbSet<PlaybackSession> PlaybackSessions { get; set; }
     
@@ -27,6 +28,7 @@ public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : 
     #region FileIndexer
 
     public DbSet<FileSystemInfoEntity> FileSystemNodes { get; set; }
+    public DbSet<FileSystemRootEntity> FileSystemRoots { get; set; }
 
     #endregion
     

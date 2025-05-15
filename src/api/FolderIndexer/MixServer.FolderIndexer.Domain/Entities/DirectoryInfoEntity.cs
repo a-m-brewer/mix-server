@@ -2,5 +2,7 @@ namespace MixServer.FolderIndexer.Domain.Entities;
 
 public class DirectoryInfoEntity : FileSystemInfoEntity
 {
-    public bool IsRoot { get; set; }
+    public FileSystemRootEntity? FileSystemRoot { get; set; }
+    
+    public Guid? FileSystemRootId { get; set; }
 }

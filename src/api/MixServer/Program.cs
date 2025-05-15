@@ -20,13 +20,13 @@ using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Services.Caching;
-using MixServer.Domain.FileExplorer.Settings;
 using MixServer.Domain.Settings;
 using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Users.Enums;
 using MixServer.Domain.Users.Services;
 using MixServer.FolderIndexer.Extensions;
 using MixServer.FolderIndexer.HostedServices;
+using MixServer.FolderIndexer.Settings;
 using MixServer.Infrastructure;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.EF.Entities;
@@ -151,7 +151,6 @@ builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
 
 builder.Services.AddHostedService<MediaInfoService>();
-builder.Services.AddHostedService<MixServerFileIndexerStartupService>();
 
 // API Controllers
 builder.Services.AddControllers()
@@ -175,7 +174,7 @@ builder.Configuration
         c.Prefix = environmentVariablePrefix;
     });
 
-builder.Services.Configure<RootFolderSettings>(builder.Configuration.GetSection(ConfigSection.RootFolder));
+builder.Services.Configure<FileSystemRootSettings>(builder.Configuration.GetSection(ConfigSection.RootFolder));
 
 var hostSettingsSection = builder.Configuration.GetSection(ConfigSection.HostSettings);
 var hostSettings = hostSettingsSection.Get<HostSettings>() ?? new HostSettings();

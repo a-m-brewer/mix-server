@@ -1,6 +1,6 @@
-﻿namespace MixServer.Domain.FileExplorer.Settings;
+﻿namespace MixServer.FolderIndexer.Settings;
 
-public class RootFolderSettings
+public class FileSystemRootSettings
 {
     public string Children { get; set; } = string.Empty;
 

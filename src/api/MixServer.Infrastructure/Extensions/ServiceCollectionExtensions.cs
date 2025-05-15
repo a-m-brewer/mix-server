@@ -9,6 +9,8 @@ using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Tracklists.Factories;
 using MixServer.Domain.Users.Services;
 using MixServer.Domain.Utilities;
+using MixServer.FolderIndexer.Data.EF;
+using MixServer.FolderIndexer.Data.Extensions;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.Files.Services;
 using MixServer.Infrastructure.Queueing.Repositories;
@@ -32,6 +34,7 @@ public static class ServiceCollectionExtensions
             options =>
                 options.UseSqlite(dbConnectionString));
         services.AddScoped<IUnitOfWork, EfUnitOfWork<MixServerDbContext>>();
+        services.AddFolderIndexerData<MixServerDbContext>();
 
 
         services.AddTransient<IUserRepository, UserRepository>();

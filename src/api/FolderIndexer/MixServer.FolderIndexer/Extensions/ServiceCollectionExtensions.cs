@@ -16,6 +16,8 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IFolderIndexerScannerApi, FolderIndexerScannerApi>();
             
         services.AddTransient<IFileSystemScannerService, FileSystemScannerService>();
+        services.AddTransient<IFileSystemPersistenceService, FileSystemPersistenceService>();
+        services.AddTransient<IFileSystemRootPersistenceService, FileSystemRootPersistenceService>();
         
         services.AddSingleton<FileSystemIndexerChannelStore>();
         

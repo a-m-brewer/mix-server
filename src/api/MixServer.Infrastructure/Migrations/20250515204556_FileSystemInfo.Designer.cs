@@ -11,7 +11,7 @@ using MixServer.Infrastructure.EF;
 namespace MixServer.Infrastructure.Migrations
 {
     [DbContext(typeof(MixServerDbContext))]
-    [Migration("20250515193338_FileSystemInfo")]
+    [Migration("20250515204556_FileSystemInfo")]
     partial class FileSystemInfo
     {
         /// <inheritdoc />
@@ -342,6 +342,21 @@ namespace MixServer.Infrastructure.Migrations
                     b.UseTphMappingStrategy();
                 });
 
+            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.FileSystemRootEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AbsolutePath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FileSystemRoots");
+                });
+
             modelBuilder.Entity("MixServer.Infrastructure.EF.Entities.DbUser", b =>
                 {
                     b.Property<string>("Id")
@@ -418,8 +433,10 @@ namespace MixServer.Infrastructure.Migrations
                 {
                     b.HasBaseType("MixServer.FolderIndexer.Domain.Entities.FileSystemInfoEntity");
 
-                    b.Property<bool>("IsRoot")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("FileSystemRootId")
+                        .HasColumnType("TEXT");
+
+                    b.HasIndex("FileSystemRootId");
 
                     b.HasDiscriminator().HasValue("DirectoryInfoEntity");
                 });
@@ -554,9 +571,24 @@ namespace MixServer.Infrastructure.Migrations
                     b.Navigation("CurrentPlaybackSession");
                 });
 
+            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.DirectoryInfoEntity", b =>
+                {
+                    b.HasOne("MixServer.FolderIndexer.Domain.Entities.FileSystemRootEntity", "FileSystemRoot")
+                        .WithMany("Directories")
+                        .HasForeignKey("FileSystemRootId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("FileSystemRoot");
+                });
+
             modelBuilder.Entity("MixServer.Domain.Users.Entities.Device", b =>
                 {
                     b.Navigation("UserCredentials");
+                });
+
+            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.FileSystemRootEntity", b =>
+                {
+                    b.Navigation("Directories");
                 });
 
             modelBuilder.Entity("MixServer.Infrastructure.EF.Entities.DbUser", b =>
