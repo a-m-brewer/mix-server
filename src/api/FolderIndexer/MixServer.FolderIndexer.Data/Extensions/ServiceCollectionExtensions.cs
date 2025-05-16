@@ -9,12 +9,11 @@ namespace MixServer.FolderIndexer.Data.Extensions;
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddFolderIndexerData<TContext>(this IServiceCollection services)
-        where TContext : class, IFileIndexerDbContext
+        where TContext : class, IFolderIndexerDbContext
     {
-        services.AddScoped<IFileIndexerDbContext>(sp => sp.GetRequiredService<TContext>());
+        services.AddScoped<IFolderIndexerDbContext>(sp => sp.GetRequiredService<TContext>());
         
         services.AddTransient<IFileSystemInfoRepository, EfFileSystemInfoRepository>();
-        services.AddTransient<IFileSystemRootRepository, EfFileSystemRootRepository>();
         
         services.AddTransient<IFileIndexerUnitOfWork, EfFileIndexerUnitOfWork>();
         

@@ -1,12 +1,12 @@
 using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Exceptions;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Infrastructure.Users.Repository;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Sessions.Commands.ClearCurrentSession;
 

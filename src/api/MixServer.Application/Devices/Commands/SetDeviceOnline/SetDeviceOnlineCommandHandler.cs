@@ -1,8 +1,8 @@
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.Users.Repository;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Devices.Commands.SetDeviceOnline;
 

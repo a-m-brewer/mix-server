@@ -1,6 +1,6 @@
 using MixServer.Application.Devices.Responses;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Users.Entities;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Devices.Queries.GetUsersDevices;
 

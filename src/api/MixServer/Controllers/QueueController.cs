@@ -4,7 +4,7 @@ using MixServer.Application.Queueing.Commands.RemoveFromQueue;
 using MixServer.Application.Queueing.Commands.SetQueuePosition;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Dtos;
-using MixServer.Domain.Interfaces;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Controllers;
 

@@ -3,9 +3,9 @@ using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.FileExplorer.Services.Caching;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Streams.Enums;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.FileExplorer.Queries.GetNode;
 

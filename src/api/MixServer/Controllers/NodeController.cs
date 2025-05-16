@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MixServer.Application.FileExplorer.Commands.RefreshFolder;
 using MixServer.Application.FileExplorer.Commands.SetFolderSort;
 using MixServer.Application.FileExplorer.Queries.GetNode;
-using MixServer.Domain.Interfaces;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Controllers;
 

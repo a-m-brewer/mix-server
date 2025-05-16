@@ -1,5 +1,6 @@
 using DeviceDetectorNET.Cache;
 using MixServer.Domain.Persistence;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Infrastructure.Users.Repository;
 

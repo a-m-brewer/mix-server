@@ -2,7 +2,7 @@
 using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
-using MixServer.Domain.Interfaces;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.FileExplorer.Converters;
 

@@ -1,9 +1,9 @@
 using FluentValidation;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Validators;
 using MixServer.Infrastructure.Users.Repository;
 using MixServer.Infrastructure.Users.Services;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Users.Commands.UpdateUser;
 

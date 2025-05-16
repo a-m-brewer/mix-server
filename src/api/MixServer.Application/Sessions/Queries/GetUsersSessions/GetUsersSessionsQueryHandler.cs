@@ -1,8 +1,8 @@
 using FluentValidation;
 using MixServer.Application.Sessions.Responses;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Sessions.Queries.GetUsersSessions;
 

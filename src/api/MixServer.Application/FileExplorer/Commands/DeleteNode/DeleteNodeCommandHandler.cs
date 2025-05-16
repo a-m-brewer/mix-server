@@ -1,6 +1,6 @@
 using FluentValidation;
 using MixServer.Domain.FileExplorer.Services;
-using MixServer.Domain.Interfaces;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.FileExplorer.Commands.DeleteNode;
 

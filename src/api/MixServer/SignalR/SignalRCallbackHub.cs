@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.SignalR;
 using MixServer.Application.Devices.Commands.SetDeviceInteraction;
 using MixServer.Application.Devices.Commands.SetDeviceOnline;
 using MixServer.Application.Sessions.Commands.UpdatePlaybackCurrentTime;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Users.Repository;
+using MixServer.Shared.Interfaces;
 using MixServer.SignalR.Commands;
 using MixServer.SignalR.Events;
 

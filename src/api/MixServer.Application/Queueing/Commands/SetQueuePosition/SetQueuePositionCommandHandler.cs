@@ -1,11 +1,11 @@
 ﻿using FluentValidation;
 using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Dtos;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Queueing.Commands.SetQueuePosition;
 

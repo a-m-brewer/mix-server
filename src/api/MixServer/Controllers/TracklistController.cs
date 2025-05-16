@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MixServer.Application.Tracklists.Commands.ImportTracklist;
 using MixServer.Application.Tracklists.Commands.SaveTracklist;
-using MixServer.Domain.Interfaces;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Controllers;
 

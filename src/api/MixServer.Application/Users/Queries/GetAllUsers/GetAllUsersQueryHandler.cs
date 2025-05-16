@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.Exceptions;
-using MixServer.Domain.Interfaces;
 using MixServer.Infrastructure.EF.Entities;
 using MixServer.Infrastructure.Users.Repository;
 using MixServer.Infrastructure.Users.Services;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Users.Queries.GetAllUsers;
 

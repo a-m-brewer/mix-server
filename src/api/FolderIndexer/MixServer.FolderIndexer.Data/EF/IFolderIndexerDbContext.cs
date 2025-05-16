@@ -3,10 +3,9 @@ using MixServer.FolderIndexer.Domain.Entities;
 
 namespace MixServer.FolderIndexer.Data.EF;
 
-public interface IFileIndexerDbContext
+public interface IFolderIndexerDbContext
 {
     DbSet<FileSystemInfoEntity> FileSystemNodes { get; }
-    DbSet<FileSystemRootEntity> FileSystemRoots { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

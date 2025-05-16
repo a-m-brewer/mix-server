@@ -1,8 +1,8 @@
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Domain.FileExplorer.Models;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Queueing.Entities;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Queueing.Converters;
 

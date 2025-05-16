@@ -1,7 +1,7 @@
 using MixServer.Application.Devices.Responses;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Models;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Devices.Converters;
 

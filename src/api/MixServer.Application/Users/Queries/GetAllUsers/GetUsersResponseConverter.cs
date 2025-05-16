@@ -1,6 +1,6 @@
 using MixServer.Application.Users.Dtos;
-using MixServer.Domain.Interfaces;
 using MixServer.Infrastructure.EF.Entities;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Users.Queries.GetAllUsers;
 

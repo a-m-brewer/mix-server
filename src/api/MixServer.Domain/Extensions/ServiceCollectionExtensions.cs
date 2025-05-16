@@ -4,7 +4,6 @@ using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Sessions.Validators;
@@ -32,51 +31,8 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ICanPlayOnDeviceValidator, CanPlayOnDeviceValidator>();
         services.AddSingleton<IMediaInfoCache, MediaInfoCache>();
 
-        services.AddDomainInterfaces();
         services.AddDomainUtilities();
         
-        return services;
-    }
-    
-    private static IServiceCollection AddDomainInterfaces(this IServiceCollection services)
-    {
-        bool InApplicationNamespace(Assembly assembly)
-        {
-            var assemblyName = assembly.GetName().Name;
-
-            return !string.IsNullOrWhiteSpace(assemblyName) &&
-                   assemblyName.StartsWith(nameof(MixServer));
-        }
-        
-        // Handlers
-        services.Scan(s => s.FromApplicationDependencies(InApplicationNamespace)
-            .AddClasses(c => c.AssignableTo<IHandler>())
-            .AsSelfWithInterfaces()
-            .WithTransientLifetime());
-                
-        // Add Converters
-        services.Scan(s => s.FromApplicationDependencies(InApplicationNamespace)
-            .AddClasses(c => c.AssignableTo<IConverter>())
-            .AsImplementedInterfaces()
-            .WithTransientLifetime()
-        );
-        
-        // Repositories
-        services.Scan(s => s.FromApplicationDependencies(InApplicationNamespace)
-            .AddClasses(c => c.AssignableTo<IScopedRepository>())
-            .AsImplementedInterfaces()
-            .WithScopedLifetime());
-        
-        services.Scan(s => s.FromApplicationDependencies(InApplicationNamespace)
-            .AddClasses(c => c.AssignableTo<ITransientRepository>())
-            .AsImplementedInterfaces()
-            .WithTransientLifetime());
-        
-        services.Scan(s => s.FromApplicationDependencies(InApplicationNamespace)
-            .AddClasses(c => c.AssignableTo<ISingletonRepository>())
-            .AsImplementedInterfaces()
-            .WithSingletonLifetime());
-
         return services;
     }
     

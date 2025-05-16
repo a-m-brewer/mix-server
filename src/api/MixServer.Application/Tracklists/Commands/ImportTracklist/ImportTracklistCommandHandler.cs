@@ -1,6 +1,6 @@
 using MixServer.Domain.Exceptions;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Tracklists.Dtos.Import;
+using MixServer.Shared.Interfaces;
 using Newtonsoft.Json;
 
 namespace MixServer.Application.Tracklists.Commands.ImportTracklist;

@@ -1,4 +1,4 @@
-﻿namespace MixServer.Domain.Persistence;
+﻿namespace MixServer.Shared.Interfaces;
 
 public interface IRepository {}
 

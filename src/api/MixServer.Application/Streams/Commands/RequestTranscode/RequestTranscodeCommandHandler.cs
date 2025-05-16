@@ -2,11 +2,11 @@ using FluentValidation;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Streams.Repositories;
 using MixServer.Domain.Streams.Services;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Streams.Commands.RequestTranscode;
 

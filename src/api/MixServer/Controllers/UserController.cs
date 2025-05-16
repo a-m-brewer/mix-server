@@ -8,7 +8,7 @@ using MixServer.Application.Users.Commands.ResetPassword;
 using MixServer.Application.Users.Commands.UpdateUser;
 using MixServer.Application.Users.Queries.GetAllUsers;
 using MixServer.Auth;
-using MixServer.Domain.Interfaces;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Controllers;
 

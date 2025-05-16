@@ -1,5 +1,6 @@
 ﻿using MixServer.Domain.Persistence;
 using MixServer.Domain.Streams.Entities;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Domain.Streams.Repositories;
 

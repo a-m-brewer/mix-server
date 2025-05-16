@@ -1,8 +1,8 @@
 using FluentValidation;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Users.Repository;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Sessions.Commands.UpdatePlaybackCurrentTime;
 

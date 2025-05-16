@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using MixServer.Domain.Callbacks;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Domain.Persistence;
 

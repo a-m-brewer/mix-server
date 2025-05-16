@@ -4,13 +4,13 @@ using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Services.Caching;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Models;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.Users.Repository;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Sessions.Commands.RequestPlayback;
 

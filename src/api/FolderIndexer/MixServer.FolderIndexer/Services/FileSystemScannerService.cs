@@ -63,4 +63,9 @@ internal class FileSystemScannerService(FileSystemIndexerChannelStore channelSto
 
         await actionBlock.Completion.ConfigureAwait(false);
     }
+
+    public Task ScanRootsAsync(CancellationToken stoppingToken)
+    {
+        throw new NotImplementedException();
+    }
 }

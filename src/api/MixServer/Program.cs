@@ -37,6 +37,7 @@ using MixServer.Infrastructure.Users.Settings;
 using MixServer.Middleware;
 using MixServer.NSwag;
 using MixServer.Services;
+using MixServer.Shared.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -144,6 +145,7 @@ builder.Services.AddProblemDetails(setup =>
 
 // Application Services
 builder.Services
+    .AddMixServerSharedServices()
     .AddMixServerDomainServices()
     .AddMixServerInfrastructureServices(builder.Configuration.GetConnectionString("DefaultConnection")!);
 

@@ -1,7 +1,7 @@
 using MixServer.Application.Sessions.Dtos;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Enums;
 using MixServer.Domain.Sessions.Models;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Sessions.Converters;
 

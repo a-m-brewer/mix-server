@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
+using MixServer.FolderIndexer.Converters;
 using MixServer.FolderIndexer.Domain;
-using MixServer.FolderIndexer.Domain.Entities;
 using MixServer.FolderIndexer.Domain.Repositories;
 using MixServer.FolderIndexer.Settings;
 
@@ -13,13 +13,14 @@ internal interface IFileSystemRootPersistenceService
 
 internal class FileSystemRootPersistenceService(
     IOptions<FileSystemRootSettings> rootSettings,
-    IFileSystemRootRepository fileSystemRootRepository,
+    IFileSystemInfoConverter fileSystemInfoConverter,
+    IFileSystemInfoRepository fileSystemInfoRepository,
     IFileIndexerUnitOfWork unitOfWork)
     : IFileSystemRootPersistenceService
 {
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        var existing = await fileSystemRootRepository.GetAllAsync(cancellationToken);
+        var existing = await fileSystemInfoRepository.GetAllRootFoldersAsync(cancellationToken);
 
         var allRoots = existing
             .Select(x => x.AbsolutePath)
@@ -39,20 +40,23 @@ internal class FileSystemRootPersistenceService(
                      SettingsRoot = settingsRoot
                  })
         {
+            var directoryInfo = new DirectoryInfo(root.AbsolutePath);
+            // Add
             if (root.ExistingRoot is null && !string.IsNullOrWhiteSpace(root.SettingsRoot))
             {
-                var rootFolder = new FileSystemRootEntity
-                {
-                    Id = Guid.NewGuid(),
-                    AbsolutePath = root.AbsolutePath
-                };
-                await fileSystemRootRepository.AddAsync(rootFolder, cancellationToken);
+                var rootFolder = fileSystemInfoConverter.ConvertRoot(directoryInfo);
+                await fileSystemInfoRepository.AddAsync(rootFolder, cancellationToken);
             }
+            // Remove
             else if (root.ExistingRoot is not null && string.IsNullOrWhiteSpace(root.SettingsRoot))
             {
-                fileSystemRootRepository.Remove(root.ExistingRoot);
+                fileSystemInfoRepository.Remove(root.ExistingRoot);
             }
-            // No need to add an update as the only property is the absolute path
+            // Update
+            else if (root.ExistingRoot is not null && !string.IsNullOrWhiteSpace(root.SettingsRoot))
+            {
+                fileSystemInfoConverter.Update(root.ExistingRoot, directoryInfo);
+            }
         }
         
         await unitOfWork.SaveChangesAsync(cancellationToken);

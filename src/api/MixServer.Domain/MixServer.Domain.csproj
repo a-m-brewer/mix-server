@@ -12,4 +12,7 @@
   <ItemGroup>
     <Folder Include="FileExplorer\Settings\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\MixServer.Shared\MixServer.Shared.csproj" />
+  </ItemGroup>
 </Project>

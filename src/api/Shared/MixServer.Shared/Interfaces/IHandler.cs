@@ -1,4 +1,4 @@
-﻿namespace MixServer.Domain.Interfaces;
+﻿namespace MixServer.Shared.Interfaces;
 
 public interface IHandler;
 

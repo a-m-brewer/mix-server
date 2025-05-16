@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Infrastructure.Users.Repository;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Sessions.Commands.RequestPause;
 

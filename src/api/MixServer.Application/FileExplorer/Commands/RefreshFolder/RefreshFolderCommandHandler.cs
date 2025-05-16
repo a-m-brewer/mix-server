@@ -3,9 +3,9 @@ using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Users.Repository;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.FileExplorer.Commands.RefreshFolder;
 

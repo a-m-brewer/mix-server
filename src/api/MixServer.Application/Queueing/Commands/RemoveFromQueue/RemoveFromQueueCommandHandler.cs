@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 using MixServer.Application.Queueing.Responses;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Services;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Queueing.Commands.RemoveFromQueue;
 

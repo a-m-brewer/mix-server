@@ -9,7 +9,6 @@ using MixServer.Application.Users.Dtos;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
@@ -17,6 +16,7 @@ using MixServer.Domain.Sessions.Models;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Enums;
 using MixServer.Domain.Users.Models;
+using MixServer.Shared.Interfaces;
 using MixServer.SignalR.Events;
 
 namespace MixServer.SignalR;

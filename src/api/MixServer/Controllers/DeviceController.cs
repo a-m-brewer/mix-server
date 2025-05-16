@@ -3,7 +3,7 @@ using MixServer.Application.Devices.Commands.DeleteDevice;
 using MixServer.Application.Devices.Commands.SetDeviceInteraction;
 using MixServer.Application.Devices.Commands.UpdateDevicePlaybackCapabilities;
 using MixServer.Application.Devices.Queries.GetUsersDevices;
-using MixServer.Domain.Interfaces;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Controllers;
 

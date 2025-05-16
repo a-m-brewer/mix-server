@@ -12,18 +12,6 @@ namespace MixServer.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "FileSystemRoots",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    AbsolutePath = table.Column<string>(type: "TEXT", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FileSystemRoots", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "FileSystemNodes",
                 columns: table => new
                 {
@@ -33,8 +21,7 @@ namespace MixServer.Infrastructure.Migrations
                     Exists = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreationTimeUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
                     ParentId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    Type = table.Column<string>(type: "TEXT", maxLength: 21, nullable: false),
-                    FileSystemRootId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    Type = table.Column<string>(type: "TEXT", maxLength: 34, nullable: false),
                     Extension = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
@@ -45,12 +32,6 @@ namespace MixServer.Infrastructure.Migrations
                         column: x => x.ParentId,
                         principalTable: "FileSystemNodes",
                         principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_FileSystemNodes_FileSystemRoots_FileSystemRootId",
-                        column: x => x.FileSystemRootId,
-                        principalTable: "FileSystemRoots",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -58,11 +39,6 @@ namespace MixServer.Infrastructure.Migrations
                 table: "FileSystemNodes",
                 column: "AbsolutePath",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FileSystemNodes_FileSystemRootId",
-                table: "FileSystemNodes",
-                column: "FileSystemRootId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FileSystemNodes_ParentId",
@@ -75,9 +51,6 @@ namespace MixServer.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "FileSystemNodes");
-
-            migrationBuilder.DropTable(
-                name: "FileSystemRoots");
         }
     }
 }

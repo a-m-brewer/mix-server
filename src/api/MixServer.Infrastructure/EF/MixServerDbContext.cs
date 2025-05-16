@@ -13,7 +13,7 @@ using MixServer.Infrastructure.EF.Entities;
 
 namespace MixServer.Infrastructure.EF;
 
-public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : IdentityDbContext<DbUser>(options), IFileIndexerDbContext
+public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : IdentityDbContext<DbUser>(options), IFolderIndexerDbContext
 {
     public DbSet<PlaybackSession> PlaybackSessions { get; set; }
     
@@ -28,7 +28,6 @@ public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : 
     #region FileIndexer
 
     public DbSet<FileSystemInfoEntity> FileSystemNodes { get; set; }
-    public DbSet<FileSystemRootEntity> FileSystemRoots { get; set; }
 
     #endregion
     

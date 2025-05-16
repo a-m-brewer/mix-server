@@ -9,13 +9,14 @@ internal interface IFileSystemPersistenceService
 }
 
 internal class FileSystemPersistenceService(
-    IFileSystemRootRepository fileSystemRootRepository,
     IFileSystemInfoRepository fileSystemInfoRepository,
     IFileIndexerUnitOfWork unitOfWork)
     : IFileSystemPersistenceService
 {
-    public async Task AddOrUpdateFolderAsync(DirectoryInfo directoryInfo, ICollection<FileSystemInfo> children, CancellationToken cancellationToken = default)
+    public async Task AddOrUpdateFolderAsync(
+        DirectoryInfo directoryInfo,
+        ICollection<FileSystemInfo> children,
+        CancellationToken cancellationToken = default)
     {
-        var root = await fileSystemRootRepository.FindChildRootAsync(directoryInfo.FullName, cancellationToken);
     }
 }

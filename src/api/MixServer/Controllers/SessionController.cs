@@ -9,8 +9,8 @@ using MixServer.Application.Sessions.Commands.SetPlaying;
 using MixServer.Application.Sessions.Commands.SyncPlaybackSession;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Application.Sessions.Queries.GetUsersSessions;
-using MixServer.Domain.Interfaces;
 using MixServer.Requests;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Controllers;
 

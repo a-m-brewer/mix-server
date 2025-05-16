@@ -1,7 +1,7 @@
 using FluentValidation;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Services;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Devices.Commands.DeleteDevice;
 

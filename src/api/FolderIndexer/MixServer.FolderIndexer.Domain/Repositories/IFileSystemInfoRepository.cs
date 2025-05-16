@@ -4,5 +4,7 @@ namespace MixServer.FolderIndexer.Domain.Repositories;
 
 public interface IFileSystemInfoRepository
 {
-    Task<DirectoryInfoEntity> GetDirectoryOrDefaultAsync(string path);
+    Task<ICollection<RootDirectoryInfoEntity>> GetAllRootFoldersAsync(CancellationToken cancellationToken);
+    Task AddAsync(FileSystemInfoEntity fileSystemInfo, CancellationToken cancellationToken);
+    void Remove(FileSystemInfoEntity fileSystemInfo);
 }

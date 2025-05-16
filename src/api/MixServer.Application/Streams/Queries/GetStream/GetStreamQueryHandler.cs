@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Services;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Services;
@@ -10,6 +9,7 @@ using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Streams.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.Users.Services;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Streams.Queries.GetStream;
 

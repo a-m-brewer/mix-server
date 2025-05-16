@@ -1,6 +1,6 @@
-﻿namespace MixServer.Domain.Interfaces;
+﻿namespace MixServer.Shared.Interfaces;
 
-public interface IConverter {}
+public interface IConverter;
 
 public interface IConverter<in TIn, out TOut> : IConverter
 {

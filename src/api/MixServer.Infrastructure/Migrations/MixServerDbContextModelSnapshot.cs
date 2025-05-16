@@ -322,7 +322,7 @@ namespace MixServer.Infrastructure.Migrations
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasMaxLength(21)
+                        .HasMaxLength(34)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -337,21 +337,6 @@ namespace MixServer.Infrastructure.Migrations
                     b.HasDiscriminator<string>("Type").HasValue("FileSystemInfoEntity");
 
                     b.UseTphMappingStrategy();
-                });
-
-            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.FileSystemRootEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("AbsolutePath")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("FileSystemRoots");
                 });
 
             modelBuilder.Entity("MixServer.Infrastructure.EF.Entities.DbUser", b =>
@@ -430,11 +415,6 @@ namespace MixServer.Infrastructure.Migrations
                 {
                     b.HasBaseType("MixServer.FolderIndexer.Domain.Entities.FileSystemInfoEntity");
 
-                    b.Property<Guid?>("FileSystemRootId")
-                        .HasColumnType("TEXT");
-
-                    b.HasIndex("FileSystemRootId");
-
                     b.HasDiscriminator().HasValue("DirectoryInfoEntity");
                 });
 
@@ -447,6 +427,13 @@ namespace MixServer.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasDiscriminator().HasValue("FileInfoEntity");
+                });
+
+            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.RootDirectoryInfoEntity", b =>
+                {
+                    b.HasBaseType("MixServer.FolderIndexer.Domain.Entities.DirectoryInfoEntity");
+
+                    b.HasDiscriminator().HasValue("RootDirectoryInfoEntity");
                 });
 
             modelBuilder.Entity("DbUserDevice", b =>
@@ -568,24 +555,9 @@ namespace MixServer.Infrastructure.Migrations
                     b.Navigation("CurrentPlaybackSession");
                 });
 
-            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.DirectoryInfoEntity", b =>
-                {
-                    b.HasOne("MixServer.FolderIndexer.Domain.Entities.FileSystemRootEntity", "FileSystemRoot")
-                        .WithMany("Directories")
-                        .HasForeignKey("FileSystemRootId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("FileSystemRoot");
-                });
-
             modelBuilder.Entity("MixServer.Domain.Users.Entities.Device", b =>
                 {
                     b.Navigation("UserCredentials");
-                });
-
-            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.FileSystemRootEntity", b =>
-                {
-                    b.Navigation("Directories");
                 });
 
             modelBuilder.Entity("MixServer.Infrastructure.EF.Entities.DbUser", b =>

@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using MixServer.Application.Users.Extensions;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Users.Services;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Users.Commands.RefreshUser;
 

@@ -1,7 +1,7 @@
 using MixServer.Application.Users.Dtos;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Users.Models;
 using MixServer.Infrastructure.EF.Entities;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Application.Users.Converters;
 

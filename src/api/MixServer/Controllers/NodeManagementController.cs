@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MixServer.Application.FileExplorer.Commands.CopyNode;
 using MixServer.Application.FileExplorer.Commands.DeleteNode;
 using MixServer.Auth;
-using MixServer.Domain.Interfaces;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Controllers;
 

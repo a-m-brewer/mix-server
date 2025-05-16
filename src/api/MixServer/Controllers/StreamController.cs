@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MixServer.Application.Streams.Queries.GetStream;
-using MixServer.Domain.Interfaces;
 using MixServer.Domain.Streams.Models;
+using MixServer.Shared.Interfaces;
 
 namespace MixServer.Controllers;
 
