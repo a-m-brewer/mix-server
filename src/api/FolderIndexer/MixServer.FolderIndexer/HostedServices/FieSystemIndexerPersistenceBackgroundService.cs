@@ -42,7 +42,7 @@ internal class FieSystemIndexerPersistenceBackgroundService(
         
         foreach (var root in roots)
         {
-            await channelStore.ScannerChannel.Writer.WriteAsync(root.AbsolutePath, stoppingToken)
+            await channelStore.ScannerChannel.Writer.WriteAsync(root.RelativePath, stoppingToken)
                 .ConfigureAwait(false);
         }
     }

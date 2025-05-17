@@ -11,7 +11,8 @@ internal class FileSystemIndexerChannelStore
         AllowSynchronousContinuations = false
     });
     
-    public Channel<(DirectoryInfo Parent, ICollection<FileSystemInfo> Children)> FileSystemInfoChannel { get; } = Channel.CreateUnbounded<(DirectoryInfo Parent, ICollection<FileSystemInfo> Children)>(new UnboundedChannelOptions
+    public Channel<(DirectoryInfo Parent, ICollection<FileSystemInfo> Children)> FileSystemInfoChannel { get; } = 
+        Channel.CreateBounded<(DirectoryInfo Parent, ICollection<FileSystemInfo> Children)>(new BoundedChannelOptions(1)
     {
         SingleReader = false,
         SingleWriter = false,

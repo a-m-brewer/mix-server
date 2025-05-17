@@ -23,13 +23,13 @@ internal class FileSystemRootPersistenceService(
         var existing = await fileSystemInfoRepository.GetAllRootFoldersAsync(cancellationToken);
 
         var allRoots = existing
-            .Select(x => x.AbsolutePath)
+            .Select(x => x.RelativePath)
             .Concat(rootSettings.Value.ChildrenSplit)
             .Distinct()
             .ToHashSet();
 
         foreach (var root in from root in allRoots
-                 join existingRoot in existing on root equals existingRoot.AbsolutePath into existingRootGroup
+                 join existingRoot in existing on root equals existingRoot.RelativePath into existingRootGroup
                  from existingRoot in existingRootGroup.DefaultIfEmpty()
                  join child in rootSettings.Value.ChildrenSplit on root equals child into settingsRootGroup
                  from settingsRoot in settingsRootGroup.DefaultIfEmpty()
@@ -55,7 +55,7 @@ internal class FileSystemRootPersistenceService(
             // Update
             else if (root.ExistingRoot is not null && !string.IsNullOrWhiteSpace(root.SettingsRoot))
             {
-                fileSystemInfoConverter.Update(root.ExistingRoot, directoryInfo);
+                fileSystemInfoConverter.UpdateRoot(root.ExistingRoot, directoryInfo);
             }
         }
         

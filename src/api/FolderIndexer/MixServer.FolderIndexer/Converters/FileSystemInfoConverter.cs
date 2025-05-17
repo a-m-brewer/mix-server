@@ -4,69 +4,127 @@ using MixServer.Shared.Interfaces;
 namespace MixServer.FolderIndexer.Converters;
 
 public interface IFileSystemInfoConverter
-    : IConverter<DirectoryInfo, DirectoryInfoEntity>,
-        IUpdater<DirectoryInfoEntity, DirectoryInfo>,
-        IConverter<FileInfo, FileInfoEntity>,
-        IUpdater<FileInfoEntity, FileInfo>
+    : IConverter
 {
-    RootDirectoryInfoEntity ConvertRoot(DirectoryInfo value);
+    RootDirectoryInfoEntity ConvertRoot(DirectoryInfo directoryInfo);
+    void UpdateRoot(RootDirectoryInfoEntity existingRoot, DirectoryInfo directoryInfo);
+    DirectoryInfoEntity ConvertChildDirectory(DirectoryInfo directoryInfo, RootDirectoryInfoEntity root, DirectoryInfoEntity? parent);
+
+    void UpdateChildDirectory(
+        DirectoryInfoEntity dir,
+        DirectoryInfo directoryInfo,
+        RootDirectoryInfoEntity root,
+        DirectoryInfoEntity? parent);
+    
+    void UpdateChild(
+        FileSystemInfoEntity fsEntity, 
+        FileSystemInfo fileSystemInfo,
+        RootDirectoryInfoEntity root,
+        DirectoryInfoEntity parent);
+
+    FileSystemInfoEntity ConvertChild(FileSystemInfo fileSystemInfo, RootDirectoryInfoEntity root, DirectoryInfoEntity parent);
 }
 
 public class FileSystemInfoConverter : IFileSystemInfoConverter
 {
-    public DirectoryInfoEntity Convert(DirectoryInfo value)
-    {
-        return new DirectoryInfoEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = value.Name,
-            AbsolutePath = value.FullName,
-            Exists = value.Exists,
-            CreationTimeUtc = value.CreationTimeUtc
-        };
-    }
-
-    public FileInfoEntity Convert(FileInfo value)
-    {
-        return new FileInfoEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = value.Name,
-            AbsolutePath = value.FullName,
-            Exists = value.Exists,
-            CreationTimeUtc = value.CreationTimeUtc,
-            Extension = value.Extension
-        };
-    }
-
-    public void Update(DirectoryInfoEntity value, DirectoryInfo update)
-    {
-        Update((FileSystemInfoEntity)value, update);
-    }
-
-    public void Update(FileInfoEntity value, FileInfo update)
-    {
-        Update((FileSystemInfoEntity)value, update);
-        value.Extension = update.Extension;
-    }
-    
-    public RootDirectoryInfoEntity ConvertRoot(DirectoryInfo value)
+    public RootDirectoryInfoEntity ConvertRoot(DirectoryInfo directoryInfo)
     {
         return new RootDirectoryInfoEntity
         {
             Id = Guid.NewGuid(),
-            Name = value.Name,
-            AbsolutePath = value.FullName,
-            Exists = value.Exists,
-            CreationTimeUtc = value.CreationTimeUtc
+            Name = directoryInfo.Name,
+            RelativePath = directoryInfo.FullName,
+            Exists = directoryInfo.Exists,
+            CreationTimeUtc = directoryInfo.CreationTimeUtc,
+        };
+
+    }
+
+    public void UpdateRoot(RootDirectoryInfoEntity existingRoot, DirectoryInfo directoryInfo)
+    {
+        existingRoot.Name = directoryInfo.Name;
+        existingRoot.RelativePath = directoryInfo.FullName;
+        existingRoot.Exists = directoryInfo.Exists;
+        existingRoot.CreationTimeUtc = directoryInfo.CreationTimeUtc;
+    }
+
+    public DirectoryInfoEntity ConvertChildDirectory(
+        DirectoryInfo directoryInfo,
+        RootDirectoryInfoEntity root,
+        DirectoryInfoEntity? parent)
+    {
+        var relativePath = Path.GetRelativePath(root.RelativePath, directoryInfo.FullName);
+        
+        return new DirectoryInfoEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = directoryInfo.Name,
+            RelativePath = relativePath,
+            Exists = directoryInfo.Exists,
+            CreationTimeUtc = directoryInfo.CreationTimeUtc,
+            Parent = parent,
+            Root = root
         };
     }
-    
-    private static void Update(FileSystemInfoEntity value, FileSystemInfo update)
+
+    public void UpdateChildDirectory(
+        DirectoryInfoEntity dir,
+        DirectoryInfo directoryInfo,
+        RootDirectoryInfoEntity root,
+        DirectoryInfoEntity? parent)
     {
-        value.Name = update.Name;
-        value.AbsolutePath = update.FullName;
-        value.Exists = update.Exists;
-        value.CreationTimeUtc = update.CreationTimeUtc;
+        dir.Name = directoryInfo.Name;
+        dir.RelativePath = Path.GetRelativePath(root.RelativePath, directoryInfo.FullName);
+        dir.Exists = directoryInfo.Exists;
+        dir.CreationTimeUtc = directoryInfo.CreationTimeUtc;
+        dir.Parent = parent;
+        dir.Root = root;
+    }
+    
+    public void UpdateChild(
+        FileSystemInfoEntity fsEntity,
+        FileSystemInfo fileSystemInfo,
+        RootDirectoryInfoEntity root,
+        DirectoryInfoEntity parent)
+    {
+        fsEntity.Name = fileSystemInfo.Name;
+        fsEntity.RelativePath = Path.GetRelativePath(root.RelativePath, fileSystemInfo.FullName);
+        fsEntity.Exists = fileSystemInfo.Exists;
+        fsEntity.CreationTimeUtc = fileSystemInfo.CreationTimeUtc;
+        fsEntity.Parent = parent;
+        fsEntity.Root = root;
+
+        if (fileSystemInfo is FileInfo fileInfo)
+        {
+            ((FileInfoEntity)fsEntity).Extension = fileInfo.Extension;
+        }
+    }
+
+    public FileSystemInfoEntity ConvertChild(
+        FileSystemInfo fileSystemInfo,
+        RootDirectoryInfoEntity root,
+        DirectoryInfoEntity parent)
+    {
+        if (fileSystemInfo is DirectoryInfo directoryInfo)
+        {
+            return ConvertChildDirectory(directoryInfo, root, parent);
+        }
+        
+        if (fileSystemInfo is FileInfo fileInfo)
+        {
+            return new FileInfoEntity
+            {
+                Id = Guid.NewGuid(),
+                Name = fileInfo.Name,
+                RelativePath = Path.GetRelativePath(root.RelativePath, fileInfo.FullName),
+                Exists = fileInfo.Exists,
+                CreationTimeUtc = fileInfo.CreationTimeUtc,
+                Extension = fileInfo.Extension,
+                Parent = parent,
+                Root = root
+            };
+        }
+        
+        throw new NotSupportedException($"FileSystemInfo type {fileSystemInfo.GetType()} is not supported.");
     }
 }

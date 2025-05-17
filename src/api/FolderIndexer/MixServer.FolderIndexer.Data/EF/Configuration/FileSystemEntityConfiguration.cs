@@ -9,10 +9,22 @@ public class FileSystemEntityConfiguration : IEntityTypeConfiguration<FileSystem
     public void Configure(EntityTypeBuilder<FileSystemInfoEntity> builder)
     {
         builder.HasKey(k => k.Id);
-        builder.HasIndex(i => i.AbsolutePath)
+        builder.HasIndex(i => new { i.RootId, i.RelativePath })
             .IsUnique();
 
         builder.UseTphMappingStrategy()
-            .HasDiscriminator(t => t.Type);
+            .HasDiscriminator(t => t.Type)
+            .HasValue<RootDirectoryInfoEntity>(nameof(RootDirectoryInfoEntity))
+            .HasValue<DirectoryInfoEntity>(nameof(DirectoryInfoEntity))
+            .HasValue<FileInfoEntity>(nameof(FileInfoEntity));
+
+        builder.HasOne(o => o.Parent)
+            .WithMany(m => m.Children)
+            .HasForeignKey(f => f.ParentId);
+        
+        builder.HasOne(o => o.Root)
+            .WithMany()
+            .HasForeignKey(f => f.RootId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

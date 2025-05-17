@@ -6,17 +6,21 @@ public class FileSystemInfoEntity
     
     public required string Name { get; set; }
 
-    public required string AbsolutePath { get; set; }
+    public required string RelativePath { get; set; }
 
     public required bool Exists { get; set; }
 
     public required DateTime CreationTimeUtc { get; set; }
-    
-    public Guid? ParentId { get; set; }
-
-    public DirectoryInfoEntity? Parent { get; set; }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     public string Type { get; set; }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+    
+    public Guid? ParentId { get; set; }
+
+    public DirectoryInfoEntity? Parent { get; set; }
+    
+    public Guid? RootId { get; set; }
+    
+    public RootDirectoryInfoEntity? Root { get; set; }
 }

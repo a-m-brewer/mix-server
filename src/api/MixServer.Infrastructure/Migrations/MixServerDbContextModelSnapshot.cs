@@ -303,10 +303,6 @@ namespace MixServer.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("AbsolutePath")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime>("CreationTimeUtc")
                         .HasColumnType("TEXT");
 
@@ -320,6 +316,13 @@ namespace MixServer.Infrastructure.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("RelativePath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RootId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(34)
@@ -327,10 +330,10 @@ namespace MixServer.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AbsolutePath")
-                        .IsUnique();
-
                     b.HasIndex("ParentId");
+
+                    b.HasIndex("RootId", "RelativePath")
+                        .IsUnique();
 
                     b.ToTable("FileSystemNodes");
 
@@ -540,10 +543,17 @@ namespace MixServer.Infrastructure.Migrations
             modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.FileSystemInfoEntity", b =>
                 {
                     b.HasOne("MixServer.FolderIndexer.Domain.Entities.DirectoryInfoEntity", "Parent")
-                        .WithMany()
+                        .WithMany("Children")
                         .HasForeignKey("ParentId");
 
+                    b.HasOne("MixServer.FolderIndexer.Domain.Entities.RootDirectoryInfoEntity", "Root")
+                        .WithMany()
+                        .HasForeignKey("RootId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("Parent");
+
+                    b.Navigation("Root");
                 });
 
             modelBuilder.Entity("MixServer.Infrastructure.EF.Entities.DbUser", b =>
@@ -567,6 +577,11 @@ namespace MixServer.Infrastructure.Migrations
                     b.Navigation("FolderSorts");
 
                     b.Navigation("PlaybackSessions");
+                });
+
+            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.DirectoryInfoEntity", b =>
+                {
+                    b.Navigation("Children");
                 });
 #pragma warning restore 612, 618
         }
