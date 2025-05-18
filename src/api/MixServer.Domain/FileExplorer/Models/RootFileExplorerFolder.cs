@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Options;
 using MixServer.Domain.FileExplorer.Enums;
 
@@ -7,7 +8,7 @@ public class RootFileExplorerFolder : FileExplorerFolder, IRootFileExplorerFolde
 {
     // private readonly IOptions<RootFolderSettings> _rootFolderSettings;
 
-    public RootFileExplorerFolder() : base(new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true, DateTime.MinValue, false, false, null))
+    public RootFileExplorerFolder() : base(new FileExplorerFolderNode(string.Empty, string.Empty, FileExplorerNodeType.Folder, true, DateTime.MinValue, false, false, null), new ConcurrentDictionary<string, IFileExplorerNode>())
     {
         // _rootFolderSettings = rootFolderSettings;
         RefreshChildren();

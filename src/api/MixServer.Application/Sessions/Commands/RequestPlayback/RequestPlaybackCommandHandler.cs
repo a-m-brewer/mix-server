@@ -34,7 +34,7 @@ public class RequestPlaybackCommandHandler(
         var requestDeviceId = request.DeviceId ?? currentDeviceRepository.DeviceId;
         
         var deviceState = deviceTrackingService.GetDeviceStateOrThrow(requestDeviceId);
-        var file = folderCacheService.GetFile(playbackState.AbsolutePath);
+        var file = await folderCacheService.GetFileAsync(playbackState.AbsolutePath);
 
         canPlayOnDeviceValidator.ValidateCanPlayOrThrow(deviceState, file);
 

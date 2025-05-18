@@ -1,6 +1,8 @@
+using MixServer.FolderIndexer.Interface.Models;
+
 namespace MixServer.FolderIndexer.Domain.Entities;
 
-public class FileSystemInfoEntity
+public class FileSystemInfoEntity : IFileSystemInfo
 {
     public required Guid Id { get; set; }
     
@@ -23,4 +25,6 @@ public class FileSystemInfoEntity
     public Guid? RootId { get; set; }
     
     public RootDirectoryInfoEntity? Root { get; set; }
+    
+    public string FullName => Path.Join(Root?.RelativePath ?? string.Empty, RelativePath);
 }

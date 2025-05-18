@@ -6,7 +6,7 @@ namespace MixServer.Domain.Sessions.Services;
 
 public interface ISessionHydrationService
 {
-    void Hydrate(IPlaybackSession session);
+    Task HydrateAsync(IPlaybackSession session);
 }
 
 public class SessionHydrationService(
@@ -14,9 +14,9 @@ public class SessionHydrationService(
     IPlaybackTrackingService playbackTrackingService,
     IStreamKeyService streamKeyService) : ISessionHydrationService
 {
-    public void Hydrate(IPlaybackSession session)
+    public async Task HydrateAsync(IPlaybackSession session)
     {
-        var currentNode = fileService.GetFile(session.AbsolutePath);
+        var currentNode = await fileService.GetFileAsync(session.AbsolutePath);
 
         playbackTrackingService.Populate(session);
         

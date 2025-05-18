@@ -11,7 +11,6 @@ using MixServer.Domain.Tracklists.Services;
 namespace MixServer.Services;
 
 public class MediaInfoService(
-    IFolderCacheService folderCacheService,
     ILogger<MediaInfoService> logger,
     IMediaInfoCache mediaInfoCache,
     IServiceProvider serviceProvider,
@@ -22,22 +21,22 @@ public class MediaInfoService(
     {
         await Task.Yield();
         
-        folderCacheService.FolderAdded += FolderCacheServiceOnFolderAdded;
-        folderCacheService.FolderRemoved += FolderCacheServiceOnFolderRemoved;
-        folderCacheService.ItemAdded += FolderCacheServiceOnItemAdded;
-        folderCacheService.ItemUpdated += FolderCacheServiceOnItemUpdated;
-        folderCacheService.ItemRemoved += FolderCacheServiceOnItemRemoved;
+        // folderCacheService.FolderAdded += FolderCacheServiceOnFolderAdded;
+        // folderCacheService.FolderRemoved += FolderCacheServiceOnFolderRemoved;
+        // folderCacheService.ItemAdded += FolderCacheServiceOnItemAdded;
+        // folderCacheService.ItemUpdated += FolderCacheServiceOnItemUpdated;
+        // folderCacheService.ItemRemoved += FolderCacheServiceOnItemRemoved;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         await Task.Yield();
         
-        folderCacheService.FolderAdded -= FolderCacheServiceOnFolderAdded;
-        folderCacheService.FolderRemoved -= FolderCacheServiceOnFolderRemoved;
-        folderCacheService.ItemAdded -= FolderCacheServiceOnItemAdded;
-        folderCacheService.ItemUpdated -= FolderCacheServiceOnItemUpdated;
-        folderCacheService.ItemRemoved -= FolderCacheServiceOnItemRemoved;
+        // folderCacheService.FolderAdded -= FolderCacheServiceOnFolderAdded;
+        // folderCacheService.FolderRemoved -= FolderCacheServiceOnFolderRemoved;
+        // folderCacheService.ItemAdded -= FolderCacheServiceOnItemAdded;
+        // folderCacheService.ItemUpdated -= FolderCacheServiceOnItemUpdated;
+        // folderCacheService.ItemRemoved -= FolderCacheServiceOnItemRemoved;
     }
     
     private async void FolderCacheServiceOnFolderAdded(object? sender, IFileExplorerFolder e)

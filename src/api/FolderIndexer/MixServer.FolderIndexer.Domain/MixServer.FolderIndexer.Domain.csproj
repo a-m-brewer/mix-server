@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Shared\MixServer.Shared\MixServer.Shared.csproj" />
+      <ProjectReference Include="..\MixServer.FolderIndexer.Interface\MixServer.FolderIndexer.Interface.csproj" />
     </ItemGroup>
 
 </Project>

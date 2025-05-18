@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using MixServer.FolderIndexer.Api;
 using MixServer.FolderIndexer.HostedServices;
+using MixServer.FolderIndexer.Interface.Api;
 using MixServer.FolderIndexer.Persistence.InMemory;
 using MixServer.FolderIndexer.Services;
 
@@ -14,6 +15,7 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<FileSystemIndexerBackgroundService>();
 
         services.AddTransient<IFolderIndexerScannerApi, FolderIndexerScannerApi>();
+        services.AddTransient<IFolderIndexerFileSystemApi, FolderIndexerFileSystemApi>();
             
         services.AddTransient<IFileSystemScannerService, FileSystemScannerService>();
         services.AddTransient<IFileSystemPersistenceService, FileSystemPersistenceService>();

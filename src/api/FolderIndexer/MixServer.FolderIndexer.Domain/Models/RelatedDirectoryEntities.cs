@@ -2,7 +2,7 @@ using MixServer.FolderIndexer.Domain.Entities;
 
 namespace MixServer.FolderIndexer.Domain.Models;
 
-public class RelatedDirectoryEntities
+public class RelatedDirectoryEntities<TEntity> where TEntity : FileSystemInfoEntity
 {
     public required string FullName { get; init; }
     
@@ -10,5 +10,5 @@ public class RelatedDirectoryEntities
     
     public DirectoryInfoEntity? Parent { get; init; }
     
-    public DirectoryInfoEntity? Directory { get; init; }
+    public TEntity? Entity { get; init; }
 }

@@ -19,7 +19,7 @@ public class FileService(
 {
     public async Task<IFileExplorerFolder> GetFolderAsync(string absolutePath)
     {
-        var cacheItem = folderCacheService.GetOrAdd(absolutePath);
+        var cacheItem = await folderCacheService.GetOrAddAsync(absolutePath);
 
         var folder = cacheItem.Folder;
 
@@ -39,13 +39,8 @@ public class FileService(
         // If no folder is specified return the root folder
         if (string.IsNullOrWhiteSpace(absolutePath))
         {
-            return rootFolder;
-        }
-
-        // The folder is out of bounds return the root folder instead
-        if (!rootFolder.BelongsToRootChild(absolutePath))
-        {
-            throw new ForbiddenRequestException("You do not have permission to access this folder");
+            var root = await folderCacheService.GetRootFolderAsync();
+            return root;
         }
         
         var folder = await GetFolderAsync(absolutePath);
@@ -55,19 +50,19 @@ public class FileService(
             : throw new NotFoundException("Folder", absolutePath);
     }
 
-    public List<IFileExplorerFileNode> GetFiles(IReadOnlyList<string> absoluteFilePaths)
+    public async Task<List<IFileExplorerFileNode>> GetFilesAsync(IReadOnlyList<string> absoluteFilePaths)
     {
-        return absoluteFilePaths.Select(GetFile).ToList();
+        return (await Task.WhenAll(absoluteFilePaths.Select(GetFileAsync))).ToList();
     }
     
-    public IFileExplorerFileNode GetFile(string absoluteFolderPath, string filename)
+    public Task<IFileExplorerFileNode> GetFileAsync(string absoluteFolderPath, string filename)
     {
-        return GetFile(Path.Join(absoluteFolderPath, filename));
+        return GetFileAsync(Path.Join(absoluteFolderPath, filename));
     }
 
-    public IFileExplorerFileNode GetFile(string fileAbsolutePath)
+    public async Task<IFileExplorerFileNode> GetFileAsync(string fileAbsolutePath)
     {
-        return folderCacheService.GetFile(fileAbsolutePath);
+        return await folderCacheService.GetFileAsync(fileAbsolutePath);
     }
 
     public void CopyNode(

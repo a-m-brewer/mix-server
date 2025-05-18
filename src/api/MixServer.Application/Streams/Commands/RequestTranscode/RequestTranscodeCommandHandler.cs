@@ -23,7 +23,7 @@ public class RequestTranscodeCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request);
         
-        var file = fileService.GetFile(request.AbsoluteFilePath);
+        var file = await fileService.GetFileAsync(request.AbsoluteFilePath);
 
         if (!file.Exists)
         {

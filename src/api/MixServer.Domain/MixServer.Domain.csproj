@@ -13,6 +13,7 @@
     <Folder Include="FileExplorer\Settings\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FolderIndexer\MixServer.FolderIndexer.Interface\MixServer.FolderIndexer.Interface.csproj" />
     <ProjectReference Include="..\Shared\MixServer.Shared\MixServer.Shared.csproj" />
   </ItemGroup>
 </Project>

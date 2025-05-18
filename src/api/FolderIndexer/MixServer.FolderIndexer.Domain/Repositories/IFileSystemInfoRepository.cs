@@ -8,7 +8,8 @@ public interface IFileSystemInfoRepository
     Task<ICollection<RootDirectoryInfoEntity>> GetAllRootFoldersAsync(CancellationToken cancellationToken);
     Task AddAsync(FileSystemInfoEntity fileSystemInfo, CancellationToken cancellationToken);
     void Remove(FileSystemInfoEntity fileSystemInfo);
-    Task<RelatedDirectoryEntities> GetDirectoriesAsync(
+    Task<RelatedDirectoryEntities<TEntity>> GetDirectoriesAsync<TEntity>(
         string fullName,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken) 
+        where TEntity : FileSystemInfoEntity;
 }

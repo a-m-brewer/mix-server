@@ -18,7 +18,7 @@ public class AddToQueueCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request);
 
-        var file = fileService.GetFile(request.AbsoluteFolderPath, request.FileName);
+        var file = await fileService.GetFileAsync(request.AbsoluteFolderPath, request.FileName);
 
         var queueSnapshot = await queueService.AddToQueueAsync(file);
 

@@ -57,7 +57,7 @@ public class SessionService(
         
         var device = requestedPlaybackDeviceAccessor.PlaybackDevice;
         
-        var file = folderCacheService.GetFile(request.AbsoluteFilePath);
+        var file = await folderCacheService.GetFileAsync(request.AbsoluteFilePath);
 
         canPlayOnDeviceValidator.ValidateCanPlayOrThrow(device, file);
 
@@ -89,7 +89,7 @@ public class SessionService(
         
         user.CurrentPlaybackSession = session;
 
-        sessionHydrationService.Hydrate(session);
+        sessionHydrationService.HydrateAsync(session);
         
         unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(session.UserId, currentDeviceRepository.DeviceId, session));
         return session;
@@ -127,7 +127,7 @@ public class SessionService(
     {
         var session = await playbackSessionRepository.GetAsync(id);
 
-        sessionHydrationService.Hydrate(session);
+        sessionHydrationService.HydrateAsync(session);
         
         return session;
     }
@@ -136,7 +136,7 @@ public class SessionService(
     {
         var session = await GetCurrentPlaybackSessionAsync();
         
-        sessionHydrationService.Hydrate(session);
+        sessionHydrationService.HydrateAsync(session);
 
         return session;
     }
@@ -172,7 +172,7 @@ public class SessionService(
 
         foreach (var session in sessions)
         {
-            sessionHydrationService.Hydrate(session);
+            sessionHydrationService.HydrateAsync(session);
         }
 
         return sessions;

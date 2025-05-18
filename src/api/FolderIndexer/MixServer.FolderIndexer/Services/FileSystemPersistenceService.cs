@@ -23,15 +23,15 @@ internal class FileSystemPersistenceService(
         ICollection<FileSystemInfo> children,
         CancellationToken cancellationToken = default)
     {
-        var dirs = await fileSystemInfoRepository.GetDirectoriesAsync(directoryInfo.FullName, cancellationToken);
+        var dirs = await fileSystemInfoRepository.GetDirectoriesAsync<DirectoryInfoEntity>(directoryInfo.FullName, cancellationToken);
         
         logger.LogInformation("{FullName} - Root: {Root} - Parent: {Parent} - Directory: {Directory}",
             directoryInfo.FullName,
             dirs.Root.RelativePath,
             dirs.Parent?.RelativePath,
-            dirs.Directory?.RelativePath);
+            dirs.Entity?.RelativePath);
 
-        var dir = dirs.Directory;
+        var dir = dirs.Entity;
         if (dir is null)
         {
             dir = fileSystemInfoConverter.ConvertChildDirectory(directoryInfo, dirs.Root, dirs.Parent);

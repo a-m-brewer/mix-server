@@ -56,13 +56,13 @@ public class QueueService(
         var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderAbsolutePath);
         if (files.All(a => a.AbsolutePath != nextSession.AbsolutePath))
         {
-            files.Add(fileService.GetFile(nextSession.AbsolutePath));
+            files.Add(await fileService.GetFileAsync(nextSession.AbsolutePath));
         }
 
         queue.RegenerateFolderQueueSortItems(files);
         queue.SetQueuePositionFromFolderItemOrThrow(nextSession.AbsolutePath);
 
-        var queueSnapshot = GenerateQueueSnapshot(queue, files);
+        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, files);
 
         unitOfWork.InvokeCallbackOnSaved(c =>
             c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
@@ -164,7 +164,7 @@ public class QueueService(
 
         queue.Sort(files);
 
-        var queueSnapshot = GenerateQueueSnapshot(queue, files);
+        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, files);
         unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot));
     }
 
@@ -199,12 +199,13 @@ public class QueueService(
     
     private async Task<QueueSnapshot> GenerateQueueSnapshotAsync(UserQueue userQueue)
     {
-        return GenerateQueueSnapshot(userQueue, await GetPlayableFilesInFolderAsync(userQueue.CurrentFolderAbsolutePath));
+        return await GenerateQueueSnapshotAsync(userQueue, await GetPlayableFilesInFolderAsync(userQueue.CurrentFolderAbsolutePath));
     }
     
-    private QueueSnapshot GenerateQueueSnapshot(UserQueue userQueue, IEnumerable<IFileExplorerFileNode> folderFiles)
+    private async Task<QueueSnapshot> GenerateQueueSnapshotAsync(UserQueue userQueue,
+        IEnumerable<IFileExplorerFileNode> folderFiles)
     {
-        var userQueueFiles = fileService.GetFiles(userQueue.UserQueueItemsAbsoluteFilePaths);
+        var userQueueFiles = await fileService.GetFilesAsync(userQueue.UserQueueItemsAbsoluteFilePaths);
 
         var allFiles = new List<IFileExplorerFileNode>(userQueueFiles);
         allFiles.AddRange(folderFiles);

@@ -10,6 +10,8 @@ public interface ICacheFolder
     IFileExplorerFolder Folder { get; }
 }
 
+public record CacheFolderDto(IFileExplorerFolder Folder) : ICacheFolder;
+
 public interface IFolderCacheItem : ICacheFolder, IDisposable
 {
     event EventHandler<IFileExplorerNode> ItemAdded;

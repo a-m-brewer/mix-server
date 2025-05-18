@@ -4,9 +4,9 @@ using MixServer.Domain.FileExplorer.Enums;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
-public class FileExplorerFolder(IFileExplorerFolderNode node) : IFileExplorerFolder
+public class FileExplorerFolder(IFileExplorerFolderNode node, ConcurrentDictionary<string, IFileExplorerNode>? childNodes = null) : IFileExplorerFolder
 {
-    protected readonly ConcurrentDictionary<string, IFileExplorerNode> ChildNodes = [];
+    protected readonly ConcurrentDictionary<string, IFileExplorerNode> ChildNodes = childNodes ?? new ConcurrentDictionary<string, IFileExplorerNode>();
 
     public IFileExplorerFolderNode Node { get; } = node;
 

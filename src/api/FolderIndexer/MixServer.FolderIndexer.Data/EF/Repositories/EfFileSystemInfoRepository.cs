@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MixServer.FolderIndexer.Data.EF.Extensions;
 using MixServer.FolderIndexer.Domain.Entities;
 using MixServer.FolderIndexer.Domain.Exceptions;
 using MixServer.FolderIndexer.Domain.Models;
@@ -25,7 +26,8 @@ public class EfFileSystemInfoRepository(IFolderIndexerDbContext context) : IFile
         context.FileSystemNodes.Remove(fileSystemInfo);
     }
 
-    public async Task<RelatedDirectoryEntities> GetDirectoriesAsync(string fullName, CancellationToken cancellationToken)
+    public async Task<RelatedDirectoryEntities<TEntity>> GetDirectoriesAsync<TEntity>(string fullName, CancellationToken cancellationToken)
+        where TEntity : FileSystemInfoEntity
     {
         var root = await context.FileSystemNodes
             .OfType<RootDirectoryInfoEntity>()
@@ -39,12 +41,12 @@ public class EfFileSystemInfoRepository(IFolderIndexerDbContext context) : IFile
         
         if (root.RelativePath == fullName)
         {
-            return new RelatedDirectoryEntities
+            return new RelatedDirectoryEntities<TEntity>
             {
                 FullName = fullName,
                 Root = root,
                 Parent = root,
-                Directory = root,
+                Entity = root as TEntity
             };
         }
         
@@ -63,18 +65,18 @@ public class EfFileSystemInfoRepository(IFolderIndexerDbContext context) : IFile
         
         var dirRelativePath = Path.GetRelativePath(root.RelativePath, fullName);
         var directory = await context.FileSystemNodes
-            .OfType<DirectoryInfoEntity>()
-            .Include(i => i.Children)
+            .OfType<TEntity>()
+            .IncludeChildren()
             .Include(i => i.Parent)
             .Include(i => i.Root)
             .FirstOrDefaultAsync(f => f.RelativePath == dirRelativePath && f.RootId == root.Id, cancellationToken);
 
-        return new RelatedDirectoryEntities
+        return new RelatedDirectoryEntities<TEntity>
         {
             FullName = fullName,
             Root = root,
             Parent = parent,
-            Directory = directory
+            Entity = directory
         };
     }
 }

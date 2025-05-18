@@ -4,6 +4,7 @@ using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
+using MixServer.Domain.FileExplorer.Services.Indexing;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Sessions.Validators;
@@ -20,7 +21,8 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddMixServerDomainServices(this IServiceCollection services)
     {
         services.AddScoped<IUserValidator, UserValidator>();
-        services.AddSingleton<IFolderCacheService, FolderCacheService>();
+        // services.AddSingleton<IFolderCacheService, FolderCacheService>();
+        services.AddTransient<IFolderCacheService, IndexFolderCacheService>();
         services.AddSingleton<IFileNotificationService, FileNotificationService>();
         services.AddTransient<FileExplorerConverter, FileExplorerConverter>();
         services.AddSingleton<IRootFileExplorerFolder, RootFileExplorerFolder>();

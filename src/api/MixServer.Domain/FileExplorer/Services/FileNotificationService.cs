@@ -18,7 +18,6 @@ public interface IFileNotificationService : INotificationService
 
 public class FileNotificationService(
     ICallbackService callbackService,
-    IFolderCacheService folderCacheService,
     ILogger<FileNotificationService> logger,
     IServiceProvider serviceProvider,
     ITranscodeCache transcodeCache)
@@ -26,9 +25,9 @@ public class FileNotificationService(
 {
     public override void Initialize()
     {
-        folderCacheService.ItemAdded += CreateHandler<IFileExplorerNode>(FolderCacheServiceOnItemAdded);
-        folderCacheService.ItemUpdated += CreateHandler<FolderCacheServiceItemUpdatedEventArgs>(FolderCacheServiceOnItemUpdated);
-        folderCacheService.ItemRemoved += CreateHandler<FolderCacheServiceItemRemovedEventArgs>(FolderCacheServiceOnItemRemoved);
+        // folderCacheService.ItemAdded += CreateHandler<IFileExplorerNode>(FolderCacheServiceOnItemAdded);
+        // folderCacheService.ItemUpdated += CreateHandler<FolderCacheServiceItemUpdatedEventArgs>(FolderCacheServiceOnItemUpdated);
+        // folderCacheService.ItemRemoved += CreateHandler<FolderCacheServiceItemRemovedEventArgs>(FolderCacheServiceOnItemRemoved);
         transcodeCache.TranscodeStatusUpdated += CreateHandler<TranscodeStatusUpdatedEventArgs>(TranscodeCacheOnTranscodeStatusUpdated);
     }
 
@@ -63,11 +62,11 @@ public class FileNotificationService(
     
     private async Task TranscodeCacheOnTranscodeStatusUpdated(object? sender, IServiceProvider sp, TranscodeStatusUpdatedEventArgs e)
     {
-        var (parent, file) = folderCacheService.GetFileAndFolder(e.AbsoluteFilePath);
-        
-        var expectedIndexes = await GetExpectedIndexesAsync(sp, parent, file);
-        
-        await callbackService.FileExplorerNodeUpdated(expectedIndexes, file, null);
+        // var (parent, file) = await folderCacheService.GetFileAndFolderAsync(e.AbsoluteFilePath);
+        //
+        // var expectedIndexes = await GetExpectedIndexesAsync(sp, parent, file);
+        //
+        // await callbackService.FileExplorerNodeUpdated(expectedIndexes, file, null);
     }
     
     private bool IsFileExplorerFolder(object? sender, [MaybeNullWhen(false)] out IFileExplorerFolder parent)

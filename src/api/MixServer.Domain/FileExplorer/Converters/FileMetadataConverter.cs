@@ -6,11 +6,12 @@ using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Tracklists.Factories;
 using MixServer.Domain.Tracklists.Services;
 using MixServer.Domain.Utilities;
+using MixServer.FolderIndexer.Interface.Models;
 using MixServer.Shared.Interfaces;
 
 namespace MixServer.Domain.FileExplorer.Converters;
 
-public interface IFileMetadataConverter : IConverter<FileInfo, IFileMetadata>;
+public interface IFileMetadataConverter : IConverter<FileInfo, IFileMetadata>, IConverter<IFileInfo, IFileMetadata>;
 
 public partial class FileMetadataConverter(
     ILogger<FileMetadataConverter> logger,
@@ -25,6 +26,21 @@ public partial class FileMetadataConverter(
     ];
     
     public IFileMetadata Convert(FileInfo file)
+    {
+        var mimeType = mimeTypeService.GetMimeType(file.FullName, file.Extension);
+
+        var isMedia = !string.IsNullOrWhiteSpace(mimeType) &&
+                      AudioVideoMimeTypeRegex().IsMatch(mimeType) &&
+                      !ExcludedMediaMimeTypes.Contains(mimeType);
+
+        return new FileMetadata
+        {
+            MimeType = mimeType,
+            IsMedia = isMedia
+        };
+    }
+    
+    public IFileMetadata Convert(IFileInfo file)
     {
         var mimeType = mimeTypeService.GetMimeType(file.FullName, file.Extension);
 
