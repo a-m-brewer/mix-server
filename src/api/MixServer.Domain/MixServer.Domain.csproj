@@ -9,11 +9,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Scrutor" Version="4.2.2" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="FileExplorer\Settings\" />
-  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\FolderIndexer\MixServer.FolderIndexer.Interface\MixServer.FolderIndexer.Interface.csproj" />
+    <ProjectReference Include="..\FolderIndexer\MixServer.FolderIndexer.Tags.Interface\MixServer.FolderIndexer.Tags.Interface.csproj" />
     <ProjectReference Include="..\Shared\MixServer.Shared\MixServer.Shared.csproj" />
   </ItemGroup>
 </Project>

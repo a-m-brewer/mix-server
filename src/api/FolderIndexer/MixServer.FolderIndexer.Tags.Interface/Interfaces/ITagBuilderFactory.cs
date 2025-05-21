@@ -1,6 +1,4 @@
-using MixServer.Domain.Tracklists.Builders;
-
-namespace MixServer.Domain.Tracklists.Factories;
+namespace MixServer.FolderIndexer.Tags.Interface.Interfaces;
 
 public interface ITagBuilderFactory
 {

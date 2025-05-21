@@ -1,11 +1,10 @@
 using Microsoft.Extensions.Logging;
-using MixServer.Domain.Tracklists.Builders;
-using MixServer.Domain.Tracklists.Factories;
-using MixServer.Infrastructure.Tracklist.Builders;
+using MixServer.FolderIndexer.Tags.Builders;
+using MixServer.FolderIndexer.Tags.Interface.Interfaces;
 
-namespace MixServer.Infrastructure.Tracklist.Factories;
+namespace MixServer.FolderIndexer.Tags.Factories;
 
-public class TagLibSharpTagBuilderFactory(ILoggerFactory loggerFactory) : ITagBuilderFactory
+internal class TagLibSharpTagBuilderFactory(ILoggerFactory loggerFactory) : ITagBuilderFactory
 {
     public ITagBuilder Create(string filePath)
     {

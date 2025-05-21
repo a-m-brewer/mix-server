@@ -1,12 +1,12 @@
 using Microsoft.Extensions.Logging;
-using MixServer.Domain.Tracklists.Builders;
-using MixServer.Domain.Tracklists.Models;
+using MixServer.FolderIndexer.Tags.Interface.Interfaces;
+using MixServer.FolderIndexer.Tags.Models;
 using TagLib;
 using TagLib.Id3v2;
 
-namespace MixServer.Infrastructure.Tracklist.Builders;
+namespace MixServer.FolderIndexer.Tags.Builders;
 
-public class TagLibSharpTagBuilder : ITagBuilder
+internal class TagLibSharpTagBuilder : ITagBuilder
 {
     private readonly ILogger<TagLibSharpTagBuilder> _logger;
     private readonly TagLib.File _file;

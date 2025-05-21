@@ -28,6 +28,7 @@ public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : 
     #region FileIndexer
 
     public DbSet<FileSystemInfoEntity> FileSystemNodes { get; set; }
+    public DbSet<FileMetadataEntity> FileMetadata { get; set; }
 
     #endregion
     

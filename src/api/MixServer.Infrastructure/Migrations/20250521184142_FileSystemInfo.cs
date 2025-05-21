@@ -41,6 +41,34 @@ namespace MixServer.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "FileMetadata",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MimeType = table.Column<string>(type: "TEXT", nullable: false),
+                    FileId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Type = table.Column<string>(type: "TEXT", maxLength: 21, nullable: false),
+                    Bitrate = table.Column<int>(type: "INTEGER", nullable: true),
+                    Duration = table.Column<TimeSpan>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FileMetadata", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FileMetadata_FileSystemNodes_FileId",
+                        column: x => x.FileId,
+                        principalTable: "FileSystemNodes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FileMetadata_FileId",
+                table: "FileMetadata",
+                column: "FileId",
+                unique: true);
+
             migrationBuilder.CreateIndex(
                 name: "IX_FileSystemNodes_ParentId",
                 table: "FileSystemNodes",
@@ -56,6 +84,9 @@ namespace MixServer.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "FileMetadata");
+
             migrationBuilder.DropTable(
                 name: "FileSystemNodes");
         }

@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFolderIndexerDbContext>(sp => sp.GetRequiredService<TContext>());
         
         services.AddTransient<IFileSystemInfoRepository, EfFileSystemInfoRepository>();
+        services.AddTransient<IFileSystemMetadataRepository, EfFileSystemMetadataRepository>();
         
         services.AddTransient<IFileIndexerUnitOfWork, EfFileIndexerUnitOfWork>();
         

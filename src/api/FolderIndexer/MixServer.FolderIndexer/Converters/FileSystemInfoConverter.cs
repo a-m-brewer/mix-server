@@ -1,9 +1,11 @@
+using System.Text.RegularExpressions;
 using MixServer.FolderIndexer.Domain.Entities;
+using MixServer.FolderIndexer.Services;
 using MixServer.Shared.Interfaces;
 
 namespace MixServer.FolderIndexer.Converters;
 
-public interface IFileSystemInfoConverter
+internal interface IFileSystemInfoConverter
     : IConverter
 {
     RootDirectoryInfoEntity ConvertRoot(DirectoryInfo directoryInfo);
@@ -16,16 +18,18 @@ public interface IFileSystemInfoConverter
         RootDirectoryInfoEntity root,
         DirectoryInfoEntity? parent);
     
-    void UpdateChild(
-        FileSystemInfoEntity fsEntity, 
+    Task UpdateChildAsync(FileSystemInfoEntity fsEntity,
         FileSystemInfo fileSystemInfo,
         RootDirectoryInfoEntity root,
-        DirectoryInfoEntity parent);
+        DirectoryInfoEntity parent,
+        CancellationToken cancellationToken);
 
-    FileSystemInfoEntity ConvertChild(FileSystemInfo fileSystemInfo, RootDirectoryInfoEntity root, DirectoryInfoEntity parent);
+    Task<FileSystemInfoEntity> ConvertChildAsync(FileSystemInfo fileSystemInfo, RootDirectoryInfoEntity root,
+        DirectoryInfoEntity parent, CancellationToken cancellationToken);
 }
 
-public class FileSystemInfoConverter : IFileSystemInfoConverter
+internal partial class FileSystemInfoConverter(
+    IFileSystemMetadataPersistenceService metadataPersistenceService) : IFileSystemInfoConverter
 {
     public RootDirectoryInfoEntity ConvertRoot(DirectoryInfo directoryInfo)
     {
@@ -81,11 +85,12 @@ public class FileSystemInfoConverter : IFileSystemInfoConverter
         dir.Root = root;
     }
     
-    public void UpdateChild(
+    public async Task UpdateChildAsync(
         FileSystemInfoEntity fsEntity,
         FileSystemInfo fileSystemInfo,
         RootDirectoryInfoEntity root,
-        DirectoryInfoEntity parent)
+        DirectoryInfoEntity parent,
+        CancellationToken cancellationToken)
     {
         fsEntity.Name = fileSystemInfo.Name;
         fsEntity.RelativePath = Path.GetRelativePath(root.RelativePath, fileSystemInfo.FullName);
@@ -96,14 +101,15 @@ public class FileSystemInfoConverter : IFileSystemInfoConverter
 
         if (fileSystemInfo is FileInfo fileInfo)
         {
-            ((FileInfoEntity)fsEntity).Extension = fileInfo.Extension;
+            await metadataPersistenceService.UpdateMetadataAsync((FileInfoEntity)fsEntity, fileInfo, cancellationToken);
         }
     }
 
-    public FileSystemInfoEntity ConvertChild(
+    public async Task<FileSystemInfoEntity> ConvertChildAsync(
         FileSystemInfo fileSystemInfo,
         RootDirectoryInfoEntity root,
-        DirectoryInfoEntity parent)
+        DirectoryInfoEntity parent,
+        CancellationToken cancellationToken)
     {
         if (fileSystemInfo is DirectoryInfo directoryInfo)
         {
@@ -112,17 +118,25 @@ public class FileSystemInfoConverter : IFileSystemInfoConverter
         
         if (fileSystemInfo is FileInfo fileInfo)
         {
-            return new FileInfoEntity
+            var file = new FileInfoEntity
             {
                 Id = Guid.NewGuid(),
                 Name = fileInfo.Name,
-                RelativePath = Path.GetRelativePath(root.RelativePath, fileInfo.FullName),
+                RelativePath = Path.GetRelativePath(root.RelativePath,
+                    fileInfo.FullName),
                 Exists = fileInfo.Exists,
                 CreationTimeUtc = fileInfo.CreationTimeUtc,
                 Extension = fileInfo.Extension,
                 Parent = parent,
-                Root = root
+                Root = root,
+                Metadata = metadataPersistenceService.CreateMetadata(fileInfo)
             };
+            file.Metadata.File = file;
+            file.Metadata.FileId = file.Id;
+            
+            await metadataPersistenceService.AddAsync(file.Metadata, cancellationToken);
+            
+            return file;
         }
         
         throw new NotSupportedException($"FileSystemInfo type {fileSystemInfo.GetType()} is not supported.");

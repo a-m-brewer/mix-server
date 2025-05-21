@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MixServer.FolderIndexer.Persistence.InMemory;
 using MixServer.FolderIndexer.Services;
 
@@ -7,6 +8,7 @@ namespace MixServer.FolderIndexer.HostedServices;
 
 internal class FileSystemIndexerBackgroundService(
     FileSystemIndexerChannelStore channelStore,
+    ILogger<FileSystemIndexerBackgroundService> logger,
     IServiceProvider serviceProvider) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -23,9 +25,16 @@ internal class FileSystemIndexerBackgroundService(
         {
             while (channelStore.ScannerChannel.Reader.TryRead(out var dir))
             {
-                using var scope = serviceProvider.CreateScope();
-                var fileSystemScannerService = scope.ServiceProvider.GetRequiredService<IFileSystemScannerService>();
-                await fileSystemScannerService.ScanAsync(dir, stoppingToken);
+                try
+                {
+                    using var scope = serviceProvider.CreateScope();
+                    var fileSystemScannerService = scope.ServiceProvider.GetRequiredService<IFileSystemScannerService>();
+                    await fileSystemScannerService.ScanAsync(dir, stoppingToken).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Error while scanning directory: {Directory}", dir);
+                }
             }
         }
     }

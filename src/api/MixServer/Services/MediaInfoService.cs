@@ -3,7 +3,6 @@ using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Caching;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.FileExplorer.Services.Caching;
-using MixServer.Domain.Tracklists.Factories;
 using MixServer.Domain.Tracklists.Services;
 
 // ReSharper disable AsyncVoidMethod
@@ -14,7 +13,7 @@ public class MediaInfoService(
     ILogger<MediaInfoService> logger,
     IMediaInfoCache mediaInfoCache,
     IServiceProvider serviceProvider,
-    ITagBuilderFactory tagBuilderFactory,
+    // ITagBuilderFactory tagBuilderFactory,
     ITracklistTagService tracklistTagService) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -124,19 +123,20 @@ public class MediaInfoService(
     
     private Task<MediaInfo?> LoadMediaInfoFromFileAsync(IFileExplorerFileNode arg)
     {
+        throw new NotImplementedException();
         try
         {
-            using var tb = tagBuilderFactory.CreateReadOnly(arg.AbsolutePath);
-            var tracklist = tracklistTagService.GetTracklist(tb);
-            var mediaInfo = new MediaInfo
-            {
-                NodePath = new NodePath(arg.Parent.AbsolutePath, arg.Name),
-                Bitrate = tb.Bitrate,
-                Duration = tb.Duration,
-                Tracklist = tracklist
-            };
-
-            return Task.FromResult<MediaInfo?>(mediaInfo);
+            // using var tb = tagBuilderFactory.CreateReadOnly(arg.AbsolutePath);
+            // var tracklist = tracklistTagService.GetTracklist(tb);
+            // var mediaInfo = new MediaInfo
+            // {
+            //     NodePath = new NodePath(arg.Parent.AbsolutePath, arg.Name),
+            //     Bitrate = tb.Bitrate,
+            //     Duration = tb.Duration,
+            //     Tracklist = tracklist
+            // };
+            //
+            // return Task.FromResult<MediaInfo?>(mediaInfo);
         } 
         catch (Exception e)
         {

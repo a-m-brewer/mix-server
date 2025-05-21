@@ -1,6 +1,6 @@
-using MixServer.Domain.Tracklists.Models;
+using MixServer.FolderIndexer.Tags.Models;
 
-namespace MixServer.Domain.Tracklists.Builders;
+namespace MixServer.FolderIndexer.Tags.Interface.Interfaces;
 
 public interface IReadOnlyTagBuilder : IDisposable
 {

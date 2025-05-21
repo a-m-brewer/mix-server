@@ -1,8 +1,4 @@
-using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
-using MixServer.Domain.Tracklists.Builders;
-using MixServer.Domain.Tracklists.Factories;
-using MixServer.Domain.Tracklists.Models;
 using MixServer.Domain.Tracklists.Services;
 using MixServer.Infrastructure.Users.Repository;
 using MixServer.Shared.Interfaces;

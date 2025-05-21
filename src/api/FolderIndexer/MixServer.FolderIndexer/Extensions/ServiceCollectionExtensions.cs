@@ -4,6 +4,7 @@ using MixServer.FolderIndexer.HostedServices;
 using MixServer.FolderIndexer.Interface.Api;
 using MixServer.FolderIndexer.Persistence.InMemory;
 using MixServer.FolderIndexer.Services;
+using MixServer.FolderIndexer.Tags.Extensions;
 
 namespace MixServer.FolderIndexer.Extensions;
 
@@ -22,6 +23,11 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IFileSystemRootPersistenceService, FileSystemRootPersistenceService>();
         
         services.AddSingleton<FileSystemIndexerChannelStore>();
+
+        services.AddTransient<FileExtensionContentTypeProvider>();
+        services.AddTransient<IFileSystemMetadataPersistenceService, FileSystemMetadataPersistenceService>();
+
+        services.AddFolderIndexerTagsServices();
         
         return services;
     }

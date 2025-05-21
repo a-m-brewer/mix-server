@@ -1,4 +1,4 @@
-namespace MixServer.Domain.Tracklists.Models;
+namespace MixServer.FolderIndexer.Tags.Models;
 
 public class Chapter(
     string id,

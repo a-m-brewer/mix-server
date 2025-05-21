@@ -11,7 +11,7 @@ using MixServer.Infrastructure.EF;
 namespace MixServer.Infrastructure.Migrations
 {
     [DbContext(typeof(MixServerDbContext))]
-    [Migration("20250517193837_FileSystemInfo")]
+    [Migration("20250521184142_FileSystemInfo")]
     partial class FileSystemInfo
     {
         /// <inheritdoc />
@@ -300,6 +300,36 @@ namespace MixServer.Infrastructure.Migrations
                     b.ToTable("UserCredentials");
                 });
 
+            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.FileMetadataEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileId")
+                        .IsUnique();
+
+                    b.ToTable("FileMetadata");
+
+                    b.HasDiscriminator<string>("Type").HasValue("FileMetadataEntity");
+
+                    b.UseTphMappingStrategy();
+                });
+
             modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.FileSystemInfoEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -415,6 +445,19 @@ namespace MixServer.Infrastructure.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.MediaMetadataEntity", b =>
+                {
+                    b.HasBaseType("MixServer.FolderIndexer.Domain.Entities.FileMetadataEntity");
+
+                    b.Property<int>("Bitrate")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<TimeSpan>("Duration")
+                        .HasColumnType("TEXT");
+
+                    b.HasDiscriminator().HasValue("MediaMetadataEntity");
                 });
 
             modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.DirectoryInfoEntity", b =>
@@ -543,6 +586,17 @@ namespace MixServer.Infrastructure.Migrations
                     b.Navigation("Device");
                 });
 
+            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.FileMetadataEntity", b =>
+                {
+                    b.HasOne("MixServer.FolderIndexer.Domain.Entities.FileInfoEntity", "File")
+                        .WithOne("Metadata")
+                        .HasForeignKey("MixServer.FolderIndexer.Domain.Entities.FileMetadataEntity", "FileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("File");
+                });
+
             modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.FileSystemInfoEntity", b =>
                 {
                     b.HasOne("MixServer.FolderIndexer.Domain.Entities.DirectoryInfoEntity", "Parent")
@@ -585,6 +639,12 @@ namespace MixServer.Infrastructure.Migrations
             modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.DirectoryInfoEntity", b =>
                 {
                     b.Navigation("Children");
+                });
+
+            modelBuilder.Entity("MixServer.FolderIndexer.Domain.Entities.FileInfoEntity", b =>
+                {
+                    b.Navigation("Metadata")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

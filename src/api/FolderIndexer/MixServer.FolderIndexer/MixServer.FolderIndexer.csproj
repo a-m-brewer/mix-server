@@ -15,6 +15,7 @@
     <ItemGroup>
       <ProjectReference Include="..\MixServer.FolderIndexer.Domain\MixServer.FolderIndexer.Domain.csproj" />
       <ProjectReference Include="..\MixServer.FolderIndexer.Interface\MixServer.FolderIndexer.Interface.csproj" />
+      <ProjectReference Include="..\MixServer.FolderIndexer.Tags\MixServer.FolderIndexer.Tags.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,9 +1,8 @@
 using Microsoft.Extensions.Logging;
-using MixServer.Domain.Tracklists.Builders;
 using MixServer.Domain.Tracklists.Dtos.Import;
 using MixServer.Domain.Tracklists.Enums;
-using MixServer.Domain.Tracklists.Factories;
-using MixServer.Domain.Tracklists.Models;
+using MixServer.FolderIndexer.Tags.Interface.Interfaces;
+using MixServer.FolderIndexer.Tags.Models;
 
 namespace MixServer.Domain.Tracklists.Services;
 

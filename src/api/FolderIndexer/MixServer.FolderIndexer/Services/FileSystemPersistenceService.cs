@@ -3,6 +3,7 @@ using MixServer.FolderIndexer.Converters;
 using MixServer.FolderIndexer.Domain;
 using MixServer.FolderIndexer.Domain.Entities;
 using MixServer.FolderIndexer.Domain.Repositories;
+using MixServer.FolderIndexer.Persistence.InMemory;
 
 namespace MixServer.FolderIndexer.Services;
 
@@ -63,8 +64,7 @@ internal class FileSystemPersistenceService(
             // Add
             if (child.Db is null && child.Fs is not null)
             {
-                var fsEntity = fileSystemInfoConverter.ConvertChild(child.Fs, dirs.Root, dir);
-                fsEntity.Parent = dir;
+                var fsEntity = await fileSystemInfoConverter.ConvertChildAsync(child.Fs, dirs.Root, dir, cancellationToken);
                 await fileSystemInfoRepository.AddAsync(fsEntity, cancellationToken);
             }
             // Remove
@@ -75,10 +75,17 @@ internal class FileSystemPersistenceService(
             // Update
             else if (child.Db is not null && child.Fs is not null)
             {
-                fileSystemInfoConverter.UpdateChild(child.Db, child.Fs, dirs.Root, dir);
+                await fileSystemInfoConverter.UpdateChildAsync(child.Db, child.Fs, dirs.Root, dir, cancellationToken);
             }
         }
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await unitOfWork.SaveChangesAsync(cancellationToken);    
+        }
+        catch (Exception e)
+        {
+            throw;
+        }
     }
 }
