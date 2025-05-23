@@ -6,10 +6,7 @@ public class AddToQueueCommandValidator : AbstractValidator<AddToQueueCommand>
 {
     public AddToQueueCommandValidator()
     {
-        RuleFor(r => r.FileName)
-            .NotEmpty();
-
-        RuleFor(r => r.AbsoluteFolderPath)
+        RuleFor(r => r.NodePath)
             .NotEmpty();
     }
 }

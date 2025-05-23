@@ -22,17 +22,18 @@ public interface IFolderCacheService
     
     event EventHandler<IFileExplorerFolder> FolderRemoved;
 
-    ICacheFolder GetOrAdd(string absolutePath);
-    IFileExplorerFileNode GetFile(string fileAbsolutePath);
-    (IFileExplorerFolder Parent, IFileExplorerFileNode File) GetFileAndFolder(string absoluteFilePath);
-    void InvalidateFolder(string absolutePath);
+    ICacheFolder GetOrAdd(NodePath nodePath);
+    IFileExplorerFileNode GetFile(NodePath nodePath);
+    (IFileExplorerFolder Parent, IFileExplorerFileNode File) GetFileAndFolder(NodePath nodePath);
+    void InvalidateFolder(NodePath nodePath);
 }
 
 public class FolderCacheService(
     ILogger<FolderCacheService> logger,
     ILoggerFactory loggerFactory,
     IOptions<FolderCacheSettings> options,
-    IFileExplorerConverter fileExplorerConverter) : IFolderCacheService
+    IFileExplorerConverter fileExplorerConverter,
+    IRootFileExplorerFolder rootFolder) : IFolderCacheService
 {
     private readonly MemoryCache _cache = new(new MemoryCacheOptions
     {
@@ -47,7 +48,7 @@ public class FolderCacheService(
     public event EventHandler<IFileExplorerFolder>? FolderAdded;
     public event EventHandler<IFileExplorerFolder>? FolderRemoved;
 
-    public ICacheFolder GetOrAdd(string absolutePath)
+    public ICacheFolder GetOrAdd(NodePath nodePath)
     {
         var maxDirectories = options.Value.MaxCachedDirectories;
         if (maxDirectories > 0 && _cache.Count >= maxDirectories)
@@ -59,7 +60,7 @@ public class FolderCacheService(
         }
 
         var cacheMiss = false;
-        var cacheItem = _cache.GetOrCreate<IFolderCacheItem>(absolutePath, entry =>
+        var cacheItem = _cache.GetOrCreate<IFolderCacheItem>(nodePath, entry =>
         {
             return new Lazy<IFolderCacheItem>(() =>
             {
@@ -68,16 +69,17 @@ public class FolderCacheService(
                 entry.RegisterPostEvictionCallback(PostEvictionCallback);
 
                 IFolderCacheItem item =
-                    new FolderCacheItem(absolutePath,
+                    new FolderCacheItem(nodePath,
                         loggerFactory.CreateLogger<FolderCacheItem>(),
-                        fileExplorerConverter);
+                        fileExplorerConverter,
+                        rootFolder);
                 item.ItemAdded += OnItemAdded;
                 item.ItemUpdated += OnItemUpdated;
                 item.ItemRemoved += OnItemRemoved;
 
                 return item;
             }, LazyThreadSafetyMode.ExecutionAndPublication).Value;
-        }) ?? throw new NotFoundException(nameof(FolderCacheService), absolutePath);
+        }) ?? throw new NotFoundException(nameof(FolderCacheService), nodePath.ToString());
 
         if (cacheItem.Folder.Node.Exists)
         {
@@ -89,71 +91,59 @@ public class FolderCacheService(
         else
         {
             // We don't want to keep missing folders in the cache.
-            _cache.Remove(absolutePath);
+            _cache.Remove(nodePath);
         }
 
         return cacheItem;
     }
 
-    public IFileExplorerFileNode GetFile(string fileAbsolutePath)
+    public IFileExplorerFileNode GetFile(NodePath nodePath)
     {
-        var directoryAbsolutePath = Path.GetDirectoryName(fileAbsolutePath);
-
-        if (string.IsNullOrWhiteSpace(directoryAbsolutePath))
-        {
-            throw new InvalidRequestException(nameof(directoryAbsolutePath), "Directory Absolute Path is Null");
-        }
-
-        var dir = _cache.TryGetValue<IFolderCacheItem>(directoryAbsolutePath, out var cacheItem) ? cacheItem : null;
+        var dir = _cache.TryGetValue<IFolderCacheItem>(nodePath.Parent, out var cacheItem) ? cacheItem : null;
 
         if (dir is null)
         {
             logger.LogWarning("Directory {DirectoryAbsolutePath} not found in cache when retrieving file",
-                directoryAbsolutePath);
+                nodePath.Parent.AbsolutePath);
 
-            return fileExplorerConverter.Convert(fileAbsolutePath);
+            return fileExplorerConverter.Convert(nodePath);
         }
 
         var file = dir.Folder.Children.OfType<IFileExplorerFileNode>()
-            .FirstOrDefault(f => f.AbsolutePath == fileAbsolutePath);
+            .FirstOrDefault(f => f.Path.RootPath == nodePath.RootPath && f.Path.RelativePath == nodePath.RelativePath);
 
         if (file is null)
         {
-            logger.LogWarning("File {FileAbsolutePath} not found in cache", fileAbsolutePath);
+            logger.LogWarning("File {FileAbsolutePath} not found in cache", nodePath.AbsolutePath);
 
-            if (Debugger.IsAttached && File.Exists(fileAbsolutePath))
+            if (Debugger.IsAttached && File.Exists(nodePath.AbsolutePath))
             {
                 Debugger.Break();
             }
 
-            return fileExplorerConverter.Convert(new FileInfo(fileAbsolutePath), dir.Folder.Node);
+            return fileExplorerConverter.Convert(new FileInfo(nodePath.AbsolutePath), dir.Folder.Node);
         }
 
         return file;
     }
 
-    public (IFileExplorerFolder Parent, IFileExplorerFileNode File) GetFileAndFolder(string absoluteFilePath)
+    public (IFileExplorerFolder Parent, IFileExplorerFileNode File) GetFileAndFolder(NodePath nodePath)
     {
-        var directoryAbsolutePath = Path.GetDirectoryName(absoluteFilePath);
+        var folder = GetOrAdd(nodePath.Parent);
 
-        if (string.IsNullOrWhiteSpace(directoryAbsolutePath))
-        {
-            throw new InvalidRequestException(nameof(directoryAbsolutePath), "Directory Absolute Path is Null");
-        }
-
-        var folder = GetOrAdd(directoryAbsolutePath);
-
-        var file = folder.Folder.Children
+        var file = folder
+                       .Folder
+                       .Children
                        .OfType<IFileExplorerFileNode>()
-                       .SingleOrDefault(f => f.AbsolutePath == absoluteFilePath) ??
-                   throw new NotFoundException(directoryAbsolutePath, Path.GetFileName(absoluteFilePath));
+                       .SingleOrDefault(f => f.Path.RootPath == nodePath.RootPath && f.Path.RelativePath == nodePath.RelativePath) ??
+                   throw new NotFoundException(nodePath.Parent.AbsolutePath, nodePath.FileName);
 
         return (folder.Folder, file);
     }
 
-    public void InvalidateFolder(string absolutePath)
+    public void InvalidateFolder(NodePath nodePath)
     {
-        _cache.Remove(absolutePath);
+        _cache.Remove(nodePath);
     }
 
     private void PostEvictionCallback(object key, object? value, EvictionReason reason, object? state)
@@ -179,13 +169,21 @@ public class FolderCacheService(
     private void OnItemUpdated(object? sender, FolderItemUpdatedEventArgs e)
     {
         if (!IsFolderCacheItem(sender, out var parent)) return;
-        ItemUpdated?.Invoke(parent.Folder, new FolderCacheServiceItemUpdatedEventArgs(e.Item, e.OldFullPath));
+        ItemUpdated?.Invoke(parent.Folder, new FolderCacheServiceItemUpdatedEventArgs
+        {
+            Item = e.Item,
+            OldPath = e.OldPath
+        });
     }
 
-    private void OnItemRemoved(object? sender, string e)
+    private void OnItemRemoved(object? sender, NodePath nodePath)
     {
         if (!IsFolderCacheItem(sender, out var parent)) return;
-        ItemRemoved?.Invoke(parent.Folder, new FolderCacheServiceItemRemovedEventArgs(parent.Folder.Node, e));
+        ItemRemoved?.Invoke(parent.Folder, new FolderCacheServiceItemRemovedEventArgs
+        {
+            Path = nodePath,
+            Parent = parent.Folder.Node
+        });
     }
 
     private bool IsFolderCacheItem(object? sender, [MaybeNullWhen(false)] out IFolderCacheItem parent)

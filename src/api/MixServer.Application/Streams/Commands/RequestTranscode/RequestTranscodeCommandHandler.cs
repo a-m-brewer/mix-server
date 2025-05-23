@@ -1,4 +1,5 @@
 using FluentValidation;
+using MixServer.Application.FileExplorer.Converters;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
@@ -13,6 +14,7 @@ namespace MixServer.Application.Streams.Commands.RequestTranscode;
 public class RequestTranscodeCommandHandler(
     IFileService fileService,
     IMediaInfoCache mediaInfoCache,
+    INodePathDtoConverter nodePathDtoConverter,
     ITranscodeService transcodeService,
     ITranscodeCache transcodeCache,
     ITranscodeRepository transcodeRepository,
@@ -23,26 +25,28 @@ public class RequestTranscodeCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request);
         
-        var file = fileService.GetFile(request.AbsoluteFilePath);
+        var nodePath = nodePathDtoConverter.Convert(request.NodePath);
+        
+        var file = fileService.GetFile(nodePath);
 
         if (!file.Exists)
         {
-            throw new NotFoundException(nameof(request.AbsoluteFilePath), request.AbsoluteFilePath);
+            throw new NotFoundException(nameof(request.NodePath), nodePath.AbsolutePath);
         }
 
         if (!file.PlaybackSupported || !file.Metadata.IsMedia)
         {
-            throw new InvalidRequestException(nameof(request.AbsoluteFilePath), $"{request.AbsoluteFilePath} is not supported for transcoding");
+            throw new InvalidRequestException(nameof(request.NodePath), $"{nodePath.AbsolutePath} is not supported for transcoding");
         }
 
-        var existingTranscode = await transcodeRepository.GetOrDefaultAsync(file.AbsolutePath);
+        var existingTranscode = await transcodeRepository.GetOrDefaultAsync(file.Path);
 
         if (existingTranscode is not null && transcodeCache.GetTranscodeStatus(existingTranscode.Id) != TranscodeState.None)
         {
-            throw new InvalidRequestException(nameof(request.AbsoluteFilePath), $"{request.AbsoluteFilePath} is already being transcoded");
+            throw new InvalidRequestException(nameof(request.NodePath), $"{nodePath.AbsolutePath} is already being transcoded");
         }
         
-        var bitrate = mediaInfoCache.TryGet(file.AbsolutePath, out var mediaInfo) ? mediaInfo.Bitrate : 0;
-        await transcodeService.RequestTranscodeAsync(file.AbsolutePath, bitrate);
+        var bitrate = mediaInfoCache.TryGet(file.Path, out var mediaInfo) ? mediaInfo.Bitrate : 0;
+        await transcodeService.RequestTranscodeAsync(file.Path, bitrate);
     }
 }

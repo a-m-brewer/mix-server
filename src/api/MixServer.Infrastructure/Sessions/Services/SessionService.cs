@@ -57,19 +57,19 @@ public class SessionService(
         
         var device = requestedPlaybackDeviceAccessor.PlaybackDevice;
         
-        var file = folderCacheService.GetFile(request.AbsoluteFilePath);
+        var file = folderCacheService.GetFile(request.NodePath);
 
         canPlayOnDeviceValidator.ValidateCanPlayOrThrow(device, file);
 
-        await currentUserRepository.LoadPlaybackSessionAsync(request.AbsoluteFilePath);
-        var session = user.PlaybackSessions.SingleOrDefault(s => s.AbsolutePath == request.AbsoluteFilePath);
+        await currentUserRepository.LoadPlaybackSessionAsync(request.NodePath);
+        var session = user.PlaybackSessions.SingleOrDefault(s => s.AbsolutePath == request.NodePath.AbsolutePath);
 
         if (session == null)
         {
             session = new PlaybackSession
             {
                 Id = Guid.NewGuid(),
-                AbsolutePath = request.AbsoluteFilePath,
+                AbsolutePath = request.NodePath.AbsolutePath,
                 LastPlayed = dateTimeProvider.UtcNow,
                 UserId = user.Id,
                 CurrentTime = TimeSpan.Zero

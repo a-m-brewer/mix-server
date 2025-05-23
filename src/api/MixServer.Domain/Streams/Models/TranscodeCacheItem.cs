@@ -16,7 +16,7 @@ public class TranscodeCacheItem(ILogger<TranscodeCacheItem> logger)
 
     public required Guid TranscodeId { get; init; }
     
-    public required string AbsoluteFilePath { get; init; }
+    public required NodePath Path { get; init; }
 
     public bool HasCompletePlaylist
     {
@@ -64,7 +64,7 @@ public class TranscodeCacheItem(ILogger<TranscodeCacheItem> logger)
             return false;
         }
 
-        var lines = await File.ReadAllLinesAsync(playlistFile.AbsolutePath);
+        var lines = await File.ReadAllLinesAsync(playlistFile.Path.AbsolutePath);
         
         return lines.LastOrDefault()?.StartsWith("#EXT-X-ENDLIST") ?? false;
     }
@@ -78,19 +78,19 @@ public class TranscodeCacheItem(ILogger<TranscodeCacheItem> logger)
 
         return new HlsPlaylistStreamFile
         {
-            FilePath = playlistFile.AbsolutePath
+            FilePath = playlistFile.Path
         };
     }
     
     private bool TryGetPlaylistFile([MaybeNullWhen(false)] out IFileExplorerNode playlistFile)
     {
-        playlistFile = TranscodeFolder.Folder.Children.SingleOrDefault(s => s.Name.EndsWith(".m3u8"));
+        playlistFile = TranscodeFolder.Folder.Children.SingleOrDefault(s => s.Path.Extension == ".m3u8");
         return playlistFile is not null && playlistFile.Exists;
     }
 
     public HlsSegmentStreamFile GetSegmentOrThrow(string segment)
     {
-        var segmentFile = TranscodeFolder.Folder.Children.SingleOrDefault(s => s.Name == segment);
+        var segmentFile = TranscodeFolder.Folder.Children.SingleOrDefault(s => s.Path.FileName == segment);
         
         if (segmentFile is null || !segmentFile.Exists)
         {
@@ -99,7 +99,7 @@ public class TranscodeCacheItem(ILogger<TranscodeCacheItem> logger)
         
         return new HlsSegmentStreamFile
         {
-            FilePath = segmentFile.AbsolutePath
+            FilePath = segmentFile.Path
         };
     }
 }

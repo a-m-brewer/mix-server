@@ -1,8 +1,8 @@
 namespace MixServer.Domain.FileExplorer.Models.Caching;
 
-public class FolderItemUpdatedEventArgs(IFileExplorerNode item, string oldFullPath)
+public class FolderItemUpdatedEventArgs(IFileExplorerNode item, NodePath oldPath)
 {
     public IFileExplorerNode Item { get; } = item;
 
-    public string OldFullPath { get; } = oldFullPath;
+    public NodePath OldPath { get; } = oldPath;
 }

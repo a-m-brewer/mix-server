@@ -4,17 +4,15 @@ namespace MixServer.Domain.FileExplorer.Services;
 
 public interface IFileService
 {
-    Task<IFileExplorerFolder> GetFolderAsync(string absolutePath);
-    Task<IFileExplorerFolder> GetFolderOrRootAsync(string? absolutePath);
-    List<IFileExplorerFileNode> GetFiles(IReadOnlyList<string> absoluteFilePaths);
-    IFileExplorerFileNode GetFile(string absoluteFolderPath, string fileName);
-    IFileExplorerFileNode GetFile(string absoluteFilePath);
+    Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath);
+    Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath);
+    List<IFileExplorerFileNode> GetFiles(IReadOnlyList<NodePath> nodePaths);
+    IFileExplorerFileNode GetFile(NodePath nodePath);
     void CopyNode(
-        string sourcePath,
-        string destinationFolder,
-        string destinationName,
+        NodePath sourcePath,
+        NodePath destinationPath,
         bool move,
         bool overwrite);
-    void DeleteNode(string absolutePath);
+    void DeleteNode(NodePath nodePath);
     Task SetFolderSortAsync(IFolderSortRequest request);
 }

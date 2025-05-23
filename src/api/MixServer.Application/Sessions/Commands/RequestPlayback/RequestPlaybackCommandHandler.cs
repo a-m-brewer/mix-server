@@ -34,7 +34,13 @@ public class RequestPlaybackCommandHandler(
         var requestDeviceId = request.DeviceId ?? currentDeviceRepository.DeviceId;
         
         var deviceState = deviceTrackingService.GetDeviceStateOrThrow(requestDeviceId);
-        var file = folderCacheService.GetFile(playbackState.AbsolutePath);
+
+        if (playbackState.NodePath is null)
+        {
+            throw new InvalidRequestException(nameof(playbackState.NodePath), "Playback file state is not set");
+        }
+
+        var file = folderCacheService.GetFile(playbackState.NodePath);
 
         canPlayOnDeviceValidator.ValidateCanPlayOrThrow(deviceState, file);
 

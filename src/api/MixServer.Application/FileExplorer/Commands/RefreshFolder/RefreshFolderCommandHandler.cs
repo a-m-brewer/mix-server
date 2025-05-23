@@ -20,16 +20,16 @@ public class RefreshFolderCommandHandler(
 {
     public async Task<FileExplorerFolderResponse> HandleAsync(RefreshFolderCommand request)
     {
-        if (string.IsNullOrWhiteSpace(request.AbsolutePath))
+        if (request.NodePath is null)
         {
             rootFolder.RefreshChildren();
         }
         else
         {
-            folderCacheService.InvalidateFolder(request.AbsolutePath);
+            folderCacheService.InvalidateFolder(request.NodePath);
         }
         
-        var folder = await fileService.GetFolderOrRootAsync(request.AbsolutePath);
+        var folder = await fileService.GetFolderOrRootAsync(request.NodePath);
 
         // TODO: make a way of refreshing all users folders at once on cache invalidation with their folder sorts
         await callbackService.FolderRefreshed(

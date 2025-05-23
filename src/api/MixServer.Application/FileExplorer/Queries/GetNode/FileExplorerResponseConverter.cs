@@ -21,6 +21,7 @@ public interface IFileExplorerResponseConverter
 public class FileExplorerResponseConverter(
     IMediaInfoCache mediaInfoCache,
     IMediaInfoDtoConverter mediaInfoDtoConverter,
+    INodePathDtoConverter nodePathDtoConverter,
     ITranscodeCache transcodeCache) : IFileExplorerResponseConverter
 {
     public FileExplorerNodeResponse Convert(IFileExplorerNode value)
@@ -37,12 +38,11 @@ public class FileExplorerResponseConverter(
     {
         return new FileExplorerFileNodeResponse
         {
-            AbsolutePath = value.AbsolutePath,
+            Path = nodePathDtoConverter.Convert(value.Path),
             Exists = value.Exists,
-            Name = value.Name,
             Type = value.Type,
             CreationTimeUtc = value.CreationTimeUtc,
-            Metadata = Convert(value.Metadata, value.AbsolutePath),
+            Metadata = Convert(value.Metadata, value.Path),
             PlaybackSupported = value.PlaybackSupported,
             Parent = Convert(value.Parent)
         };
@@ -52,9 +52,8 @@ public class FileExplorerResponseConverter(
     {
         return new FileExplorerFolderNodeResponse
         {
-            AbsolutePath = value.AbsolutePath,
+            Path = nodePathDtoConverter.Convert(value.Path),
             Exists = value.Exists,
-            Name = value.Name,
             Type = value.Type,
             CreationTimeUtc = value.CreationTimeUtc,
             BelongsToRoot = value.BelongsToRoot,
@@ -87,17 +86,17 @@ public class FileExplorerResponseConverter(
         };
     }
 
-    private FileMetadataResponse Convert(IFileMetadata value, string absolutePath)
+    private FileMetadataResponse Convert(IFileMetadata value, NodePath nodePath)
     {
         return new FileMetadataResponse
         {
-            MediaInfo = value.IsMedia && mediaInfoCache.TryGet(absolutePath, out var mediaInfo)
+            MediaInfo = value.IsMedia && mediaInfoCache.TryGet(nodePath, out var mediaInfo)
                 ? mediaInfoDtoConverter.Convert(mediaInfo)
                 : null,
             IsMedia = value.IsMedia,
             MimeType = value.MimeType,
             TranscodeStatus = value.IsMedia
-                ? transcodeCache.GetTranscodeStatus(absolutePath)
+                ? transcodeCache.GetTranscodeStatus(nodePath)
                 : TranscodeState.None
         };
     }

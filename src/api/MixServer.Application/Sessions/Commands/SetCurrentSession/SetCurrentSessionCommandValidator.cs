@@ -6,14 +6,13 @@ public class SetCurrentSessionCommandValidator : AbstractValidator<SetCurrentSes
 {
     public SetCurrentSessionCommandValidator()
     {
-        RuleFor(r => r.AbsoluteFolderPath)
-            .NotEmpty()
-            .Must(Directory.Exists);
+        RuleFor(r => r.NodePath.RelativePath)
+            .NotEmpty();
 
-        RuleFor(r => r.FileName)
+        RuleFor(r => r.NodePath.RootPath)
             .NotEmpty();
         
         RuleFor(r => r)
-            .Must(m => File.Exists(Path.Join(m.AbsoluteFolderPath, m.FileName)));
+            .Must(m => File.Exists(Path.Join(m.NodePath.RootPath, m.NodePath.RelativePath)));
     }
 }

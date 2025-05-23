@@ -1,8 +1,8 @@
 namespace MixServer.Domain.FileExplorer.Models.Caching;
 
-public class FolderCacheServiceItemRemovedEventArgs(IFileExplorerFolderNode parent, string fullName)
+public class FolderCacheServiceItemRemovedEventArgs : EventArgs
 {
-    public string FullName { get; } = fullName;
+    public required NodePath Path { get; init; }
     
-    public IFileExplorerFolderNode Parent { get; } = parent;
+    public required IFileExplorerFolderNode Parent { get; init; }
 }

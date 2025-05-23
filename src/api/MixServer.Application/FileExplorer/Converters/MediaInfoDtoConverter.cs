@@ -7,10 +7,9 @@ using MixServer.Domain.Interfaces;
 namespace MixServer.Application.FileExplorer.Converters;
 
 public interface IMediaInfoDtoConverter :
-    IConverter<MediaInfo, MediaInfoDto>,
-    IConverter<NodePath, NodePathDto>;
+    IConverter<MediaInfo, MediaInfoDto>;
 
-public class MediaInfoDtoConverter : IMediaInfoDtoConverter
+public class MediaInfoDtoConverter(INodePathDtoConverter nodePathDtoConverter) : IMediaInfoDtoConverter
 {
     public MediaInfoDto Convert(MediaInfo value)
     {
@@ -18,18 +17,8 @@ public class MediaInfoDtoConverter : IMediaInfoDtoConverter
         {
             Bitrate = value.Bitrate,
             Duration = FormatTimespan(value.Duration),
-            NodePath = Convert(value.NodePath),
+            NodePath = nodePathDtoConverter.Convert(value.Path),
             Tracklist = value.Tracklist
-        };
-    }
-
-    public NodePathDto Convert(NodePath value)
-    {
-        return new NodePathDto
-        {
-            ParentAbsolutePath = value.ParentAbsolutePath,
-            FileName = value.FileName,
-            AbsolutePath = value.AbsolutePath
         };
     }
     

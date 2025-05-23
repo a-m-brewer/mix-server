@@ -4,7 +4,7 @@ namespace MixServer.Domain.FileExplorer.Models.Metadata;
 
 public class MediaInfo
 {
-    public required NodePath NodePath { get; init; }
+    public required NodePath Path { get; init; }
     
     public required int Bitrate { get; init; }
     

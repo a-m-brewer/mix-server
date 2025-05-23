@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
@@ -20,6 +21,7 @@ public class PlaybackTrackingService(
     ILogger<PlaybackTrackingService> logger,
     ILoggerFactory loggerFactory,
     IReadWriteLock readWriteLock,
+    IRootFileExplorerFolder rootFolder,
     IServiceProvider serviceProvider)
     : IPlaybackTrackingService
 {
@@ -70,15 +72,20 @@ public class PlaybackTrackingService(
     {
         readWriteLock.ForWrite(() =>
         {
+            var nodePath = rootFolder.GetNodePath(session.AbsolutePath);
+            
             if (_playingItems.TryGetValue(session.UserId, out var existingItem))
             {
-                existingItem.UpdateWithoutEvents(session, includePlaying);
+                existingItem.UpdateWithoutEvents(session, nodePath, includePlaying);
             }
             else
             {
                 logger.LogInformation("Started tracking user's ({UserId}) playback state", session.UserId);
                 
-                var newSession = new PlaybackState(session, loggerFactory.CreateLogger<PlaybackState>());
+                var newSession = new PlaybackState(session, loggerFactory.CreateLogger<PlaybackState>())
+                {
+                    NodePath = nodePath
+                };
                 newSession.AudioPlayerStateUpdated += OnAudioPlayerStateUpdated;
                 
                 _playingItems[session.UserId] = newSession;

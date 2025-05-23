@@ -1,6 +1,7 @@
 using CliWrap;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Settings;
@@ -13,7 +14,7 @@ namespace MixServer.Domain.Streams.Services;
 
 public interface ITranscodeService
 {
-    Task RequestTranscodeAsync(string absoluteFilePath, int bitrate);
+    Task RequestTranscodeAsync(NodePath path, int bitrate);
 }
 
 public class TranscodeService(
@@ -27,16 +28,16 @@ public class TranscodeService(
     private const int HlsTime = 4;
     private const int DefaultBitrate = 192;
     
-    public async Task RequestTranscodeAsync(string absoluteFilePath, int bitrate)
+    public async Task RequestTranscodeAsync(NodePath path, int bitrate)
     {
-        var transcode = await transcodeRepository.GetOrAddAsync(absoluteFilePath);
+        var transcode = await transcodeRepository.GetOrAddAsync(path);
 
         await unitOfWork.SaveChangesAsync();
         
         var transcodeIdString = transcode.Id.ToString();
         
         Directory.CreateDirectory(GetTranscodeFolder(transcode.Id.ToString()));
-        logger.LogDebug("Transcode requested for {AbsoluteFilePath} ({Hash})", absoluteFilePath, transcodeIdString);
+        logger.LogDebug("Transcode requested for {AbsoluteFilePath} ({Hash})", path.AbsolutePath, transcodeIdString);
         
         _ = Task.Run(() => ProcessTranscode(transcode, bitrate));
     }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Streams.Entities;
 using MixServer.Domain.Streams.Repositories;
 
@@ -13,19 +14,19 @@ public class EfTranscodeRepository(MixServerDbContext context) : ITranscodeRepos
                ?? throw new NotFoundException(nameof(Transcode), id);
     }
 
-    public async Task<Transcode> GetAsync(string fileAbsolutePath)
+    public async Task<Transcode> GetAsync(NodePath nodePath)
     {
-        return await GetOrDefaultAsync(fileAbsolutePath) ?? throw new NotFoundException(nameof(Transcode), fileAbsolutePath);
+        return await GetOrDefaultAsync(nodePath) ?? throw new NotFoundException(nameof(Transcode), nodePath.AbsolutePath);
     }
 
-    public Task<Transcode?> GetOrDefaultAsync(string fileAbsolutePath)
+    public Task<Transcode?> GetOrDefaultAsync(NodePath nodePath)
     {
-        return context.Transcodes.SingleOrDefaultAsync(s => s.AbsolutePath == fileAbsolutePath);
+        return context.Transcodes.SingleOrDefaultAsync(s => s.AbsolutePath == nodePath.AbsolutePath);
     }
 
-    public async Task<Transcode> GetOrAddAsync(string fileAbsolutePath)
+    public async Task<Transcode> GetOrAddAsync(NodePath nodePath)
     {
-        var existing = await GetOrDefaultAsync(fileAbsolutePath);
+        var existing = await GetOrDefaultAsync(nodePath);
         
         if (existing is not null)
         {
@@ -35,7 +36,7 @@ public class EfTranscodeRepository(MixServerDbContext context) : ITranscodeRepos
         var transcode = new Transcode
         {
             Id = Guid.NewGuid(),
-            AbsolutePath = fileAbsolutePath,
+            AbsolutePath = nodePath.AbsolutePath,
         };
         await context.Transcodes.AddAsync(transcode);
         

@@ -6,8 +6,8 @@ public class SetFolderSortCommandValidator : AbstractValidator<SetFolderSortComm
 {
     public SetFolderSortCommandValidator()
     {
-        RuleFor(r => r.AbsoluteFolderPath)
-            .NotEmpty();
+        RuleFor(r => r.NodePath)
+            .NotNull();
 
         RuleFor(r => r.SortMode)
             .IsInEnum();

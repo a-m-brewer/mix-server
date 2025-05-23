@@ -3,7 +3,7 @@ using MixServer.Domain.FileExplorer.Models;
 
 namespace MixServer.Domain.FileExplorer.Entities;
 
-public class FolderSort : IFolderSortRequest
+public class FolderSort : IFolderSort
 {
     public FolderSort(
         Guid id,

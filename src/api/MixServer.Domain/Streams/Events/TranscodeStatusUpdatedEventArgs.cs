@@ -1,6 +1,8 @@
-﻿namespace MixServer.Domain.Streams.Events;
+﻿using MixServer.Domain.FileExplorer.Models;
+
+namespace MixServer.Domain.Streams.Events;
 
 public class TranscodeStatusUpdatedEventArgs : EventArgs
 {
-    public required string AbsoluteFilePath { get; init; }
+    public required NodePath Path { get; init; }
 }

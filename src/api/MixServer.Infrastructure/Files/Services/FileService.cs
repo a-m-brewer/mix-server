@@ -17,9 +17,9 @@ public class FileService(
     IRootFileExplorerFolder rootFolder)
     : IFileService
 {
-    public async Task<IFileExplorerFolder> GetFolderAsync(string absolutePath)
+    public async Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath)
     {
-        var cacheItem = folderCacheService.GetOrAdd(absolutePath);
+        var cacheItem = folderCacheService.GetOrAdd(nodePath);
 
         var folder = cacheItem.Folder;
 
@@ -28,71 +28,63 @@ public class FileService(
             return folder;
         }
 
-        await currentUserRepository.LoadFileSortByAbsolutePathAsync(absolutePath);
-        folder.Sort = currentUserRepository.CurrentUser.GetSortOrDefault(absolutePath);
+        await currentUserRepository.LoadFileSortByAbsolutePathAsync(nodePath);
+        folder.Sort = currentUserRepository.CurrentUser.GetSortOrDefault(nodePath);
     
         return folder;
     }
 
-    public async Task<IFileExplorerFolder> GetFolderOrRootAsync(string? absolutePath)
+    public async Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath)
     {
         // If no folder is specified return the root folder
-        if (string.IsNullOrWhiteSpace(absolutePath))
+        if (nodePath is null)
         {
             return rootFolder;
         }
 
         // The folder is out of bounds return the root folder instead
-        if (!rootFolder.BelongsToRootChild(absolutePath))
+        if (!rootFolder.BelongsToRootChild(nodePath.RootPath))
         {
             throw new ForbiddenRequestException("You do not have permission to access this folder");
         }
         
-        var folder = await GetFolderAsync(absolutePath);
+        var folder = await GetFolderAsync(nodePath);
 
         return folder.Node.Exists
             ? folder
-            : throw new NotFoundException("Folder", absolutePath);
+            : throw new NotFoundException("Folder", nodePath.AbsolutePath);
     }
 
-    public List<IFileExplorerFileNode> GetFiles(IReadOnlyList<string> absoluteFilePaths)
+    public List<IFileExplorerFileNode> GetFiles(IReadOnlyList<NodePath> absoluteFilePaths)
     {
         return absoluteFilePaths.Select(GetFile).ToList();
     }
-    
-    public IFileExplorerFileNode GetFile(string absoluteFolderPath, string filename)
-    {
-        return GetFile(Path.Join(absoluteFolderPath, filename));
-    }
 
-    public IFileExplorerFileNode GetFile(string fileAbsolutePath)
+    public IFileExplorerFileNode GetFile(NodePath nodePath)
     {
-        return folderCacheService.GetFile(fileAbsolutePath);
+        return folderCacheService.GetFile(nodePath);
     }
 
     public void CopyNode(
-        string sourcePath,
-        string destinationFolder,
-        string destinationName,
+        NodePath sourcePath,
+        NodePath destinationPath,
         bool move,
         bool overwrite)
     {
-        var destinationFolderType = GetNodeTypeOrThrow(destinationFolder);
+        var destinationFolderType = GetNodeTypeOrThrow(destinationPath.Parent);
         switch (destinationFolderType)
         {
             case FileExplorerNodeType.File:
-                throw new InvalidRequestException(nameof(destinationFolder), $"{destinationFolder} is a file");
+                throw new InvalidRequestException(nameof(destinationPath.Parent), $"{destinationPath.Parent.AbsolutePath} is a file");
             case FileExplorerNodeType.Folder:
                 break;
             default:
-                throw new NotFoundException(nameof(destinationFolder), destinationFolder);
+                throw new NotFoundException(nameof(destinationPath.Parent), destinationPath.Parent.AbsolutePath);
         }
         
-        var destinationPath = Path.Join(destinationFolder, destinationName);
-        
-        if (File.Exists(destinationPath) && !overwrite)
+        if (File.Exists(destinationPath.AbsolutePath) && !overwrite)
         {
-            throw new ConflictException(destinationFolder, destinationName);
+            throw new ConflictException(destinationPath.Parent.AbsolutePath, destinationPath.FileName);
         }
         
         var type = GetNodeTypeOrThrow(sourcePath);
@@ -101,11 +93,11 @@ public class FileService(
         {
             if (move)
             {
-                File.Move(sourcePath, destinationPath);
+                File.Move(sourcePath.AbsolutePath, destinationPath.AbsolutePath);
             }
             else
             {
-                File.Copy(sourcePath, destinationPath, overwrite);
+                File.Copy(sourcePath.AbsolutePath, destinationPath.AbsolutePath, overwrite);
             }
         }
         else
@@ -114,14 +106,14 @@ public class FileService(
         }
     }
 
-    public void DeleteNode(string absolutePath)
+    public void DeleteNode(NodePath nodePath)
     {
         // check if file or folder
-        var type = GetNodeTypeOrThrow(absolutePath);
+        var type = GetNodeTypeOrThrow(nodePath);
         
         if (type == FileExplorerNodeType.File)
         {
-            File.Delete(absolutePath);
+            File.Delete(nodePath.AbsolutePath);
         }
         else
         {
@@ -130,17 +122,17 @@ public class FileService(
         }
     }
 
-    private static FileExplorerNodeType GetNodeTypeOrThrow(string absolutePath) =>
-        GetNodeType(absolutePath) ?? throw new NotFoundException("Node", absolutePath);
+    private static FileExplorerNodeType GetNodeTypeOrThrow(NodePath nodePath) =>
+        GetNodeType(nodePath) ?? throw new NotFoundException("Node", nodePath.AbsolutePath);
 
-    private static FileExplorerNodeType? GetNodeType(string absolutePath)
+    private static FileExplorerNodeType? GetNodeType(NodePath nodePath)
     {
-        if (File.Exists(absolutePath))
+        if (File.Exists(nodePath.AbsolutePath))
         {
             return FileExplorerNodeType.File;
         }
         
-        if (Directory.Exists(absolutePath))
+        if (Directory.Exists(nodePath.AbsolutePath))
         {
             return FileExplorerNodeType.Folder;
         }
@@ -150,16 +142,16 @@ public class FileService(
 
     public async Task SetFolderSortAsync(IFolderSortRequest request)
     {
-        await currentUserRepository.LoadFileSortByAbsolutePathAsync(request.AbsoluteFolderPath);
+        await currentUserRepository.LoadFileSortByAbsolutePathAsync(request.Path);
         var user = currentUserRepository.CurrentUser;
 
-        var sort = user.FolderSorts.SingleOrDefault(s => s.AbsoluteFolderPath == request.AbsoluteFolderPath);
+        var sort = user.FolderSorts.SingleOrDefault(s => s.AbsoluteFolderPath == request.Path.AbsolutePath);
 
         if (sort == null)
         {
             var folderSort = new FolderSort(
                 Guid.NewGuid(),
-                request.AbsoluteFolderPath,
+                request.Path.AbsolutePath,
                 request.Descending,
                 request.SortMode)
             {

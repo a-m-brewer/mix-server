@@ -12,25 +12,23 @@ namespace MixServer.Application.FileExplorer.Queries.GetNode;
 [JsonConverter(typeof(JsonInheritanceConverter), "discriminator")]
 public class FileExplorerNodeResponse
 {
-    public string Name { get; init; } = string.Empty;
+    public required NodePathDto Path { get; init; }
 
-    public string AbsolutePath { get; init; } = string.Empty;
+    public required FileExplorerNodeType Type { get; init; }
 
-    public FileExplorerNodeType Type { get; init; }
-
-    public bool Exists { get; init; }
+    public required bool Exists { get; init; }
     
-    public DateTime CreationTimeUtc { get; init; }
+    public required DateTime CreationTimeUtc { get; init; }
     
     [UsedImplicitly]
     public static IEnumerable<Type> GetKnownTypes()
     {
-        return new[]
-        {
+        return
+        [
             typeof(FileExplorerNodeResponse),
             typeof(FileExplorerFileNodeResponse),
-            typeof(FileExplorerFolderNodeResponse),
-        };
+            typeof(FileExplorerFolderNodeResponse)
+        ];
     }
 }
 
@@ -45,31 +43,31 @@ public class FileExplorerFileNodeResponse : FileExplorerNodeResponse
 
 public class FileExplorerFolderNodeResponse : FileExplorerNodeResponse
 {
-    public bool BelongsToRoot { get; init; }
+    public required bool BelongsToRoot { get; init; }
 
-    public bool BelongsToRootChild { get; init; }
+    public required bool BelongsToRootChild { get; init; }
     
-    public FileExplorerFolderNodeResponse? Parent { get; init; }
+    public required FileExplorerFolderNodeResponse? Parent { get; init; }
 }
 
 [KnownType(nameof(GetKnownTypes))]
 [JsonConverter(typeof(JsonInheritanceConverter), "discriminator")]
 public class FileExplorerFolderResponse
 {
-    public FileExplorerFolderNodeResponse Node { get; init; } = new ();
+    public required FileExplorerFolderNodeResponse Node { get; init; }
 
-    public IReadOnlyCollection<FileExplorerNodeResponse> Children { get; init; } = Array.Empty<FileExplorerNodeResponse>();
+    public IReadOnlyCollection<FileExplorerNodeResponse> Children { get; init; } = [];
 
     public FolderSortDto Sort { get; set; } = FolderSortDto.Default;
     
     [UsedImplicitly]
     public static IEnumerable<Type> GetKnownTypes()
     {
-        return new[]
-        {
+        return
+        [
             typeof(FileExplorerFolderResponse),
             typeof(RootFileExplorerFolderResponse)
-        };
+        ];
     }
 }
 

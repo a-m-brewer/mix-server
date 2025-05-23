@@ -8,17 +8,17 @@ namespace MixServer.Infrastructure.Queueing.Models;
 
 public class UserQueue(string userId, IReadWriteLock readWriteLock)
 {
-    private string? _currentFolderAbsolutePath;
+    private NodePath? _currentFolderPath;
 
     public string UserId { get; } = userId;
 
-    public string? CurrentFolderAbsolutePath
+    public NodePath? CurrentFolderPath
     {
-        get => readWriteLock.ForRead(() => _currentFolderAbsolutePath);
-        set => readWriteLock.ForWrite(() => _currentFolderAbsolutePath = value);
+        get => readWriteLock.ForRead(() => _currentFolderPath);
+        set => readWriteLock.ForWrite(() => _currentFolderPath = value);
     }
 
-    private Dictionary<string, FolderQueueSortItem> CurrentFolderSortItems { get; } = new();
+    private Dictionary<NodePath, FolderQueueSortItem> CurrentFolderSortItems { get; } = new();
 
     private List<UserQueueSortItem> UserQueueSortItems { get; } = [];
 
@@ -27,13 +27,13 @@ public class UserQueue(string userId, IReadWriteLock readWriteLock)
         .OrderBy(o => o.Position)
         .ToList();
 
-    public IReadOnlyList<string> UserQueueItemsAbsoluteFilePaths => readWriteLock.ForRead(() => UserQueueSortItems
-        .Select(s => s.AbsoluteFilePath)
-        .Distinct()
+    public IReadOnlyList<NodePath> UserQueueItemsAbsoluteFilePaths => readWriteLock.ForRead(() => UserQueueSortItems
+        .Select(s => s.NodePath)
+        .DistinctBy(s => s.AbsolutePath)
         .ToList());
 
     /// <summary>
-    /// The last queue item played that was from the folder of <see cref="CurrentFolderAbsolutePath"/>
+    /// The last queue item played that was from the folder of <see cref="CurrentFolderPath"/>
     /// As User queue items should only be related to folder items
     /// </summary>
     private Guid? CurrentFolderQueueItemPositionId { get; set; }
@@ -46,14 +46,14 @@ public class UserQueue(string userId, IReadWriteLock readWriteLock)
     public void Sort(IEnumerable<IFileExplorerFileNode> files)
     {
         var filteredFiles = files
-            .Where(w => !string.IsNullOrWhiteSpace(w.AbsolutePath))
+            .Where(w => !string.IsNullOrWhiteSpace(w.Path.AbsolutePath))
             .ToList();
 
         readWriteLock.ForWrite(() =>
         {
             foreach (var (_, item) in CurrentFolderSortItems)
             {
-                var index = filteredFiles.FindIndex(f => f.AbsolutePath == item.AbsoluteFilePath);
+                var index = filteredFiles.FindIndex(f => f.Path.IsEqualTo(item.NodePath));
                 if (index == -1)
                 {
                     continue;
@@ -87,24 +87,29 @@ public class UserQueue(string userId, IReadWriteLock readWriteLock)
             CurrentFolderSortItems.Clear();
 
             var filteredFiles = files
-                .Where(w => !string.IsNullOrWhiteSpace(w.AbsolutePath))
+                .Where(w => !string.IsNullOrWhiteSpace(w.Path.AbsolutePath))
                 .ToList();
 
             for (var i = 0; i < filteredFiles.Count; i++)
             {
                 var file = filteredFiles[i];
-                CurrentFolderSortItems[file.AbsolutePath!] = new FolderQueueSortItem(Guid.NewGuid(), file.AbsolutePath!, i);
+                CurrentFolderSortItems[file.Path] = new FolderQueueSortItem
+                {
+                    Id = Guid.NewGuid(),
+                    NodePath = file.Path,
+                    Position = i
+                };
             }
         });
     }
     
-    public void SetQueuePositionFromFolderItemOrThrow(string absoluteFilePath)
+    public void SetQueuePositionFromFolderItemOrThrow(NodePath nodePath)
     {
         readWriteLock.ForUpgradeableRead(() =>
         {
-            if (!CurrentFolderSortItems.TryGetValue(absoluteFilePath, out var queueItemId))
+            if (!CurrentFolderSortItems.TryGetValue(nodePath, out var queueItemId))
             {
-                throw new NotFoundException(nameof(CurrentFolderSortItems), absoluteFilePath);
+                throw new NotFoundException(nameof(CurrentFolderSortItems), nodePath.AbsolutePath);
             }
 
             readWriteLock.ForWrite(() =>
@@ -118,7 +123,12 @@ public class UserQueue(string userId, IReadWriteLock readWriteLock)
     public void AddToQueue(IFileExplorerFileNode file)
     {
         readWriteLock.ForWrite(() =>
-            UserQueueSortItems.Add(new UserQueueSortItem(Guid.NewGuid(), file.AbsolutePath!, CurrentFolderQueueItemPositionId)));
+            UserQueueSortItems.Add(new UserQueueSortItem
+            {
+                Id = Guid.NewGuid(),
+                NodePath = file.Path,
+                PreviousFolderItemId = CurrentFolderQueueItemPositionId
+            }));
     }
     
     public void RemoveUserQueueItems(List<Guid> ids)
@@ -137,7 +147,7 @@ public class UserQueue(string userId, IReadWriteLock readWriteLock)
         return readWriteLock.ForRead(() => ids.All(id => UserQueueSortItems.Any(a => a.Id == id)));
     }
 
-    public List<QueueSnapshotItem> GenerateQueueSnapshotItems(Dictionary<string, IFileExplorerFileNode> files) =>
+    public List<QueueSnapshotItem> GenerateQueueSnapshotItems(Dictionary<NodePath, IFileExplorerFileNode> files) =>
         readWriteLock.ForRead(() =>
         {
             return GenerateQueueOrder()
@@ -167,7 +177,7 @@ public class UserQueue(string userId, IReadWriteLock readWriteLock)
         return finalQueue;
     }
 
-    private static QueueSnapshotItem GenerateSnapshotQueueItem(QueueSortItem item, Dictionary<string, IFileExplorerFileNode> files)
+    private static QueueSnapshotItem GenerateSnapshotQueueItem(QueueSortItem item, Dictionary<NodePath, IFileExplorerFileNode> files)
     {
         return new QueueSnapshotItem(
             item.Id,
@@ -177,8 +187,8 @@ public class UserQueue(string userId, IReadWriteLock readWriteLock)
                 UserQueueSortItem => QueueSnapshotItemType.User,
                 _ => throw new ArgumentOutOfRangeException(nameof(item))
             },
-            files.TryGetValue(item.AbsoluteFilePath, out var file)
+            files.TryGetValue(item.NodePath, out var file)
                 ? file
-                : throw new NotFoundException(nameof(files), item.AbsoluteFilePath));
+                : throw new NotFoundException(nameof(files), item.NodePath.AbsolutePath));
     }
 }

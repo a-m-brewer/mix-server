@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.EF.Entities;
 using MixServer.Infrastructure.Users.Constants;
@@ -20,10 +21,10 @@ public interface ICurrentUserRepository
     Task LoadCurrentPlaybackSessionAsync();
     Task LoadAllPlaybackSessionsAsync();
     Task LoadPlaybackSessionAsync(Guid id);
-    Task LoadPlaybackSessionAsync(string absolutePath);
+    Task LoadPlaybackSessionAsync(NodePath nodePath);
     Task LoadPagedPlaybackSessionsAsync(int sessionStartIndex, int sessionPageSize);
     Task LoadAllFileSortsAsync();
-    Task LoadFileSortByAbsolutePathAsync(string absoluteFolderPath);
+    Task LoadFileSortByAbsolutePathAsync(NodePath nodePath);
     Task LoadAllDevicesAsync();
     Task LoadDeviceByIdAsync(Guid deviceId);
 }
@@ -108,12 +109,12 @@ public class CurrentUserRepository(
             .LoadAsync();
     }
 
-    public async Task LoadPlaybackSessionAsync(string absolutePath)
+    public async Task LoadPlaybackSessionAsync(NodePath nodePath)
     {
         await context.Entry(CurrentUser)
             .Collection(u => u.PlaybackSessions)
             .Query()
-            .Where(w => w.AbsolutePath == absolutePath)
+            .Where(w => w.AbsolutePath == nodePath.AbsolutePath)
             .LoadAsync();
     }
 
@@ -135,12 +136,12 @@ public class CurrentUserRepository(
             .LoadAsync();
     }
 
-    public async Task LoadFileSortByAbsolutePathAsync(string absoluteFolderPath)
+    public async Task LoadFileSortByAbsolutePathAsync(NodePath nodePath)
     {
         await context.Entry(CurrentUser)
             .Collection(c => c.FolderSorts)
             .Query()
-            .Where(w => w.AbsoluteFolderPath == absoluteFolderPath)
+            .Where(w => w.AbsoluteFolderPath == nodePath.AbsolutePath)
             .LoadAsync();
     }
 

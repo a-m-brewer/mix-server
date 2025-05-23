@@ -6,6 +6,6 @@ public class RequestTranscodeCommandValidator : AbstractValidator<RequestTransco
 {
     public RequestTranscodeCommandValidator()
     {
-        RuleFor(x => x.AbsoluteFilePath).NotEmpty();
+        RuleFor(x => x.NodePath).NotNull();
     }
 }

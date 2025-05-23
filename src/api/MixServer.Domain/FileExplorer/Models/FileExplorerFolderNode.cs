@@ -3,8 +3,7 @@ using MixServer.Domain.FileExplorer.Enums;
 namespace MixServer.Domain.FileExplorer.Models;
 
 public class FileExplorerFolderNode(
-    string name,
-    string absolutePath,
+    NodePath path,
     FileExplorerNodeType type,
     bool exists,
     DateTime creationTimeUtc,
@@ -13,8 +12,7 @@ public class FileExplorerFolderNode(
     IFileExplorerFolderNode? parent)
     : IFileExplorerFolderNode
 {
-    public string Name { get; } = name;
-    public string AbsolutePath { get; } = absolutePath;
+    public NodePath Path { get; } = path;
     public FileExplorerNodeType Type { get; } = type;
     public bool Exists { get; } = exists;
     public DateTime CreationTimeUtc { get; } = creationTimeUtc;

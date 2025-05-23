@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Accessors;
@@ -20,6 +21,7 @@ public class GetStreamQueryHandler(
     ISessionService sessionService,
     ITranscodeCache transcodeCache,
     ITranscodeRepository transcodeRepository,
+    IRootFileExplorerFolder rootFileExplorerFolder,
     IValidator<GetStreamQuery> validator)
     : IQueryHandler<GetStreamQuery, StreamFile>
 {
@@ -60,15 +62,17 @@ public class GetStreamQueryHandler(
         // Rather than what the playback device can play e.g. switching from Transcode to DirectStream
         if (!deviceTrackingService.GetDeviceStateOrThrow(securityParameters.DeviceId).CanPlay(session.File))
         {
-            var transcode = await transcodeRepository.GetAsync(session.File.AbsolutePath);
+            var transcode = await transcodeRepository.GetAsync(session.File.Path);
             return transcodeCache.GetPlaylistOrThrowAsync(transcode.Id);
         }
 
-        var mimeType = mimeTypeService.GetMimeType(session.File.AbsolutePath, session.File.Extension);
+        var mimeType = mimeTypeService.GetMimeType(session.File.Path);
 
+        var filePath = rootFileExplorerFolder.GetNodePath(session.AbsolutePath);
+        
         return new DirectStreamFile(mimeType)
         {
-            FilePath = session.AbsolutePath,
+            FilePath = filePath
         };
     }
 }

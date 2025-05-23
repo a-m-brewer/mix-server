@@ -26,6 +26,7 @@ public class SignalRCallbackService(
     IConverter<IDeviceState, DeviceStateDto> deviceStateConverter,
     IFileExplorerResponseConverter fileExplorerResponseConverter,
     IMediaInfoDtoConverter mediaInfoDtoConverter,
+    INodePathDtoConverter nodePathDtoConverter,
     IConverter<IPlaybackSession, bool, PlaybackSessionDto> playbackSessionConverter,
     IPlaybackStateConverter playbackStateConverter,
     IHubContext<SignalRCallbackHub, ISignalRCallbackClient> context,
@@ -204,7 +205,7 @@ public class SignalRCallbackService(
             .UserUpdated(userDtoConverter.Convert(user));
     }
     
-    public Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, string? oldAbsolutePath)
+    public Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, NodePath? oldNodePath)
     {
         var tasks = new List<Task>();
         var nodeDto = fileExplorerResponseConverter.Convert(node);
@@ -215,7 +216,9 @@ public class SignalRCallbackService(
             {
                 Index = index,
                 Node = nodeDto,
-                OldAbsolutePath = oldAbsolutePath
+                OldPath = oldNodePath is null
+                    ? null
+                    : nodePathDtoConverter.Convert(oldNodePath)
             };
             var connections = user.GetConnections();
             var task = context.Clients.Clients(connections).FileExplorerNodeUpdated(dto);
@@ -225,11 +228,15 @@ public class SignalRCallbackService(
         return Task.WhenAll(tasks);
     }
 
-    public Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, string absolutePath)
+    public Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, NodePath nodePath)
     {
         return context.Clients
             .All
-            .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto(fileExplorerResponseConverter.Convert(parentNode), absolutePath));
+            .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto
+            {
+                Parent = fileExplorerResponseConverter.Convert(parentNode),
+                NodePath = nodePathDtoConverter.Convert(nodePath)
+            });
     }
 
     public Task MediaInfoUpdated(IReadOnlyCollection<MediaInfo> mediaInfo)
@@ -246,7 +253,7 @@ public class SignalRCallbackService(
     {
         var eventDto = new MediaInfoRemovedDto
         {
-            NodePaths = removedItems.Select(mediaInfoDtoConverter.Convert).ToList()
+            NodePaths = removedItems.Select(nodePathDtoConverter.Convert).ToList()
         };
         
         return context.Clients.All.MediaInfoRemoved(eventDto);

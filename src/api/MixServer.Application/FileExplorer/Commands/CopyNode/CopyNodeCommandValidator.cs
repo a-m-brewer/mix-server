@@ -6,10 +6,10 @@ public class CopyNodeCommandValidator : AbstractValidator<CopyNodeCommand>
 {
     public CopyNodeCommandValidator()
     {
-        RuleFor(r => r.SourceAbsolutePath).NotEmpty();
+        RuleFor(r => r.SourcePath)
+            .NotNull();
         
-        RuleFor(r => r.DestinationFolder).NotEmpty();
-        
-        RuleFor(r => r.DestinationName).NotEmpty();
+        RuleFor(r => r.DestinationPath)
+            .NotNull();
     }
 }

@@ -5,9 +5,7 @@ namespace MixServer.Domain.FileExplorer.Models;
 
 public interface IFileExplorerNode
 {
-    string Name { get; }
-
-    string AbsolutePath { get; }
+    NodePath Path { get; }
 
     FileExplorerNodeType Type { get; }
 
@@ -18,8 +16,6 @@ public interface IFileExplorerNode
 
 public interface IFileExplorerFileNode : IFileExplorerNode
 {
-    string Extension { get; }
-    
     IFileMetadata Metadata { get; }
 
     bool PlaybackSupported { get; }
@@ -51,8 +47,9 @@ public interface IFileExplorerFolder
 
 public interface IRootFileExplorerFolder : IFileExplorerFolder
 {
-    bool BelongsToRoot(string? absolutePath);
+    bool BelongsToRoot(string? rootPath);
 
-    bool BelongsToRootChild(string? absolutePath);
+    bool BelongsToRootChild(string rootPath);
     void RefreshChildren();
+    NodePath GetNodePath(string absolutePath);
 }
