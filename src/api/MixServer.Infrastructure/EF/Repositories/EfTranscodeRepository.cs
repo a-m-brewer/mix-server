@@ -42,4 +42,9 @@ public class EfTranscodeRepository(MixServerDbContext context) : ITranscodeRepos
         
         return transcode;
     }
+
+    public void Remove(Guid transcodeId)
+    { 
+        context.Transcodes.RemoveRange(context.Transcodes.Where(s => s.Id == transcodeId));
+    }
 }

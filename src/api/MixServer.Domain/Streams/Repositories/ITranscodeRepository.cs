@@ -10,4 +10,5 @@ public interface ITranscodeRepository : ITransientRepository
     Task<Transcode> GetAsync(NodePath path);
     Task<Transcode?> GetOrDefaultAsync(NodePath path);
     Task<Transcode> GetOrAddAsync(NodePath path);
+    void Remove(Guid transcodeId);
 }

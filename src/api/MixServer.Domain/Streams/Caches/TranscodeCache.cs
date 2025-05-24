@@ -7,6 +7,7 @@ using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Caching;
+using MixServer.Domain.Persistence;
 using MixServer.Domain.Settings;
 using MixServer.Domain.Streams.Entities;
 using MixServer.Domain.Streams.Enums;
@@ -175,6 +176,7 @@ public class TranscodeCache(
 
             await transcode.InitializeAsync();
 
+            // ReSharper disable once MethodHasAsyncOverload
             SendTranscodeStatusUpdated(transcode.Path);
 
             transcode.HasCompletePlaylistChanged += TranscodeOnHasCompletePlaylistChanged;
@@ -188,7 +190,8 @@ public class TranscodeCache(
         }
     }
 
-    private void CacheFolderOnItemRemoved(object? sender, NodePath path)
+    // ReSharper disable once AsyncVoidMethod
+    private async void CacheFolderOnItemRemoved(object? sender, NodePath path)
     {
         var hash = path.FileName;
 
@@ -199,15 +202,33 @@ public class TranscodeCache(
             return;
         }
 
-        transcode.HasCompletePlaylistChanged -= TranscodeOnHasCompletePlaylistChanged;
+        try
+        {
+            using var scope = serviceProvider.CreateScope();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            unitOfWork.GetRepository<ITranscodeRepository>()
+                .Remove(transcodeId);
+            
+            unitOfWork.OnSaved(() => SendTranscodeStatusUpdatedAsync(transcode.Path));
+            
+            await unitOfWork.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to remove transcode folder {Hash} from DB", hash);
+        }
+        finally
+        {
+            transcode.HasCompletePlaylistChanged -= TranscodeOnHasCompletePlaylistChanged;
 
-        var folder = transcode.TranscodeFolder;
+            var folder = transcode.TranscodeFolder;
 
-        folder.ItemAdded -= TranscodeFolderOnItemAdded;
-        folder.ItemUpdated -= TranscodeFolderOnItemUpdated;
-        folder.ItemRemoved -= TranscodeFolderOnItemRemoved;
-        folder.Dispose();
-        logger.LogInformation("Removed transcode folder {Hash}", path.AbsolutePath);
+            folder.ItemAdded -= TranscodeFolderOnItemAdded;
+            folder.ItemUpdated -= TranscodeFolderOnItemUpdated;
+            folder.ItemRemoved -= TranscodeFolderOnItemRemoved;
+            folder.Dispose();
+            logger.LogInformation("Removed transcode folder {Hash}", path.AbsolutePath);
+        }
     }
 
     private void CacheFolderOnItemUpdated(object? sender, FolderItemUpdatedEventArgs e)
@@ -286,19 +307,26 @@ public class TranscodeCache(
 
     private void SendTranscodeStatusUpdated(NodePath nodePath)
     {
-        _ = Task.Run(() =>
+        _ = Task.Run(async () =>
         {
-            try
-            {
-                TranscodeStatusUpdated?.Invoke(this, new TranscodeStatusUpdatedEventArgs
-                {
-                    Path = nodePath
-                });
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e, "Failed to send transcode status updated event");
-            }
+            await SendTranscodeStatusUpdatedAsync(nodePath).ConfigureAwait(false);
         });
+    }
+    
+    private Task SendTranscodeStatusUpdatedAsync(NodePath nodePath)
+    {
+        try
+        {
+            TranscodeStatusUpdated?.Invoke(this, new TranscodeStatusUpdatedEventArgs
+            {
+                Path = nodePath
+            });
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to send transcode status updated event");
+        }
+        
+        return Task.CompletedTask;
     }
 }
