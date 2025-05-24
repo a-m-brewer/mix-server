@@ -1,4 +1,5 @@
 using MixServer.Application.FileExplorer.Converters;
+using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
@@ -9,14 +10,11 @@ public class GetFolderNodeQueryHandler(
     IConverter<IFileExplorerFolder, FileExplorerFolderResponse> folderNodeConverter,
     INodePathDtoConverter nodePathConverter,
     IFileService fileService)
-    : IQueryHandler<GetFolderNodeQuery, FileExplorerFolderResponse>
+    : IQueryHandler<NodePathRequestDto, FileExplorerFolderResponse>
 {
-    public async Task<FileExplorerFolderResponse> HandleAsync(GetFolderNodeQuery request)
+    public async Task<FileExplorerFolderResponse> HandleAsync(NodePathRequestDto request)
     {
-        var folder = await fileService.GetFolderOrRootAsync(
-            request.NodePath is null
-                ? null
-                : nodePathConverter.Convert(request.NodePath));
+        var folder = await fileService.GetFolderOrRootAsync(nodePathConverter.Convert(request));
 
         var result = folderNodeConverter.Convert(folder);
 

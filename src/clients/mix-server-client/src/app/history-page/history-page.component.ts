@@ -67,7 +67,7 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
   }
 
   public onNodeClick(event: NodeListItemChangedEvent) {
-    const session = this.sessions.find(f => f.currentNode.absolutePath === event.id)
+    const session = this.sessions.find(f => f.currentNode.path.key === event.key)
 
     if (!session) {
       return;

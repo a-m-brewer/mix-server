@@ -29,7 +29,7 @@ export class SessionComponent implements OnInit, OnDestroy {
     this._playbackSessionRepository.currentSession$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(s => {
-        this.fileName = s?.currentNode.name ?? '';
+        this.fileName = s?.currentNode.path.fileName ?? '';
         this.sessionCurrentDirectory = s?.currentNode.parent;
       });
   }

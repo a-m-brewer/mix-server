@@ -17,7 +17,7 @@ export class NodeListItemComponent {
   @ContentChildren(ContextMenuButton) contextMenuButtons: QueryList<ContextMenuButton> | null | undefined;
 
   @Input()
-  public id: string = null!;
+  public key: string = null!;
 
   @Input()
   public nodeType: FileExplorerNodeType = FileExplorerNodeType.Folder;
@@ -56,7 +56,7 @@ export class NodeListItemComponent {
   }
 
   public get playingState(): FileExplorerPlayingState {
-    if (this.audioPlayerState.queueItemId === this.id || this.audioPlayerState.node?.absolutePath === this.id) {
+    if (this.audioPlayerState.queueItemId === this.key || this.audioPlayerState.node?.path.key === this.key) {
       return this.audioPlayerState.playing ? FileExplorerPlayingState.Playing : FileExplorerPlayingState.Paused;
     }
 
@@ -72,10 +72,10 @@ export class NodeListItemComponent {
       return;
     }
 
-    this.contentClick.emit({id: this.id, nodeType: this.nodeType});
+    this.contentClick.emit({key: this.key, nodeType: this.nodeType});
   }
 
   public onSelectedChange(selected: boolean): void {
-    this.selectedChange.emit({id: this.id, selected});
+    this.selectedChange.emit({key: this.key, selected});
   }
 }

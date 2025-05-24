@@ -9,12 +9,13 @@ import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {NodeCacheService} from "../nodes/node-cache.service";
+import {NodePathHeader} from "../../main-content/file-explorer/models/node-path";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FileExplorerNodeRepositoryService {
-  private _currentFolderAbsolutePath$ = new BehaviorSubject<string>("");
+  private _currentFolderPath$ = new BehaviorSubject<NodePathHeader>(NodePathHeader.Default);
 
   private _loggedIn: boolean = false;
 
@@ -45,7 +46,7 @@ export class FileExplorerNodeRepositoryService {
   }
 
   public get currentFolder$(): Observable<FileExplorerFolder> {
-    return this._nodeCache.getFolder$(this._currentFolderAbsolutePath$);
+    return this._nodeCache.getFolder$(this._currentFolderPath$);
   }
 
   public changeDirectory(node?: FileExplorerFolderNode | null): void {
@@ -53,13 +54,13 @@ export class FileExplorerNodeRepositoryService {
       return;
     }
 
-    firstValueFrom(this.navigateToDirectory(node?.absolutePath))
+    firstValueFrom(this.navigateToDirectory(node?.path))
       .then();
   }
 
-  private navigateToDirectory(absolutePath?: string | null): Observable<boolean> {
-    const query = absolutePath
-      ? {dir: absolutePath}
+  private navigateToDirectory(nodePath?: NodePathHeader | null): Observable<boolean> {
+    const query = nodePath
+      ? {root: nodePath.rootPath, dir: nodePath.relativePath}
       : {}
 
     return from(this._router.navigate(
@@ -76,34 +77,38 @@ export class FileExplorerNodeRepositoryService {
 
     const queryParams = this._route.snapshot.queryParams;
 
+    const root = 'root' in queryParams
+      ? queryParams['root'] as string
+      : '';
+
     const dir = 'dir' in queryParams
       ? queryParams['dir'] as string
       : '';
 
-    this.loadDirectory(dir);
+    this.loadDirectory(root, dir);
   }
 
   public refreshFolder(): void {
-    this._nodeCache.refreshFolder(this._currentFolderAbsolutePath$.value)
+    this._nodeCache.refreshFolder(this._currentFolderPath$.value)
   }
 
   public setFolderSort(sortMode: FileExplorerFolderSortMode, descending: boolean) {
-    if (this._currentFolderAbsolutePath$.value === "") {
+    if (this._currentFolderPath$.value.empty) {
       return;
     }
 
-    this._nodeCache.setFolderSort(this._currentFolderAbsolutePath$.value, sortMode, descending)
+    this._nodeCache.setFolderSort(this._currentFolderPath$.value, sortMode, descending)
       .then();
   }
 
-  private loadDirectory(absolutePath: string): void {
-    this._nodeCache.loadDirectory(absolutePath)
+  private loadDirectory(root: string, relativePath: string): void {
+    this._nodeCache.loadDirectory(new NodePathHeader(root, relativePath))
       .then(loadedPath => {
-        this._currentFolderAbsolutePath$.next(loadedPath);
+        this._currentFolderPath$.next(loadedPath);
       })
   }
 
   private clear(): void {
-    this._currentFolderAbsolutePath$.next("");
+    this._currentFolderPath$.next(NodePathHeader.Default);
   }
 }

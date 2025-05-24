@@ -38,7 +38,7 @@ public class FileExplorerResponseConverter(
     {
         return new FileExplorerFileNodeResponse
         {
-            Path = nodePathDtoConverter.Convert(value.Path),
+            Path = nodePathDtoConverter.ConvertToResponse(value.Path),
             Exists = value.Exists,
             Type = value.Type,
             CreationTimeUtc = value.CreationTimeUtc,
@@ -52,7 +52,7 @@ public class FileExplorerResponseConverter(
     {
         return new FileExplorerFolderNodeResponse
         {
-            Path = nodePathDtoConverter.Convert(value.Path),
+            Path = nodePathDtoConverter.ConvertToResponse(value.Path),
             Exists = value.Exists,
             Type = value.Type,
             CreationTimeUtc = value.CreationTimeUtc,

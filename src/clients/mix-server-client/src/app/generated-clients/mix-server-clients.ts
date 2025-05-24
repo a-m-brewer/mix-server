@@ -256,7 +256,7 @@ export class DeviceClient implements IDeviceClient {
 }
 
 export interface INodeClient {
-    getNode(nodePath_RootPath?: string | undefined, nodePath_RelativePath?: string | undefined): Observable<FileExplorerFolderResponse>;
+    getNode(rootPath?: string | undefined, relativePath?: string | undefined): Observable<FileExplorerFolderResponse>;
     refreshFolder(command: RefreshFolderCommand): Observable<FileExplorerFolderResponse>;
     setFolderSortMode(command: SetFolderSortCommand): Observable<void>;
 }
@@ -274,16 +274,16 @@ export class NodeClient implements INodeClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getNode(nodePath_RootPath?: string | undefined, nodePath_RelativePath?: string | undefined): Observable<FileExplorerFolderResponse> {
+    getNode(rootPath?: string | undefined, relativePath?: string | undefined): Observable<FileExplorerFolderResponse> {
         let url_ = this.baseUrl + "/api/node?";
-        if (nodePath_RootPath === null)
-            throw new Error("The parameter 'nodePath_RootPath' cannot be null.");
-        else if (nodePath_RootPath !== undefined)
-            url_ += "NodePath.RootPath=" + encodeURIComponent("" + nodePath_RootPath) + "&";
-        if (nodePath_RelativePath === null)
-            throw new Error("The parameter 'nodePath_RelativePath' cannot be null.");
-        else if (nodePath_RelativePath !== undefined)
-            url_ += "NodePath.RelativePath=" + encodeURIComponent("" + nodePath_RelativePath) + "&";
+        if (rootPath === null)
+            throw new Error("The parameter 'rootPath' cannot be null.");
+        else if (rootPath !== undefined)
+            url_ += "RootPath=" + encodeURIComponent("" + rootPath) + "&";
+        if (relativePath === null)
+            throw new Error("The parameter 'relativePath' cannot be null.");
+        else if (relativePath !== undefined)
+            url_ += "RelativePath=" + encodeURIComponent("" + relativePath) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -3042,11 +3042,11 @@ export interface IFileExplorerFolderNodeResponse extends IFileExplorerNodeRespon
     parent?: FileExplorerFolderNodeResponse | undefined;
 }
 
-export class NodePathDto implements INodePathDto {
+export class NodePathRequestDto implements INodePathRequestDto {
     rootPath!: string;
     relativePath!: string;
 
-    constructor(data?: INodePathDto) {
+    constructor(data?: INodePathRequestDto) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3062,9 +3062,9 @@ export class NodePathDto implements INodePathDto {
         }
     }
 
-    static fromJS(data: any): NodePathDto {
+    static fromJS(data: any): NodePathRequestDto {
         data = typeof data === 'object' ? data : {};
-        let result = new NodePathDto();
+        let result = new NodePathRequestDto();
         result.init(data);
         return result;
     }
@@ -3077,9 +3077,98 @@ export class NodePathDto implements INodePathDto {
     }
 }
 
-export interface INodePathDto {
+export interface INodePathRequestDto {
     rootPath: string;
     relativePath: string;
+}
+
+export class NodePathDto extends NodePathRequestDto implements INodePathDto {
+    fileName!: string;
+    absolutePath!: string;
+    extension!: string;
+    parent!: NodePathHeaderDto;
+    isRoot!: boolean;
+    isRootChild!: boolean;
+
+    constructor(data?: INodePathDto) {
+        super(data);
+        if (!data) {
+            this.parent = new NodePathHeaderDto();
+        }
+    }
+
+    override init(_data?: any) {
+        super.init(_data);
+        if (_data) {
+            this.fileName = _data["fileName"];
+            this.absolutePath = _data["absolutePath"];
+            this.extension = _data["extension"];
+            this.parent = _data["parent"] ? NodePathHeaderDto.fromJS(_data["parent"]) : new NodePathHeaderDto();
+            this.isRoot = _data["isRoot"];
+            this.isRootChild = _data["isRootChild"];
+        }
+    }
+
+    static override fromJS(data: any): NodePathDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new NodePathDto();
+        result.init(data);
+        return result;
+    }
+
+    override toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["fileName"] = this.fileName;
+        data["absolutePath"] = this.absolutePath;
+        data["extension"] = this.extension;
+        data["parent"] = this.parent ? this.parent.toJSON() : <any>undefined;
+        data["isRoot"] = this.isRoot;
+        data["isRootChild"] = this.isRootChild;
+        super.toJSON(data);
+        return data;
+    }
+}
+
+export interface INodePathDto extends INodePathRequestDto {
+    fileName: string;
+    absolutePath: string;
+    extension: string;
+    parent: NodePathHeaderDto;
+    isRoot: boolean;
+    isRootChild: boolean;
+}
+
+export class NodePathHeaderDto extends NodePathRequestDto implements INodePathHeaderDto {
+    absolutePath!: string;
+
+    constructor(data?: INodePathHeaderDto) {
+        super(data);
+    }
+
+    override init(_data?: any) {
+        super.init(_data);
+        if (_data) {
+            this.absolutePath = _data["absolutePath"];
+        }
+    }
+
+    static override fromJS(data: any): NodePathHeaderDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new NodePathHeaderDto();
+        result.init(data);
+        return result;
+    }
+
+    override toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["absolutePath"] = this.absolutePath;
+        super.toJSON(data);
+        return data;
+    }
+}
+
+export interface INodePathHeaderDto extends INodePathRequestDto {
+    absolutePath: string;
 }
 
 export enum FileExplorerNodeType {
@@ -3593,7 +3682,7 @@ export interface IHttpValidationProblemDetails extends IProblemDetails {
 }
 
 export class ValidationProblemDetails extends HttpValidationProblemDetails implements IValidationProblemDetails {
-    errors!: { [key: string]: string[]; };
+    override errors!: { [key: string]: string[]; };
 
     [key: string]: any;
 
@@ -3653,7 +3742,7 @@ export interface IValidationProblemDetails extends IHttpValidationProblemDetails
 }
 
 export class RefreshFolderCommand implements IRefreshFolderCommand {
-    nodePath?: NodePath | undefined;
+    nodePath?: NodePathRequestDto | undefined;
 
     constructor(data?: IRefreshFolderCommand) {
         if (data) {
@@ -3666,7 +3755,7 @@ export class RefreshFolderCommand implements IRefreshFolderCommand {
 
     init(_data?: any) {
         if (_data) {
-            this.nodePath = _data["nodePath"] ? NodePath.fromJS(_data["nodePath"]) : <any>undefined;
+            this.nodePath = _data["nodePath"] ? NodePathRequestDto.fromJS(_data["nodePath"]) : <any>undefined;
         }
     }
 
@@ -3685,78 +3774,11 @@ export class RefreshFolderCommand implements IRefreshFolderCommand {
 }
 
 export interface IRefreshFolderCommand {
-    nodePath?: NodePath | undefined;
-}
-
-export class NodePath implements INodePath {
-    rootPath!: string;
-    relativePath!: string;
-    absolutePath!: string;
-    fileName!: string;
-    parent!: NodePath;
-    extension!: string;
-    isRoot!: boolean;
-    isRootChild!: boolean;
-
-    constructor(data?: INodePath) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.parent = new NodePath();
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.rootPath = _data["rootPath"];
-            this.relativePath = _data["relativePath"];
-            this.absolutePath = _data["absolutePath"];
-            this.fileName = _data["fileName"];
-            this.parent = _data["parent"] ? NodePath.fromJS(_data["parent"]) : new NodePath();
-            this.extension = _data["extension"];
-            this.isRoot = _data["isRoot"];
-            this.isRootChild = _data["isRootChild"];
-        }
-    }
-
-    static fromJS(data: any): NodePath {
-        data = typeof data === 'object' ? data : {};
-        let result = new NodePath();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["rootPath"] = this.rootPath;
-        data["relativePath"] = this.relativePath;
-        data["absolutePath"] = this.absolutePath;
-        data["fileName"] = this.fileName;
-        data["parent"] = this.parent ? this.parent.toJSON() : <any>undefined;
-        data["extension"] = this.extension;
-        data["isRoot"] = this.isRoot;
-        data["isRootChild"] = this.isRootChild;
-        return data;
-    }
-}
-
-export interface INodePath {
-    rootPath: string;
-    relativePath: string;
-    absolutePath: string;
-    fileName: string;
-    parent: NodePath;
-    extension: string;
-    isRoot: boolean;
-    isRootChild: boolean;
+    nodePath?: NodePathRequestDto | undefined;
 }
 
 export class SetFolderSortCommand implements ISetFolderSortCommand {
-    nodePath!: NodePathDto;
+    nodePath!: NodePathRequestDto;
     descending!: boolean;
     sortMode!: FolderSortMode;
 
@@ -3768,13 +3790,13 @@ export class SetFolderSortCommand implements ISetFolderSortCommand {
             }
         }
         if (!data) {
-            this.nodePath = new NodePathDto();
+            this.nodePath = new NodePathRequestDto();
         }
     }
 
     init(_data?: any) {
         if (_data) {
-            this.nodePath = _data["nodePath"] ? NodePathDto.fromJS(_data["nodePath"]) : new NodePathDto();
+            this.nodePath = _data["nodePath"] ? NodePathRequestDto.fromJS(_data["nodePath"]) : new NodePathRequestDto();
             this.descending = _data["descending"];
             this.sortMode = _data["sortMode"];
         }
@@ -3797,14 +3819,14 @@ export class SetFolderSortCommand implements ISetFolderSortCommand {
 }
 
 export interface ISetFolderSortCommand {
-    nodePath: NodePathDto;
+    nodePath: NodePathRequestDto;
     descending: boolean;
     sortMode: FolderSortMode;
 }
 
 export class CopyNodeCommand implements ICopyNodeCommand {
-    sourcePath!: NodePathDto;
-    destinationPath!: NodePathDto;
+    sourcePath!: NodePathRequestDto;
+    destinationPath!: NodePathRequestDto;
     move!: boolean;
     overwrite!: boolean;
 
@@ -3816,15 +3838,15 @@ export class CopyNodeCommand implements ICopyNodeCommand {
             }
         }
         if (!data) {
-            this.sourcePath = new NodePathDto();
-            this.destinationPath = new NodePathDto();
+            this.sourcePath = new NodePathRequestDto();
+            this.destinationPath = new NodePathRequestDto();
         }
     }
 
     init(_data?: any) {
         if (_data) {
-            this.sourcePath = _data["sourcePath"] ? NodePathDto.fromJS(_data["sourcePath"]) : new NodePathDto();
-            this.destinationPath = _data["destinationPath"] ? NodePathDto.fromJS(_data["destinationPath"]) : new NodePathDto();
+            this.sourcePath = _data["sourcePath"] ? NodePathRequestDto.fromJS(_data["sourcePath"]) : new NodePathRequestDto();
+            this.destinationPath = _data["destinationPath"] ? NodePathRequestDto.fromJS(_data["destinationPath"]) : new NodePathRequestDto();
             this.move = _data["move"];
             this.overwrite = _data["overwrite"];
         }
@@ -3848,14 +3870,14 @@ export class CopyNodeCommand implements ICopyNodeCommand {
 }
 
 export interface ICopyNodeCommand {
-    sourcePath: NodePathDto;
-    destinationPath: NodePathDto;
+    sourcePath: NodePathRequestDto;
+    destinationPath: NodePathRequestDto;
     move: boolean;
     overwrite: boolean;
 }
 
 export class DeleteNodeCommand implements IDeleteNodeCommand {
-    nodePath!: NodePathDto;
+    nodePath!: NodePathRequestDto;
 
     constructor(data?: IDeleteNodeCommand) {
         if (data) {
@@ -3865,13 +3887,13 @@ export class DeleteNodeCommand implements IDeleteNodeCommand {
             }
         }
         if (!data) {
-            this.nodePath = new NodePathDto();
+            this.nodePath = new NodePathRequestDto();
         }
     }
 
     init(_data?: any) {
         if (_data) {
-            this.nodePath = _data["nodePath"] ? NodePathDto.fromJS(_data["nodePath"]) : new NodePathDto();
+            this.nodePath = _data["nodePath"] ? NodePathRequestDto.fromJS(_data["nodePath"]) : new NodePathRequestDto();
         }
     }
 
@@ -3890,7 +3912,7 @@ export class DeleteNodeCommand implements IDeleteNodeCommand {
 }
 
 export interface IDeleteNodeCommand {
-    nodePath: NodePathDto;
+    nodePath: NodePathRequestDto;
 }
 
 export class QueueSnapshotDto implements IQueueSnapshotDto {
@@ -4005,7 +4027,7 @@ export enum QueueSnapshotItemType {
 }
 
 export class AddToQueueCommand implements IAddToQueueCommand {
-    nodePath!: NodePathDto;
+    nodePath!: NodePathRequestDto;
 
     constructor(data?: IAddToQueueCommand) {
         if (data) {
@@ -4015,13 +4037,13 @@ export class AddToQueueCommand implements IAddToQueueCommand {
             }
         }
         if (!data) {
-            this.nodePath = new NodePathDto();
+            this.nodePath = new NodePathRequestDto();
         }
     }
 
     init(_data?: any) {
         if (_data) {
-            this.nodePath = _data["nodePath"] ? NodePathDto.fromJS(_data["nodePath"]) : new NodePathDto();
+            this.nodePath = _data["nodePath"] ? NodePathRequestDto.fromJS(_data["nodePath"]) : new NodePathRequestDto();
         }
     }
 
@@ -4040,7 +4062,7 @@ export class AddToQueueCommand implements IAddToQueueCommand {
 }
 
 export interface IAddToQueueCommand {
-    nodePath: NodePathDto;
+    nodePath: NodePathRequestDto;
 }
 
 export class RemoveFromQueueCommand implements IRemoveFromQueueCommand {
@@ -4366,7 +4388,7 @@ export interface ISyncPlaybackSessionCommand {
 }
 
 export class SetCurrentSessionCommand implements ISetCurrentSessionCommand {
-    nodePath!: NodePathDto;
+    nodePath!: NodePathRequestDto;
 
     constructor(data?: ISetCurrentSessionCommand) {
         if (data) {
@@ -4376,13 +4398,13 @@ export class SetCurrentSessionCommand implements ISetCurrentSessionCommand {
             }
         }
         if (!data) {
-            this.nodePath = new NodePathDto();
+            this.nodePath = new NodePathRequestDto();
         }
     }
 
     init(_data?: any) {
         if (_data) {
-            this.nodePath = _data["nodePath"] ? NodePathDto.fromJS(_data["nodePath"]) : new NodePathDto();
+            this.nodePath = _data["nodePath"] ? NodePathRequestDto.fromJS(_data["nodePath"]) : new NodePathRequestDto();
         }
     }
 
@@ -4401,7 +4423,7 @@ export class SetCurrentSessionCommand implements ISetCurrentSessionCommand {
 }
 
 export interface ISetCurrentSessionCommand {
-    nodePath: NodePathDto;
+    nodePath: NodePathRequestDto;
 }
 
 export class GetUsersSessionsResponse implements IGetUsersSessionsResponse {
@@ -4769,7 +4791,7 @@ export interface IImportTracklistResponse {
 }
 
 export class RequestTranscodeCommand implements IRequestTranscodeCommand {
-    nodePath!: NodePathDto;
+    nodePath!: NodePathRequestDto;
 
     constructor(data?: IRequestTranscodeCommand) {
         if (data) {
@@ -4779,13 +4801,13 @@ export class RequestTranscodeCommand implements IRequestTranscodeCommand {
             }
         }
         if (!data) {
-            this.nodePath = new NodePathDto();
+            this.nodePath = new NodePathRequestDto();
         }
     }
 
     init(_data?: any) {
         if (_data) {
-            this.nodePath = _data["nodePath"] ? NodePathDto.fromJS(_data["nodePath"]) : new NodePathDto();
+            this.nodePath = _data["nodePath"] ? NodePathRequestDto.fromJS(_data["nodePath"]) : new NodePathRequestDto();
         }
     }
 
@@ -4804,7 +4826,7 @@ export class RequestTranscodeCommand implements IRequestTranscodeCommand {
 }
 
 export interface IRequestTranscodeCommand {
-    nodePath: NodePathDto;
+    nodePath: NodePathRequestDto;
 }
 
 export class GetAllUsersResponse implements IGetAllUsersResponse {

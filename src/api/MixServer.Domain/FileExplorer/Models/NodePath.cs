@@ -3,7 +3,7 @@ namespace MixServer.Domain.FileExplorer.Models;
 public record NodePath(string RootPath, string RelativePath)
 {
     public string AbsolutePath => Path.Join(RootPath, RelativePath);
-    public string FileName => Path.GetFileName(RelativePath);
+    public string FileName => Path.GetFileName(AbsolutePath);
     public NodePath Parent => this with { RelativePath = Path.GetDirectoryName(RelativePath) ?? string.Empty };
     
     public string Extension => Path.GetExtension(RelativePath);

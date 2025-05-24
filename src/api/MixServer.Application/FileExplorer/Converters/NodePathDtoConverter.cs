@@ -4,21 +4,45 @@ using MixServer.Domain.Interfaces;
 
 namespace MixServer.Application.FileExplorer.Converters;
 
-public interface INodePathDtoConverter : IConverter<NodePath, NodePathDto>, IConverter<NodePathDto, NodePath>;
+public interface INodePathDtoConverter :
+    IConverter<NodePath, NodePathHeaderDto>,
+    IConverter<NodePathRequestDto, NodePath?>
+{
+    NodePathDto ConvertToResponse(NodePath value);
+}
 
 public class NodePathDtoConverter : INodePathDtoConverter
 {
-    public NodePathDto Convert(NodePath value)
+    public NodePathHeaderDto Convert(NodePath value)
+    {
+        return new NodePathHeaderDto
+        {
+            RootPath = value.RootPath,
+            RelativePath = value.RelativePath,
+            AbsolutePath = value.AbsolutePath
+        };
+    }
+
+    public NodePath? Convert(NodePathRequestDto value)
+    {
+        if (string.IsNullOrEmpty(value.RootPath) && string.IsNullOrEmpty(value.RelativePath))
+            return null;
+
+        return new NodePath(value.RootPath ?? string.Empty, value.RelativePath ?? string.Empty);
+    }
+
+    public NodePathDto ConvertToResponse(NodePath value)
     {
         return new NodePathDto
         {
             RootPath = value.RootPath,
-            RelativePath = value.RelativePath
+            RelativePath = value.RelativePath,
+            FileName = value.FileName,
+            AbsolutePath = value.AbsolutePath,
+            Extension = value.Extension,
+            Parent = Convert(value.Parent),
+            IsRoot = value.IsRoot,
+            IsRootChild = value.IsRootChild
         };
-    }
-
-    public NodePath Convert(NodePathDto value)
-    {
-        return new NodePath(value.RootPath, value.RelativePath);
     }
 }

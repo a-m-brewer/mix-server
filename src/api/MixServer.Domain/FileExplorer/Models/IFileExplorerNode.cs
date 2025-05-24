@@ -47,9 +47,8 @@ public interface IFileExplorerFolder
 
 public interface IRootFileExplorerFolder : IFileExplorerFolder
 {
-    bool BelongsToRoot(string? rootPath);
-
-    bool BelongsToRootChild(string rootPath);
-    void RefreshChildren();
     NodePath GetNodePath(string absolutePath);
+    IFileExplorerFolderNode GetRootChildOrThrow(NodePath nodePath);
+    void RefreshChildren();
+    bool DescendantOfRoot(NodePath nodePath);
 }

@@ -32,25 +32,28 @@ public class FileExplorerConverter(
     
     private FileExplorerFolderNode Convert(DirectoryInfo directoryInfo, bool includeParent)
     {
-        var currentFolderBelongsToRoot = rootFolder.BelongsToRoot(directoryInfo.FullName);
+        var nodePath = rootFolder.GetNodePath(directoryInfo.FullName);
 
         IFileExplorerFolderNode? parent = null;
-        if (includeParent && directoryInfo.Parent is not null)
+        if (includeParent && !nodePath.IsRoot)
         {
-            parent = currentFolderBelongsToRoot
-                ? rootFolder.Node
-                : Convert(directoryInfo.Parent, false);
+            if (nodePath.IsRootChild)
+            {
+                parent = rootFolder.Node;
+            }
+            else if (directoryInfo.Parent is not null)
+            {
+                parent = Convert(directoryInfo.Parent, false);
+            }
         }
         
-        var path = rootFolder.GetNodePath(directoryInfo.FullName);
-        
         return new FileExplorerFolderNode(
-            path,
+            nodePath,
             FileExplorerNodeType.Folder,
             directoryInfo.Exists,
             directoryInfo.CreationTimeUtc,
-            currentFolderBelongsToRoot,
-            rootFolder.BelongsToRootChild(directoryInfo.FullName),
+            nodePath.IsRoot,
+            nodePath.IsRootChild,
             parent);
     }
 

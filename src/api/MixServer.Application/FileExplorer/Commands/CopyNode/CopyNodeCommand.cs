@@ -4,9 +4,9 @@ namespace MixServer.Application.FileExplorer.Commands.CopyNode;
 
 public class CopyNodeCommand
 {
-    public required NodePathDto SourcePath { get; set; }
+    public required NodePathRequestDto SourcePath { get; set; }
     
-    public required NodePathDto DestinationPath { get; set; }
+    public required NodePathRequestDto DestinationPath { get; set; }
     
     public bool Move { get; set; }
     

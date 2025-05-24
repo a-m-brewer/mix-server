@@ -12,6 +12,7 @@ import {NodeDeletedEvent} from "./models/node-deleted-event";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {MediaInfoRemovedEvent, MediaInfoUpdatedEvent} from "./models/media-info-event";
 import {FileMetadataConverterService} from "../converters/file-metadata-converter.service";
+import {NodePathConverterService} from "../converters/node-path-converter.service";
 
 @Injectable({
   providedIn: 'root'
@@ -25,7 +26,8 @@ export class FolderSignalrClientService implements ISignalrClient {
   private _mediaInfoRemovedSubject$ = new Subject<MediaInfoRemovedEvent>();
 
   constructor(private _fileMetadataConverter: FileMetadataConverterService,
-              private _folderNodeConverter: FileExplorerNodeConverterService) {
+              private _folderNodeConverter: FileExplorerNodeConverterService,
+              private _nodePathConverter: NodePathConverterService) {
   }
 
   public folderRefreshed$(): Observable<FileExplorerFolder> {
@@ -96,19 +98,21 @@ export class FolderSignalrClientService implements ISignalrClient {
 
   private handleFileExplorerNodeUpdated(dto: FileExplorerNodeUpdatedDto): void {
     const node = this._folderNodeConverter.fromFileExplorerNode(dto.node);
-    this._nodeUpdatedSubject$.next(new NodeUpdatedEvent(node, dto.index, dto.oldAbsolutePath));
+    const oldPath = dto.oldPath && this._nodePathConverter.fromDto(dto.oldPath);
+    this._nodeUpdatedSubject$.next(new NodeUpdatedEvent(node, dto.index, oldPath));
   }
 
   private handleFileExplorerNodeDeleted(dto: FileExplorerNodeDeletedDto): void {
     const parent = this._folderNodeConverter.fromFileExplorerFolderNode(dto.parent);
-    this._nodeDeletedSubject$.next(new NodeDeletedEvent(parent, dto.absolutePath));
+    const nodePath = this._nodePathConverter.fromDto(dto.nodePath);
+    this._nodeDeletedSubject$.next(new NodeDeletedEvent(parent, nodePath));
   }
 
   private handleMediaInfoUpdated(dto: MediaInfoUpdatedDto): void {
     const event: MediaInfoUpdatedEvent = {
       mediaInfo: dto.mediaInfo.map(item => {
         return {
-          nodePath: this._fileMetadataConverter.fromNodePathDto(item.nodePath),
+          nodePath: this._nodePathConverter.fromDto(item.nodePath),
           info: this._fileMetadataConverter.fromMediaInfoDto(item)
         }
       })
@@ -119,7 +123,7 @@ export class FolderSignalrClientService implements ISignalrClient {
   private handleMediaInfoRemoved(dto: MediaInfoRemovedDto): void {
     const event: MediaInfoRemovedEvent = {
       nodePaths: dto.nodePaths.map(item => {
-        return this._fileMetadataConverter.fromNodePathDto(item)
+        return this._nodePathConverter.fromDto(item)
       })
     };
     this._mediaInfoRemovedSubject$.next(event);

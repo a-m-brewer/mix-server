@@ -5,7 +5,7 @@ namespace MixServer.Application.FileExplorer.Commands.SetFolderSort;
 
 public class SetFolderSortCommand
 {
-    public required NodePathDto NodePath { get; set; }
+    public required NodePathRequestDto NodePath { get; set; }
 
     public bool Descending { get; set; }
 

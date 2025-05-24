@@ -4,5 +4,5 @@ namespace MixServer.Application.FileExplorer.Commands.DeleteNode;
 
 public class DeleteNodeCommand
 {
-    public required NodePathDto NodePath { get; init; }
+    public required NodePathRequestDto NodePath { get; init; }
 }

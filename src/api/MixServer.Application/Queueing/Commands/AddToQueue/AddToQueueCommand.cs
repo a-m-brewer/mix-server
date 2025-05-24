@@ -4,5 +4,5 @@ namespace MixServer.Application.Queueing.Commands.AddToQueue;
 
 public class AddToQueueCommand
 {
-    public required NodePathDto NodePath { get; init; }
+    public required NodePathRequestDto NodePath { get; init; }
 }

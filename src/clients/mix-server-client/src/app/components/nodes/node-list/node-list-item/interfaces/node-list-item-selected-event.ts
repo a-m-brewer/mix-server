@@ -1,4 +1,4 @@
 export interface NodeListItemSelectedEvent {
-  id: string;
+  key: string;
   selected: boolean;
 }

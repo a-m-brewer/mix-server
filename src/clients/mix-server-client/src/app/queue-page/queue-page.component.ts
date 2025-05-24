@@ -71,12 +71,12 @@ export class QueuePageComponent implements OnInit, OnDestroy {
   }
 
   public onNodeClick(event: NodeListItemChangedEvent): void {
-    this._sessionService.setQueuePosition(event.id);
+    this._sessionService.setQueuePosition(event.key);
   }
 
   public onNodeSelectedChanged(e: NodeListItemSelectedEvent) {
     this._queueEditFormRepository.updateEditForm(form => {
-      form.selectedItems[e.id] = e.selected;
+      form.selectedItems[e.key] = e.selected;
     })
   }
 

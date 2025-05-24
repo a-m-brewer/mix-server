@@ -65,7 +65,7 @@ export class HistoryRepositoryService {
   }
 
   private next(sessions: PlaybackSession[]) {
-    const folders = [...new Set(sessions.map(session => session.currentNode.parent.absolutePath))];
+    const folders = [...new Set(sessions.map(session => session.currentNode.parent.path))];
     folders.forEach(folder => {
       void this._nodeCache.loadDirectory(folder)
     })

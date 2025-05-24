@@ -1,15 +1,20 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Options;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Settings;
+using MixServer.Domain.Settings;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
 public class RootFileExplorerFolder : FileExplorerFolder, IRootFileExplorerFolder
 {
+    private readonly IOptions<CacheFolderSettings> _cacheFolderSettings;
     private readonly IOptions<RootFolderSettings> _rootFolderSettings;
 
-    public RootFileExplorerFolder(IOptions<RootFolderSettings> rootFolderSettings) 
+    public RootFileExplorerFolder(
+        IOptions<CacheFolderSettings> cacheFolderSettings,
+        IOptions<RootFolderSettings> rootFolderSettings) 
         : base(
             new FileExplorerFolderNode(
                 new NodePath(string.Empty, string.Empty),
@@ -19,33 +24,90 @@ public class RootFileExplorerFolder : FileExplorerFolder, IRootFileExplorerFolde
                 false, 
                 null))
     {
+        _cacheFolderSettings = cacheFolderSettings;
         _rootFolderSettings = rootFolderSettings;
         RefreshChildren();
     }
-    
-    public bool BelongsToRoot(string? rootPath)
+
+    public NodePath GetNodePath(string absolutePath)
     {
-        if (string.IsNullOrWhiteSpace(rootPath))
+        if (string.IsNullOrWhiteSpace(absolutePath))
         {
+            return Node.Path;
+        }
+        
+        if (TryGetNodePath(absolutePath, out var absoluteNodePath))
+        {
+            return absoluteNodePath;
+        }
+        
+        if (TryGetCacheFolderNodePath(absolutePath, out var cacheNodePath))
+        {
+            return cacheNodePath;
+        }
+        
+        throw new NotFoundException(nameof(IRootFileExplorerFolder), absolutePath);
+    }
+
+    public IFileExplorerFolderNode GetRootChildOrThrow(NodePath nodePath)
+    {
+        return Children
+                   .OfType<IFileExplorerFolderNode>()
+                   .FirstOrDefault(f => f.Path.RootPath == nodePath.RootPath)
+            ?? throw new NotFoundException(nameof(Children), nodePath.RootPath);
+    }
+
+    private bool TryGetNodePath(string? absolutePath, [MaybeNullWhen(false)] out NodePath nodePath)
+    {
+        if (string.IsNullOrWhiteSpace(absolutePath))
+        {
+            nodePath = null;
             return false;
         }
 
-        return Children
-            .OfType<IFileExplorerFolderNode>()
-            .Any(f => f.Path.RootPath == rootPath);
-    }
+        var child = Children.FirstOrDefault(f => absolutePath.StartsWith(f.Path.AbsolutePath));
 
-    public bool BelongsToRootChild(string rootPath)
+        if (child is null)
+        {
+            nodePath = null;
+            return false;
+        }
+
+        nodePath = absolutePath == child.Path.RootPath
+            ? child.Path
+            : child.Path with { RelativePath = Path.GetRelativePath(child.Path.RootPath, absolutePath) };
+        return true;
+    }
+    
+    private bool TryGetCacheFolderNodePath(string? absolutePath, [MaybeNullWhen(false)] out NodePath nodePath)
     {
-        var isSubFolder = Children.OfType<IFileExplorerFolderNode>()
-            .Any(child =>
-                !string.IsNullOrWhiteSpace(rootPath) &&
-                !string.IsNullOrWhiteSpace(child.Path.RootPath) &&
-                rootPath.StartsWith(child.Path.RootPath));
+        if (string.IsNullOrWhiteSpace(absolutePath))
+        {
+            nodePath = null;
+            return false;
+        }
 
-        return isSubFolder;
+        var cacheFolderAbsolutePath = _cacheFolderSettings.Value.DirectoryAbsolutePath;
+        if (absolutePath.StartsWith(cacheFolderAbsolutePath))
+        {
+            var relativePath = absolutePath == cacheFolderAbsolutePath
+                ? string.Empty
+                : Path.GetRelativePath(cacheFolderAbsolutePath, absolutePath);
+            
+            nodePath = new NodePath(cacheFolderAbsolutePath, relativePath);
+            return true;
+        }
+        
+        nodePath = null;
+        return false;
     }
-
+    
+    public bool DescendantOfRoot(NodePath nodePath)
+    {
+        return !nodePath.IsRoot && 
+               Children.Any(f => f.Path.RootPath == nodePath.RootPath);
+    }
+    
     public void RefreshChildren()
     {
         ChildNodes.Clear();
@@ -56,29 +118,5 @@ public class RootFileExplorerFolder : FileExplorerFolder, IRootFileExplorerFolde
             ChildNodes[directoryInfo.Name] = new FileExplorerFolderNode(new NodePath(directoryInfo.FullName, string.Empty),
                 FileExplorerNodeType.Folder, directoryInfo.Exists, directoryInfo.CreationTimeUtc, true, false, Node);
         }
-    }
-
-    public NodePath GetNodePath(string absolutePath)
-    {
-        var root = GetRoot(absolutePath);
-        var relativePath = Path.GetRelativePath(root.Path.AbsolutePath, absolutePath);
-        
-        return new NodePath(root.Path.AbsolutePath, relativePath);
-    }
-
-    private IFileExplorerFolderNode GetRoot(string absolutePath)
-    {
-        if (BelongsToRoot(absolutePath))
-        {
-            return Node;
-        }
-        
-        var rootChild = Children.OfType<IFileExplorerFolderNode>()
-            .FirstOrDefault(child =>
-                !string.IsNullOrWhiteSpace(absolutePath) &&
-                !string.IsNullOrWhiteSpace(child.Path.RootPath) &&
-                absolutePath.StartsWith(child.Path.RootPath));
-        
-        return rootChild ?? throw new NotFoundException(nameof(IRootFileExplorerFolder), absolutePath);
     }
 }

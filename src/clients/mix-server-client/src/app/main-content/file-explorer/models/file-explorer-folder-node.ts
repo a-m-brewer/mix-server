@@ -1,9 +1,9 @@
 import {FileExplorerNode} from "./file-explorer-node";
 import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
+import {NodePath} from "./node-path";
 
 export class FileExplorerFolderNode implements FileExplorerNode {
-  constructor(public name: string,
-              public absolutePath: string,
+  constructor(public path: NodePath,
               public type: FileExplorerNodeType,
               public exists: boolean,
               public creationTimeUtc: Date,
@@ -26,26 +26,23 @@ export class FileExplorerFolderNode implements FileExplorerNode {
       return false;
     }
 
-    return this.absolutePath === node.absolutePath;
+    return this.path.isEqual(node.path);
   }
 
   public static get Default(): FileExplorerFolderNode {
     return new FileExplorerFolderNode(
-      '',
-      '',
+      NodePath.Default,
       FileExplorerNodeType.Folder,
       false,
       new Date(),
       false,
       false,
-      null
-    );
+      null);
   }
 
   public copy(): FileExplorerFolderNode {
     return new FileExplorerFolderNode(
-      this.name,
-      this.absolutePath,
+      this.path.copy(),
       this.type,
       this.exists,
       this.creationTimeUtc,

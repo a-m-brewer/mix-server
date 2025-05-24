@@ -1,9 +1,9 @@
 import {FileExplorerFolderNode} from "./file-explorer-folder-node";
 import {FileExplorerNodeType} from "../enums/file-explorer-node-type";
+import {NodePath} from "./node-path";
 
 export interface FileExplorerNode {
-  name: string;
-  absolutePath: string;
+  path: NodePath;
   type: FileExplorerNodeType;
   creationTimeUtc: Date;
   exists: boolean;

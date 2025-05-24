@@ -19,7 +19,7 @@ export class QueueItem {
   public file: FileExplorerFileNode;
 
   public get name(): string {
-    return this.file.name;
+    return this.file.path.fileName;
   }
 
   public get mdIcon(): string {

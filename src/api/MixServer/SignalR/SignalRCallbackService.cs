@@ -218,7 +218,7 @@ public class SignalRCallbackService(
                 Node = nodeDto,
                 OldPath = oldNodePath is null
                     ? null
-                    : nodePathDtoConverter.Convert(oldNodePath)
+                    : nodePathDtoConverter.ConvertToResponse(oldNodePath)
             };
             var connections = user.GetConnections();
             var task = context.Clients.Clients(connections).FileExplorerNodeUpdated(dto);
@@ -235,7 +235,7 @@ public class SignalRCallbackService(
             .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto
             {
                 Parent = fileExplorerResponseConverter.Convert(parentNode),
-                NodePath = nodePathDtoConverter.Convert(nodePath)
+                NodePath = nodePathDtoConverter.ConvertToResponse(nodePath)
             });
     }
 
@@ -253,7 +253,7 @@ public class SignalRCallbackService(
     {
         var eventDto = new MediaInfoRemovedDto
         {
-            NodePaths = removedItems.Select(nodePathDtoConverter.Convert).ToList()
+            NodePaths = removedItems.Select(nodePathDtoConverter.ConvertToResponse).ToList()
         };
         
         return context.Clients.All.MediaInfoRemoved(eventDto);

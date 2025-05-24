@@ -37,13 +37,13 @@ public class FileService(
     public async Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath)
     {
         // If no folder is specified return the root folder
-        if (nodePath is null)
+        if (nodePath is null || nodePath.IsRoot)
         {
             return rootFolder;
         }
 
         // The folder is out of bounds return the root folder instead
-        if (!rootFolder.BelongsToRootChild(nodePath.RootPath))
+        if (!rootFolder.DescendantOfRoot(nodePath))
         {
             throw new ForbiddenRequestException("You do not have permission to access this folder");
         }
