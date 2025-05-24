@@ -53,7 +53,7 @@ public class FileExplorerConverter(
             directoryInfo.Exists,
             directoryInfo.CreationTimeUtc,
             nodePath.IsRoot,
-            nodePath.IsRootChild,
+            rootFolder.DescendantOfRoot(nodePath),
             parent);
     }
 
