@@ -410,7 +410,7 @@ export class AudioPlayerService {
     }
 
     this._streamUrl = url;
-    this._transcode = !session.currentNode.clientPlaybackSupported;
+    this._transcode = session.currentNode.hasCompletedTranscode || !session.currentNode.clientPlaybackSupported;
 
     this._audioElementRepository.attachHls(this._streamUrl, this._transcode);
 

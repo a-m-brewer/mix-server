@@ -7,6 +7,7 @@ using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Streams.Caches;
+using MixServer.Domain.Streams.Entities;
 using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Streams.Repositories;
 using MixServer.Domain.Users.Services;
@@ -57,12 +58,19 @@ public class GetStreamQueryHandler(
             throw new NotFoundException(nameof(PlaybackSession), session.AbsolutePath);
         }
 
+        var transcode = await transcodeRepository.GetOrDefaultAsync(session.File.Path);
         // Specifically use the RequestDevice to determine if the file can be played
         // Because if playback device is switched we want the client to be seeing what version they can play
         // Rather than what the playback device can play e.g. switching from Transcode to DirectStream
-        if (!deviceTrackingService.GetDeviceStateOrThrow(securityParameters.DeviceId).CanPlay(session.File))
+        var canPlayDirect = deviceTrackingService.GetDeviceStateOrThrow(securityParameters.DeviceId).CanPlay(session.File);
+        
+        if (transcode is not null || !canPlayDirect)
         {
-            var transcode = await transcodeRepository.GetAsync(session.File.Path);
+            if (transcode is null)
+            {
+                throw new NotFoundException(nameof(Transcode), session.File.Path.AbsolutePath);
+            }
+            
             return transcodeCache.GetPlaylistOrThrowAsync(transcode.Id);
         }
 

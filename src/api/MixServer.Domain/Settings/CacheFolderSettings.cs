@@ -6,5 +6,5 @@ public class CacheFolderSettings
     
     public string DirectoryAbsolutePath => Path.GetFullPath(Directory);
     
-    public string TranscodesFolder => Path.Join(Directory, "transcodes");
+    public string TranscodesFolder => Path.Join(DirectoryAbsolutePath, "transcodes");
 }
