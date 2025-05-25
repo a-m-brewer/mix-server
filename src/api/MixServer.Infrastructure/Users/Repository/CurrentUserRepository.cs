@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.EF.Entities;
+using MixServer.Infrastructure.EF.Extensions;
 using MixServer.Infrastructure.Users.Constants;
 using MixServer.Infrastructure.Users.Services;
 
@@ -18,12 +20,9 @@ public interface ICurrentUserRepository
     Task LoadUserAsync();
     Task LoadUserAsync(string userId);
     Task LoadCurrentPlaybackSessionAsync();
-    Task LoadAllPlaybackSessionsAsync();
-    Task LoadPlaybackSessionAsync(Guid id);
-    Task LoadPlaybackSessionAsync(string absolutePath);
+    Task LoadPlaybackSessionByFileIdAsync(Guid fileId);
     Task LoadPagedPlaybackSessionsAsync(int sessionStartIndex, int sessionPageSize);
-    Task LoadAllFileSortsAsync();
-    Task LoadFileSortByAbsolutePathAsync(string absoluteFolderPath);
+    Task LoadFileSortByAbsolutePathAsync(NodePath nodePath);
     Task LoadAllDevicesAsync();
     Task LoadDeviceByIdAsync(Guid deviceId);
 }
@@ -87,33 +86,18 @@ public class CurrentUserRepository(
     {
         await context.Entry(CurrentUser)
             .Reference(u => u.CurrentPlaybackSession)
+            .Query()
+            .IncludeNode()
             .LoadAsync();
     }
 
-    public async Task LoadAllPlaybackSessionsAsync()
+    public async Task LoadPlaybackSessionByFileIdAsync(Guid fileId)
     {
         await context.Entry(CurrentUser)
             .Collection(u => u.PlaybackSessions)
             .Query()
-            .OrderByDescending(o => o.LastPlayed)
-            .LoadAsync();
-    }
-
-    public async Task LoadPlaybackSessionAsync(Guid id)
-    {
-        await context.Entry(CurrentUser)
-            .Collection(u => u.PlaybackSessions)
-            .Query()
-            .Where(w => w.Id == id)
-            .LoadAsync();
-    }
-
-    public async Task LoadPlaybackSessionAsync(string absolutePath)
-    {
-        await context.Entry(CurrentUser)
-            .Collection(u => u.PlaybackSessions)
-            .Query()
-            .Where(w => w.AbsolutePath == absolutePath)
+            .IncludeNode()
+            .Where(w => w.NodeId == fileId)
             .LoadAsync();
     }
 
@@ -122,25 +106,24 @@ public class CurrentUserRepository(
         await context.Entry(CurrentUser)
             .Collection(u =>u.PlaybackSessions)
             .Query()
+            .IncludeNode()
             .OrderByDescending(o => o.LastPlayed)
             .Skip(sessionStartIndex)
             .Take(sessionPageSize)
             .LoadAsync();
     }
 
-    public async Task LoadAllFileSortsAsync()
-    {
-        await context.Entry(CurrentUser)
-            .Collection(u => u.FolderSorts)
-            .LoadAsync();
-    }
-
-    public async Task LoadFileSortByAbsolutePathAsync(string absoluteFolderPath)
+    public async Task LoadFileSortByAbsolutePathAsync(NodePath nodePath)
     {
         await context.Entry(CurrentUser)
             .Collection(c => c.FolderSorts)
             .Query()
-            .Where(w => w.AbsoluteFolderPath == absoluteFolderPath)
+            .Include(i => i.Node)
+            .ThenInclude(t => t!.RootChild)
+            .Where(w => 
+                w.Node != null &&
+                w.Node.RootChild.RelativePath == nodePath.RootPath &&
+                w.Node.RelativePath == nodePath.RelativePath)
             .LoadAsync();
     }
 

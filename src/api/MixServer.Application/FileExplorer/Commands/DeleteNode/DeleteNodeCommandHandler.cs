@@ -1,4 +1,5 @@
 using FluentValidation;
+using MixServer.Application.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 
@@ -6,6 +7,7 @@ namespace MixServer.Application.FileExplorer.Commands.DeleteNode;
 
 public class DeleteNodeCommandHandler(
     IFileService fileService,
+    INodePathDtoConverter nodePathDtoConverter,
     IValidator<DeleteNodeCommand> validator)
     : ICommandHandler<DeleteNodeCommand>
 {
@@ -13,6 +15,6 @@ public class DeleteNodeCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request);
         
-        fileService.DeleteNode(request.AbsolutePath);
+        fileService.DeleteNode(nodePathDtoConverter.Convert(request.NodePath));
     }
 }

@@ -1,7 +1,7 @@
 <div>
   <app-node-list-item
     *ngFor="let queueItem of queue.items; last as last"
-    [id]="queueItem.id"
+    [key]="queueItem.id"
     [nodeType]="queueItem.type"
     [defaultIcon]="queueItem.mdIcon"
     [loadingStatus]="loadingStatus"

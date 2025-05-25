@@ -1,12 +1,12 @@
+using MixServer.Application.FileExplorer.Dtos;
+
 namespace MixServer.Application.FileExplorer.Commands.CopyNode;
 
 public class CopyNodeCommand
 {
-    public string SourceAbsolutePath { get; set; } = string.Empty;
+    public required NodePathRequestDto SourcePath { get; set; }
     
-    public string DestinationFolder { get; set; } = string.Empty;
-    
-    public string DestinationName { get; set; } = string.Empty;
+    public required NodePathRequestDto DestinationPath { get; set; }
     
     public bool Move { get; set; }
     

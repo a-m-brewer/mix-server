@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Sessions.Repositories;
+using MixServer.Infrastructure.EF.Extensions;
 
 namespace MixServer.Infrastructure.EF.Repositories;
 
@@ -12,12 +13,15 @@ public class EfFolderSortRepository(MixServerDbContext context) : IFolderSortRep
         await context.FolderSorts.AddAsync(folderSort);
     }
     
-    public async Task<Dictionary<string, IFolderSort>> GetFolderSortsAsync(IReadOnlyCollection<string> usernames, string absoluteFolderPath)
+    public async Task<Dictionary<string, IFolderSort>> GetFolderSortsAsync(IReadOnlyCollection<string> usernames, NodePath nodePath)
     {
         var query = from folderSort in context.FolderSorts
+                .IncludeNode()
             join dbUser in context.Users on folderSort.UserId equals dbUser.Id
             where usernames.Contains(dbUser.UserName) &&
-                  folderSort.AbsoluteFolderPath == absoluteFolderPath
+                  folderSort.Node != null &&
+                  folderSort.Node.RootChild.RelativePath == nodePath.RootPath &&
+                  folderSort.Node.RelativePath == nodePath.RelativePath
             select new {dbUser.UserName, folderSort};
         
         return await query.ToDictionaryAsync(k => k.UserName, IFolderSort (v) => v.folderSort);

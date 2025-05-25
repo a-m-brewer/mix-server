@@ -6,6 +6,7 @@ public class DeleteNodeCommandValidator : AbstractValidator<DeleteNodeCommand>
 {
     public DeleteNodeCommandValidator()
     {
-        RuleFor(r => r.AbsolutePath).NotEmpty();
+        RuleFor(r => r.NodePath)
+            .NotNull();
     }
 }

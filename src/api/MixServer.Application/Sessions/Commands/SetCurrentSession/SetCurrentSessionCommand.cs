@@ -1,8 +1,8 @@
-﻿namespace MixServer.Application.Sessions.Commands.SetCurrentSession;
+﻿using MixServer.Application.FileExplorer.Dtos;
+
+namespace MixServer.Application.Sessions.Commands.SetCurrentSession;
 
 public class SetCurrentSessionCommand
 {
-    public string AbsoluteFolderPath { get; set; } = string.Empty;
-
-    public string FileName { get; set; } = string.Empty;
+    public required NodePathRequestDto NodePath { get; init; }
 }

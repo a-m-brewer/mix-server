@@ -20,7 +20,7 @@ public class StreamController(IQueryHandler<GetStreamQuery, StreamFile> getStrea
             SecurityParameters = securityParameters
         });
         
-        return new PhysicalFileResult(stream.FilePath, stream.ContentType)
+        return new PhysicalFileResult(stream.FilePath.AbsolutePath, stream.ContentType)
         {
             EnableRangeProcessing = true
         };

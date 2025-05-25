@@ -14,6 +14,14 @@ public class CurrentUserMiddleware(
         ISessionService sessionService,
         IQueueService queueService)
     {
+        // We don't care if the user is not loaded for stream requests as they don't use the current user
+        // Instead they have there own StreamKey authentication
+        if (context.Request.Path.StartsWithSegments("/api/stream"))
+        {
+            await next(context);
+            return;
+        }
+        
         await currentUserRepository.LoadUserAsync();
         
         if (currentUserRepository.CurrentUserLoaded)

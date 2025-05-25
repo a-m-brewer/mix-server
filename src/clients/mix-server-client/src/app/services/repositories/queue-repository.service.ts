@@ -14,6 +14,7 @@ import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file
 import {QueueEditFormRepositoryService} from "./queue-edit-form-repository.service";
 import {NodeCacheService} from "../nodes/node-cache.service";
 import {QueueApiService} from "../api.service";
+import {NodePathConverterService} from "../converters/node-path-converter.service";
 
 @Injectable({
   providedIn: 'root'
@@ -22,11 +23,12 @@ export class QueueRepositoryService {
   private _queueBehaviourSubject$ = new BehaviorSubject<Queue>(new Queue(null, null, null, []));
 
 
-  constructor(private _nodeCache: NodeCacheService,
+  constructor(private _authenticationService: AuthenticationService,
+              private _nodeCache: NodeCacheService,
+              private _nodePathConverter: NodePathConverterService,
               private _queueConverter: QueueConverterService,
               private _queueSignalRClient: QueueSignalrClientService,
               private _queueClient: QueueApiService,
-              private _authenticationService: AuthenticationService,
               private _queueEditFormRepository: QueueEditFormRepositoryService) {
     this._authenticationService.connected$
       .subscribe(connected => {
@@ -94,10 +96,9 @@ export class QueueRepositoryService {
   }
 
   public addToQueue(file: FileExplorerFileNode): void {
-    this._queueClient.request(file.absolutePath,
+    this._queueClient.request(file.path.key,
       client => client.addToQueue(new AddToQueueCommand({
-        absoluteFolderPath: file.parent.absolutePath ?? '',
-        fileName: file.name
+        nodePath: this._nodePathConverter.toRequestDto(file.path)
       })), 'Failed to add item to queue')
       .then(result => result.success(dto => this.nextQueue(dto)));
   }
@@ -125,7 +126,7 @@ export class QueueRepositoryService {
   }
 
   public setNextQueue(queue: Queue) {
-    const folders = [...new Set(queue.items.map(item => item.file.parent.absolutePath))];
+    const folders = [...new Set(queue.items.map(item => item.file.parent.path))];
     folders.forEach(folder => {
       void this._nodeCache.loadDirectory(folder)
     })

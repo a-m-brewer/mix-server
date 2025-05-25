@@ -179,12 +179,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  public get folderBackButtonDisabled(): boolean {
-    return this.loadingStatus.loading ||
-      (this.currentFolder?.node.parent?.disabled ?? true) ||
-      this.currentFolder?.node.absolutePath === '';
-  }
-
   public logout(): void {
     this._authenticationService.logout();
   }

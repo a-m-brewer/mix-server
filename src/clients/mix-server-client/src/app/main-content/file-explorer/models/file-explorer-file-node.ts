@@ -4,6 +4,7 @@ import {FileExplorerFolderNode} from "./file-explorer-folder-node";
 import {FileMetadata} from "./file-metadata";
 import {Device} from "../../../services/repositories/models/device";
 import {TranscodeState} from "../../../generated-clients/mix-server-clients";
+import { NodePath } from "./node-path";
 
 export interface FileExplorerFileNodeNameParts {
   nameWithoutExtension: string;
@@ -16,8 +17,7 @@ export class FileExplorerFileNode implements FileExplorerNode {
   private readonly _fileInvalid: boolean;
   private _requestedPlaybackDevicePlaybackSupported: boolean;
 
-  constructor(public name: string,
-              public absolutePath: string,
+  constructor(public path: NodePath,
               public type: FileExplorerNodeType,
               public exists: boolean,
               public creationTimeUtc: Date,
@@ -25,7 +25,7 @@ export class FileExplorerFileNode implements FileExplorerNode {
               public serverPlaybackSupported: boolean,
               public clientPlaybackSupported: boolean,
               public parent: FileExplorerFolderNode) {
-    this._fileInvalid = absolutePath.trim() === '' || !exists;
+    this._fileInvalid = path.absolutePath.trim() === '' || !exists;
 
     this.hasTranscode = metadata.isMedia && metadata.transcodeState !== TranscodeState.None;
     this.hasCompletedTranscode = metadata.isMedia && metadata.transcodeState === TranscodeState.Completed;
@@ -45,7 +45,7 @@ export class FileExplorerFileNode implements FileExplorerNode {
 
   public get nameSections(): FileExplorerFileNodeNameParts | null {
     const re = /^((.+?)( - Copy)?( \(([0-9]+)\))?)(\.(.*))?$/;
-    const match = re.exec(this.name);
+    const match = re.exec(this.path.fileName);
 
     if (!match) {
       return null
@@ -78,7 +78,7 @@ export class FileExplorerFileNode implements FileExplorerNode {
       return false;
     }
 
-    return this.absolutePath === node.absolutePath;
+    return this.path.isEqual(node.path);
   }
 
   public get playbackDisabled(): boolean {
@@ -93,8 +93,7 @@ export class FileExplorerFileNode implements FileExplorerNode {
 
   public copy(): FileExplorerFileNode {
     return new FileExplorerFileNode(
-      this.name,
-      this.absolutePath,
+      this.path.copy(),
       this.type,
       this.exists,
       this.creationTimeUtc,

@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
@@ -13,10 +14,8 @@ namespace MixServer.Domain.FileExplorer.Converters;
 public interface IFileMetadataConverter : IConverter<FileInfo, IFileMetadata>;
 
 public partial class FileMetadataConverter(
-    ILogger<FileMetadataConverter> logger,
-    ITagBuilderFactory tagBuilderFactory,
-    ITracklistTagService tracklistTagService,
-    IMimeTypeService mimeTypeService)
+    IMimeTypeService mimeTypeService,
+    IRootFileExplorerFolder rootFileExplorerFolder)
     : IFileMetadataConverter
 {
     private static readonly HashSet<string> ExcludedMediaMimeTypes =
@@ -26,7 +25,9 @@ public partial class FileMetadataConverter(
     
     public IFileMetadata Convert(FileInfo file)
     {
-        var mimeType = mimeTypeService.GetMimeType(file.FullName, file.Extension);
+        var nodePath = rootFileExplorerFolder.GetNodePath(file.FullName);
+        
+        var mimeType = mimeTypeService.GetMimeType(nodePath);
 
         var isMedia = !string.IsNullOrWhiteSpace(mimeType) &&
                       AudioVideoMimeTypeRegex().IsMatch(mimeType) &&

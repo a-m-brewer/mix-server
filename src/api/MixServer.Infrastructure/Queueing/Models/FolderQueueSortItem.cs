@@ -1,6 +1,6 @@
 ﻿namespace MixServer.Infrastructure.Queueing.Models;
 
-public class FolderQueueSortItem(Guid id, string absoluteFilePath, int position) : QueueSortItem(id, absoluteFilePath)
+public class FolderQueueSortItem : QueueSortItem
 {
-    public int Position { get; set; } = position;
+    public required int Position { get; set; }
 }

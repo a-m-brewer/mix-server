@@ -22,6 +22,8 @@ public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : 
 
     public DbSet<UserCredential> UserCredentials { get; set; }
     
+    public DbSet<FileExplorerNodeEntityBase> Nodes { get; set; }
+    
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

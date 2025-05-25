@@ -69,9 +69,9 @@ public class MediaInfoService(
     
     private async void FolderCacheServiceOnItemUpdated(object? sender, FolderCacheServiceItemUpdatedEventArgs e)
     {
-        if (e.OldFullName != e.Item.AbsolutePath)
+        if (e.OldPath.AbsolutePath != e.Item.Path.AbsolutePath)
         {
-            await RemoveMediaInfoAsync([e.OldFullName]);
+            await RemoveMediaInfoAsync([e.OldPath]);
         }
         
         if (e.Item is not IFileExplorerFileNode fileNode || !fileNode.Metadata.IsMedia)
@@ -84,7 +84,7 @@ public class MediaInfoService(
     
     private async void FolderCacheServiceOnItemRemoved(object? sender, FolderCacheServiceItemRemovedEventArgs e)
     {
-        await RemoveMediaInfoAsync([e.FullName]);
+        await RemoveMediaInfoAsync([e.Path]);
     }
     
     private async Task LoadMediaInfoAsync(ICollection<IFileExplorerFileNode> mediaFiles)
@@ -114,10 +114,10 @@ public class MediaInfoService(
 
     private Task RemoveMediaInfoAsync(IEnumerable<IFileExplorerFileNode> mediaFiles)
     {
-        return RemoveMediaInfoAsync(mediaFiles.Select(s => s.AbsolutePath));
+        return RemoveMediaInfoAsync(mediaFiles.Select(s => s.Path));
     }
     
-    private async Task RemoveMediaInfoAsync(IEnumerable<string> absoluteFilePaths)
+    private async Task RemoveMediaInfoAsync(IEnumerable<NodePath> absoluteFilePaths)
     {
         var removedItems = mediaInfoCache.Remove(absoluteFilePaths);
         await InvokeCallback(cb => cb.MediaInfoRemoved(removedItems));
@@ -127,21 +127,21 @@ public class MediaInfoService(
     {
         try
         {
-            using var tb = tagBuilderFactory.CreateReadOnly(arg.AbsolutePath);
+            using var tb = tagBuilderFactory.CreateReadOnly(arg.Path.AbsolutePath);
             var tracklist = tracklistTagService.GetTracklist(tb);
             var mediaInfo = new MediaInfo
             {
-                NodePath = new NodePath(arg.Parent.AbsolutePath, arg.Name),
                 Bitrate = tb.Bitrate,
                 Duration = tb.Duration,
-                Tracklist = tracklist
+                Tracklist = tracklist,
+                Path = arg.Path
             };
 
             return Task.FromResult<MediaInfo?>(mediaInfo);
         } 
         catch (Exception e)
         {
-            logger.LogError(e, "Error loading media metadata for {Path}", arg.AbsolutePath);
+            logger.LogError(e, "Error loading media metadata for {Path}", arg.Path.AbsolutePath);
             return Task.FromResult<MediaInfo?>(null);
         }
     }

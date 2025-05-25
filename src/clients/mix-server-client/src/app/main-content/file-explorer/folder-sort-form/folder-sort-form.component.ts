@@ -52,7 +52,7 @@ export class FolderSortFormComponent implements OnInit, OnDestroy {
     this._nodeRepository.currentFolder$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(value => {
-        this.showForm = !!value.node.absolutePath && value.node.absolutePath !== '';
+        this.showForm = !value.node.path.empty;
 
         this.form.get(this.descendingKey)?.setValue(value.sort.descending);
         this.form.get(this.sortModeKey)?.setValue(value.sort.sortMode);

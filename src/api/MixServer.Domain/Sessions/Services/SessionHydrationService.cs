@@ -16,7 +16,7 @@ public class SessionHydrationService(
 {
     public void Hydrate(IPlaybackSession session)
     {
-        var currentNode = fileService.GetFile(session.AbsolutePath);
+        var currentNode = fileService.GetFile(session.NodeEntity.Path);
 
         playbackTrackingService.Populate(session);
         

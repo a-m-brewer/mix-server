@@ -55,7 +55,7 @@ export class DeleteNodeComponent extends ContextMenuButton implements OnInit, On
 
     const shouldDelete = await firstValueFrom(this._dialog.open(DeleteDialogComponent, {
       data: {
-        displayName: this.file.name
+        displayName: this.file.path.fileName
       }
     }).afterClosed());
 

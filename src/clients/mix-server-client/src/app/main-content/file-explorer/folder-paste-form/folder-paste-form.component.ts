@@ -53,7 +53,7 @@ export class FolderPasteFormComponent implements OnInit, OnDestroy {
     }
 
     if (this._copyService.isMove &&
-      this.sourceNode.parent.absolutePath === this.currentFolder.node.absolutePath) {
+      this.sourceNode.parent.path.isEqual(this.currentFolder.node.path)) {
       this._copyService.resetForm();
       return;
     }
@@ -90,7 +90,7 @@ export class FolderPasteFormComponent implements OnInit, OnDestroy {
       sourceNode.exists = false;
 
       const suffix = maxCopyNumber === -1 ? '' : ` (${maxCopyNumber + 1})`;
-      sourceNode.name = `${nameSections.nameWithoutSuffix} - Copy${suffix}.${nameSections.extension}`
+      sourceNode.path.fileName = `${nameSections.nameWithoutSuffix} - Copy${suffix}.${nameSections.extension}`
     }
 
     await this._copyService.pasteNode(sourceNode, false);

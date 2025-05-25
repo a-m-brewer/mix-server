@@ -1,10 +1,12 @@
-﻿namespace MixServer.Domain.Streams.Models;
+﻿using MixServer.Domain.FileExplorer.Models;
+
+namespace MixServer.Domain.Streams.Models;
 
 public abstract class StreamFile
 {
     public abstract string ContentType { get; }
     
-    public required string FilePath { get; init; }
+    public required NodePath FilePath { get; init; }
 }
 
 public class DirectStreamFile(string contentType) : StreamFile

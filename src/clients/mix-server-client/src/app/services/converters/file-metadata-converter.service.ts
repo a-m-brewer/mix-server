@@ -3,7 +3,6 @@ import {FileMetadataResponse, MediaInfoDto, NodePathDto} from "../../generated-c
 import {FileMetadata} from "../../main-content/file-explorer/models/file-metadata";
 import {TracklistConverterService} from "./tracklist-converter.service";
 import {MediaInfo} from "../../main-content/file-explorer/models/media-info";
-import {NodePath} from "../repositories/models/node-path";
 
 @Injectable({
   providedIn: 'root'
@@ -27,13 +26,5 @@ export class FileMetadataConverterService {
       dto.bitrate,
       this._tracklistConverter.createTracklistForm(dto.tracklist)
     )
-  }
-
-  public fromNodePathDto(dto: NodePathDto): NodePath {
-    return {
-      parentAbsolutePath: dto.parentAbsolutePath,
-      fileName: dto.fileName,
-      absolutePath: dto.absolutePath
-    }
   }
 }

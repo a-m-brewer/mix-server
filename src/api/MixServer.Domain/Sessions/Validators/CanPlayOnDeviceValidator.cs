@@ -19,9 +19,9 @@ public class CanPlayOnDeviceValidator(ITranscodeCache transcodeCache,
 {
     public void ValidateCanPlayOrThrow(IDeviceState deviceState, IFileExplorerFileNode file)
     {
-        if (!deviceState.CanPlay(file) && transcodeCache.GetTranscodeStatus(file.AbsolutePath) != TranscodeState.Completed)
+        if (!deviceState.CanPlay(file) && transcodeCache.GetTranscodeStatus(file.Path) != TranscodeState.Completed)
         {
-            throw new InvalidRequestException(nameof(file), $"{file.AbsolutePath} is not supported for playback on this device");
+            throw new InvalidRequestException(nameof(file), $"{file.Path.AbsolutePath} is not supported for playback on this device");
         }
     }
 
@@ -34,6 +34,6 @@ public class CanPlayOnDeviceValidator(ITranscodeCache transcodeCache,
     {
         return file.PlaybackSupported && 
                (deviceState.CanPlay(file) ||
-                transcodeCache.GetTranscodeStatus(file.AbsolutePath) == TranscodeState.Completed);
+                transcodeCache.GetTranscodeStatus(file.Path) == TranscodeState.Completed);
     }
 }

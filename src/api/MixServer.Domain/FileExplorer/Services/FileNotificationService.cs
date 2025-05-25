@@ -53,17 +53,17 @@ public class FileNotificationService(
         
         var expectedIndexes = await GetExpectedIndexesAsync(sp, parent, e.Item);
         
-        await callbackService.FileExplorerNodeUpdated(expectedIndexes, e.Item, e.OldFullName);
+        await callbackService.FileExplorerNodeUpdated(expectedIndexes, e.Item, e.OldPath);
     }
 
     private async Task FolderCacheServiceOnItemRemoved(object? sender, IServiceProvider sp, FolderCacheServiceItemRemovedEventArgs e)
     {
-        await callbackService.FileExplorerNodeDeleted(e.Parent, e.FullName);
+        await callbackService.FileExplorerNodeDeleted(e.Parent, e.Path);
     }
     
     private async Task TranscodeCacheOnTranscodeStatusUpdated(object? sender, IServiceProvider sp, TranscodeStatusUpdatedEventArgs e)
     {
-        var (parent, file) = folderCacheService.GetFileAndFolder(e.AbsoluteFilePath);
+        var (parent, file) = folderCacheService.GetFileAndFolder(e.Path);
         
         var expectedIndexes = await GetExpectedIndexesAsync(sp, parent, file);
         
@@ -87,13 +87,13 @@ public class FileNotificationService(
     private async Task<Dictionary<string, int>> GetExpectedIndexesAsync(IServiceProvider sp, IFileExplorerFolder parent, IFileExplorerNode node)
     {
         var sorts = await sp.GetRequiredService<IFolderSortRepository>()
-            .GetFolderSortsAsync(callbackService.ConnectedUserIds, parent.Node.AbsolutePath);
+            .GetFolderSortsAsync(callbackService.ConnectedUserIds, parent.Node.Path);
 
         var expectedIndexes = new Dictionary<string, int>();
         foreach (var (userId, sort) in sorts)
         {
             var list = parent.GenerateSortedChildren<IFileExplorerNode>(sort).ToList();
-            var index = list.FindIndex(f => f.AbsolutePath == node.AbsolutePath);
+            var index = list.FindIndex(f => f.Path.RootPath == node.Path.RootPath && f.Path.RelativePath == node.Path.RelativePath);
             expectedIndexes[userId] = index;
         }
         

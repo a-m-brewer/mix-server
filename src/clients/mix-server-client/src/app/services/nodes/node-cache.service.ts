@@ -7,7 +7,6 @@ import {
   RefreshFolderCommand,
   SetFolderSortCommand
 } from "../../generated-clients/mix-server-clients";
-import {ToastService} from "../toasts/toast-service";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {cloneDeep} from "lodash";
 import {FolderSignalrClientService} from "../signalr/folder-signalr-client.service";
@@ -18,19 +17,21 @@ import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/fi
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
 import {PlaybackDeviceRepositoryService} from "../repositories/playback-device-repository.service";
 import {MediaInfoUpdatedEventItem} from "../signalr/models/media-info-event";
-import {NodePath} from "../repositories/models/node-path";
 import {NodeApiService} from "../api.service";
+import {NodePath, NodePathHeader} from "../../main-content/file-explorer/models/node-path";
+import {NodePathConverterService} from "../converters/node-path-converter.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class NodeCacheService {
-  private _folders$ = new BehaviorSubject<{ [absolutePath: string]: FileExplorerFolder }>({});
+  private _folders$ = new BehaviorSubject<{ [nodeKey: string]: FileExplorerFolder }>({});
 
   constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
               private _folderSignalRClient: FolderSignalrClientService,
               private _loadingRepository: LoadingRepositoryService,
               private _nodeClient: NodeApiService,
+              private _nodePathConverter: NodePathConverterService,
               private _playbackDeviceService: PlaybackDeviceRepositoryService) {
     this._playbackDeviceService.requestPlaybackDevice$
       .subscribe(device => {
@@ -46,7 +47,7 @@ export class NodeCacheService {
     this._folderSignalRClient.folderSorted$()
       .subscribe(updatedFolder => {
         this.updateFolder(updatedFolder);
-        this._loadingRepository.stopLoading(updatedFolder.node.absolutePath);
+        this._loadingRepository.stopLoading(updatedFolder.node.path.key);
       });
 
     this._folderSignalRClient.nodeUpdated$()
@@ -55,12 +56,12 @@ export class NodeCacheService {
 
         const nextFolder = this.copyOrCreateParentFromNode(node);
 
-        const oldPathIndex = !!event.oldAbsolutePath
-          ? nextFolder.children.findIndex(n => n.absolutePath === event.oldAbsolutePath)
+        const oldPathIndex = !!event.oldPath
+          ? nextFolder.children.findIndex(n => n.path.isEqual(event.oldPath))
           : -1;
 
         const index = oldPathIndex === -1
-          ? nextFolder.children.findIndex(n => n.absolutePath === node.absolutePath)
+          ? nextFolder.children.findIndex(n => n.path.isEqual(node.path))
           : oldPathIndex;
 
         this.insertNodeIntoFolder(nextFolder, node, index, event.index);
@@ -72,7 +73,7 @@ export class NodeCacheService {
       .subscribe(event => {
         const nextFolder = this.copyOrCreateParent(event.parent);
 
-        nextFolder.children = nextFolder.children.filter(f => f.absolutePath !== event.absolutePath);
+        nextFolder.children = nextFolder.children.filter(f => !f.path.isEqual(event.nodePath));
 
         this.updateFolder(nextFolder);
       });
@@ -81,11 +82,11 @@ export class NodeCacheService {
       .subscribe(event => {
         const groupedUpdates = event.mediaInfo
           .reduce((acc, item) => {
-            if (!(item.nodePath.parentAbsolutePath in acc)) {
-              acc[item.nodePath.parentAbsolutePath] = [];
+            if (!(item.nodePath.parent.key in acc)) {
+              acc[item.nodePath.parent.key] = [];
             }
 
-            acc[item.nodePath.parentAbsolutePath].push(item);
+            acc[item.nodePath.parent.key].push(item);
 
             return acc;
           }, {} as { [absolutePath: string]: MediaInfoUpdatedEventItem[] });
@@ -100,7 +101,7 @@ export class NodeCacheService {
 
           const nextFolder = parent.copy();
           mediaInfos.forEach(f => {
-            const node = nextFolder.children.find(n => n.name === f.nodePath.fileName);
+            const node = nextFolder.children.find(n => n.path.fileName === f.nodePath.fileName);
             if (node instanceof FileExplorerFileNode) {
               node.metadata.mediaInfo = f.info;
             }
@@ -116,11 +117,11 @@ export class NodeCacheService {
       .subscribe(event => {
         const groupedUpdates = event.nodePaths
           .reduce((acc, item) => {
-            if (!(item.parentAbsolutePath in acc)) {
-              acc[item.parentAbsolutePath] = [];
+            if (!(item.parent.key in acc)) {
+              acc[item.parent.key] = [];
             }
 
-            acc[item.parentAbsolutePath].push(item);
+            acc[item.parent.key].push(item);
 
             return acc;
           }, {} as { [absolutePath: string]: NodePath[] });
@@ -135,7 +136,7 @@ export class NodeCacheService {
 
           const nextFolder = parent.copy();
           mediaInfos.forEach(f => {
-            const node = nextFolder.children.find(n => n.name === f.fileName);
+            const node = nextFolder.children.find(n => n.path.fileName === f.fileName);
             if (node instanceof FileExplorerFileNode) {
               node.metadata.mediaInfo = null;
             }
@@ -148,17 +149,17 @@ export class NodeCacheService {
       });
   }
 
-  public getFolder$(query$: Observable<string>): Observable<FileExplorerFolder> {
+  public getFolder$(query$: Observable<NodePathHeader>): Observable<FileExplorerFolder> {
     return this._folders$
       .pipe(combineLatestWith(query$))
-      .pipe(map(([folders, absolutePath]) => folders[absolutePath] ?? FileExplorerFolder.Default));
+      .pipe(map(([folders, header]) => folders[header.key] ?? FileExplorerFolder.Default));
   }
 
   getFileByNode$(initialNode: FileExplorerFileNode): Observable<FileExplorerFileNode> {
-    const existingFolder = this._folders$.value[initialNode.parent.absolutePath];
+    const existingFolder = this._folders$.value[initialNode.parent.path.key];
 
     const nodeIndex = !!existingFolder
-      ? existingFolder.children.findIndex(n => n.absolutePath === initialNode.absolutePath)
+      ? existingFolder.children.findIndex(n => n.path.isEqual(initialNode.path))
       : -1;
 
     if (existingFolder && nodeIndex !== -1) {
@@ -168,8 +169,8 @@ export class NodeCacheService {
 
     return this._folders$
       .pipe(map(folders => {
-        const folder = folders[initialNode.parent.absolutePath];
-        const node = folder?.children.find(n => n.absolutePath === initialNode.absolutePath);
+        const folder = folders[initialNode.parent.path.key];
+        const node = folder?.children.find(n => n.path.isEqual(initialNode.path));
 
         if (!node || !(node instanceof FileExplorerFileNode)) {
           return initialNode;
@@ -179,35 +180,35 @@ export class NodeCacheService {
       }));
   }
 
-  public async loadDirectory(absolutePath: string): Promise<string> {
-    if (this._folders$.value[absolutePath]) {
-      return absolutePath;
+  public async loadDirectory(path: NodePathHeader): Promise<NodePathHeader> {
+    if (this._folders$.value[path.key]) {
+      return path;
     }
 
-    const loadingKey = absolutePath === "" ? "root" : absolutePath;
+    const loadingKey = path.key === "" ? "root" : path.key;
 
     if (this._loadingRepository.isLoading(loadingKey)) {
-      return absolutePath;
+      return path;
     }
 
     const result = await this._nodeClient.request(loadingKey,
-      client => client.getNode(absolutePath), 'Error loading directory');
+      client => client.getNode(path.rootPath, path.relativePath), 'Error loading directory');
 
     if (result.result) {
       const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(result.result);
 
       this.updateFolder(folder);
 
-      return folder.node.absolutePath;
+      return folder.node.path;
     }
 
-    return "";
+    return new NodePathHeader("", "");
   }
 
-  public refreshFolder(absolutePath: string): void {
-    this._nodeClient.request(absolutePath,
+  public refreshFolder(nodePath: NodePathHeader): void {
+    this._nodeClient.request(nodePath.key,
       client => client.refreshFolder(new RefreshFolderCommand({
-        absolutePath: absolutePath
+        nodePath: this._nodePathConverter.toRequestDto(nodePath)
       })), 'Failed to refresh folder')
       .then(result => result.success(dto => {
         const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(dto);
@@ -215,10 +216,10 @@ export class NodeCacheService {
       }))
   }
 
-  public async setFolderSort(absolutePath: string, sortMode: FileExplorerFolderSortMode, descending: boolean): Promise<void> {
-    await this._nodeClient.request(absolutePath,
+  public async setFolderSort(nodePath: NodePathHeader, sortMode: FileExplorerFolderSortMode, descending: boolean): Promise<void> {
+    await this._nodeClient.request(nodePath.key,
       client => client.setFolderSortMode(new SetFolderSortCommand({
-        absoluteFolderPath: absolutePath,
+        nodePath: this._nodePathConverter.toRequestDto(nodePath),
         sortMode: this.toFolderSortMode(sortMode),
         descending: descending
       })), 'Failed to update folder sort');
@@ -229,14 +230,14 @@ export class NodeCacheService {
   }
 
   private copyOrCreateParent(parent: FileExplorerFolderNode | null | undefined): FileExplorerFolder {
-    const existingFolder = this._folders$.value[parent?.absolutePath ?? ""]
+    const existingFolder = this._folders$.value[parent?.path.key ?? ""]
     return existingFolder
       ? existingFolder.copy()
       : FileExplorerFolder.Default;
   }
 
   private updateFolder(folder: FileExplorerFolder): void {
-    this.updateFolders({[folder.node.absolutePath]: folder});
+    this.updateFolders({[folder.node.path.key]: folder});
   }
 
   private updateFolders(updates: { [absolutePath: string]: FileExplorerFolder }, device?: Device | null): void {

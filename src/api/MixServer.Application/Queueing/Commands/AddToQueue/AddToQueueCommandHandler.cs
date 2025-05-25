@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
@@ -11,6 +12,7 @@ public class AddToQueueCommandHandler(
     IConverter<QueueSnapshot, QueueSnapshotDto> converter,
     IFileService fileService,
     IQueueService queueService,
+    INodePathDtoConverter nodePathDtoConverter,
     IValidator<AddToQueueCommand> validator)
     : ICommandHandler<AddToQueueCommand, QueueSnapshotDto>
 {
@@ -18,7 +20,7 @@ public class AddToQueueCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request);
 
-        var file = fileService.GetFile(request.AbsoluteFolderPath, request.FileName);
+        var file = fileService.GetFile(nodePathDtoConverter.Convert(request.NodePath));
 
         var queueSnapshot = await queueService.AddToQueueAsync(file);
 

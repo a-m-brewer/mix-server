@@ -10,6 +10,7 @@ import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-p
 import {QueueRepositoryService} from "../repositories/queue-repository.service";
 import {QueueConverterService} from "../converters/queue-converter.service";
 import {QueueApiService, SessionApiService} from "../api.service";
+import {NodePathConverterService} from "../converters/node-path-converter.service";
 
 @Injectable({
     providedIn: 'root'
@@ -19,6 +20,7 @@ export class SessionService {
     constructor(
         private _playbackSessionConverter: PlaybackSessionConverterService,
         private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
+        private _nodePathConverter: NodePathConverterService,
         private _sessionClient: SessionApiService,
         private _queueClient: QueueApiService,
         private _queueConverter: QueueConverterService,
@@ -26,10 +28,9 @@ export class SessionService {
     }
 
     public setFile(file: FileExplorerFileNode): void {
-        this._sessionClient.request(file.absolutePath,
+        this._sessionClient.request(file.path.key,
             client => client.setCurrentSession(new SetCurrentSessionCommand({
-                absoluteFolderPath: file.parent.absolutePath,
-                fileName: file.name
+              nodePath: this._nodePathConverter.toRequestDto(file.path)
             })), 'Failed to set current session')
             .then(result => result.success(dto => this.next(dto)));
     }

@@ -1,10 +1,11 @@
+using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 
 namespace MixServer.SignalR.Events;
 
-public class FileExplorerNodeDeletedDto(FileExplorerFolderNodeResponse parent, string absolutePath)
+public class FileExplorerNodeDeletedDto
 {
-    public FileExplorerFolderNodeResponse Parent { get; } = parent;
+    public required FileExplorerFolderNodeResponse Parent { get; init; }
 
-    public string AbsolutePath { get; set; } = absolutePath;
+    public required NodePathDto NodePath { get; init; }
 }

@@ -1,7 +1,7 @@
 namespace MixServer.Domain.FileExplorer.Models.Caching;
 
-public class FolderCacheServiceItemUpdatedEventArgs(IFileExplorerNode item, string oldFullName)
+public class FolderCacheServiceItemUpdatedEventArgs
 {
-    public IFileExplorerNode Item { get; } = item;
-    public string OldFullName { get; } = oldFullName;
+    public required IFileExplorerNode Item { get; init; }
+    public required NodePath OldPath { get; init; }
 }

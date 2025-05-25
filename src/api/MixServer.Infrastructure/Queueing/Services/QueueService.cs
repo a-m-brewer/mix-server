@@ -50,17 +50,19 @@ public class QueueService(
     {
         var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
 
-        queue.CurrentFolderAbsolutePath = nextSession.GetParentFolderPathOrThrow();
+        queue.CurrentFolderPath = nextSession.NodeEntity.Path.Parent;
         queue.ClearUserQueue();
         
-        var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderAbsolutePath);
-        if (files.All(a => a.AbsolutePath != nextSession.AbsolutePath))
+        var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath);
+        var nextSessionPath = nextSession.NodeEntity.Path;
+        
+        if (files.All(a => !a.Path.IsEqualTo(nextSessionPath)))
         {
-            files.Add(fileService.GetFile(nextSession.AbsolutePath));
+            files.Add(fileService.GetFile(nextSessionPath));
         }
 
         queue.RegenerateFolderQueueSortItems(files);
-        queue.SetQueuePositionFromFolderItemOrThrow(nextSession.AbsolutePath);
+        queue.SetQueuePositionFromFolderItemOrThrow(nextSessionPath);
 
         var queueSnapshot = GenerateQueueSnapshot(queue, files);
 
@@ -160,7 +162,7 @@ public class QueueService(
     {
         var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
      
-        var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderAbsolutePath);
+        var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath);
 
         queue.Sort(files);
 
@@ -185,9 +187,9 @@ public class QueueService(
                    queue.CurrentQueuePositionId.ToString() ?? "unknown");
     }
 
-    public string? GetCurrentQueueFolderAbsolutePath()
+    public NodePath? GetCurrentQueueFolderPath()
     {
-        return queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId).CurrentFolderAbsolutePath;
+        return queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId).CurrentFolderPath;
     }
 
     public async Task<QueueSnapshot> GenerateQueueSnapshotAsync()
@@ -199,7 +201,7 @@ public class QueueService(
     
     private async Task<QueueSnapshot> GenerateQueueSnapshotAsync(UserQueue userQueue)
     {
-        return GenerateQueueSnapshot(userQueue, await GetPlayableFilesInFolderAsync(userQueue.CurrentFolderAbsolutePath));
+        return GenerateQueueSnapshot(userQueue, await GetPlayableFilesInFolderAsync(userQueue.CurrentFolderPath));
     }
     
     private QueueSnapshot GenerateQueueSnapshot(UserQueue userQueue, IEnumerable<IFileExplorerFileNode> folderFiles)
@@ -210,9 +212,8 @@ public class QueueService(
         allFiles.AddRange(folderFiles);
 
         var distinctFiles = allFiles
-            .Where(w => !string.IsNullOrWhiteSpace(w.AbsolutePath))
-            .DistinctBy(d => d.AbsolutePath)
-            .ToDictionary(k => k.AbsolutePath, v => v);
+            .DistinctBy(d => d.Path.AbsolutePath)
+            .ToDictionary(k => k.Path, v => v);
 
         var items = userQueue.GenerateQueueSnapshotItems(distinctFiles);
         
@@ -226,14 +227,14 @@ public class QueueService(
         return new QueueSnapshot(userQueue.CurrentQueuePositionId, previousValidOffset, nextValidOffset, items);
     }
 
-    private async Task<List<IFileExplorerFileNode>> GetPlayableFilesInFolderAsync(string? absoluteFolderPath)
+    private async Task<List<IFileExplorerFileNode>> GetPlayableFilesInFolderAsync(NodePath? nodePath)
     {
-        if (string.IsNullOrWhiteSpace(absoluteFolderPath))
+        if (nodePath is null)
         {
             return [];
         }
 
-        var folder = await fileService.GetFolderAsync(absoluteFolderPath);
+        var folder = await fileService.GetFolderAsync(nodePath);
 
         return folder.GenerateSortedChildren<IFileExplorerFileNode>()
             .Where(w => w.PlaybackSupported)

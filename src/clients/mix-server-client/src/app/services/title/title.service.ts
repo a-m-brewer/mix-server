@@ -35,14 +35,14 @@ export class TitleService {
 
     this._nodeRepository.currentFolder$
       .subscribe(folder => {
-        this._currentFolderName = folder.node.name;
+        this._currentFolderName = folder.node.path.fileName;
         this.setTitle();
       });
 
     this._audioStateRepository.state$
       .subscribe(state => {
-        this._currentPlayingFile = state?.playing && state.node?.name
-          ? state.node.name
+        this._currentPlayingFile = state?.playing && state.node?.path.fileName
+          ? state.node.path.fileName
           : null;
 
         this.setTitle();

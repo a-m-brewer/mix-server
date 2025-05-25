@@ -7,7 +7,7 @@ using MixServer.Domain.Interfaces;
 namespace MixServer.Domain.FileExplorer.Converters;
 
 public interface IFileExplorerConverter
-    : IConverter<string, IFileExplorerFileNode>,
+    : IConverter<NodePath, IFileExplorerFileNode>,
     IConverter<DirectoryInfo, IFileExplorerFolderNode>,
     IConverter<FileInfo, IFileExplorerFolderNode, IFileExplorerFileNode>
 {
@@ -17,12 +17,12 @@ public class FileExplorerConverter(
     IFileMetadataConverter metadataConverter,
     IRootFileExplorerFolder rootFolder) : IFileExplorerConverter
 {
-    public IFileExplorerFileNode Convert(string fileAbsolutePath)
+    public IFileExplorerFileNode Convert(NodePath fileNodePath)
     {
-        var parentAbsolutePath = fileAbsolutePath.GetParentFolderPathOrThrow();
+        var parentAbsolutePath = fileNodePath.Parent.AbsolutePath;
         var parent = Convert(new DirectoryInfo(parentAbsolutePath), false);
         
-        return Convert(new FileInfo(fileAbsolutePath), parent);
+        return Convert(new FileInfo(fileNodePath.AbsolutePath), parent);
     }
 
     public IFileExplorerFolderNode Convert(DirectoryInfo value)
@@ -32,33 +32,37 @@ public class FileExplorerConverter(
     
     private FileExplorerFolderNode Convert(DirectoryInfo directoryInfo, bool includeParent)
     {
-        var currentFolderBelongsToRoot = rootFolder.BelongsToRoot(directoryInfo.FullName);
+        var nodePath = rootFolder.GetNodePath(directoryInfo.FullName);
 
         IFileExplorerFolderNode? parent = null;
-        if (includeParent && directoryInfo.Parent is not null)
+        if (includeParent && !nodePath.IsRoot)
         {
-            parent = currentFolderBelongsToRoot
-                ? rootFolder.Node
-                : Convert(directoryInfo.Parent, false);
+            if (nodePath.IsRootChild)
+            {
+                parent = rootFolder.Node;
+            }
+            else if (directoryInfo.Parent is not null)
+            {
+                parent = Convert(directoryInfo.Parent, false);
+            }
         }
         
         return new FileExplorerFolderNode(
-            directoryInfo.Name,
-            directoryInfo.FullName,
+            nodePath,
             FileExplorerNodeType.Folder,
             directoryInfo.Exists,
             directoryInfo.CreationTimeUtc,
-            currentFolderBelongsToRoot,
-            rootFolder.BelongsToRootChild(directoryInfo.FullName),
+            nodePath.IsRoot,
+            rootFolder.DescendantOfRoot(nodePath),
             parent);
     }
 
     public IFileExplorerFileNode Convert(FileInfo fileInfo, IFileExplorerFolderNode parent)
     {
+        var path = rootFolder.GetNodePath(fileInfo.FullName);
+        
         return new FileExplorerFileNode(
-            fileInfo.Name,
-            fileInfo.FullName,
-            fileInfo.Extension,
+            path,
             FileExplorerNodeType.File,
             fileInfo.Exists,
             fileInfo.CreationTimeUtc,

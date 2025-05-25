@@ -26,9 +26,9 @@ public class DbUser : IdentityUser, IUser
     [NotMapped]
     public IList<Role> Roles { get; set; } = new List<Role>();
 
-    public IFolderSort GetSortOrDefault(string absoluteFolderPath)
+    public IFolderSort GetSortOrDefault(NodePath nodePath)
     {
-        var sort = FolderSorts.SingleOrDefault(s => s.AbsoluteFolderPath == absoluteFolderPath);
+        var sort = FolderSorts.SingleOrDefault(s => s.NodeEntity.Path.IsEqualTo(nodePath));
 
         if (sort == null)
         {

@@ -9,7 +9,7 @@
 >
   <app-node-list-item
     *ngFor="let session of sessions; last as last"
-    [id]="session.currentNode.absolutePath"
+    [key]="session.currentNode.path.key"
     [nodeType]="session.currentNode.type"
     [defaultIcon]="session.currentNode.mdIcon"
     [loadingStatus]="loadingStatus"
@@ -19,7 +19,7 @@
     (contentClick)="onNodeClick($event)"
   >
     <div appNodeListItemTitle>
-      {{ session.currentNode.name }}
+      {{ session.currentNode.path.fileName }}
     </div>
 
     <app-file-metadata-subtitle appNodeListItemSubtitle

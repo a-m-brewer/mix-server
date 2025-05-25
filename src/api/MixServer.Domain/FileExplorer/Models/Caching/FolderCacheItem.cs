@@ -16,7 +16,7 @@ public interface IFolderCacheItem : ICacheFolder, IDisposable
 
     event EventHandler<FolderItemUpdatedEventArgs> ItemUpdated;
 
-    event EventHandler<string> ItemRemoved;
+    event EventHandler<NodePath> ItemRemoved;
 }
 
 public class FolderCacheItem : IFolderCacheItem
@@ -30,26 +30,29 @@ public class FolderCacheItem : IFolderCacheItem
     private readonly CancellationTokenSource _cts = new();
     private readonly BlockingCollection<FolderChangeEvent> _events = new();
     
-    private readonly string _absolutePath;
+    private readonly NodePath _nodePath;
     private readonly ILogger<FolderCacheItem> _logger;
     private readonly IFileExplorerConverter _fileExplorerConverter;
+    private readonly IRootFileExplorerFolder _rootFolder;
     private readonly LogLevel _logLevel;
 
     private readonly FileSystemWatcher? _watcher;
     private readonly FileExplorerFolder _folder;
 
     public FolderCacheItem(
-        string absolutePath,
+        NodePath nodePath,
         ILogger<FolderCacheItem> logger,
         IFileExplorerConverter fileExplorerConverter,
+        IRootFileExplorerFolder rootFolder,
         LogLevel logLevel = LogLevel.Information)
     {
-        _absolutePath = absolutePath;
+        _nodePath = nodePath;
         _logger = logger;
         _fileExplorerConverter = fileExplorerConverter;
+        _rootFolder = rootFolder;
         _logLevel = logLevel;
 
-        var directoryInfo = new DirectoryInfo(absolutePath);
+        var directoryInfo = new DirectoryInfo(_nodePath.AbsolutePath);
         
         _folder = new FileExplorerFolder(_fileExplorerConverter.Convert(directoryInfo));
 
@@ -68,7 +71,7 @@ public class FolderCacheItem : IFolderCacheItem
             _folder.AddChild(fileExplorerConverter.Convert(file, _folder.Node));
         }
 
-        _watcher = new FileSystemWatcher(absolutePath)
+        _watcher = new FileSystemWatcher(_nodePath.AbsolutePath)
         {
             NotifyFilter = NotifyFilters.Attributes
                            | NotifyFilters.CreationTime
@@ -89,7 +92,7 @@ public class FolderCacheItem : IFolderCacheItem
 
     public event EventHandler<IFileExplorerNode>? ItemAdded;
     public event EventHandler<FolderItemUpdatedEventArgs>? ItemUpdated;
-    public event EventHandler<string>? ItemRemoved;
+    public event EventHandler<NodePath>? ItemRemoved;
     
     public IFileExplorerFolder Folder => _folder;
 
@@ -107,7 +110,7 @@ public class FolderCacheItem : IFolderCacheItem
 
     private void WatcherOnError(object sender, ErrorEventArgs e)
     {
-        _logger.LogError(e.GetException(), "Error occurred in FileSystemWatcher for {AbsolutePath}", _absolutePath);
+        _logger.LogError(e.GetException(), "Error occurred in FileSystemWatcher for {AbsolutePath}", _nodePath.AbsolutePath);
     }
     
     private void SubmitCacheUpdate(string fullName, ChangeType changeType, WatcherChangeTypes watcherChangeType, string oldFullName = "")
@@ -133,7 +136,7 @@ public class FolderCacheItem : IFolderCacheItem
         }
         catch (TaskCanceledException)
         {
-            _logger.LogInformation("Stopping processing events for {AbsolutePath}", _absolutePath);
+            _logger.LogInformation("Stopping processing events for {AbsolutePath}", _nodePath.AbsolutePath);
         }
     }
 
@@ -142,11 +145,12 @@ public class FolderCacheItem : IFolderCacheItem
         var directoryExists = Directory.Exists(e.fullName);
         var fileExists = File.Exists(e.fullName);
         var isFile = fileExists && !directoryExists;
+        var nodePath = _rootFolder.GetNodePath(e.fullName);
         
         switch (e.changeType)
         {
             case ChangeType.Created:
-                if (Folder.Children.Any(a => a.AbsolutePath == e.fullName))
+                if (Folder.Children.Any(a => a.Path.AbsolutePath == e.fullName))
                 {
                     return;
                 }
@@ -155,15 +159,16 @@ public class FolderCacheItem : IFolderCacheItem
                 break;
             case ChangeType.Deleted:
                 Delete(e.fullName);
-                ItemRemoved?.Invoke(this, e.fullName);
+                ItemRemoved?.Invoke(this, nodePath);
                 break;
             case ChangeType.Changed:
                 var changedItem = Replace(isFile, e.fullName);
-                ItemUpdated?.Invoke(this, new FolderItemUpdatedEventArgs(changedItem, e.fullName));
+                ItemUpdated?.Invoke(this, new FolderItemUpdatedEventArgs(changedItem, nodePath));
                 break;
             case ChangeType.Renamed:
                 var renamedItem = Replace(isFile, e.fullName, e.oldFullName);
-                ItemUpdated?.Invoke(this, new FolderItemUpdatedEventArgs(renamedItem, e.oldFullName));
+                var oldNodePath = _rootFolder.GetNodePath(e.oldFullName);
+                ItemUpdated?.Invoke(this, new FolderItemUpdatedEventArgs(renamedItem, oldNodePath));
                 break;
         }
     }
@@ -187,7 +192,7 @@ public class FolderCacheItem : IFolderCacheItem
             ? _fileExplorerConverter.Convert(new FileInfo(fullName), _folder.Node)
             : _fileExplorerConverter.Convert(new DirectoryInfo(fullName));
         _folder.AddChild(info);
-        _logger.Log(_logLevel, "Added: {AbsolutePath} to {CurrentFolder}", fullName, _absolutePath);
+        _logger.Log(_logLevel, "Added: {AbsolutePath} to {CurrentFolder}", fullName, _nodePath.AbsolutePath);
 
         return info;
     }
@@ -196,7 +201,7 @@ public class FolderCacheItem : IFolderCacheItem
     {
         var name = Path.GetFileName(fullName);
         _folder.RemoveChild(name);
-        _logger.Log(_logLevel, "Removed: {AbsolutePath} from {CurrentFolder}", fullName, _absolutePath);
+        _logger.Log(_logLevel, "Removed: {AbsolutePath} from {CurrentFolder}", fullName, _nodePath.AbsolutePath);
     }
 
     private enum ChangeType

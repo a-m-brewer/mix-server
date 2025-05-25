@@ -1,7 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Entities;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Streams.Entities;
 using MixServer.Domain.Streams.Repositories;
+using MixServer.Infrastructure.EF.Extensions;
 
 namespace MixServer.Infrastructure.EF.Repositories;
 
@@ -9,36 +12,28 @@ public class EfTranscodeRepository(MixServerDbContext context) : ITranscodeRepos
 {
     public async Task<Transcode> GetAsync(Guid id)
     {
-        return await context.Transcodes.SingleOrDefaultAsync(s => s.Id == id)
+        return await context.Transcodes
+                   .IncludeNode()
+                   .SingleOrDefaultAsync(s => s.Id == id)
                ?? throw new NotFoundException(nameof(Transcode), id);
     }
 
-    public async Task<Transcode> GetAsync(string fileAbsolutePath)
+    public Task<Transcode?> GetOrDefaultAsync(NodePath nodePath)
     {
-        return await GetOrDefaultAsync(fileAbsolutePath) ?? throw new NotFoundException(nameof(Transcode), fileAbsolutePath);
+        return context.Transcodes
+            .IncludeNode()
+            .SingleOrDefaultAsync(s => 
+                s.Node != null &&
+                s.Node.RootChild.RelativePath == nodePath.RootPath && s.Node.RelativePath == nodePath.RelativePath);
     }
 
-    public Task<Transcode?> GetOrDefaultAsync(string fileAbsolutePath)
+    public async Task AddAsync(Transcode transcode)
     {
-        return context.Transcodes.SingleOrDefaultAsync(s => s.AbsolutePath == fileAbsolutePath);
-    }
-
-    public async Task<Transcode> GetOrAddAsync(string fileAbsolutePath)
-    {
-        var existing = await GetOrDefaultAsync(fileAbsolutePath);
-        
-        if (existing is not null)
-        {
-            return existing;
-        }
-
-        var transcode = new Transcode
-        {
-            Id = Guid.NewGuid(),
-            AbsolutePath = fileAbsolutePath,
-        };
         await context.Transcodes.AddAsync(transcode);
-        
-        return transcode;
+    }
+
+    public void Remove(Guid transcodeId)
+    { 
+        context.Transcodes.RemoveRange(context.Transcodes.Where(s => s.Id == transcodeId));
     }
 }

@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Interfaces;
@@ -13,6 +14,7 @@ namespace MixServer.Application.Sessions.Commands.SetCurrentSession;
 
 public class SetCurrentSessionCommandHandler(
     IPlaybackSessionDtoConverter converter,
+    INodePathDtoConverter nodePathDtoConverter,
     IQueueService queueService,
     ISessionService sessionService,
     IUnitOfWork unitOfWork,
@@ -25,8 +27,7 @@ public class SetCurrentSessionCommandHandler(
 
         var nextSession = await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
         {
-            ParentAbsoluteFilePath = request.AbsoluteFolderPath,
-            FileName = request.FileName
+            NodePath = nodePathDtoConverter.Convert(request.NodePath)
         });
 
         var queueSnapshot = await queueService.SetQueueFolderAsync(nextSession);

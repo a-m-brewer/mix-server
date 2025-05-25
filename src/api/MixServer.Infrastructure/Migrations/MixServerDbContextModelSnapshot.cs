@@ -160,6 +160,28 @@ namespace MixServer.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("MixServer.Domain.FileExplorer.Entities.FileExplorerNodeEntityBase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("NodeType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RelativePath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Nodes");
+
+                    b.HasDiscriminator<int>("NodeType").HasValue(0);
+
+                    b.UseTphMappingStrategy();
+                });
+
             modelBuilder.Entity("MixServer.Domain.FileExplorer.Entities.FolderSort", b =>
                 {
                     b.Property<Guid>("Id")
@@ -173,6 +195,9 @@ namespace MixServer.Infrastructure.Migrations
                     b.Property<bool>("Descending")
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid?>("NodeId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("SortMode")
                         .HasColumnType("INTEGER");
 
@@ -181,6 +206,8 @@ namespace MixServer.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("NodeId");
 
                     b.HasIndex("UserId");
 
@@ -203,11 +230,16 @@ namespace MixServer.Infrastructure.Migrations
                     b.Property<DateTime>("LastPlayed")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("NodeId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("NodeId");
 
                     b.HasIndex("UserId");
 
@@ -224,9 +256,12 @@ namespace MixServer.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("NodeId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("AbsolutePath")
+                    b.HasIndex("NodeId")
                         .IsUnique();
 
                     b.ToTable("Transcodes");
@@ -369,6 +404,40 @@ namespace MixServer.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("MixServer.Domain.FileExplorer.Entities.FileExplorerNodeEntity", b =>
+                {
+                    b.HasBaseType("MixServer.Domain.FileExplorer.Entities.FileExplorerNodeEntityBase");
+
+                    b.Property<Guid>("RootChildId")
+                        .HasColumnType("TEXT");
+
+                    b.HasIndex("RootChildId", "RelativePath")
+                        .IsUnique();
+
+                    b.HasDiscriminator().HasValue(1);
+                });
+
+            modelBuilder.Entity("MixServer.Domain.FileExplorer.Entities.FileExplorerRootChildNodeEntity", b =>
+                {
+                    b.HasBaseType("MixServer.Domain.FileExplorer.Entities.FileExplorerNodeEntityBase");
+
+                    b.HasDiscriminator().HasValue(4);
+                });
+
+            modelBuilder.Entity("MixServer.Domain.FileExplorer.Entities.FileExplorerFileNodeEntity", b =>
+                {
+                    b.HasBaseType("MixServer.Domain.FileExplorer.Entities.FileExplorerNodeEntity");
+
+                    b.HasDiscriminator().HasValue(2);
+                });
+
+            modelBuilder.Entity("MixServer.Domain.FileExplorer.Entities.FileExplorerFolderNodeEntity", b =>
+                {
+                    b.HasBaseType("MixServer.Domain.FileExplorer.Entities.FileExplorerNodeEntity");
+
+                    b.HasDiscriminator().HasValue(3);
+                });
+
             modelBuilder.Entity("DbUserDevice", b =>
                 {
                     b.HasOne("MixServer.Infrastructure.EF.Entities.DbUser", null)
@@ -437,20 +506,44 @@ namespace MixServer.Infrastructure.Migrations
 
             modelBuilder.Entity("MixServer.Domain.FileExplorer.Entities.FolderSort", b =>
                 {
+                    b.HasOne("MixServer.Domain.FileExplorer.Entities.FileExplorerFolderNodeEntity", "Node")
+                        .WithMany()
+                        .HasForeignKey("NodeId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("MixServer.Infrastructure.EF.Entities.DbUser", null)
                         .WithMany("FolderSorts")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Node");
                 });
 
             modelBuilder.Entity("MixServer.Domain.Sessions.Entities.PlaybackSession", b =>
                 {
+                    b.HasOne("MixServer.Domain.FileExplorer.Entities.FileExplorerFileNodeEntity", "Node")
+                        .WithMany()
+                        .HasForeignKey("NodeId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("MixServer.Infrastructure.EF.Entities.DbUser", null)
                         .WithMany("PlaybackSessions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Node");
+                });
+
+            modelBuilder.Entity("MixServer.Domain.Streams.Entities.Transcode", b =>
+                {
+                    b.HasOne("MixServer.Domain.FileExplorer.Entities.FileExplorerFileNodeEntity", "Node")
+                        .WithOne("Transcode")
+                        .HasForeignKey("MixServer.Domain.Streams.Entities.Transcode", "NodeId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Node");
                 });
 
             modelBuilder.Entity("MixServer.Domain.Users.Entities.UserCredential", b =>
@@ -479,6 +572,17 @@ namespace MixServer.Infrastructure.Migrations
                     b.Navigation("CurrentPlaybackSession");
                 });
 
+            modelBuilder.Entity("MixServer.Domain.FileExplorer.Entities.FileExplorerNodeEntity", b =>
+                {
+                    b.HasOne("MixServer.Domain.FileExplorer.Entities.FileExplorerRootChildNodeEntity", "RootChild")
+                        .WithMany()
+                        .HasForeignKey("RootChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RootChild");
+                });
+
             modelBuilder.Entity("MixServer.Domain.Users.Entities.Device", b =>
                 {
                     b.Navigation("UserCredentials");
@@ -491,6 +595,11 @@ namespace MixServer.Infrastructure.Migrations
                     b.Navigation("FolderSorts");
 
                     b.Navigation("PlaybackSessions");
+                });
+
+            modelBuilder.Entity("MixServer.Domain.FileExplorer.Entities.FileExplorerFileNodeEntity", b =>
+                {
+                    b.Navigation("Transcode");
                 });
 #pragma warning restore 612, 618
         }

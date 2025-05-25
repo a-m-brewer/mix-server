@@ -1,6 +1,8 @@
+using MixServer.Domain.FileExplorer.Models;
+
 namespace MixServer.Domain.FileExplorer.Services;
 
 public interface IMimeTypeService
 {
-    string GetMimeType(string absolutePath, string extension);
+    string GetMimeType(NodePath path);
 }

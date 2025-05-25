@@ -1,3 +1,4 @@
+using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
@@ -16,20 +17,23 @@ public class RefreshFolderCommandHandler(
     IFileExplorerResponseConverter fileExplorerResponseConverter,
     IFolderCacheService folderCacheService,
     IFileService fileService,
+    INodePathDtoConverter nodePathDtoConverter,
     IRootFileExplorerFolder rootFolder) : ICommandHandler<RefreshFolderCommand, FileExplorerFolderResponse>
 {
     public async Task<FileExplorerFolderResponse> HandleAsync(RefreshFolderCommand request)
     {
-        if (string.IsNullOrWhiteSpace(request.AbsolutePath))
+        var nodePath = request.NodePath is null ? null : nodePathDtoConverter.Convert(request.NodePath);
+        
+        if (nodePath is null)
         {
             rootFolder.RefreshChildren();
         }
         else
         {
-            folderCacheService.InvalidateFolder(request.AbsolutePath);
+            folderCacheService.InvalidateFolder(nodePath);
         }
         
-        var folder = await fileService.GetFolderOrRootAsync(request.AbsolutePath);
+        var folder = await fileService.GetFolderOrRootAsync(nodePath);
 
         // TODO: make a way of refreshing all users folders at once on cache invalidation with their folder sorts
         await callbackService.FolderRefreshed(

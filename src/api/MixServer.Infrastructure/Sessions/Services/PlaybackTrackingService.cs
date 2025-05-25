@@ -70,15 +70,20 @@ public class PlaybackTrackingService(
     {
         readWriteLock.ForWrite(() =>
         {
+            var nodePath = session.NodeEntity.Path;
+            
             if (_playingItems.TryGetValue(session.UserId, out var existingItem))
             {
-                existingItem.UpdateWithoutEvents(session, includePlaying);
+                existingItem.UpdateWithoutEvents(session, nodePath, includePlaying);
             }
             else
             {
                 logger.LogInformation("Started tracking user's ({UserId}) playback state", session.UserId);
                 
-                var newSession = new PlaybackState(session, loggerFactory.CreateLogger<PlaybackState>());
+                var newSession = new PlaybackState(session, loggerFactory.CreateLogger<PlaybackState>())
+                {
+                    NodePath = nodePath
+                };
                 newSession.AudioPlayerStateUpdated += OnAudioPlayerStateUpdated;
                 
                 _playingItems[session.UserId] = newSession;

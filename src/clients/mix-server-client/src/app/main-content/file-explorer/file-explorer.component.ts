@@ -68,12 +68,12 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   }
 
   public onNodeClick(event: NodeListItemChangedEvent): void {
-    if (this.currentFolder.node.parent && event.id === this.currentFolder.node.parent.absolutePath) {
+    if (this.currentFolder.node.parent && event.key === this.currentFolder.node.parent.path.key) {
       this.onFolderClick(this.currentFolder.node.parent);
       return;
     }
 
-    const childNode = this.currentFolder.children.find(s => s.absolutePath === event.id);
+    const childNode = this.currentFolder.children.find(s => s.path.key === event.key);
 
     if (childNode instanceof FileExplorerFolderNode) {
       this.onFolderClick(childNode);

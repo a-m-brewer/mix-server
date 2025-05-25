@@ -58,8 +58,7 @@ public class SetNextSessionCommandHandler(
             ? null
             : await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
             {
-                ParentAbsoluteFilePath = nextFile.Parent.AbsolutePath,
-                FileName = nextFile.Name
+                NodePath = nextFile.Path
             });
         
         await unitOfWork.SaveChangesAsync();

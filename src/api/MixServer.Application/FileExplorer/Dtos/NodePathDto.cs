@@ -1,10 +1,16 @@
-﻿namespace MixServer.Application.FileExplorer.Dtos;
+namespace MixServer.Application.FileExplorer.Dtos;
 
-public class NodePathDto
+public class NodePathDto : NodePathRequestDto
 {
-    public required string ParentAbsolutePath { get; init; }
-    
     public required string FileName { get; init; }
     
     public required string AbsolutePath { get; init; }
+    
+    public required string Extension { get; init; }
+    
+    public required NodePathHeaderDto Parent { get; init; }
+    
+    public required bool IsRoot { get; init; }
+    
+    public required bool IsRootChild { get; init; }
 }

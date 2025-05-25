@@ -17,5 +17,5 @@ public interface IQueueService
     void ClearQueue();
     Task<QueueSnapshot> GenerateQueueSnapshotAsync();
     Task<IFileExplorerFileNode> GetCurrentPositionFileOrThrowAsync();
-    string? GetCurrentQueueFolderAbsolutePath();
+    NodePath? GetCurrentQueueFolderPath();
 }

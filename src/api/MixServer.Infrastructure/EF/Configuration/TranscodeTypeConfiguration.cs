@@ -10,6 +10,9 @@ public class TranscodeTypeConfiguration : IEntityTypeConfiguration<Transcode>
     {
         builder.HasKey(k => k.Id);
         
-        builder.HasIndex(i => i.AbsolutePath).IsUnique();
+        builder.HasOne(o => o.Node)
+            .WithOne(f => f.Transcode)
+            .HasForeignKey<Transcode>(o => o.NodeId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -6,6 +6,7 @@ using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.Sessions.Services;
 using MixServer.Infrastructure.Users.Services;
+using MixServer.Services;
 
 namespace MixServer;
 
@@ -15,6 +16,7 @@ public interface IBootstrapper
 }
 
 public class Bootstrapper(
+    AbsolutePathMigrationService absolutePathMigrationService,
     IWebHostEnvironment environment,
     MixServerDbContext context,
     IFileNotificationService fileNotificationService,
@@ -29,6 +31,8 @@ public class Bootstrapper(
         {
             await context.Database.MigrateAsync();
         }
+        
+        await absolutePathMigrationService.MigrateAsync();
 
         await userRoleService.InitializeAsync();
         await firstUserInitializationService.AddFirstUserIfNotExistsAsync();

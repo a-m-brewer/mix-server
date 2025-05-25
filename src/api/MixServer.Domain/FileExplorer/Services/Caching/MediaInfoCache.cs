@@ -7,39 +7,39 @@ namespace MixServer.Domain.FileExplorer.Services.Caching;
 
 public interface IMediaInfoCache
 {
-    bool TryGet(string absoluteFilePath, [MaybeNullWhen(false)] out MediaInfo mediaInfo);
-    IReadOnlyCollection<NodePath> Remove(IEnumerable<string> absoluteFilePaths);
+    bool TryGet(NodePath path, [MaybeNullWhen(false)] out MediaInfo mediaInfo);
+    IReadOnlyCollection<NodePath> Remove(IEnumerable<NodePath> nodePaths);
     void AddOrReplace(List<MediaInfo> mediaInfo);
 }
 
 public class MediaInfoCache : IMediaInfoCache
 {
-    private ConcurrentDictionary<string, MediaInfo> _cache = new();
+    private ConcurrentDictionary<NodePath, MediaInfo> _cache = new();
     
-    public bool TryGet(string absoluteFilePath, [MaybeNullWhen(false)] out MediaInfo mediaInfo)
+    public bool TryGet(NodePath absoluteFilePath, [MaybeNullWhen(false)] out MediaInfo mediaInfo)
     {
         return _cache.TryGetValue(absoluteFilePath, out mediaInfo);
     }
 
-    public IReadOnlyCollection<NodePath> Remove(IEnumerable<string> absoluteFilePaths)
+    public IReadOnlyCollection<NodePath> Remove(IEnumerable<NodePath> nodePaths)
     {
-        var nodePaths = new List<NodePath>();
-        foreach (var absoluteFilePath in absoluteFilePaths)
+        var outputNodePaths = new List<NodePath>();
+        foreach (var nodePath in nodePaths)
         {
-            if (_cache.TryRemove(absoluteFilePath, out var mediaInfo))
+            if (_cache.TryRemove(nodePath, out var mediaInfo))
             {
-                nodePaths.Add(mediaInfo.NodePath);
+                outputNodePaths.Add(mediaInfo.Path);
             }
         }
         
-        return nodePaths;
+        return outputNodePaths;
     }
 
     public void AddOrReplace(List<MediaInfo> mediaInfo)
     {
         foreach (var info in mediaInfo)
         {
-            _cache[info.NodePath.AbsolutePath] = info;
+            _cache[info.Path] = info;
         }
     }
 }

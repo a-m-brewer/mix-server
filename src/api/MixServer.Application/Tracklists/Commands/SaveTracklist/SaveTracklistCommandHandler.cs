@@ -23,7 +23,7 @@ public class SaveTracklistCommandHandler(
             throw new InvalidRequestException("CurrentPlaybackSession", "No playback session is currently active.");
         }
 
-        var currentSessionFilePath = currentUserRepository.CurrentUser.CurrentPlaybackSession.AbsolutePath;
+        var currentSessionFilePath = currentUserRepository.CurrentUser.CurrentPlaybackSession.NodeEntity.Path.AbsolutePath;
 
         if (!File.Exists(currentSessionFilePath))
         {

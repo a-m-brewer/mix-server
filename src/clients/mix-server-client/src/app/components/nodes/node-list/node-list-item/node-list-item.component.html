@@ -20,7 +20,7 @@
   >
     <div class="node-list-item-content-icon-container node-list-item">
       <app-node-list-item-icon
-        [loading]="loadingStatus.loading && !!loadingStatus.loadingIds[id]"
+        [loading]="loadingStatus.loading && !!loadingStatus.loadingIds[key]"
         [playingState]="playingState"
         [disabled]="loadingStatus.loading || disabled"
         [defaultIcon]="defaultIcon"

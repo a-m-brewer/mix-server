@@ -27,8 +27,7 @@ public class SetQueuePositionCommandHandler(
         
         var session = await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
         {
-            ParentAbsoluteFilePath = file.Parent.AbsolutePath,
-            FileName = file.Name
+            NodePath = file.Path
         });
 
         await unitOfWork.SaveChangesAsync();

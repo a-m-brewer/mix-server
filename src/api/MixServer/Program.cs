@@ -150,6 +150,8 @@ builder.Services
 
 builder.Services.AddHostedService<MediaInfoService>();
 
+builder.Services.AddTransient<AbsolutePathMigrationService>();
+
 // API Controllers
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options => { options.SerializerSettings.Converters.Add(new StringEnumConverter()); });

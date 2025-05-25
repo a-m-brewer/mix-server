@@ -15,12 +15,14 @@ import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/fi
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {FileMetadataConverterService} from "./file-metadata-converter.service";
 import {AudioElementRepositoryService} from "../audio-player/audio-element-repository.service";
+import {NodePathConverterService} from "./node-path-converter.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FileExplorerNodeConverterService {
   constructor(private _fileMetadataConverter: FileMetadataConverterService,
+              private _nodePathConverter: NodePathConverterService,
               private _audioElementRepository: AudioElementRepositoryService) {
   }
 
@@ -49,8 +51,7 @@ export class FileExplorerNodeConverterService {
     const clientPlaybackSupported = this._audioElementRepository.audio.canPlayType(metadata.mimeType) !== '';
 
     return new FileExplorerFileNode(
-      dto.name,
-      dto.absolutePath,
+      this._nodePathConverter.fromDto(dto.path),
       dto.type,
       dto.exists,
       dto.creationTimeUtc,
@@ -63,8 +64,7 @@ export class FileExplorerNodeConverterService {
 
   public fromFileExplorerFolderNode(dto: FileExplorerFolderNodeResponse): FileExplorerFolderNode {
     return new FileExplorerFolderNode(
-      dto.name,
-      dto.absolutePath,
+      this._nodePathConverter.fromDto(dto.path),
       dto.type,
       dto.exists,
       dto.creationTimeUtc,

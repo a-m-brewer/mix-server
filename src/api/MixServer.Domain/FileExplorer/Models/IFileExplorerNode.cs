@@ -1,3 +1,4 @@
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 
@@ -5,9 +6,7 @@ namespace MixServer.Domain.FileExplorer.Models;
 
 public interface IFileExplorerNode
 {
-    string Name { get; }
-
-    string AbsolutePath { get; }
+    NodePath Path { get; }
 
     FileExplorerNodeType Type { get; }
 
@@ -18,13 +17,16 @@ public interface IFileExplorerNode
 
 public interface IFileExplorerFileNode : IFileExplorerNode
 {
-    string Extension { get; }
-    
     IFileMetadata Metadata { get; }
 
     bool PlaybackSupported { get; }
     
     IFileExplorerFolderNode Parent { get; }
+}
+
+public interface IFileExplorerFileNodeWithEntity : IFileExplorerFileNode
+{
+    FileExplorerFileNodeEntity Entity { get; }
 }
 
 public interface IFileExplorerFolderNode : IFileExplorerNode
@@ -34,6 +36,11 @@ public interface IFileExplorerFolderNode : IFileExplorerNode
     bool BelongsToRootChild { get; }
     
     IFileExplorerFolderNode? Parent { get; }
+}
+
+public interface IFileExplorerFolderNodeWithEntity : IFileExplorerFolderNode
+{
+    FileExplorerFolderNodeEntity Entity { get; }
 }
 
 public interface IFileExplorerFolder
@@ -51,8 +58,8 @@ public interface IFileExplorerFolder
 
 public interface IRootFileExplorerFolder : IFileExplorerFolder
 {
-    bool BelongsToRoot(string? absolutePath);
-
-    bool BelongsToRootChild(string? absolutePath);
+    NodePath GetNodePath(string absolutePath);
+    IFileExplorerFolderNode GetRootChildOrThrow(NodePath nodePath);
     void RefreshChildren();
+    bool DescendantOfRoot(NodePath nodePath);
 }

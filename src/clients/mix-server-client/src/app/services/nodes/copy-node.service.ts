@@ -6,6 +6,7 @@ import {CopyNodeCommand} from "../../generated-clients/mix-server-clients";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {ToastService} from "../toasts/toast-service";
 import {NodeManagementApiService} from "../api.service";
+import {NodePathConverterService} from "../converters/node-path-converter.service";
 
 interface CopyNodeForm {
   sourceNode: FormControl<FileExplorerFileNode | null>;
@@ -24,6 +25,7 @@ export class CopyNodeService {
   private _form: FormGroup<CopyNodeForm>;
 
   constructor(private _formBuilder: FormBuilder,
+              private _nodePathConverter: NodePathConverterService,
               private _nodeManagementClient: NodeManagementApiService) {
     this._form = this.createForm();
   }
@@ -44,8 +46,9 @@ export class CopyNodeService {
     });
   }
 
-  async pasteNode(destinationNode: FileExplorerFileNode,
-            overwrite: boolean) {
+  async pasteNode(
+    destinationNode: FileExplorerFileNode,
+    overwrite: boolean) {
     this._form.patchValue({
       destinationNode,
       overwrite
@@ -60,11 +63,10 @@ export class CopyNodeService {
       return;
     }
 
-    await this._nodeManagementClient.request(sourceNode.absolutePath,
+    await this._nodeManagementClient.request(sourceNode.path.key,
       client => client.copyNode(new CopyNodeCommand({
-        sourceAbsolutePath: sourceNode.absolutePath,
-        destinationFolder: destinationNode.parent.absolutePath,
-        destinationName: destinationNode.name,
+        sourcePath: this._nodePathConverter.toRequestDto(sourceNode.path),
+        destinationPath: this._nodePathConverter.toRequestDto(destinationNode.path),
         overwrite,
         move: move ?? false
       })), 'Failed to copy node');

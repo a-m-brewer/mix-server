@@ -374,16 +374,16 @@ export class AudioPlayerService {
     } catch (err) {
       if (err instanceof DOMException) {
         if (err.name === 'NotSupportedError') {
-          this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name} unsupported`, 'Not Supported');
+          this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.path.fileName} unsupported`, 'Not Supported');
           this._sessionService.clearSession();
           this._loadingRepository.stopLoadingAction('RequestPlayback');
         } else {
           console.error(err);
-          this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name}: ${err.message}`, err.name);
+          this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.path.fileName}: ${err.message}`, err.name);
         }
       } else if (err instanceof Error) {
         console.error(err);
-        this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.name}: ${err.message}`, err.name);
+        this._toastService.error(`${this._playbackSessionRepository.currentSession?.currentNode?.path.fileName}: ${err.message}`, err.name);
       }
     }
   }
@@ -410,7 +410,7 @@ export class AudioPlayerService {
     }
 
     this._streamUrl = url;
-    this._transcode = !session.currentNode.clientPlaybackSupported;
+    this._transcode = session.currentNode.hasCompletedTranscode || !session.currentNode.clientPlaybackSupported;
 
     this._audioElementRepository.attachHls(this._streamUrl, this._transcode);
 

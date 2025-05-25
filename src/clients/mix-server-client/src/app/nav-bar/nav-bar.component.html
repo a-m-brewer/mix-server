@@ -13,7 +13,7 @@
     <div
          class="page-title">
       @if (currentPage === MenuLabel.Files && currentFolder && currentFolder.node.belongsToRootChild) {
-        {{ currentFolder.node.name }}
+        {{ currentFolder.node.path.fileName }}
       } @else if (currentPage) {
         {{ currentPage }}
       } @else {

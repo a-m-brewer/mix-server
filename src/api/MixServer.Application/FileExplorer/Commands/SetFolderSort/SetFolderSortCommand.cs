@@ -1,12 +1,12 @@
+using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.FileExplorer.Enums;
-using MixServer.Domain.FileExplorer.Models;
 
 namespace MixServer.Application.FileExplorer.Commands.SetFolderSort;
 
-public class SetFolderSortCommand : IFolderSortRequest
+public class SetFolderSortCommand
 {
-    public string AbsoluteFolderPath { get; set; } = string.Empty;
-    
+    public required NodePathRequestDto NodePath { get; set; }
+
     public bool Descending { get; set; }
 
     public FolderSortMode SortMode { get; set; }

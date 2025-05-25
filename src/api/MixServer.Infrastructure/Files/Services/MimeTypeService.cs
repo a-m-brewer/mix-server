@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Infrastructure.Files.Constants;
 
@@ -7,14 +8,14 @@ namespace MixServer.Infrastructure.Files.Services;
 public class MimeTypeService(FileExtensionContentTypeProvider fileExtensionContentTypeProvider)
     : IMimeTypeService
 {
-    public string GetMimeType(string absolutePath, string extension)
+    public string GetMimeType(NodePath nodePath)
     {
-        if (fileExtensionContentTypeProvider.TryGetContentType(absolutePath, out var contentType))
+        if (fileExtensionContentTypeProvider.TryGetContentType(nodePath.AbsolutePath, out var contentType))
         {
             return contentType;
         }
 
-        return extension switch
+        return nodePath.Extension switch
         {
             ".flac" => MimeTypeConstants.AudioFlac,
             ".ogx" => MimeTypeConstants.ApplicationOgg,

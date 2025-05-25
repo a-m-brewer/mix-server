@@ -1,5 +1,5 @@
-﻿import {NodePath} from "../../repositories/models/node-path";
-import {MediaInfo} from "../../../main-content/file-explorer/models/media-info";
+﻿import {MediaInfo} from "../../../main-content/file-explorer/models/media-info";
+import {NodePath} from "../../../main-content/file-explorer/models/node-path";
 
 export interface MediaInfoUpdatedEventItem {
   nodePath: NodePath
