@@ -150,6 +150,7 @@ builder.Services
 
 builder.Services.AddHostedService<MediaInfoService>();
 builder.Services.AddHostedService<TranscodeBackgroundService>();
+builder.Services.AddHostedService<DeviceDetectionBackgroundService>();
 
 builder.Services.AddTransient<AbsolutePathMigrationService>();
 

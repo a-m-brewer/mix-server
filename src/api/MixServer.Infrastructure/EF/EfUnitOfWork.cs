@@ -27,9 +27,9 @@ public class EfUnitOfWork<TDbContext>(
         OnSaved(() => callback.Invoke(callbackService));
     }
 
-    public async Task SaveChangesAsync()
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         await Task.WhenAll(_deferredCommands.Select(async s =>
         {

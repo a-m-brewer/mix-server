@@ -1,9 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
+using MixServer.Domain.Persistence;
 
 namespace MixServer.Domain.Interfaces;
 
-public interface IChannel<T>
+public interface IChannel<T> : ISingletonRepository
 {
     Task WriteAsync(T request);
     Task<bool> WaitToReadAsync(CancellationToken stoppingToken);
