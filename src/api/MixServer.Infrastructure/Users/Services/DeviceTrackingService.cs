@@ -103,7 +103,7 @@ public class DeviceTrackingService(
             deviceState.DeviceId,
             deviceState.Online,
             deviceState.InteractedWith,
-            string.Join(", ", deviceState.Capabilities));
+            string.Join(", ", deviceState.Capabilities.Values.ToList()));
         await callbackService.DeviceStateUpdated(deviceState);
     }
 }

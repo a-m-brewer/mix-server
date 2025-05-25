@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
-using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
@@ -21,7 +20,6 @@ public class PlaybackTrackingService(
     ILogger<PlaybackTrackingService> logger,
     ILoggerFactory loggerFactory,
     IReadWriteLock readWriteLock,
-    IRootFileExplorerFolder rootFolder,
     IServiceProvider serviceProvider)
     : IPlaybackTrackingService
 {
@@ -72,7 +70,7 @@ public class PlaybackTrackingService(
     {
         readWriteLock.ForWrite(() =>
         {
-            var nodePath = rootFolder.GetNodePath(session.AbsolutePath);
+            var nodePath = session.NodeEntity.Path;
             
             if (_playingItems.TryGetValue(session.UserId, out var existingItem))
             {

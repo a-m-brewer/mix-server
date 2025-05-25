@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
-using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Accessors;
@@ -10,7 +9,6 @@ using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Users.Repositories;
-using MixServer.Domain.Users.Services;
 using MixServer.Domain.Utilities;
 using MixServer.Infrastructure.EF.Entities;
 using MixServer.Infrastructure.Users.Repository;
@@ -22,13 +20,12 @@ public class SessionService(
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
     IDateTimeProvider dateTimeProvider,
-    IFolderCacheService folderCacheService,
+    IFolderPersistenceService folderPersistenceService,
     ILogger<SessionService> logger,
     IPlaybackSessionRepository playbackSessionRepository,
     IPlaybackTrackingService playbackTrackingService,
     IRequestedPlaybackDeviceAccessor requestedPlaybackDeviceAccessor,
     ISessionHydrationService sessionHydrationService,
-    IUserRepository userRepository,
     IUnitOfWork unitOfWork)
     : ISessionService
 {
@@ -57,22 +54,23 @@ public class SessionService(
         
         var device = requestedPlaybackDeviceAccessor.PlaybackDevice;
         
-        var file = folderCacheService.GetFile(request.NodePath);
+        var file = await folderPersistenceService.GetFileAsync(request.NodePath);
 
         canPlayOnDeviceValidator.ValidateCanPlayOrThrow(device, file);
 
-        await currentUserRepository.LoadPlaybackSessionAsync(request.NodePath);
-        var session = user.PlaybackSessions.SingleOrDefault(s => s.AbsolutePath == request.NodePath.AbsolutePath);
+        await currentUserRepository.LoadPlaybackSessionByFileIdAsync(file.Entity.Id);
+        var session = user.PlaybackSessions.SingleOrDefault(s => s.NodeEntity.Id == file.Entity.Id);
 
         if (session == null)
         {
             session = new PlaybackSession
             {
                 Id = Guid.NewGuid(),
-                AbsolutePath = request.NodePath.AbsolutePath,
                 LastPlayed = dateTimeProvider.UtcNow,
                 UserId = user.Id,
-                CurrentTime = TimeSpan.Zero
+                CurrentTime = TimeSpan.Zero,
+                NodeEntity = file.Entity,
+                NodeIdEntity = file.Entity.Id,
             };
 
             await playbackSessionRepository.AddAsync(session);
@@ -107,20 +105,6 @@ public class SessionService(
         user.CurrentPlaybackSession = null;
         
         unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(user.Id, currentDeviceRepository.DeviceId, null));
-    }
-
-    public async Task<PlaybackSession> GetPlaybackSessionByIdAsync(Guid id, string username)
-    {
-        var user = await userRepository.GetUserAsync(username);
-
-        var session = await GetPlaybackSessionByIdAsync(id);
-            
-        if (session.UserId != user.Id)
-        {
-            throw new ForbiddenRequestException();
-        }
-        
-        return session;
     }
 
     public async Task<PlaybackSession> GetPlaybackSessionByIdAsync(Guid id)

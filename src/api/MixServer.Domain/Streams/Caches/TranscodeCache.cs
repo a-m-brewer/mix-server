@@ -165,7 +165,7 @@ public class TranscodeCache(
             folder.ItemUpdated += TranscodeFolderOnItemUpdated;
             folder.ItemRemoved += TranscodeFolderOnItemRemoved;
 
-            var nodePath = rootFolder.GetNodePath(transcodeEntity.AbsolutePath);
+            var nodePath = transcodeEntity.NodeEntity.Path;
             
             var transcode = new TranscodeCacheItem(loggerFactory.CreateLogger<TranscodeCacheItem>())
             {

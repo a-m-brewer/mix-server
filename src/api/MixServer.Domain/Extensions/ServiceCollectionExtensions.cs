@@ -22,6 +22,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IUserValidator, UserValidator>();
         services.AddSingleton<IFolderCacheService, FolderCacheService>();
+        services.AddTransient<IFolderPersistenceService, FolderPersistenceService>();
         services.AddSingleton<IFileNotificationService, FileNotificationService>();
         services.AddTransient<FileExplorerConverter, FileExplorerConverter>();
         services.AddSingleton<IRootFileExplorerFolder, RootFileExplorerFolder>();

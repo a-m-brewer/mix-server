@@ -13,6 +13,7 @@ namespace MixServer.Infrastructure.Files.Services;
 public class FileService(
     ICurrentUserRepository currentUserRepository,
     IFolderCacheService folderCacheService,
+    IFolderPersistenceService folderPersistenceService,
     IFolderSortRepository folderSortRepository,
     IRootFileExplorerFolder rootFolder)
     : IFileService
@@ -145,16 +146,20 @@ public class FileService(
         await currentUserRepository.LoadFileSortByAbsolutePathAsync(request.Path);
         var user = currentUserRepository.CurrentUser;
 
-        var sort = user.FolderSorts.SingleOrDefault(s => s.AbsoluteFolderPath == request.Path.AbsolutePath);
+        var sort = user.FolderSorts.SingleOrDefault(s =>
+            s.NodeEntity.RootChild.RelativePath == request.Path.RootPath &&
+            s.NodeEntity.RelativePath == request.Path.RelativePath);
 
-        if (sort == null)
+        if (sort is null)
         {
-            var folderSort = new FolderSort(
-                Guid.NewGuid(),
-                request.Path.AbsolutePath,
-                request.Descending,
-                request.SortMode)
+            var folder = await folderPersistenceService.GetFolderAsync(request.Path);
+            var folderSort = new FolderSort
             {
+                Id = Guid.NewGuid(),
+                NodeEntity = folder.Entity,
+                NodeIdEntity = folder.Entity.Id,
+                Descending = request.Descending,
+                SortMode = request.SortMode,
                 UserId = user.UserName ?? throw new UnauthorizedRequestException()
             };
 

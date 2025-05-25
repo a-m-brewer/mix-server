@@ -28,7 +28,7 @@ public class DbUser : IdentityUser, IUser
 
     public IFolderSort GetSortOrDefault(NodePath nodePath)
     {
-        var sort = FolderSorts.SingleOrDefault(s => s.AbsoluteFolderPath == nodePath.AbsolutePath);
+        var sort = FolderSorts.SingleOrDefault(s => s.NodeEntity.Path.IsEqualTo(nodePath));
 
         if (sort == null)
         {

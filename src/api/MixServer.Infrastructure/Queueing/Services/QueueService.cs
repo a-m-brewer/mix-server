@@ -23,7 +23,6 @@ public class QueueService(
     ICurrentUserRepository currentUserRepository,
     IFileService fileService,
     ILogger<QueueService> logger,
-    IRootFileExplorerFolder rootFileExplorerFolder,
     IQueueRepository queueRepository,
     IUnitOfWork unitOfWork)
     : IQueueService
@@ -51,11 +50,11 @@ public class QueueService(
     {
         var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
 
-        queue.CurrentFolderPath = rootFileExplorerFolder.GetNodePath(nextSession.GetParentFolderPathOrThrow());
+        queue.CurrentFolderPath = nextSession.NodeEntity.Path.Parent;
         queue.ClearUserQueue();
         
         var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath);
-        var nextSessionPath = rootFileExplorerFolder.GetNodePath(nextSession.AbsolutePath);
+        var nextSessionPath = nextSession.NodeEntity.Path;
         
         if (files.All(a => !a.Path.IsEqualTo(nextSessionPath)))
         {

@@ -8,5 +8,5 @@ public interface IFolderSortRepository : ITransientRepository
 {
     Task AddAsync(FolderSort folderSort);
 
-    Task<Dictionary<string, IFolderSort>> GetFolderSortsAsync(IReadOnlyCollection<string> usernames, string absoluteFolderPath);
+    Task<Dictionary<string, IFolderSort>> GetFolderSortsAsync(IReadOnlyCollection<string> usernames, NodePath nodePath);
 }

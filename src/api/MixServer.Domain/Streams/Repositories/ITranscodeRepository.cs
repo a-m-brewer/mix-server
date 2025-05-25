@@ -7,8 +7,7 @@ namespace MixServer.Domain.Streams.Repositories;
 public interface ITranscodeRepository : ITransientRepository
 {
     Task<Transcode> GetAsync(Guid id);
-    Task<Transcode> GetAsync(NodePath path);
     Task<Transcode?> GetOrDefaultAsync(NodePath path);
-    Task<Transcode> GetOrAddAsync(NodePath path);
+    Task AddAsync(Transcode transcode);
     void Remove(Guid transcodeId);
 }

@@ -1,4 +1,3 @@
-using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Users.Services;
@@ -13,14 +12,11 @@ public interface ISessionHydrationService
 public class SessionHydrationService(
     IFileService fileService,
     IPlaybackTrackingService playbackTrackingService,
-    IStreamKeyService streamKeyService,
-    IRootFileExplorerFolder rootFolder) : ISessionHydrationService
+    IStreamKeyService streamKeyService) : ISessionHydrationService
 {
     public void Hydrate(IPlaybackSession session)
     {
-        var nodePath = rootFolder.GetNodePath(session.AbsolutePath);
-        
-        var currentNode = fileService.GetFile(nodePath);
+        var currentNode = fileService.GetFile(session.NodeEntity.Path);
 
         playbackTrackingService.Populate(session);
         

@@ -12,7 +12,7 @@ using MixServer.Domain.Streams.Services;
 namespace MixServer.Application.Streams.Commands.RequestTranscode;
 
 public class RequestTranscodeCommandHandler(
-    IFileService fileService,
+    IFolderPersistenceService folderPersistenceService,
     IMediaInfoCache mediaInfoCache,
     INodePathDtoConverter nodePathDtoConverter,
     ITranscodeService transcodeService,
@@ -27,7 +27,7 @@ public class RequestTranscodeCommandHandler(
         
         var nodePath = nodePathDtoConverter.Convert(request.NodePath);
         
-        var file = fileService.GetFile(nodePath);
+        var file = await folderPersistenceService.GetFileAsync(nodePath);
 
         if (!file.Exists)
         {
@@ -47,6 +47,6 @@ public class RequestTranscodeCommandHandler(
         }
         
         var bitrate = mediaInfoCache.TryGet(file.Path, out var mediaInfo) ? mediaInfo.Bitrate : 0;
-        await transcodeService.RequestTranscodeAsync(file.Path, bitrate);
+        await transcodeService.RequestTranscodeAsync(file.Entity, bitrate);
     }
 }

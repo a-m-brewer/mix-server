@@ -1,3 +1,4 @@
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Enums;
 
 namespace MixServer.Domain.FileExplorer.Models;
@@ -19,4 +20,13 @@ public class FileExplorerFolderNode(
     public bool BelongsToRoot { get; } = belongsToRoot;
     public bool BelongsToRootChild { get; } = belongsToRootChild;
     public IFileExplorerFolderNode? Parent { get; } = parent;
+}
+
+public class FileExplorerFolderNodeWithEntity(
+    IFileExplorerFolderNode node,
+    FileExplorerFolderNodeEntity entity)
+    : FileExplorerFolderNode(node.Path, node.Type, node.Exists, node.CreationTimeUtc, node.BelongsToRoot, node.BelongsToRootChild, node.Parent),
+      IFileExplorerFolderNodeWithEntity
+{
+    public FileExplorerFolderNodeEntity Entity { get; } = entity;
 }

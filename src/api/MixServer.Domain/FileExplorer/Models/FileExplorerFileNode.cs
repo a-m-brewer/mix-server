@@ -1,3 +1,4 @@
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 
@@ -23,4 +24,13 @@ public class FileExplorerFileNode(
                                      Exists && 
                                      Metadata.IsMedia;
     public IFileExplorerFolderNode Parent { get; } = parent;
+}
+
+public class FileExplorerFileNodeWithEntity(
+    IFileExplorerFileNode node,
+    FileExplorerFileNodeEntity entity)
+    : FileExplorerFileNode(node.Path, node.Type, node.Exists, node.CreationTimeUtc, node.Metadata, node.Parent),
+      IFileExplorerFileNodeWithEntity
+{
+    public FileExplorerFileNodeEntity Entity { get; } = entity;
 }

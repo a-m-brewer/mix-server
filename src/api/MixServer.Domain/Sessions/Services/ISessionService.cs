@@ -8,7 +8,6 @@ public interface ISessionService
     Task LoadPlaybackStateAsync();
     Task<PlaybackSession> AddOrUpdateSessionAsync(IAddOrUpdateSessionRequest request);
     void ClearUsersCurrentSession();
-    Task<PlaybackSession> GetPlaybackSessionByIdAsync(Guid id, string username);
     Task<PlaybackSession> GetPlaybackSessionByIdAsync(Guid id);
     Task<PlaybackSession> GetCurrentPlaybackSessionWithFileAsync();
     Task<PlaybackSession> GetCurrentPlaybackSessionAsync();

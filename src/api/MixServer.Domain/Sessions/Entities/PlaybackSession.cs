@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using MixServer.Domain.Extensions;
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Sessions.Models;
 
@@ -8,19 +9,22 @@ namespace MixServer.Domain.Sessions.Entities;
 public interface IPlaybackSession : IPlaybackState
 {
     Guid Id { get; set; }
-    new string AbsolutePath { get; set; }
+    FileExplorerFileNodeEntity NodeEntity { get; }
     DateTime LastPlayed { get; set; }
     IFileExplorerFileNode? File { get; set; }
     StreamKey StreamKey { get; set; }
-    string GetParentFolderPathOrThrow();
-    string? GetParentFolderPathOrDefault();
     void PopulateState(IPlaybackState playingItem);
 }
 
 public class PlaybackSession : IPlaybackSession
 {
     public Guid Id { get; set; }
+    
+    // TODO: Make this non-nullable after migration to new root, relative paths is complete.
+    public FileExplorerFileNodeEntity? Node { get; set; }
+    public Guid? NodeId { get; set; }
 
+    [Obsolete("Use Node instead.")]
     public string AbsolutePath { get; set; } = string.Empty;
 
     public DateTime LastPlayed { get; set; }
@@ -45,15 +49,20 @@ public class PlaybackSession : IPlaybackSession
 
     [NotMapped]
     public StreamKey StreamKey { get; set; } = new () { Expires = 0, Key = string.Empty };
-
-    public string GetParentFolderPathOrThrow()
+    
+    // Workaround for application code to pretend Node is not nullable
+    [NotMapped]
+    public required FileExplorerFileNodeEntity NodeEntity
     {
-        return AbsolutePath.GetParentFolderPathOrThrow();
+        get => Node ?? throw new InvalidOperationException("Node is not set.");
+        set => Node = value;
     }
-
-    public string? GetParentFolderPathOrDefault()
+    
+    [NotMapped]
+    public required Guid NodeIdEntity
     {
-        return AbsolutePath.GetParentFolderPathOrDefault();
+        get => NodeId ?? throw new InvalidOperationException("NodeId is not set.");
+        set => NodeId = value;
     }
 
     public void PopulateState(IPlaybackState playingItem)

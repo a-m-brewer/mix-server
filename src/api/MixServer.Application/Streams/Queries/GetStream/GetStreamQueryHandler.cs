@@ -1,6 +1,5 @@
 ﻿using FluentValidation;
 using MixServer.Domain.Exceptions;
-using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Accessors;
@@ -22,7 +21,6 @@ public class GetStreamQueryHandler(
     ISessionService sessionService,
     ITranscodeCache transcodeCache,
     ITranscodeRepository transcodeRepository,
-    IRootFileExplorerFolder rootFileExplorerFolder,
     IValidator<GetStreamQuery> validator)
     : IQueryHandler<GetStreamQuery, StreamFile>
 {
@@ -55,7 +53,7 @@ public class GetStreamQueryHandler(
 
         if (session.File is null || !session.File.Exists)
         {
-            throw new NotFoundException(nameof(PlaybackSession), session.AbsolutePath);
+            throw new NotFoundException(nameof(PlaybackSession), session.NodeEntity.Path.AbsolutePath);
         }
 
         var transcode = await transcodeRepository.GetOrDefaultAsync(session.File.Path);
@@ -75,12 +73,10 @@ public class GetStreamQueryHandler(
         }
 
         var mimeType = mimeTypeService.GetMimeType(session.File.Path);
-
-        var filePath = rootFileExplorerFolder.GetNodePath(session.AbsolutePath);
         
         return new DirectStreamFile(mimeType)
         {
-            FilePath = filePath
+            FilePath = session.NodeEntity.Path
         };
     }
 }

@@ -6,7 +6,7 @@ namespace MixServer.Application.FileExplorer.Converters;
 
 public interface INodePathDtoConverter :
     IConverter<NodePath, NodePathHeaderDto>,
-    IConverter<NodePathRequestDto, NodePath?>
+    IConverter<NodePathRequestDto, NodePath>
 {
     NodePathDto ConvertToResponse(NodePath value);
 }
@@ -23,10 +23,10 @@ public class NodePathDtoConverter : INodePathDtoConverter
         };
     }
 
-    public NodePath? Convert(NodePathRequestDto value)
+    public NodePath Convert(NodePathRequestDto value)
     {
         if (string.IsNullOrEmpty(value.RootPath) && string.IsNullOrEmpty(value.RelativePath))
-            return null;
+            return new NodePath(string.Empty, string.Empty);
 
         return new NodePath(value.RootPath ?? string.Empty, value.RelativePath ?? string.Empty);
     }

@@ -1,3 +1,4 @@
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 
@@ -23,6 +24,11 @@ public interface IFileExplorerFileNode : IFileExplorerNode
     IFileExplorerFolderNode Parent { get; }
 }
 
+public interface IFileExplorerFileNodeWithEntity : IFileExplorerFileNode
+{
+    FileExplorerFileNodeEntity Entity { get; }
+}
+
 public interface IFileExplorerFolderNode : IFileExplorerNode
 {
     bool BelongsToRoot { get; }
@@ -30,6 +36,11 @@ public interface IFileExplorerFolderNode : IFileExplorerNode
     bool BelongsToRootChild { get; }
     
     IFileExplorerFolderNode? Parent { get; }
+}
+
+public interface IFileExplorerFolderNodeWithEntity : IFileExplorerFolderNode
+{
+    FileExplorerFolderNodeEntity Entity { get; }
 }
 
 public interface IFileExplorerFolder

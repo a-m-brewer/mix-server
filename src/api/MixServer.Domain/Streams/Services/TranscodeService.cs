@@ -1,6 +1,7 @@
 using CliWrap;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Persistence;
@@ -14,7 +15,7 @@ namespace MixServer.Domain.Streams.Services;
 
 public interface ITranscodeService
 {
-    Task RequestTranscodeAsync(NodePath path, int bitrate);
+    Task RequestTranscodeAsync(FileExplorerFileNodeEntity file, int bitrate);
 }
 
 public class TranscodeService(
@@ -28,16 +29,26 @@ public class TranscodeService(
     private const int HlsTime = 4;
     private const int DefaultBitrate = 192;
     
-    public async Task RequestTranscodeAsync(NodePath path, int bitrate)
+    public async Task RequestTranscodeAsync(FileExplorerFileNodeEntity file, int bitrate)
     {
-        var transcode = await transcodeRepository.GetOrAddAsync(path);
+        var transcode = file.Transcode;
+        if (transcode is null)
+        {
+            transcode = new Transcode
+            {
+                Id = Guid.NewGuid(),
+                NodeEntity = file,
+                NodeIdEntity = file.Id
+            };
+            await transcodeRepository.AddAsync(transcode);
+        }
 
         await unitOfWork.SaveChangesAsync();
         
         var transcodeIdString = transcode.Id.ToString();
         
         Directory.CreateDirectory(GetTranscodeFolder(transcode.Id.ToString()));
-        logger.LogDebug("Transcode requested for {AbsoluteFilePath} ({Hash})", path.AbsolutePath, transcodeIdString);
+        logger.LogDebug("Transcode requested for {AbsoluteFilePath} ({Hash})", file.Path.AbsolutePath, transcodeIdString);
         
         _ = Task.Run(() => ProcessTranscode(transcode, bitrate));
     }
@@ -51,13 +62,13 @@ public class TranscodeService(
         var bitrate = requestedBitrate == 0 ? DefaultBitrate : requestedBitrate;
         
         logger.LogInformation("Starting transcode for {AbsoluteFilePath} ({TranscodeId})",
-            transcode.AbsolutePath,
+            transcode.NodeEntity.Path.AbsolutePath,
             transcodeIdString);
         
         var result = await Cli.Wrap(ffmpegSettings.Value.Path)
             .WithValidation(CommandResultValidation.None)
             .WithArguments([
-                "-i", $"{transcode.AbsolutePath}",
+                "-i", $"{transcode.NodeEntity.Path.AbsolutePath}",
                 "-c:a", "aac",
                 "-b:a", $"{bitrate}k",
                 "-vn",
@@ -74,7 +85,7 @@ public class TranscodeService(
             .ExecuteAsync();
         
         logger.LogInformation("Transcode {AbsoluteFilePath} ({Hash}) finished after {RunTime} ({StartTime}-{ExitTime}) with exit code {ExitCode}",
-            transcode.AbsolutePath,
+            transcode.NodeEntity.Path.AbsolutePath,
             transcodeIdString,
             result.RunTime,
             result.StartTime,
@@ -88,7 +99,7 @@ public class TranscodeService(
         else
         {
             logger.LogError("Transcode of {AbsoluteFilePath} ({Hash}) failed cleaning up resources", 
-                transcode.AbsolutePath,
+                transcode.NodeEntity.Path.AbsolutePath,
                 transcodeIdString);
             Directory.Delete(transcodeFolder, true);
         }
