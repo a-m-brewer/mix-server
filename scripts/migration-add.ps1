@@ -5,6 +5,6 @@ param(
 )
 
 $repoRoot = Join-Path -Path "$PSScriptRoot" -ChildPath ".."
-$infrastructreProj = Join-Path -Path $repoRoot  -ChildPath "src" -AdditionalChildPath "api", "MixServer.Infrastructure"
+$infrastructureProj = Join-Path -Path $repoRoot  -ChildPath "src" -AdditionalChildPath "api", "MixServer.Infrastructure"
 
-dotnet ef migrations add "$MigrationName"  --project $infrastructreProj
+dotnet ef migrations add "$MigrationName"  --project $infrastructureProj
