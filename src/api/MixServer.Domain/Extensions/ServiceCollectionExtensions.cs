@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ITranscodeService, TranscodeService>();
         services.AddTransient<ICanPlayOnDeviceValidator, CanPlayOnDeviceValidator>();
         services.AddSingleton<IMediaInfoCache, MediaInfoCache>();
+        services.AddTransient<ITranscodeWorkerService, TranscodeWorkerService>();
 
         services.AddDomainInterfaces();
         services.AddDomainUtilities();

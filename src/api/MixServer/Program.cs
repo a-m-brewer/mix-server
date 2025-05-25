@@ -149,6 +149,7 @@ builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
 
 builder.Services.AddHostedService<MediaInfoService>();
+builder.Services.AddHostedService<TranscodeBackgroundService>();
 
 builder.Services.AddTransient<AbsolutePathMigrationService>();
 

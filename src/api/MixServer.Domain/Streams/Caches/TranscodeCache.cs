@@ -25,7 +25,7 @@ public interface ITranscodeCache : IDisposable
     Task InitializeAsync();
     TranscodeState GetTranscodeStatus(Guid transcodeId);
     TranscodeState GetTranscodeStatus(NodePath nodePath);
-    void CalculateHasCompletePlaylist(Guid transcodeId);
+    void CalculateHasCompletePlaylist(Guid transcodeId, CancellationToken cancellationToken = default);
     HlsPlaylistStreamFile GetPlaylistOrThrowAsync(Guid transcodeId);
     HlsSegmentStreamFile GetSegmentOrThrow(string segment);
 }
@@ -95,14 +95,14 @@ public class TranscodeCache(
             : TranscodeState.InProgress;
     }
 
-    public void CalculateHasCompletePlaylist(Guid transcodeId)
+    public void CalculateHasCompletePlaylist(Guid transcodeId, CancellationToken cancellationToken = default)
     {
         if (!_transcodeFolders.TryGetValue(transcodeId, out var transcode))
         {
             return;
         }
 
-        transcode.CalculateHasCompletePlaylist();
+        transcode.CalculateHasCompletePlaylist(cancellationToken);
     }
 
     public HlsPlaylistStreamFile GetPlaylistOrThrowAsync(Guid transcodeId)

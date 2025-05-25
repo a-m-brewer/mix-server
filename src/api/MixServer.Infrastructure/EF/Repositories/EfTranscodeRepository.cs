@@ -10,11 +10,11 @@ namespace MixServer.Infrastructure.EF.Repositories;
 
 public class EfTranscodeRepository(MixServerDbContext context) : ITranscodeRepository
 {
-    public async Task<Transcode> GetAsync(Guid id)
+    public async Task<Transcode> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await context.Transcodes
                    .IncludeNode()
-                   .SingleOrDefaultAsync(s => s.Id == id)
+                   .SingleOrDefaultAsync(s => s.Id == id, cancellationToken)
                ?? throw new NotFoundException(nameof(Transcode), id);
     }
 
