@@ -62,7 +62,6 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IDeviceService, DeviceService>();
         services.AddTransient<IDeviceDetectionService, DeviceDetectionService>();
         services.AddSingleton<IDeviceTrackingService, DeviceTrackingService>();
-        services.AddTransient<IDeviceDetectionPersistenceService, DeviceDetectionPersistenceService>();
         services.AddTransient<IRequestedPlaybackDeviceAccessor, RequestedPlaybackDeviceAccessor>();
 
         services.AddTransient<ITagBuilderFactory, TagLibSharpTagBuilderFactory>();

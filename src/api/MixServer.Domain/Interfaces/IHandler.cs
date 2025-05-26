@@ -14,6 +14,11 @@ public interface ICommandHandler<in TRequest> : IHandler
     Task HandleAsync(TRequest request);
 }
 
+public interface ICommandHandler2<in TRequest> : IHandler
+{
+    Task HandleAsync(TRequest request, CancellationToken cancellationToken);
+}
+
 public interface IQueryHandler<in TRequest, TResponse> : IHandler
 {
     Task<TResponse> HandleAsync(TRequest request);

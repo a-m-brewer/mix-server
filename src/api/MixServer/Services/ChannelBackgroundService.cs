@@ -30,7 +30,9 @@ public abstract class ChannelBackgroundService<T>(
                     try
                     {
                         using var scope = serviceProvider.CreateScope();
-                        await ProcessRequestAsync(request, scope.ServiceProvider, stoppingToken);
+                        await scope.ServiceProvider.GetRequiredService<ICommandHandler2<T>>()
+                            .HandleAsync(request, stoppingToken)
+                            .ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -49,6 +51,4 @@ public abstract class ChannelBackgroundService<T>(
             logger.LogError(e, "An error occurred in the transcode background service");
         }
     }
-    
-    protected abstract Task ProcessRequestAsync(T request, IServiceProvider serviceProvider, CancellationToken stoppingToken);
 }

@@ -148,7 +148,9 @@ builder.Services
 builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
 
-builder.Services.AddHostedService<MediaInfoService>();
+builder.Services.AddHostedService<FolderMediaMetadataSubscriber>();
+builder.Services.AddHostedService<UpdateMediaMetadataBackgroundService>();
+builder.Services.AddHostedService<RemoveMediaMetadataBackgroundService>();
 builder.Services.AddHostedService<TranscodeBackgroundService>();
 builder.Services.AddHostedService<DeviceDetectionBackgroundService>();
 

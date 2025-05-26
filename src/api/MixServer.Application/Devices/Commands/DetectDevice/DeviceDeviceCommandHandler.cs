@@ -1,26 +1,22 @@
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Models;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Domain.Utilities;
 
-namespace MixServer.Infrastructure.Users.Services;
+namespace MixServer.Application.Devices.Commands.DetectDevice;
 
-public interface IDeviceDetectionPersistenceService
-{
-    Task DetectAndPersistDeviceAsync(DeviceInfoRequest request, CancellationToken cancellationToken);
-}
-
-public class DeviceDetectionPersistenceService(
+public class DeviceDeviceCommandHandler(
     IDateTimeProvider dateTimeProvider,
     IDeviceDetectionService deviceDetectionService,
     IDeviceRepository deviceRepository,
     IDeviceTrackingService deviceTrackingService,
-    ILogger<DeviceDetectionPersistenceService> logger,
-    IUnitOfWork unitOfWork) : IDeviceDetectionPersistenceService
+    ILogger<DeviceDeviceCommandHandler> logger,
+    IUnitOfWork unitOfWork) : ICommandHandler2<DeviceInfoRequest>
 {
-    public async Task DetectAndPersistDeviceAsync(DeviceInfoRequest request, CancellationToken cancellationToken)
+    public async Task HandleAsync(DeviceInfoRequest request, CancellationToken cancellationToken)
     {
         logger.LogInformation("Populating Device Info for device: {DeviceId}", request.DeviceId);
         

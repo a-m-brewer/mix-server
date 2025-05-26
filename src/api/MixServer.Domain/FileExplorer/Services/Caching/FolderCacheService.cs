@@ -176,12 +176,12 @@ public class FolderCacheService(
         });
     }
 
-    private void OnItemRemoved(object? sender, NodePath nodePath)
+    private void OnItemRemoved(object? sender, IFileExplorerNode node)
     {
         if (!IsFolderCacheItem(sender, out var parent)) return;
         ItemRemoved?.Invoke(parent.Folder, new FolderCacheServiceItemRemovedEventArgs
         {
-            Path = nodePath,
+            Node = node,
             Parent = parent.Folder.Node
         });
     }

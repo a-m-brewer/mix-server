@@ -58,7 +58,7 @@ public class FileNotificationService(
 
     private async Task FolderCacheServiceOnItemRemoved(object? sender, IServiceProvider sp, FolderCacheServiceItemRemovedEventArgs e)
     {
-        await callbackService.FileExplorerNodeDeleted(e.Parent, e.Path);
+        await callbackService.FileExplorerNodeDeleted(e.Parent, e.Node.Path);
     }
     
     private async Task TranscodeCacheOnTranscodeStatusUpdated(object? sender, IServiceProvider sp, TranscodeStatusUpdatedEventArgs e)

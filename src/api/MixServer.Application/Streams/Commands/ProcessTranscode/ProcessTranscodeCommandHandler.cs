@@ -1,29 +1,25 @@
 using CliWrap;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MixServer.Domain.Interfaces;
 using MixServer.Domain.Settings;
 using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Streams.Models;
 using MixServer.Domain.Streams.Repositories;
 
-namespace MixServer.Domain.Streams.Services;
+namespace MixServer.Application.Streams.Commands.ProcessTranscode;
 
-public interface ITranscodeWorkerService
-{
-    Task ProcessTranscodeRequestAsync(TranscodeRequest request, CancellationToken cancellationToken);
-}
-
-public class TranscodeWorkerService(
+public class ProcessTranscodeCommandHandler(
     IOptions<CacheFolderSettings> cacheFolderSettings,
     IOptions<FfmpegSettings> ffmpegSettings,
-    ILogger<TranscodeWorkerService> logger,
+    ILogger<ProcessTranscodeCommandHandler> logger,
     ITranscodeCache transcodeCache,
-    ITranscodeRepository transcodeRepository) : ITranscodeWorkerService
+    ITranscodeRepository transcodeRepository) : ICommandHandler2<TranscodeRequest>
 {
     private const int HlsTime = 4;
     private const int DefaultBitrate = 192;
     
-    public async Task ProcessTranscodeRequestAsync(TranscodeRequest request, CancellationToken cancellationToken)
+    public async Task HandleAsync(TranscodeRequest request, CancellationToken cancellationToken)
     {
         var transcode = await transcodeRepository.GetAsync(request.TranscodeId, cancellationToken);
         
