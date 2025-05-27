@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Models;
-using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
 
@@ -20,105 +19,147 @@ public interface IPlaybackState
 public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger) : IPlaybackState
 {
     private readonly ManualResetEventSlim _pauseSemaphore = new(true);
+    private readonly object _lock = new();
+
     private Guid? _deviceId = session.DeviceId;
+    private Guid? _lastPlaybackDeviceId = session.LastPlaybackDeviceId;
+    private bool _playing = session.Playing;
+    private TimeSpan _currentTime = session.CurrentTime;
+    private Guid? _sessionId = session.SessionId;
+    private NodePath? _nodePath;
 
     public event EventHandler<AudioPlayerStateUpdateType>? AudioPlayerStateUpdated;
-    
+
     public string UserId { get; } = session.UserId;
 
-    public Guid? SessionId { get; private set; } = session.SessionId;
+    public Guid? SessionId
+    {
+        get { lock (_lock) return _sessionId; }
+    }
 
-    public required NodePath? NodePath { get; set; }
+    public required NodePath? NodePath
+    {
+        get { lock (_lock) return _nodePath; }
+        init { lock (_lock) _nodePath = value; }
+    }
 
-    public Guid? LastPlaybackDeviceId { get; private set; } = session.LastPlaybackDeviceId;
+    public Guid? LastPlaybackDeviceId
+    {
+        get { lock (_lock) return _lastPlaybackDeviceId; }
+    }
 
     public Guid? DeviceId
     {
-        get => _deviceId;
+        get
+        {
+            lock (_lock) return _deviceId;
+        }
         set
         {
-            _deviceId = value;
-            if (_deviceId.HasValue)
+            lock (_lock)
             {
-                LastPlaybackDeviceId = _deviceId;
+                _deviceId = value;
+                if (_deviceId.HasValue)
+                {
+                    _lastPlaybackDeviceId = _deviceId;
+                }
             }
         }
     }
 
     public bool HasDevice => DeviceId.HasValue && DeviceId.Value != Guid.Empty;
-    
+
     public Guid DeviceIdOrThrow => HasDevice
         ? DeviceId!.Value
-        : throw new InvalidRequestException(nameof(DeviceId),
-            $"Playback State for {UserId} currently does not have a device");
+        : throw new InvalidRequestException(nameof(DeviceId), $"Playback State for {UserId} currently does not have a device");
 
-    public bool Playing { get; private set; } = session.Playing;
+    public bool Playing
+    {
+        get { lock (_lock) return _playing; }
+    }
 
-    public TimeSpan CurrentTime { get; private set; } = session.CurrentTime;
+    public TimeSpan CurrentTime
+    {
+        get { lock (_lock) return _currentTime; }
+    }
 
     public void UpdateWithoutEvents(IPlaybackSession session, NodePath nodePath, bool includePlaying)
     {
         if (session.UserId != UserId)
         {
             throw new InvalidRequestException(nameof(UserId),
-                "Trying to update playback state with another sessions state");
+                "Trying to update playback state with another session's state");
         }
-        
-        SessionId = session.SessionId;
-        DeviceId = session.DeviceId;
-        NodePath = nodePath;
 
-        if (includePlaying)
+        lock (_lock)
         {
-            SetPlaying(session.Playing, session.CurrentTime, false);
-        }
-        else
-        {
-            CurrentTime = session.CurrentTime;
+            _sessionId = session.SessionId;
+            _deviceId = session.DeviceId;
+            _nodePath = nodePath;
+
+            if (includePlaying)
+            {
+                _playing = session.Playing;
+            }
+
+            _currentTime = session.CurrentTime;
         }
     }
 
     public void SetWaitingForPause()
     {
         _pauseSemaphore.Reset();
-        
         logger.LogWarning("Set Waiting For Pause IsSet: {IsSet}", _pauseSemaphore.IsSet);
     }
 
     public void WaitForPause()
     {
         var success = _pauseSemaphore.Wait(TimeSpan.FromSeconds(20));
-
-        if (success)
+        if (!success)
         {
-            return;
+            SetPlaying(Playing, CurrentTime);
         }
-
-        SetPlaying(Playing, CurrentTime);
     }
 
     public void HandleDeviceDisconnected(Guid deviceId)
     {
-        if (!DeviceId.HasValue || DeviceId.Value != deviceId)
+        bool shouldRaise;
+
+        lock (_lock)
         {
-            return;
+            if (!_deviceId.HasValue || _deviceId.Value != deviceId)
+                return;
+
+            _deviceId = null;
+            _playing = false;
+            shouldRaise = true;
         }
 
-        DeviceId = null;
-        SetPlaying(false, CurrentTime);
+        _pauseSemaphore.Set();
+
+        if (shouldRaise)
+        {
+            AudioPlayerStateChanged(AudioPlayerStateUpdateType.Playing);
+        }
     }
-    
+
     public void SetPlaying(bool playing, TimeSpan currentTime, bool raiseEvents = true)
     {
+        bool changed;
+
+        lock (_lock)
+        {
+            _playing = playing;
+            _currentTime = currentTime;
+            changed = raiseEvents;
+        }
+
         if (!playing)
         {
             _pauseSemaphore.Set();
         }
 
-        Playing = playing;
-        CurrentTime = currentTime;
-
-        if (raiseEvents)
+        if (changed)
         {
             AudioPlayerStateChanged(AudioPlayerStateUpdateType.Playing);
         }
@@ -126,43 +167,60 @@ public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger
 
     public void Seek(TimeSpan time)
     {
-        CurrentTime = time;
+        lock (_lock)
+        {
+            _currentTime = time;
+        }
 
         AudioPlayerStateChanged(AudioPlayerStateUpdateType.Seek);
     }
 
     public void UpdateAudioPlayerCurrentTime(Guid deviceId, TimeSpan currentTime)
     {
-        AssertPlayingDeviceUpdatedState(deviceId);
+        bool changed;
 
-        if (!Playing)
+        lock (_lock)
         {
-            throw new InvalidRequestException(nameof(Playing), "Can not update playback state whilst paused");
+            if (_deviceId != deviceId)
+            {
+                throw new InvalidRequestException(nameof(DeviceId),
+                    $"Only the playing device can update state. Expected: {_deviceId}, got: {deviceId}");
+            }
+
+            if (!_playing)
+            {
+                throw new InvalidRequestException(nameof(Playing), "Cannot update playback state while paused");
+            }
+
+            _currentTime = currentTime;
+            changed = true;
         }
 
-        CurrentTime = currentTime;
-
-        AudioPlayerStateChanged(AudioPlayerStateUpdateType.CurrentTime);
+        if (changed)
+        {
+            AudioPlayerStateChanged(AudioPlayerStateUpdateType.CurrentTime);
+        }
     }
 
-    private void AssertPlayingDeviceUpdatedState(Guid deviceId)
+    public void ClearSession()
     {
-        if (deviceId != DeviceId)
+        lock (_lock)
         {
-            throw new InvalidRequestException(nameof(DeviceId),
-                $"Only playing device can set paused state Playing: {DeviceId} Requester: {deviceId}");
+            _sessionId = null;
+            _nodePath = null;
+            _currentTime = TimeSpan.Zero;
         }
     }
 
     private void AudioPlayerStateChanged(AudioPlayerStateUpdateType type)
     {
-        AudioPlayerStateUpdated?.Invoke(this, type);
-    }
-
-    public void ClearSession()
-    {
-        SessionId = null;
-        NodePath = null;
-        CurrentTime = TimeSpan.Zero;
+        try
+        {
+            AudioPlayerStateUpdated?.Invoke(this, type);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error during AudioPlayerStateUpdated event invocation");
+        }
     }
 }

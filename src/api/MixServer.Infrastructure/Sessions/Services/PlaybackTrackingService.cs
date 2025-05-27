@@ -1,5 +1,5 @@
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using DebounceThrottle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
@@ -10,7 +10,6 @@ using MixServer.Domain.Sessions.Enums;
 using MixServer.Domain.Sessions.Models;
 using MixServer.Domain.Sessions.Repositories;
 using MixServer.Domain.Sessions.Services;
-using MixServer.Domain.Utilities;
 using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Infrastructure.Sessions.Services;
@@ -19,11 +18,10 @@ public class PlaybackTrackingService(
     IUpdateSessionStateRateLimiter updateSessionStateRateLimiter,
     ILogger<PlaybackTrackingService> logger,
     ILoggerFactory loggerFactory,
-    IReadWriteLock readWriteLock,
     IServiceProvider serviceProvider)
     : IPlaybackTrackingService
 {
-    private readonly Dictionary<string, PlaybackState> _playingItems = new();
+    private readonly ConcurrentDictionary<string, PlaybackState> _playingItems = new();
     private readonly KeyedDebouncer<Guid> _saveSessionStateDebouncer = new(
         TimeSpan.FromSeconds(5),
         logger,
@@ -31,33 +29,22 @@ public class PlaybackTrackingService(
 
     public PlaybackState GetOrThrow(string userId)
     {
-        return readWriteLock.ForRead(() =>
+        if (_playingItems.TryGetValue(userId, out var state))
         {
-            if (_playingItems.TryGetValue(userId, out var state))
-            {
-                return state;
-            }
+            return state;
+        }
 
-            throw new NotFoundException(nameof(PlaybackState), userId);
-        });
+        throw new NotFoundException(nameof(PlaybackState), userId);
     }
 
     public bool TryGet(string userId, [MaybeNullWhen(false)] out PlaybackState state)
     {
-        var res = readWriteLock.ForRead(() =>
-        {
-            var found = _playingItems.TryGetValue(userId, out var existingState);
-
-            return (found, existingState);
-        });
-
-        state = res.existingState;
-        return res.found;
+        return _playingItems.TryGetValue(userId, out state);
     }
 
     public bool IsTracking(string userId)
     {
-        return readWriteLock.ForRead(() => _playingItems.ContainsKey(userId));
+        return _playingItems.ContainsKey(userId);
     }
 
     public void UpdateSessionState(IPlaybackSession session)
@@ -72,89 +59,77 @@ public class PlaybackTrackingService(
 
     private void UpdateSessionState(IPlaybackSession session, bool includePlaying)
     {
-        readWriteLock.ForWrite(() =>
-        {
-            var nodePath = session.NodeEntity.Path;
+        var nodePath = session.NodeEntity.Path;
             
-            if (_playingItems.TryGetValue(session.UserId, out var existingItem))
-            {
-                existingItem.UpdateWithoutEvents(session, nodePath, includePlaying);
-            }
-            else
-            {
-                logger.LogInformation("Started tracking user's ({UserId}) playback state", session.UserId);
+        if (_playingItems.TryGetValue(session.UserId, out var existingItem))
+        {
+            existingItem.UpdateWithoutEvents(session, nodePath, includePlaying);
+        }
+        else
+        {
+            logger.LogInformation("Started tracking user's ({UserId}) playback state", session.UserId);
                 
-                var newSession = new PlaybackState(session, loggerFactory.CreateLogger<PlaybackState>())
-                {
-                    NodePath = nodePath
-                };
-                newSession.AudioPlayerStateUpdated += OnAudioPlayerStateUpdated;
+            var newSession = new PlaybackState(session, loggerFactory.CreateLogger<PlaybackState>())
+            {
+                NodePath = nodePath
+            };
+            newSession.AudioPlayerStateUpdated += OnAudioPlayerStateUpdated;
                 
-                _playingItems[session.UserId] = newSession;
-            }
-        });
+            _playingItems[session.UserId] = newSession;
+        }
     }
 
     public void ClearSession(string userId)
     {
-        readWriteLock.ForWrite(() =>
+        if (!_playingItems.TryGetValue(userId, out var state))
         {
-            if (!_playingItems.TryGetValue(userId, out var state))
-            {
-                return;
-            }
+            return;
+        }
 
-            state.ClearSession();
-        });
+        state.ClearSession();
     }
 
     public void UpdateAudioPlayerCurrentTime(string userId, Guid requestingDeviceId, TimeSpan currentTime)
     {
-        readWriteLock.ForWrite(() =>
+        if (!_playingItems.TryGetValue(userId, out var state))
         {
-            if (!_playingItems.TryGetValue(userId, out var state))
-            {
-                logger.LogWarning("Could not find playback state for user: {UserId}", userId);
-                return;
-            }
+            logger.LogWarning("Could not find playback state for user: {UserId}", userId);
+            return;
+        }
 
-            if (!updateSessionStateRateLimiter.TryAcquire(userId))
-            {
-                logger.LogTrace("Failed to acquire lease to update user: {UserId}'s session due to to many requests", userId);
-                return;
-            }
+        if (!updateSessionStateRateLimiter.TryAcquire(userId))
+        {
+            logger.LogTrace("Failed to acquire lease to update user: {UserId}'s session due to to many requests", userId);
+            return;
+        }
             
-            if (state.DeviceId != requestingDeviceId)
-            {
-                logger.LogWarning("Could not update playback current time for user: {UserId} due mismatching devices" + 
-                                   " Requesting Device: {RequestingDeviceId} State DeviceId: {StateDeviceId}",
-                    userId,
-                    requestingDeviceId,
-                    state.DeviceId);
-                return;
-            }
+        if (state.DeviceId != requestingDeviceId)
+        {
+            logger.LogWarning("Could not update playback current time for user: {UserId} due mismatching devices" + 
+                              " Requesting Device: {RequestingDeviceId} State DeviceId: {StateDeviceId}",
+                userId,
+                requestingDeviceId,
+                state.DeviceId);
+            return;
+        }
 
-            if (!state.Playing)
-            {
-                logger.LogWarning("Could not update playback current time for user: {UserId} as the session is not playing", userId);
-                return;
-            }
+        if (!state.Playing)
+        {
+            logger.LogWarning("Could not update playback current time for user: {UserId} as the session is not playing", userId);
+            return;
+        }
 
-            state.UpdateAudioPlayerCurrentTime(requestingDeviceId, currentTime);
-        });
+        state.UpdateAudioPlayerCurrentTime(requestingDeviceId, currentTime);
     }
 
     public void UpdatePlaybackDevice(string userId, Guid deviceId)
     {
-        readWriteLock.ForWrite(() =>
+        if (!_playingItems.TryGetValue(userId, out var state))
         {
-            if (!_playingItems.TryGetValue(userId, out var state))
-            {
-                return;
-            }
+            return;
+        }
 
-            state.DeviceId = deviceId;
-        });
+        state.DeviceId = deviceId;
     }
 
     public void SetWaitingForPause(string userId)
@@ -221,29 +196,20 @@ public class PlaybackTrackingService(
 
     public void HandleDeviceDisconnected(string userId, Guid deviceId)
     {
-        readWriteLock.ForUpgradeableRead(() =>
+        if (_playingItems.TryGetValue(userId, out var state))
         {
-            if (_playingItems.TryGetValue(userId, out var state))
-            {
-                readWriteLock.ForWrite(() =>
-                {
-                    state.HandleDeviceDisconnected(deviceId);
-                });
-            }
-        });
+            state.HandleDeviceDisconnected(deviceId);
+        }
     }
 
     public void Populate(IPlaybackSession session)
     {
-        readWriteLock.ForRead(() =>
+        if (!_playingItems.TryGetValue(session.UserId, out var playingItem))
         {
-            if (!_playingItems.TryGetValue(session.UserId, out var playingItem))
-            {
-                return;
-            }
+            return;
+        }
 
-            session.PopulateState(playingItem);
-        });
+        session.PopulateState(playingItem);
     }
 
     private async Task TrySavePlaybackStateAsync(IPlaybackState playbackState, AudioPlayerStateUpdateType type)
