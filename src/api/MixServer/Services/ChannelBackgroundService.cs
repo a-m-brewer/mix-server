@@ -7,7 +7,7 @@ public abstract class ChannelBackgroundService<T>(
     IServiceProvider serviceProvider,
     ILogger logger,
     int? workers = null)
-    : BackgroundService
+    : BackgroundService where T : notnull
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -31,12 +31,16 @@ public abstract class ChannelBackgroundService<T>(
                     {
                         using var scope = serviceProvider.CreateScope();
                         await scope.ServiceProvider.GetRequiredService<ICommandHandler2<T>>()
-                            .HandleAsync(request, stoppingToken)
+                            .HandleAsync(request.Request, stoppingToken)
                             .ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
-                        logger.LogError(e, "Error while transcode directory: {Directory}", request);
+                        logger.LogError(e, "Error while transcode directory: {Directory}", request.Request);
+                    }
+                    finally
+                    {
+                        request.Dispose();
                     }
                 }
             }

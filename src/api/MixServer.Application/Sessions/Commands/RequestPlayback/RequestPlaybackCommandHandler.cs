@@ -40,7 +40,7 @@ public class RequestPlaybackCommandHandler(
             throw new InvalidRequestException(nameof(playbackState.NodePath), "Playback file state is not set");
         }
 
-        var file = folderCacheService.GetFile(playbackState.NodePath);
+        var file = await folderCacheService.GetFileAsync(playbackState.NodePath);
 
         canPlayOnDeviceValidator.ValidateCanPlayOrThrow(deviceState, file);
 

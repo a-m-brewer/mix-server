@@ -7,9 +7,11 @@ using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Enums;
 using MixServer.Domain.Queueing.Services;
+using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Users.Repositories;
+using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.Queueing.Models;
 using MixServer.Infrastructure.Queueing.Repositories;
 using MixServer.Infrastructure.Users.Repository;
@@ -21,6 +23,7 @@ public class QueueService(
     ICallbackService callbackService,
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
+    IRequestedPlaybackDeviceAccessor requestedPlaybackDeviceAccessor,
     IFileService fileService,
     ILogger<QueueService> logger,
     IQueueRepository queueRepository,
@@ -58,13 +61,13 @@ public class QueueService(
         
         if (files.All(a => !a.Path.IsEqualTo(nextSessionPath)))
         {
-            files.Add(fileService.GetFile(nextSessionPath));
+            files.Add(await fileService.GetFileAsync(nextSessionPath));
         }
 
         queue.RegenerateFolderQueueSortItems(files);
         queue.SetQueuePositionFromFolderItemOrThrow(nextSessionPath);
 
-        var queueSnapshot = GenerateQueueSnapshot(queue, files);
+        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, files);
 
         unitOfWork.InvokeCallbackOnSaved(c =>
             c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
@@ -166,7 +169,7 @@ public class QueueService(
 
         queue.Sort(files);
 
-        var queueSnapshot = GenerateQueueSnapshot(queue, files);
+        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, files);
         unitOfWork.InvokeCallbackOnSaved(c => c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, queueSnapshot));
     }
 
@@ -201,12 +204,12 @@ public class QueueService(
     
     private async Task<QueueSnapshot> GenerateQueueSnapshotAsync(UserQueue userQueue)
     {
-        return GenerateQueueSnapshot(userQueue, await GetPlayableFilesInFolderAsync(userQueue.CurrentFolderPath));
+        return await GenerateQueueSnapshotAsync(userQueue, await GetPlayableFilesInFolderAsync(userQueue.CurrentFolderPath));
     }
     
-    private QueueSnapshot GenerateQueueSnapshot(UserQueue userQueue, IEnumerable<IFileExplorerFileNode> folderFiles)
+    private async Task<QueueSnapshot> GenerateQueueSnapshotAsync(UserQueue userQueue, IEnumerable<IFileExplorerFileNode> folderFiles)
     {
-        var userQueueFiles = fileService.GetFiles(userQueue.UserQueueItemsAbsoluteFilePaths);
+        var userQueueFiles = await fileService.GetFilesAsync(userQueue.UserQueueItemsAbsoluteFilePaths);
 
         var allFiles = new List<IFileExplorerFileNode>(userQueueFiles);
         allFiles.AddRange(folderFiles);
@@ -246,6 +249,11 @@ public class QueueService(
         bool skip,
         List<QueueSnapshotItem> queueItems)
     {
+        if (!requestedPlaybackDeviceAccessor.HasPlaybackDevice)
+        {
+            return null;
+        }
+        
         var requestedOffset = skip ? 1 : -1;
         
         var currentIndex = queueItems.FindIndex(f => f.Id == currentQueuePosition);

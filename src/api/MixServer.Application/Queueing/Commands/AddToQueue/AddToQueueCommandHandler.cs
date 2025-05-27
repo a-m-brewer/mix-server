@@ -20,7 +20,7 @@ public class AddToQueueCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request);
 
-        var file = fileService.GetFile(nodePathDtoConverter.Convert(request.NodePath));
+        var file = await fileService.GetFileAsync(nodePathDtoConverter.Convert(request.NodePath));
 
         var queueSnapshot = await queueService.AddToQueueAsync(file);
 

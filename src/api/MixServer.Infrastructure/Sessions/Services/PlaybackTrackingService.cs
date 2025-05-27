@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using DebounceThrottle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
@@ -15,7 +16,6 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Infrastructure.Sessions.Services;
 
 public class PlaybackTrackingService(
-    ISaveSessionStateRateLimiter saveSessionStateRateLimiter,
     IUpdateSessionStateRateLimiter updateSessionStateRateLimiter,
     ILogger<PlaybackTrackingService> logger,
     ILoggerFactory loggerFactory,
@@ -24,6 +24,10 @@ public class PlaybackTrackingService(
     : IPlaybackTrackingService
 {
     private readonly Dictionary<string, PlaybackState> _playingItems = new();
+    private readonly KeyedDebouncer<Guid> _saveSessionStateDebouncer = new(
+        TimeSpan.FromSeconds(5),
+        logger,
+        TimeSpan.FromSeconds(30));
 
     public PlaybackState GetOrThrow(string userId)
     {
@@ -250,37 +254,39 @@ public class PlaybackTrackingService(
             return;
         }
         
-        if (type == AudioPlayerStateUpdateType.CurrentTime && !saveSessionStateRateLimiter.TryAcquire(playbackState.SessionId.Value))
+        if (type == AudioPlayerStateUpdateType.CurrentTime)
         {
-            logger.LogTrace("Failed to acquire lease to save session: {SessionId} due to to many requests", playbackState.SessionId);
             return;
         }
-        
-        try
+
+        await _saveSessionStateDebouncer.DebounceAsync(playbackState.SessionId.Value, async () =>
         {
-            using var scope = serviceProvider.CreateScope();
-            var currentUserRepository = scope.ServiceProvider.GetRequiredService<ICurrentUserRepository>();
-            var playbackSessionRepository = scope.ServiceProvider.GetRequiredService<IPlaybackSessionRepository>();
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
-            logger.LogDebug("Saving Session: {SessionId}", playbackState.SessionId);
-            await currentUserRepository.LoadUserAsync(playbackState.UserId);
-            var currentUser = currentUserRepository.CurrentUser;
-
-            var session = await playbackSessionRepository.GetAsync(playbackState.SessionId.Value);
-
-            if (currentUser.Id != session.UserId)
+            try
             {
-                return;
+                using var scope = serviceProvider.CreateScope();
+                var currentUserRepository = scope.ServiceProvider.GetRequiredService<ICurrentUserRepository>();
+                var playbackSessionRepository = scope.ServiceProvider.GetRequiredService<IPlaybackSessionRepository>();
+                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+                logger.LogDebug("Saving Session: {SessionId}", playbackState.SessionId);
+                await currentUserRepository.LoadUserAsync(playbackState.UserId);
+                var currentUser = currentUserRepository.CurrentUser;
+
+                var session = await playbackSessionRepository.GetAsync(playbackState.SessionId.Value);
+
+                if (currentUser.Id != session.UserId)
+                {
+                    return;
+                }
+
+                session.CurrentTime = playbackState.CurrentTime;
+
+                await unitOfWork.SaveChangesAsync();
             }
-
-            session.CurrentTime = playbackState.CurrentTime;
-
-            await unitOfWork.SaveChangesAsync();
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "Failed to save playback state");
-        }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Failed to save playback state");
+            }
+        });
     }
 }

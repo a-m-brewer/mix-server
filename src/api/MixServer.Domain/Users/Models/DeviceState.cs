@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using MixServer.Domain.FileExplorer.Models;
 
 namespace MixServer.Domain.Users.Models;
@@ -11,7 +12,7 @@ public interface IDeviceState
     
     bool Online { get;}
 
-    Dictionary<string, bool> Capabilities { get; }
+    ConcurrentDictionary<string, bool> Capabilities { get; }
     bool CanPlay(IFileExplorerFileNode? sessionFile);
 }
 
@@ -27,7 +28,7 @@ public class DeviceState(Guid deviceId) : IDeviceState
     
     public bool InteractedWith { get; private set; }
     
-    public Dictionary<string, bool> Capabilities { get; } = new();
+    public ConcurrentDictionary<string, bool> Capabilities { get; } = new();
 
     public bool CanPlay(IFileExplorerFileNode? sessionFile)
     {

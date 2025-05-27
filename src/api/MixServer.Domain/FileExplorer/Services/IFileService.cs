@@ -6,8 +6,8 @@ public interface IFileService
 {
     Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath);
     Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath);
-    List<IFileExplorerFileNode> GetFiles(IReadOnlyList<NodePath> nodePaths);
-    IFileExplorerFileNode GetFile(NodePath nodePath);
+    Task<List<IFileExplorerFileNode>> GetFilesAsync(IReadOnlyList<NodePath> nodePaths);
+    Task<IFileExplorerFileNode> GetFileAsync(NodePath nodePath);
     void CopyNode(
         NodePath sourcePath,
         NodePath destinationPath,

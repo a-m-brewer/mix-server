@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations.Schema;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Users.Enums;
@@ -31,7 +32,7 @@ public class Device : IDevice
     public bool Online { get; set; }
 
     [NotMapped]
-    public Dictionary<string, bool> Capabilities { get; private set; } = new();
+    public ConcurrentDictionary<string, bool> Capabilities { get; private set; } = new();
 
     public bool CanPlay(IFileExplorerFileNode? sessionFile)
     {

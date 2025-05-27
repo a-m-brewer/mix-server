@@ -12,6 +12,7 @@ namespace MixServer.Infrastructure.Files.Services;
 
 public class FileService(
     ICurrentUserRepository currentUserRepository,
+    IFileExplorerConverter fileExplorerConverter,
     IFolderCacheService folderCacheService,
     IFolderPersistenceService folderPersistenceService,
     IFolderSortRepository folderSortRepository,
@@ -20,7 +21,7 @@ public class FileService(
 {
     public async Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath)
     {
-        var cacheItem = folderCacheService.GetOrAdd(nodePath);
+        var cacheItem = await folderCacheService.GetOrAddAsync(nodePath);
 
         var folder = cacheItem.Folder;
 
@@ -56,14 +57,31 @@ public class FileService(
             : throw new NotFoundException("Folder", nodePath.AbsolutePath);
     }
 
-    public List<IFileExplorerFileNode> GetFiles(IReadOnlyList<NodePath> absoluteFilePaths)
+    public async Task<List<IFileExplorerFileNode>> GetFilesAsync(IReadOnlyList<NodePath> absoluteFilePaths)
     {
-        return absoluteFilePaths.Select(GetFile).ToList();
+        var groupedPaths = await Task.WhenAll(absoluteFilePaths
+            .Select(s => s.Parent)
+            .DistinctBy(d => d.AbsolutePath)
+            .Select(folderCacheService.GetOrAddAsync));
+
+        var files = new List<IFileExplorerFileNode>();
+        foreach (var nodePath in absoluteFilePaths)
+        {
+            var parent = groupedPaths.First(f => f.Folder.Node.Path.IsEqualTo(nodePath.Parent)).Folder;
+            var file = parent.Children
+                .OfType<IFileExplorerFileNode>()
+                .FirstOrDefault(f => f.Path.IsEqualTo(nodePath)) ?? 
+                       fileExplorerConverter.Convert(new FileInfo(nodePath.AbsolutePath), parent.Node);
+
+            files.Add(file);
+        }
+        
+        return files;
     }
 
-    public IFileExplorerFileNode GetFile(NodePath nodePath)
+    public async Task<IFileExplorerFileNode> GetFileAsync(NodePath nodePath)
     {
-        return folderCacheService.GetFile(nodePath);
+        return await folderCacheService.GetFileAsync(nodePath);
     }
 
     public void CopyNode(

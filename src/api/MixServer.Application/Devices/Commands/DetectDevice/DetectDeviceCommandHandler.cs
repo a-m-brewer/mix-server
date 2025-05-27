@@ -8,12 +8,12 @@ using MixServer.Domain.Utilities;
 
 namespace MixServer.Application.Devices.Commands.DetectDevice;
 
-public class DeviceDeviceCommandHandler(
+public class DetectDeviceCommandHandler(
     IDateTimeProvider dateTimeProvider,
     IDeviceDetectionService deviceDetectionService,
     IDeviceRepository deviceRepository,
     IDeviceTrackingService deviceTrackingService,
-    ILogger<DeviceDeviceCommandHandler> logger,
+    ILogger<DetectDeviceCommandHandler> logger,
     IUnitOfWork unitOfWork) : ICommandHandler2<DeviceInfoRequest>
 {
     public async Task HandleAsync(DeviceInfoRequest request, CancellationToken cancellationToken)

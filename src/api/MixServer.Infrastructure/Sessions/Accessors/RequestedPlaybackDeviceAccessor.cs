@@ -13,19 +13,20 @@ public class RequestedPlaybackDeviceAccessor(
     ICurrentDeviceRepository currentDeviceRepository,
     IDeviceTrackingService deviceTrackingService) : IRequestedPlaybackDeviceAccessor
 {
-    public IDeviceState PlaybackDevice
-    {
-        get
-        {
-            var user = currentUserRepository.CurrentUser;
-        
-            var requestedDeviceId = playbackTrackingService.TryGet(user.Id, out var state) && state.HasDevice
-                ? state.DeviceIdOrThrow
-                : currentDeviceRepository.DeviceId;
-        
-            return deviceTrackingService.GetDeviceStateOrThrow(requestedDeviceId);
-        }
-    }
+    public IDeviceState PlaybackDevice => deviceTrackingService.GetDeviceStateOrThrow(GetPlaybackDeviceId());
+
+    public bool HasPlaybackDevice => deviceTrackingService.HasDeviceState(GetPlaybackDeviceId());
 
     public IDeviceState RequestDevice => deviceTrackingService.GetDeviceStateOrThrow(currentDeviceRepository.DeviceId);
+
+    private Guid GetPlaybackDeviceId()
+    {
+        var user = currentUserRepository.CurrentUser;
+        
+        var requestedDeviceId = playbackTrackingService.TryGet(user.Id, out var state) && state.HasDevice
+            ? state.DeviceIdOrThrow
+            : currentDeviceRepository.DeviceId;
+        
+        return requestedDeviceId;
+    }
 }

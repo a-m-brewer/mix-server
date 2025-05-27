@@ -23,6 +23,11 @@ public class DeviceTrackingService(
             : throw new NotFoundException(nameof(DeviceState), deviceId);
     }
 
+    public bool HasDeviceState(Guid deviceId)
+    {
+        return _states.ContainsKey(deviceId);
+    }
+
     public void SetOnline(string userId, Guid deviceId, bool online)
     {
         GetOrAdd(userId, deviceId, state =>

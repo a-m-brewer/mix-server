@@ -18,7 +18,7 @@ public class UpdateMediaMetadataCommandHandler(
 {
     public async Task HandleAsync(UpdateMediaMetadataRequest request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Updating media metadata for {Path}", request.NodePath);
+        // logger.LogDebug("Updating media metadata for {Path}", request.NodePath);
         
         using var tb = tagBuilderFactory.CreateReadOnly(request.NodePath.AbsolutePath);
         var tracklist = tracklistTagService.GetTracklist(tb);

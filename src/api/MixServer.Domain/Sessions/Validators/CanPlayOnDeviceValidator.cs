@@ -11,7 +11,6 @@ public interface ICanPlayOnDeviceValidator
 {
     void ValidateCanPlayOrThrow(IDeviceState deviceState, IFileExplorerFileNode file);
     bool CanPlay(IFileExplorerFileNode itemFile);
-    bool CanPlay(IDeviceState deviceState, IFileExplorerFileNode itemFile);
 }
 
 public class CanPlayOnDeviceValidator(ITranscodeCache transcodeCache,
@@ -30,7 +29,7 @@ public class CanPlayOnDeviceValidator(ITranscodeCache transcodeCache,
         return CanPlay(requestedPlaybackDeviceAccessor.PlaybackDevice, itemFile);
     }
 
-    public bool CanPlay(IDeviceState deviceState, IFileExplorerFileNode file)
+    private bool CanPlay(IDeviceState deviceState, IFileExplorerFileNode file)
     {
         return file.PlaybackSupported && 
                (deviceState.CanPlay(file) ||

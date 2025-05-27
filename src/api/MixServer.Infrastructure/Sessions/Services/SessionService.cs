@@ -87,7 +87,7 @@ public class SessionService(
         
         user.CurrentPlaybackSession = session;
 
-        sessionHydrationService.Hydrate(session);
+        await sessionHydrationService.HydrateAsync(session);
         
         unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(session.UserId, currentDeviceRepository.DeviceId, session));
         return session;
@@ -111,7 +111,7 @@ public class SessionService(
     {
         var session = await playbackSessionRepository.GetAsync(id);
 
-        sessionHydrationService.Hydrate(session);
+        await sessionHydrationService.HydrateAsync(session);
         
         return session;
     }
@@ -120,7 +120,7 @@ public class SessionService(
     {
         var session = await GetCurrentPlaybackSessionAsync();
         
-        sessionHydrationService.Hydrate(session);
+        await sessionHydrationService.HydrateAsync(session);
 
         return session;
     }
@@ -154,10 +154,7 @@ public class SessionService(
 
         var sessions = user.PlaybackSessions;
 
-        foreach (var session in sessions)
-        {
-            sessionHydrationService.Hydrate(session);
-        }
+        await Task.WhenAll(sessions.Select(sessionHydrationService.HydrateAsync));
 
         return sessions;
     }
