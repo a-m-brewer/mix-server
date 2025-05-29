@@ -12,13 +12,16 @@ public class StreamController(IQueryHandler<GetStreamQuery, StreamFile> getStrea
 {
     [HttpGet("{id}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetStream([FromRoute] string id, [FromQuery] StreamSecurityParametersDto securityParameters)
+    public async Task<IActionResult> GetStream(
+        [FromRoute] string id,
+        [FromQuery] StreamSecurityParametersDto securityParameters,
+        CancellationToken cancellationToken)
     {
         var stream = await getStreamQueryHandler.HandleAsync(new GetStreamQuery
         {
             Id = id,
             SecurityParameters = securityParameters
-        });
+        }, cancellationToken);
         
         return new PhysicalFileResult(stream.FilePath.AbsolutePath, stream.ContentType)
         {

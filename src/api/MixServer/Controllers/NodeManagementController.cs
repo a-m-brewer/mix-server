@@ -21,9 +21,9 @@ public class NodeManagementController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> CopyNode([FromBody] CopyNodeCommand command)
+    public async Task<IActionResult> CopyNode([FromBody] CopyNodeCommand command, CancellationToken cancellationToken)
     {
-        await copyNodeCommandHandler.HandleAsync(command);
+        await copyNodeCommandHandler.HandleAsync(command, cancellationToken);
 
         return NoContent();
     }
@@ -32,9 +32,9 @@ public class NodeManagementController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteNode([FromBody] DeleteNodeCommand command)
+    public async Task<IActionResult> DeleteNode([FromBody] DeleteNodeCommand command, CancellationToken cancellationToken)
     {
-        await deleteNodeCommandHandler.HandleAsync(command);
+        await deleteNodeCommandHandler.HandleAsync(command, cancellationToken);
 
         return NoContent();
     }

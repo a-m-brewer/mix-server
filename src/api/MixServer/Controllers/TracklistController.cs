@@ -18,9 +18,9 @@ public class TracklistController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SaveTracklist([FromBody] SaveTracklistCommand command)
+    public async Task<IActionResult> SaveTracklist([FromBody] SaveTracklistCommand command, CancellationToken cancellationToken)
     {
-        return Ok(await saveTracklistCommandHandler.HandleAsync(command));
+        return Ok(await saveTracklistCommandHandler.HandleAsync(command, cancellationToken));
     }
     
     [HttpPost("import")]
@@ -28,9 +28,9 @@ public class TracklistController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ImportTracklist([FromForm] ImportTracklistCommand command)
+    public async Task<IActionResult> ImportTracklist([FromForm] ImportTracklistCommand command, CancellationToken cancellationToken)
     {
-        return Ok(await importTracklistCommandHandler.HandleAsync(command));
+        return Ok(await importTracklistCommandHandler.HandleAsync(command, cancellationToken));
     }
     
 }

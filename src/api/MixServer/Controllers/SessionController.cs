@@ -32,61 +32,61 @@ public class SessionController(
     [HttpPost("sync")]
     [ProducesResponseType(typeof(SyncPlaybackSessionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SyncPlaybackSession([FromBody] SyncPlaybackSessionCommand command)
+    public async Task<IActionResult> SyncPlaybackSession([FromBody] SyncPlaybackSessionCommand command, CancellationToken cancellationToken)
     {
-        return Ok(await syncPlaybackSessionCommandHandler.HandleAsync(command));
+        return Ok(await syncPlaybackSessionCommandHandler.HandleAsync(command, cancellationToken));
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> SetCurrentSession([FromBody] SetCurrentSessionCommand command)
+    public async Task<IActionResult> SetCurrentSession([FromBody] SetCurrentSessionCommand command, CancellationToken cancellationToken)
     {
-        return Ok(await setCurrentSessionCommandHandler.HandleAsync(command));
+        return Ok(await setCurrentSessionCommandHandler.HandleAsync(command, cancellationToken));
     }
 
     [HttpPost("back")]
     [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Back()
+    public async Task<IActionResult> Back(CancellationToken cancellationToken)
     { 
-        return Ok(await setNextSessionCommandHandler.BackAsync());
+        return Ok(await setNextSessionCommandHandler.BackAsync(cancellationToken));
     }
     
     [HttpPost("skip")]
     [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Skip()
+    public async Task<IActionResult> Skip(CancellationToken cancellationToken)
     { 
-        return Ok(await setNextSessionCommandHandler.SkipAsync());
+        return Ok(await setNextSessionCommandHandler.SkipAsync(cancellationToken));
     }
     
     [HttpPost("end")]
     [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> End()
+    public async Task<IActionResult> End(CancellationToken cancellationToken)
     { 
-        return Ok(await setNextSessionCommandHandler.EndAsync());
+        return Ok(await setNextSessionCommandHandler.EndAsync(cancellationToken));
     }
 
     [HttpDelete]
     [ProducesResponseType(typeof(CurrentSessionUpdatedDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ClearCurrentSession()
+    public async Task<IActionResult> ClearCurrentSession(CancellationToken cancellationToken)
     {
-        return Ok(await clearCurrentSessionCommandHandler.HandleAsync(new ClearCurrentSessionCommand()));
+        return Ok(await clearCurrentSessionCommandHandler.HandleAsync(new ClearCurrentSessionCommand(), cancellationToken));
     }
 
     [HttpGet("history")]
     [ProducesResponseType(typeof(GetUsersSessionsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> History([FromQuery] GetUsersSessionsQuery query)
+    public async Task<IActionResult> History([FromQuery] GetUsersSessionsQuery query, CancellationToken cancellationToken)
     {
-        return Ok(await getUsersSessionsQueryHandler.HandleAsync(query));
+        return Ok(await getUsersSessionsQueryHandler.HandleAsync(query, cancellationToken));
     }
 
     [HttpPost("request-playback")]
@@ -94,9 +94,9 @@ public class SessionController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RequestPlayback([FromBody] RequestPlaybackCommand command)
+    public async Task<IActionResult> RequestPlayback([FromBody] RequestPlaybackCommand command, CancellationToken cancellationToken)
     {
-        return Ok(await requestPlaybackCommandHandler.HandleAsync(command));
+        return Ok(await requestPlaybackCommandHandler.HandleAsync(command, cancellationToken));
     }
     
     [HttpPost("request-pause")]
@@ -104,9 +104,9 @@ public class SessionController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RequestPause()
+    public async Task<IActionResult> RequestPause(CancellationToken cancellationToken)
     {
-        await requestPauseCommandHandler.HandleAsync(new RequestPauseCommand());
+        await requestPauseCommandHandler.HandleAsync(new RequestPauseCommand(), cancellationToken);
             
         return NoContent();
     }
@@ -116,9 +116,9 @@ public class SessionController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> SetPlaying([FromBody] SetPlayingCommand command)
+    public async Task<IActionResult> SetPlaying([FromBody] SetPlayingCommand command, CancellationToken cancellationToken)
     {
-        await setPlayingCommandHandler.HandleAsync(command);
+        await setPlayingCommandHandler.HandleAsync(command, cancellationToken);
 
         return NoContent();
     }
@@ -128,12 +128,12 @@ public class SessionController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Seek([FromBody] SeekRequest command)
+    public async Task<IActionResult> Seek([FromBody] SeekRequest command, CancellationToken cancellationToken)
     {
         await seekCommandHandler.HandleAsync(new SeekCommand
         {
             Time = TimeSpan.FromSeconds(command.Time)
-        });
+        }, cancellationToken);
 
         return NoContent();
     }

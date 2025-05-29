@@ -15,9 +15,9 @@ public class TranscodeController(
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RequestTranscode([FromBody] RequestTranscodeCommand command)
+    public async Task<IActionResult> RequestTranscode([FromBody] RequestTranscodeCommand command, CancellationToken cancellationToken)
     {
-        await requestTranscodeCommandHandler.HandleAsync(command);
+        await requestTranscodeCommandHandler.HandleAsync(command, cancellationToken);
         
         return Accepted();
     }

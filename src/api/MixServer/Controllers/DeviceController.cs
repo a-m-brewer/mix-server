@@ -20,20 +20,20 @@ public class DeviceController(
     [HttpGet]
     [ProducesResponseType(typeof(GetUsersDevicesQueryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Devices()
+    public async Task<IActionResult> Devices(CancellationToken cancellationToken)
     {
-        return Ok(await getUsersDevicesQueryHandler.HandleAsync());
+        return Ok(await getUsersDevicesQueryHandler.HandleAsync(cancellationToken));
     }
 
     [HttpDelete("{deviceId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteDevice([FromRoute] Guid deviceId)
+    public async Task<IActionResult> DeleteDevice([FromRoute] Guid deviceId, CancellationToken cancellationToken)
     {
         await deleteDeviceCommandHandler.HandleAsync(new DeleteDeviceCommand
         {
             DeviceId = deviceId
-        });
+        }, cancellationToken);
         
         return NoContent();
     }
@@ -41,9 +41,9 @@ public class DeviceController(
     [HttpPost("interacted")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SetDeviceInteracted([FromBody] SetDeviceInteractionCommand command)
+    public async Task<IActionResult> SetDeviceInteracted([FromBody] SetDeviceInteractionCommand command, CancellationToken cancellationToken)
     {
-        await setDeviceInteractionCommandHandler.HandleAsync(command);
+        await setDeviceInteractionCommandHandler.HandleAsync(command, cancellationToken);
         
         return NoContent();
     }
@@ -51,9 +51,9 @@ public class DeviceController(
     [HttpPost("capabilities")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateDeviceCapabilities([FromBody] UpdateDevicePlaybackCapabilitiesCommand command)
+    public async Task<IActionResult> UpdateDeviceCapabilities([FromBody] UpdateDevicePlaybackCapabilitiesCommand command, CancellationToken cancellationToken)
     {
-        await updateDevicePlaybackCapabilitiesCommandHandler.HandleAsync(command);
+        await updateDevicePlaybackCapabilitiesCommandHandler.HandleAsync(command, cancellationToken);
         
         return NoContent();
     }
