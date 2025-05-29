@@ -159,7 +159,7 @@ public class FolderCacheItem : IFolderCacheItem
                 ItemAdded?.Invoke(this, newItem);
                 break;
             case ChangeType.Deleted:
-                if (Delete(e.fullName, out var node))
+                if (TryDelete(e.fullName, out var node))
                 {
                     ItemRemoved?.Invoke(this, node);
                 }
@@ -180,10 +180,10 @@ public class FolderCacheItem : IFolderCacheItem
 
     private IFileExplorerNode Replace(bool isFile, string fullName, string oldFullName)
     {
-        Delete(fullName, out _);
+        TryDelete(fullName, out _);
         if (oldFullName != fullName)
         {
-            Delete(oldFullName, out _);
+            TryDelete(oldFullName, out _);
         }
         
         return Create(isFile, fullName);
@@ -200,7 +200,7 @@ public class FolderCacheItem : IFolderCacheItem
         return info;
     }
 
-    private bool Delete(string fullName, [MaybeNullWhen(false)] out IFileExplorerNode node)
+    private bool TryDelete(string fullName, [MaybeNullWhen(false)] out IFileExplorerNode node)
     {
         var name = Path.GetFileName(fullName);
         var success = _folder.RemoveChild(name, out node);
