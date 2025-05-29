@@ -11,7 +11,7 @@ public class GetUsersDevicesQueryHandler(
 {
     public async Task<GetUsersDevicesQueryResponse> HandleAsync(CancellationToken cancellationToken = default)
     {
-        var devices = await deviceService.GetUsersDevicesAsync();
+        var devices = await deviceService.GetUsersDevicesAsync(cancellationToken);
 
         return getUsersDevicesQueryResponseConverter.Convert(devices);
     }

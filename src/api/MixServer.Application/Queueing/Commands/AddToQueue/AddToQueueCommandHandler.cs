@@ -22,7 +22,7 @@ public class AddToQueueCommandHandler(
 
         var file = await fileService.GetFileAsync(nodePathDtoConverter.Convert(request.NodePath));
 
-        var queueSnapshot = await queueService.AddToQueueAsync(file);
+        var queueSnapshot = await queueService.AddToQueueAsync(file, cancellationToken);
 
         return converter.Convert(queueSnapshot);
     }

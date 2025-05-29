@@ -15,7 +15,7 @@ public class DeleteDeviceCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        await deviceService.DeleteDeviceAsync(request.DeviceId);
+        await deviceService.DeleteDeviceAsync(request.DeviceId, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

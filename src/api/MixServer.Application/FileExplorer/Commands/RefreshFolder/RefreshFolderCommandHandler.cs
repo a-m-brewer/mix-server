@@ -33,7 +33,7 @@ public class RefreshFolderCommandHandler(
             folderCacheService.InvalidateFolder(nodePath);
         }
         
-        var folder = await fileService.GetFolderOrRootAsync(nodePath);
+        var folder = await fileService.GetFolderOrRootAsync(nodePath, cancellationToken);
 
         // TODO: make a way of refreshing all users folders at once on cache invalidation with their folder sorts
         await callbackService.FolderRefreshed(

@@ -34,7 +34,7 @@ public class SetNextSessionCommandHandler(
     
     private async Task<CurrentSessionUpdatedDto> SetNextPositionAsync(bool skip, bool resetSessionState, CancellationToken cancellationToken)
     {
-        var currentSession = await sessionService.GetCurrentPlaybackSessionAsync();
+        var currentSession = await sessionService.GetCurrentPlaybackSessionAsync(cancellationToken);
 
         if (resetSessionState)
         {
@@ -42,7 +42,7 @@ public class SetNextSessionCommandHandler(
             playbackTrackingService.ClearSession(currentSession.UserId);
         }
 
-        var queue = await queueService.GenerateQueueSnapshotAsync();
+        var queue = await queueService.GenerateQueueSnapshotAsync(cancellationToken);
         
         var nextQueuePosition = skip
             ? queue.NextQueuePosition
@@ -54,7 +54,7 @@ public class SetNextSessionCommandHandler(
             return converter.Convert(null, QueueSnapshot.Empty, true);
         }
         
-        queue = await queueService.SetQueuePositionAsync(nextQueuePosition.Value);
+        queue = await queueService.SetQueuePositionAsync(nextQueuePosition.Value, cancellationToken);
 
         var nextFile = queue.CurrentQueuePositionItem?.File;
         var nextSession = nextFile is null

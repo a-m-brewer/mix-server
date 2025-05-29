@@ -4,6 +4,6 @@ namespace MixServer.Domain.Sessions.Accessors;
 
 public interface IPlaybackTrackingAccessor
 {
-    Task<PlaybackState> GetPlaybackStateAsync();
-    Task<PlaybackState?> GetPlaybackStateOrDefaultAsync();
+    Task<PlaybackState> GetPlaybackStateAsync(CancellationToken cancellationToken);
+    Task<PlaybackState?> GetPlaybackStateOrDefaultAsync(CancellationToken cancellationToken);
 }

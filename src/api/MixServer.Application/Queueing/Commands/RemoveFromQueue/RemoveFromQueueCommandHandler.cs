@@ -16,7 +16,7 @@ public class RemoveFromQueueCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var queueSnapshot = await queueService.RemoveUserQueueItemsAsync(request.QueueItems);
+        var queueSnapshot = await queueService.RemoveUserQueueItemsAsync(request.QueueItems, cancellationToken);
 
         return converter.Convert(queueSnapshot);
     }

@@ -39,7 +39,7 @@ public class SessionService(
 
         canPlayOnDeviceValidator.ValidateCanPlayOrThrow(device, file);
 
-        await currentUserRepository.LoadPlaybackSessionByFileIdAsync(file.Entity.Id);
+        await currentUserRepository.LoadPlaybackSessionByFileIdAsync(file.Entity.Id, cancellationToken);
         var session = user.PlaybackSessions.SingleOrDefault(s => s.NodeEntity.Id == file.Entity.Id);
 
         if (session == null)
@@ -97,18 +97,18 @@ public class SessionService(
         return session;
     }
 
-    public async Task<PlaybackSession> GetCurrentPlaybackSessionWithFileAsync()
+    public async Task<PlaybackSession> GetCurrentPlaybackSessionWithFileAsync(CancellationToken cancellationToken)
     {
-        var session = await GetCurrentPlaybackSessionAsync();
+        var session = await GetCurrentPlaybackSessionAsync(cancellationToken);
         
         await sessionHydrationService.HydrateAsync(session);
 
         return session;
     }
 
-    public async Task<PlaybackSession> GetCurrentPlaybackSessionAsync()
+    public async Task<PlaybackSession> GetCurrentPlaybackSessionAsync(CancellationToken cancellationToken)
     {
-        var session = await GetCurrentPlaybackSessionOrDefaultAsync();
+        var session = await GetCurrentPlaybackSessionOrDefaultAsync(cancellationToken);
 
         if (session == null)
         {
@@ -118,9 +118,9 @@ public class SessionService(
         return session;
     }
 
-    public async Task<PlaybackSession?> GetCurrentPlaybackSessionOrDefaultAsync()
+    public async Task<PlaybackSession?> GetCurrentPlaybackSessionOrDefaultAsync(CancellationToken cancellationToken)
     {
-        await currentUserRepository.LoadCurrentPlaybackSessionAsync();
+        await currentUserRepository.LoadCurrentPlaybackSessionAsync(cancellationToken);
         var user = await currentUserRepository.GetCurrentUserAsync();
 
         var session = user.CurrentPlaybackSession;
@@ -128,9 +128,10 @@ public class SessionService(
         return session;
     }
 
-    public async Task<List<PlaybackSession>> GetUsersPlaybackSessionHistoryAsync(int startIndex, int pageSize)
+    public async Task<List<PlaybackSession>> GetUsersPlaybackSessionHistoryAsync(int startIndex, int pageSize,
+        CancellationToken cancellationToken)
     {
-        await currentUserRepository.LoadPagedPlaybackSessionsAsync(startIndex, pageSize);
+        await currentUserRepository.LoadPagedPlaybackSessionsAsync(startIndex, pageSize, cancellationToken);
         var user = await currentUserRepository.GetCurrentUserAsync();
 
         var sessions = user.PlaybackSessions;

@@ -12,7 +12,7 @@ public class GetCurrentQueueQueryHandler(
 {
     public async Task<QueueSnapshotDto> HandleAsync(CancellationToken cancellationToken = default)
     {
-        var queue = await queueService.GenerateQueueSnapshotAsync();
+        var queue = await queueService.GenerateQueueSnapshotAsync(cancellationToken);
 
         return queueSnapshotDtoConverter.Convert(queue);
     }

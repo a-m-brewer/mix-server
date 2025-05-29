@@ -20,7 +20,7 @@ public class ClearCurrentSessionCommandHandler(
 {
     public async Task<CurrentSessionUpdatedDto> HandleAsync(ClearCurrentSessionCommand request, CancellationToken cancellationToken = default)
     {
-        await currentUserRepository.LoadCurrentPlaybackSessionAsync();
+        await currentUserRepository.LoadCurrentPlaybackSessionAsync(cancellationToken);
         var user = await currentUserRepository.GetCurrentUserAsync();
 
         if (user.CurrentPlaybackSession == null)

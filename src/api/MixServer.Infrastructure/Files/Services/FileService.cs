@@ -19,7 +19,7 @@ public class FileService(
     IRootFileExplorerFolder rootFolder)
     : IFileService
 {
-    public async Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath)
+    public async Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath, CancellationToken cancellationToken)
     {
         var cacheItem = await folderCacheService.GetOrAddAsync(nodePath);
 
@@ -30,13 +30,13 @@ public class FileService(
             return folder;
         }
 
-        await currentUserRepository.LoadFileSortByAbsolutePathAsync(nodePath);
+        await currentUserRepository.LoadFileSortByAbsolutePathAsync(nodePath, cancellationToken);
         folder.Sort = (await currentUserRepository.GetCurrentUserAsync()).GetSortOrDefault(nodePath);
     
         return folder;
     }
 
-    public async Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath)
+    public async Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath, CancellationToken cancellationToken)
     {
         // If no folder is specified return the root folder
         if (nodePath is null || nodePath.IsRoot)
@@ -50,7 +50,7 @@ public class FileService(
             throw new ForbiddenRequestException("You do not have permission to access this folder");
         }
         
-        var folder = await GetFolderAsync(nodePath);
+        var folder = await GetFolderAsync(nodePath, cancellationToken);
 
         return folder.Node.Exists
             ? folder
@@ -161,7 +161,7 @@ public class FileService(
 
     public async Task SetFolderSortAsync(IFolderSortRequest request, CancellationToken cancellationToken)
     {
-        await currentUserRepository.LoadFileSortByAbsolutePathAsync(request.Path);
+        await currentUserRepository.LoadFileSortByAbsolutePathAsync(request.Path, cancellationToken);
         var user = await currentUserRepository.GetCurrentUserAsync();
 
         var sort = user.FolderSorts.SingleOrDefault(s =>

@@ -21,9 +21,9 @@ public class SetQueuePositionCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var queueSnapshot = await queueService.SetQueuePositionAsync(request.QueueItemId);
+        var queueSnapshot = await queueService.SetQueuePositionAsync(request.QueueItemId, cancellationToken);
 
-        var file = await queueService.GetCurrentPositionFileOrThrowAsync();
+        var file = await queueService.GetCurrentPositionFileOrThrowAsync(cancellationToken);
         
         var session = await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
         {

@@ -23,9 +23,9 @@ public class DeviceService(
     IUnitOfWork unitOfWork)
     : IDeviceService
 {
-    public async Task<List<IDevice>> GetUsersDevicesAsync()
+    public async Task<List<IDevice>> GetUsersDevicesAsync(CancellationToken cancellationToken)
     {
-        await currentUserRepository.LoadAllDevicesAsync();
+        await currentUserRepository.LoadAllDevicesAsync(cancellationToken);
 
         await PopulateCurrentUserDevicesAsync();
         
@@ -93,9 +93,9 @@ public class DeviceService(
         }
     }
 
-    public async Task DeleteDeviceAsync(Guid deviceId)
+    public async Task DeleteDeviceAsync(Guid deviceId, CancellationToken cancellationToken)
     {
-        await currentUserRepository.LoadDeviceByIdAsync(deviceId);
+        await currentUserRepository.LoadDeviceByIdAsync(deviceId, cancellationToken);
 
         var user = await currentUserRepository.GetCurrentUserAsync();
         var device = user.Devices.SingleOrDefault(s => s.Id == deviceId);

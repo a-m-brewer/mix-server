@@ -30,7 +30,7 @@ public class SetCurrentSessionCommandHandler(
             NodePath = nodePathDtoConverter.Convert(request.NodePath)
         }, cancellationToken);
 
-        var queueSnapshot = await queueService.SetQueueFolderAsync(nextSession);
+        var queueSnapshot = await queueService.SetQueueFolderAsync(nextSession, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

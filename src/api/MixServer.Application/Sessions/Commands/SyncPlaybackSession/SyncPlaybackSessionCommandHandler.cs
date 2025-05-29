@@ -28,7 +28,7 @@ public class SyncPlaybackSessionCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
         
-        var serverSession = await sessionService.GetCurrentPlaybackSessionWithFileAsync();
+        var serverSession = await sessionService.GetCurrentPlaybackSessionWithFileAsync(cancellationToken);
 
         if (serverSession.File is { Parent.BelongsToRootChild: false })
         {

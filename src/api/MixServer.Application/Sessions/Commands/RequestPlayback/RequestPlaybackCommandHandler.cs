@@ -27,7 +27,7 @@ public class RequestPlaybackCommandHandler(
 {
     public async Task<PlaybackGrantedDto> HandleAsync(RequestPlaybackCommand request, CancellationToken cancellationToken = default)
     {
-        var playbackState = await playbackTrackingAccessor.GetPlaybackStateAsync();
+        var playbackState = await playbackTrackingAccessor.GetPlaybackStateAsync(cancellationToken);
 
         var requestDeviceId = request.DeviceId ?? currentDeviceRepository.DeviceId;
         

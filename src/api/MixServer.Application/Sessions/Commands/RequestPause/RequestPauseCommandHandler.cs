@@ -13,7 +13,7 @@ public class RequestPauseCommandHandler(
 {
     public async Task HandleAsync(RequestPauseCommand request, CancellationToken cancellationToken = default)
     {
-        var state = await playbackTrackingAccessor.GetPlaybackStateAsync();
+        var state = await playbackTrackingAccessor.GetPlaybackStateAsync(cancellationToken);
         
         logger.LogInformation("Sending request to pause to: {DeviceId}", state.DeviceId);
         
