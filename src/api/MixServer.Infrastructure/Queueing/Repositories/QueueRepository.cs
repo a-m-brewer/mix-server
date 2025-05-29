@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
+using MixServer.Domain.Exceptions;
 using MixServer.Domain.Utilities;
 using MixServer.Infrastructure.Queueing.Models;
 
@@ -8,6 +9,7 @@ namespace MixServer.Infrastructure.Queueing.Repositories;
 public interface IQueueRepository
 {
     UserQueue GetOrAddQueue(string userId);
+    UserQueue GetOrThrow(string userId);
     bool HasQueue(string userId);
     void Remove(string userId);
 }
@@ -28,6 +30,16 @@ public class QueueRepository(IServiceProvider serviceProvider)
         _queues[userId] = newQueue;
 
         return newQueue;
+    }
+
+    public UserQueue GetOrThrow(string userId)
+    {
+        if (_queues.TryGetValue(userId, out var queue))
+        {
+            return queue;
+        }
+        
+        throw new NotFoundException(nameof(UserQueue), userId);
     }
 
     public bool HasQueue(string userId)

@@ -27,9 +27,11 @@ public class DeviceService(
     {
         await currentUserRepository.LoadAllDevicesAsync();
 
-        PopulateCurrentUserDevices();
+        await PopulateCurrentUserDevicesAsync();
+        
+        var user = await currentUserRepository.GetCurrentUserAsync();
 
-        return currentUserRepository.CurrentUser.Devices
+        return user.Devices
             .Cast<IDevice>()
             .ToList();
     }
@@ -95,7 +97,8 @@ public class DeviceService(
     {
         await currentUserRepository.LoadDeviceByIdAsync(deviceId);
 
-        var device = currentUserRepository.CurrentUser.Devices.SingleOrDefault(s => s.Id == deviceId);
+        var user = await currentUserRepository.GetCurrentUserAsync();
+        var device = user.Devices.SingleOrDefault(s => s.Id == deviceId);
 
         if (device == null)
         {
@@ -104,7 +107,7 @@ public class DeviceService(
         
         deviceRepository.Delete(device);
 
-        unitOfWork.InvokeCallbackOnSaved(s => s.DeviceDeleted(currentUserRepository.CurrentUser.Id, deviceId));
+        unitOfWork.InvokeCallbackOnSaved(async s => await s.DeviceDeleted((await currentUserRepository.GetCurrentUserAsync()).Id, deviceId));
     }
 
     private void Populate(Device device)
@@ -112,8 +115,8 @@ public class DeviceService(
         deviceTrackingService.Populate(device);
     }
 
-    private void PopulateCurrentUserDevices()
+    private async Task PopulateCurrentUserDevicesAsync()
     {
-        deviceTrackingService.Populate(currentUserRepository.CurrentUser.Devices);
+        deviceTrackingService.Populate((await currentUserRepository.GetCurrentUserAsync()).Devices);
     }
 }

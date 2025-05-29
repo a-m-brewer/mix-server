@@ -13,15 +13,19 @@ public class RequestedPlaybackDeviceAccessor(
     ICurrentDeviceRepository currentDeviceRepository,
     IDeviceTrackingService deviceTrackingService) : IRequestedPlaybackDeviceAccessor
 {
-    public IDeviceState PlaybackDevice => deviceTrackingService.GetDeviceStateOrThrow(GetPlaybackDeviceId());
-
-    public bool HasPlaybackDevice => deviceTrackingService.HasDeviceState(GetPlaybackDeviceId());
-
-    public IDeviceState RequestDevice => deviceTrackingService.GetDeviceStateOrThrow(currentDeviceRepository.DeviceId);
-
-    private Guid GetPlaybackDeviceId()
+    public async Task<IDeviceState> GetPlaybackDeviceAsync()
     {
-        var user = currentUserRepository.CurrentUser;
+        return deviceTrackingService.GetDeviceStateOrThrow(await GetPlaybackDeviceId());
+    }
+
+    public async Task<bool> HasPlaybackDeviceAsync()
+    {
+        return deviceTrackingService.HasDeviceState(await GetPlaybackDeviceId());
+    }
+
+    private async Task<Guid> GetPlaybackDeviceId()
+    {
+        var user = await currentUserRepository.GetCurrentUserAsync();
         
         var requestedDeviceId = playbackTrackingService.TryGet(user.Id, out var state) && state.HasDevice
             ? state.DeviceIdOrThrow

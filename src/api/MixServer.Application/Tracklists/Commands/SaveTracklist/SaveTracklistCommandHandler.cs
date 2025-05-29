@@ -16,14 +16,15 @@ public class SaveTracklistCommandHandler(
 {
     public async Task<SaveTracklistResponse> HandleAsync(SaveTracklistCommand request)
     {
+        var user = await currentUserRepository.GetCurrentUserAsync();
         await currentUserRepository.LoadCurrentPlaybackSessionAsync();
 
-        if (currentUserRepository.CurrentUser.CurrentPlaybackSession is null)
+        if (user.CurrentPlaybackSession is null)
         {
             throw new InvalidRequestException("CurrentPlaybackSession", "No playback session is currently active.");
         }
 
-        var currentSessionFilePath = currentUserRepository.CurrentUser.CurrentPlaybackSession.NodeEntity.Path.AbsolutePath;
+        var currentSessionFilePath = user.CurrentPlaybackSession.NodeEntity.Path.AbsolutePath;
 
         if (!File.Exists(currentSessionFilePath))
         {

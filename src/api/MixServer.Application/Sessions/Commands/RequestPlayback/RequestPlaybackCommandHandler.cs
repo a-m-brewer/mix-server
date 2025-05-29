@@ -5,12 +5,11 @@ using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
+using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Models;
-using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
-using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Application.Sessions.Commands.RequestPlayback;
 
@@ -20,16 +19,15 @@ public class RequestPlaybackCommandHandler(
     ICanPlayOnDeviceValidator canPlayOnDeviceValidator,
     IConnectionManager connectionManager,
     ICurrentDeviceRepository currentDeviceRepository,
-    ICurrentUserRepository currentUserRepository,
     IDeviceTrackingService deviceTrackingService,
     IFolderCacheService folderCacheService,
     ILogger<RequestPlaybackCommandHandler> logger,
-    IPlaybackTrackingService playbackTrackingService)
+    IPlaybackTrackingAccessor playbackTrackingAccessor)
     : ICommandHandler<RequestPlaybackCommand, PlaybackGrantedDto>
 {
     public async Task<PlaybackGrantedDto> HandleAsync(RequestPlaybackCommand request)
     {
-        var playbackState = playbackTrackingService.GetOrThrow(currentUserRepository.CurrentUserId);
+        var playbackState = await playbackTrackingAccessor.GetPlaybackStateAsync();
 
         var requestDeviceId = request.DeviceId ?? currentDeviceRepository.DeviceId;
         
@@ -47,7 +45,7 @@ public class RequestPlaybackCommandHandler(
         if (!playbackState.HasDevice)
         {
             logger.LogInformation("Current session is not currently playing on any device. Granting Playback to: {DeviceId}", requestDeviceId);
-            return await UpdatePlaybackDeviceAsync(null, requestDeviceId);
+            return await UpdatePlaybackDeviceAsync(playbackState, requestDeviceId);
         }
 
         if (playbackState.DeviceId == requestDeviceId)
@@ -65,32 +63,28 @@ public class RequestPlaybackCommandHandler(
 
         if (!connectionManager.DeviceConnected(playbackState.DeviceIdOrThrow))
         {
-            return await UpdatePlaybackDeviceAsync(playbackState.DeviceIdOrThrow, requestDeviceId);
+            return await UpdatePlaybackDeviceAsync(playbackState, requestDeviceId);
         }
 
-        playbackTrackingService.SetWaitingForPause(currentUserRepository.CurrentUserId);
+        playbackState.SetWaitingForPause();
         
         logger.LogInformation("Sending request to pause to: {DeviceId}", playbackState.DeviceId);
         await callbackService.PauseRequested(playbackState.DeviceIdOrThrow);
 
-        playbackTrackingService.WaitForPause(currentUserRepository.CurrentUserId);
-        
-        playbackState = playbackTrackingService.GetOrThrow(currentUserRepository.CurrentUserId);
+        playbackState.WaitForPause();
 
-        return await UpdatePlaybackDeviceAsync(playbackState.DeviceIdOrThrow, requestDeviceId);
+        return await UpdatePlaybackDeviceAsync(playbackState, requestDeviceId);
     }
 
-    private async Task<PlaybackGrantedDto> UpdatePlaybackDeviceAsync(Guid? currentDeviceId, Guid requestedPlaybackDevice)
+    private async Task<PlaybackGrantedDto> UpdatePlaybackDeviceAsync(PlaybackState state, Guid requestedPlaybackDevice)
     {
         logger.LogInformation("Current playback device: {CurrentPlaybackDevice} transferring playback to: {NextPlaybackDevice}",
-            currentDeviceId,
+            state.DeviceId,
             requestedPlaybackDevice);
-            
-        playbackTrackingService.UpdatePlaybackDevice(currentUserRepository.CurrentUserId, requestedPlaybackDevice);
 
-        var newPlaybackState = playbackTrackingService.GetOrThrow(currentUserRepository.CurrentUserId);
+        state.DeviceId = requestedPlaybackDevice;
 
-        return await SendPlaybackGrantedAsync(newPlaybackState, false);
+        return await SendPlaybackGrantedAsync(state, false);
     }
 
     private async Task<PlaybackGrantedDto> SendPlaybackGrantedAsync(PlaybackState state, bool useDeviceCurrentTime)

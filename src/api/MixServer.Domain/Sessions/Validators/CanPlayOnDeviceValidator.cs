@@ -10,7 +10,7 @@ namespace MixServer.Domain.Sessions.Validators;
 public interface ICanPlayOnDeviceValidator
 {
     void ValidateCanPlayOrThrow(IDeviceState deviceState, IFileExplorerFileNode file);
-    bool CanPlay(IFileExplorerFileNode itemFile);
+    Task<bool> CanPlayAsync(IFileExplorerFileNode itemFile);
 }
 
 public class CanPlayOnDeviceValidator(ITranscodeCache transcodeCache,
@@ -24,9 +24,9 @@ public class CanPlayOnDeviceValidator(ITranscodeCache transcodeCache,
         }
     }
 
-    public bool CanPlay(IFileExplorerFileNode itemFile)
+    public async Task<bool> CanPlayAsync(IFileExplorerFileNode itemFile)
     {
-        return CanPlay(requestedPlaybackDeviceAccessor.PlaybackDevice, itemFile);
+        return CanPlay(await requestedPlaybackDeviceAccessor.GetPlaybackDeviceAsync(), itemFile);
     }
 
     private bool CanPlay(IDeviceState deviceState, IFileExplorerFileNode file)

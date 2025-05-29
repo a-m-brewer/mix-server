@@ -31,7 +31,7 @@ public class FileService(
         }
 
         await currentUserRepository.LoadFileSortByAbsolutePathAsync(nodePath);
-        folder.Sort = currentUserRepository.CurrentUser.GetSortOrDefault(nodePath);
+        folder.Sort = (await currentUserRepository.GetCurrentUserAsync()).GetSortOrDefault(nodePath);
     
         return folder;
     }
@@ -162,7 +162,7 @@ public class FileService(
     public async Task SetFolderSortAsync(IFolderSortRequest request)
     {
         await currentUserRepository.LoadFileSortByAbsolutePathAsync(request.Path);
-        var user = currentUserRepository.CurrentUser;
+        var user = await currentUserRepository.GetCurrentUserAsync();
 
         var sort = user.FolderSorts.SingleOrDefault(s =>
             s.NodeEntity.RootChild.RelativePath == request.Path.RootPath &&

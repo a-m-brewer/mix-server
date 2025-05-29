@@ -121,27 +121,7 @@ public class PlaybackTrackingService(
 
         state.UpdateAudioPlayerCurrentTime(requestingDeviceId, currentTime);
     }
-
-    public void UpdatePlaybackDevice(string userId, Guid deviceId)
-    {
-        if (!_playingItems.TryGetValue(userId, out var state))
-        {
-            return;
-        }
-
-        state.DeviceId = deviceId;
-    }
-
-    public void SetWaitingForPause(string userId)
-    {
-        if (!_playingItems.TryGetValue(userId, out var state))
-        {
-            throw new NotFoundException(nameof(PlaybackState), userId);
-        }
-
-        state.SetWaitingForPause();
-    }
-
+    
     public void WaitForPause(string userId)
     {
         if (!_playingItems.TryGetValue(userId, out var state))
@@ -235,8 +215,8 @@ public class PlaybackTrackingService(
                 var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
                 logger.LogDebug("Saving Session: {SessionId}", playbackState.SessionId);
-                await currentUserRepository.LoadUserAsync(playbackState.UserId);
-                var currentUser = currentUserRepository.CurrentUser;
+                currentUserRepository.SetUserId(playbackState.UserId);
+                var currentUser = await currentUserRepository.GetCurrentUserAsync();
 
                 var session = await playbackSessionRepository.GetAsync(playbackState.SessionId.Value);
 

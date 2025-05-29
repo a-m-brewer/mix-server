@@ -19,7 +19,7 @@ public class UpdateUserCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request);
         
-        var currentUser = currentUserRepository.CurrentUser;
+        var currentUser = await currentUserRepository.GetCurrentUserAsync();
         var otherUser = await userAuthenticationService.GetUserByIdOrThrowAsync(request.UserId);
         
         userValidator.AssertCanModifyUser(currentUser, otherUser);

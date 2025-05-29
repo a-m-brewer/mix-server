@@ -5,9 +5,8 @@ namespace MixServer.Domain.Sessions.Services;
 
 public interface ISessionService
 {
-    Task LoadPlaybackStateAsync();
     Task<PlaybackSession> AddOrUpdateSessionAsync(IAddOrUpdateSessionRequest request);
-    void ClearUsersCurrentSession();
+    Task ClearUsersCurrentSessionAsync();
     Task<PlaybackSession> GetPlaybackSessionByIdAsync(Guid id);
     Task<PlaybackSession> GetCurrentPlaybackSessionWithFileAsync();
     Task<PlaybackSession> GetCurrentPlaybackSessionAsync();

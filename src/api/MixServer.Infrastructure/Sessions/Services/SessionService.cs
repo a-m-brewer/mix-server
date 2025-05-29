@@ -29,30 +29,11 @@ public class SessionService(
     IUnitOfWork unitOfWork)
     : ISessionService
 {
-    public async Task LoadPlaybackStateAsync()
-    {
-        if (playbackTrackingService.IsTracking(currentUserRepository.CurrentUserId))
-        {
-            logger.LogDebug("Skipping loading playback state as it is already being tracked");
-            return;
-        }
-
-        var session = await GetCurrentPlaybackSessionOrDefaultAsync();
-
-        if (session == null)
-        {
-            logger.LogDebug("Skipping loading playback state as there is currently no playback session to track");
-            return;
-        }
-
-        playbackTrackingService.UpdateSessionState(session);
-    }
-
     public async Task<PlaybackSession> AddOrUpdateSessionAsync(IAddOrUpdateSessionRequest request)
     {
-        var user = currentUserRepository.CurrentUser;
-        
-        var device = requestedPlaybackDeviceAccessor.PlaybackDevice;
+        var user = await currentUserRepository.GetCurrentUserAsync();
+
+        var device = await requestedPlaybackDeviceAccessor.GetPlaybackDeviceAsync();
         
         var file = await folderPersistenceService.GetFileAsync(request.NodePath);
 
@@ -93,9 +74,9 @@ public class SessionService(
         return session;
     }
 
-    public void ClearUsersCurrentSession()
+    public async Task ClearUsersCurrentSessionAsync()
     {
-        var user = currentUserRepository.CurrentUser;
+        var user = await currentUserRepository.GetCurrentUserAsync();
         
         if (user.CurrentPlaybackSession != null)
         {
@@ -140,7 +121,7 @@ public class SessionService(
     public async Task<PlaybackSession?> GetCurrentPlaybackSessionOrDefaultAsync()
     {
         await currentUserRepository.LoadCurrentPlaybackSessionAsync();
-        var user = currentUserRepository.CurrentUser;
+        var user = await currentUserRepository.GetCurrentUserAsync();
 
         var session = user.CurrentPlaybackSession;
 
@@ -150,7 +131,7 @@ public class SessionService(
     public async Task<List<PlaybackSession>> GetUsersPlaybackSessionHistoryAsync(int startIndex, int pageSize)
     {
         await currentUserRepository.LoadPagedPlaybackSessionsAsync(startIndex, pageSize);
-        var user = currentUserRepository.CurrentUser;
+        var user = await currentUserRepository.GetCurrentUserAsync();
 
         var sessions = user.PlaybackSessions;
 

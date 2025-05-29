@@ -19,7 +19,7 @@ public class ResetPasswordCommandHandler(
         await validator.ValidateAndThrowAsync(request);
 
         var currentUserName =
-            currentUserRepository.CurrentUser.UserName ?? throw new UnauthorizedRequestException();
+            (await currentUserRepository.GetCurrentUserAsync()).UserName ?? throw new UnauthorizedRequestException();
 
         await userAuthenticationService.ResetPasswordAsync(currentUserName, request.CurrentPassword, request.NewPassword);
 

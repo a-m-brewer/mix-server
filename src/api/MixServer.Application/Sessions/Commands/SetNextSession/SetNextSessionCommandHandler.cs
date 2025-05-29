@@ -46,7 +46,7 @@ public class SetNextSessionCommandHandler(
             : queue.PreviousQueuePosition;
         if (!nextQueuePosition.HasValue)
         {
-            sessionService.ClearUsersCurrentSession();
+            await sessionService.ClearUsersCurrentSessionAsync();
             await unitOfWork.SaveChangesAsync();
             return converter.Convert(null, QueueSnapshot.Empty, true);
         }

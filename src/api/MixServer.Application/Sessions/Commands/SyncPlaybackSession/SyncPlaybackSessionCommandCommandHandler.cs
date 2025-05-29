@@ -32,7 +32,7 @@ public class SyncPlaybackSessionCommandCommandHandler(
 
         if (serverSession.File is { Parent.BelongsToRootChild: false })
         {
-            sessionService.ClearUsersCurrentSession();
+            await sessionService.ClearUsersCurrentSessionAsync();
             await unitOfWork.SaveChangesAsync();
 
             return new SyncPlaybackSessionResponse

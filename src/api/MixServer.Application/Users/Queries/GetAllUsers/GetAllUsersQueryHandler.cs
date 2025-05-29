@@ -17,7 +17,7 @@ public class GetAllUsersQueryHandler(
 {
     public async Task<GetAllUsersResponse> HandleAsync()
     {
-        AssertIsOwnerOrAdmin();
+        await AssertIsOwnerOrAdminAsync();
 
         var users = await userManager.Users.ToListAsync();
 
@@ -31,9 +31,9 @@ public class GetAllUsersQueryHandler(
         user.Roles = await identityUserRoleService.GetRolesAsync(user);
     }
 
-    private void AssertIsOwnerOrAdmin()
+    private async Task AssertIsOwnerOrAdminAsync()
     {
-        if (currentUserRepository.CurrentUser.IsAdminOrOwner())
+        if ((await currentUserRepository.GetCurrentUserAsync()).IsAdminOrOwner())
         {
             return;
         }

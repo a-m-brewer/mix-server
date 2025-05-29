@@ -11,7 +11,6 @@ using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Users.Repositories;
-using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.Queueing.Models;
 using MixServer.Infrastructure.Queueing.Repositories;
 using MixServer.Infrastructure.Users.Repository;
@@ -30,54 +29,16 @@ public class QueueService(
     IUnitOfWork unitOfWork)
     : IQueueService
 {
-    public async Task LoadQueueStateAsync()
-    {
-        if (queueRepository.HasQueue(currentUserRepository.CurrentUserId))
-        {
-            logger.LogDebug("Skipping initializing queue for user as queue is already initialized");
-            return;
-        }
-
-        await currentUserRepository.LoadCurrentPlaybackSessionAsync();
-
-        if (currentUserRepository.CurrentUser.CurrentPlaybackSession == null)
-        {
-            logger.LogDebug("Skipping initializing queue as user has no playback session");
-            return;
-        }
-
-        await SetQueueFolderAsync(currentUserRepository.CurrentUser.CurrentPlaybackSession);
-    }
-
     public async Task<QueueSnapshot> SetQueueFolderAsync(PlaybackSession nextSession)
     {
-        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
+        var queue = await GetOrAddQueueAsync();
 
-        queue.CurrentFolderPath = nextSession.NodeEntity.Path.Parent;
-        queue.ClearUserQueue();
-        
-        var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath);
-        var nextSessionPath = nextSession.NodeEntity.Path;
-        
-        if (files.All(a => !a.Path.IsEqualTo(nextSessionPath)))
-        {
-            files.Add(await fileService.GetFileAsync(nextSessionPath));
-        }
-
-        queue.RegenerateFolderQueueSortItems(files);
-        queue.SetQueuePositionFromFolderItemOrThrow(nextSessionPath);
-
-        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, files);
-
-        unitOfWork.InvokeCallbackOnSaved(c =>
-            c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
-
-        return queueSnapshot;
+        return await SetQueueFolderAsync(queue, nextSession);
     }
 
     public async Task<QueueSnapshot> SetQueuePositionAsync(Guid queuePositionId)
     {
-        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
+        var queue = await GetOrAddQueueAsync();
         
         if (!queue.QueueItemExists(queuePositionId))
         {
@@ -100,7 +61,7 @@ public class QueueService(
             throw new InvalidRequestException(nameof(file.PlaybackSupported), "Playback not supported for this file");
         }
 
-        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
+        var queue = await GetOrAddQueueAsync();
         queue.AddToQueue(file);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
@@ -111,7 +72,7 @@ public class QueueService(
 
     public async Task<QueueSnapshot> RemoveUserQueueItemsAsync(List<Guid> ids)
     {
-        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
+        var queue = await GetOrAddQueueAsync();
 
         if (queue.CurrentQueuePositionId.HasValue && ids.Contains(queue.CurrentQueuePositionId.Value))
         {
@@ -133,7 +94,7 @@ public class QueueService(
 
     public async Task<(PlaylistIncrementResult Result, QueueSnapshot Snapshot)> IncrementQueuePositionAsync(int offset)
     {
-        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
+        var queue = await GetOrAddQueueAsync();
         var queueOrder = queue.QueueOrder;
         
         var currentQueueItemIndex = queueOrder.FindIndex(id => id == queue.CurrentQueuePositionId);
@@ -163,7 +124,7 @@ public class QueueService(
 
     public async Task ResortQueueAsync()
     {
-        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
+        var queue = await GetOrAddQueueAsync();
      
         var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath);
 
@@ -182,7 +143,7 @@ public class QueueService(
 
     public async Task<IFileExplorerFileNode> GetCurrentPositionFileOrThrowAsync()
     {
-        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
+        var queue = await GetOrAddQueueAsync();
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
 
         return queueSnapshot.Items.FirstOrDefault(f => f.Id == queue.CurrentQueuePositionId)?.File
@@ -190,16 +151,64 @@ public class QueueService(
                    queue.CurrentQueuePositionId.ToString() ?? "unknown");
     }
 
-    public NodePath? GetCurrentQueueFolderPath()
+    public async Task<NodePath?> GetCurrentQueueFolderPathAsync()
     {
-        return queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId).CurrentFolderPath;
+        return (await GetOrAddQueueAsync()).CurrentFolderPath;
     }
 
     public async Task<QueueSnapshot> GenerateQueueSnapshotAsync()
     {
-        var queue = queueRepository.GetOrAddQueue(currentUserRepository.CurrentUserId);
+        var queue = await GetOrAddQueueAsync();
 
         return await GenerateQueueSnapshotAsync(queue);
+    }
+    
+    private async Task<UserQueue> GetOrAddQueueAsync()
+    {
+        var userId = currentUserRepository.CurrentUserId;
+        if (queueRepository.HasQueue(userId))
+        {
+            logger.LogDebug("Skipping initializing queue for user as queue is already initialized");
+            return queueRepository.GetOrThrow(userId);
+        }
+        
+        var currentUser = await currentUserRepository.GetCurrentUserAsync();
+
+        await currentUserRepository.LoadCurrentPlaybackSessionAsync();
+        
+        var queue = queueRepository.GetOrAddQueue(userId);
+
+        await SetQueueFolderAsync(queue, currentUser.CurrentPlaybackSession);
+        
+        return queue;
+    }
+    
+    private async Task<QueueSnapshot> SetQueueFolderAsync(UserQueue queue, PlaybackSession? nextSession)
+    {
+        queue.CurrentFolderPath = nextSession?.NodeEntity.Path.Parent;
+        queue.ClearUserQueue();
+        
+        var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath);
+        var nextSessionPath = nextSession?.NodeEntity.Path;
+        
+        if (nextSessionPath is not null && files.All(a => !a.Path.IsEqualTo(nextSessionPath)))
+        {
+            files.Add(await fileService.GetFileAsync(nextSessionPath));
+        }
+
+        queue.RegenerateFolderQueueSortItems(files);
+
+        if (nextSessionPath is not null)
+        {
+            queue.SetQueuePositionFromFolderItemOrThrow(nextSessionPath);
+        }
+
+        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, files);
+
+        unitOfWork.InvokeCallbackOnSaved(c =>
+            c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
+
+        return queueSnapshot;
     }
     
     private async Task<QueueSnapshot> GenerateQueueSnapshotAsync(UserQueue userQueue)
@@ -221,10 +230,10 @@ public class QueueService(
         var items = userQueue.GenerateQueueSnapshotItems(distinctFiles);
         
         var previousValidOffset = userQueue.CurrentQueuePositionId.HasValue
-            ? GetNextValidQueuePosition(userQueue.CurrentQueuePositionId.Value, false, items)
+            ? await GetNextValidQueuePositionAsync(userQueue.CurrentQueuePositionId.Value, false, items)
             : null;
         var nextValidOffset = userQueue.CurrentQueuePositionId.HasValue
-            ? GetNextValidQueuePosition(userQueue.CurrentQueuePositionId.Value, true, items)
+            ? await GetNextValidQueuePositionAsync(userQueue.CurrentQueuePositionId.Value, true, items)
             : null;
         
         return new QueueSnapshot(userQueue.CurrentQueuePositionId, previousValidOffset, nextValidOffset, items);
@@ -244,12 +253,11 @@ public class QueueService(
             .ToList();
     }
     
-    private Guid? GetNextValidQueuePosition(
-        Guid currentQueuePosition,
+    private async Task<Guid?> GetNextValidQueuePositionAsync(Guid currentQueuePosition,
         bool skip,
         List<QueueSnapshotItem> queueItems)
     {
-        if (!requestedPlaybackDeviceAccessor.HasPlaybackDevice)
+        if (!await requestedPlaybackDeviceAccessor.HasPlaybackDeviceAsync())
         {
             return null;
         }
@@ -262,7 +270,7 @@ public class QueueService(
         while (offsetIndex >= 0 && offsetIndex < queueItems.Count)
         {
             var item = queueItems[offsetIndex];
-            if (canPlayOnDeviceValidator.CanPlay(item.File))
+            if (await canPlayOnDeviceValidator.CanPlayAsync(item.File))
             {
                 return item.Id;
             }

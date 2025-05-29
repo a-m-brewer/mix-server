@@ -33,7 +33,6 @@ using MixServer.Infrastructure.Extensions;
 using MixServer.Infrastructure.Server.Settings;
 using MixServer.Infrastructure.Users.Services;
 using MixServer.Infrastructure.Users.Settings;
-using MixServer.Middleware;
 using MixServer.NSwag;
 using MixServer.Services;
 using Newtonsoft.Json;
@@ -387,8 +386,6 @@ if (!runningFromNSwag)
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseMiddleware<CurrentUserMiddleware>();
 
 app.MapControllers();
 app.MapHub<SignalRCallbackHub>("/callbacks");
