@@ -14,5 +14,5 @@ public interface IFileService
         bool move,
         bool overwrite);
     void DeleteNode(NodePath nodePath);
-    Task SetFolderSortAsync(IFolderSortRequest request);
+    Task SetFolderSortAsync(IFolderSortRequest request, CancellationToken cancellationToken);
 }

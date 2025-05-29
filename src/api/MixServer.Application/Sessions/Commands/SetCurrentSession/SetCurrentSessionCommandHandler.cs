@@ -28,7 +28,7 @@ public class SetCurrentSessionCommandHandler(
         var nextSession = await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
         {
             NodePath = nodePathDtoConverter.Convert(request.NodePath)
-        });
+        }, cancellationToken);
 
         var queueSnapshot = await queueService.SetQueueFolderAsync(nextSession);
 

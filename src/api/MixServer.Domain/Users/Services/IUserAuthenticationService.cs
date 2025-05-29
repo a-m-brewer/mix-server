@@ -12,6 +12,6 @@ public interface IUserAuthenticationService
         string username,
         string currentPassword,
         string newPassword);
-    Task<ITokenRefreshResponse> LoginAsync(IUserLoginRequest request);
-    Task<ITokenRefreshResponse> RefreshAsync(IUserRefreshRequest request);
+    Task<ITokenRefreshResponse> LoginAsync(IUserLoginRequest request, CancellationToken cancellationToken);
+    Task<ITokenRefreshResponse> RefreshAsync(IUserRefreshRequest request, CancellationToken cancellationToken);
 }

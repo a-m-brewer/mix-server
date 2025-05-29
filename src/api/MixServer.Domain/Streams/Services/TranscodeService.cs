@@ -11,7 +11,7 @@ namespace MixServer.Domain.Streams.Services;
 
 public interface ITranscodeService
 {
-    Task RequestTranscodeAsync(FileExplorerFileNodeEntity file, int bitrate);
+    Task RequestTranscodeAsync(FileExplorerFileNodeEntity file, int bitrate, CancellationToken cancellationToken);
 }
 
 public class TranscodeService(
@@ -21,7 +21,10 @@ public class TranscodeService(
     ITranscodeRepository transcodeRepository,
     IUnitOfWork unitOfWork) : ITranscodeService
 {
-    public async Task RequestTranscodeAsync(FileExplorerFileNodeEntity file, int bitrate)
+    public async Task RequestTranscodeAsync(
+        FileExplorerFileNodeEntity file,
+        int bitrate,
+        CancellationToken cancellationToken)
     {
         var transcode = file.Transcode;
         if (transcode is null)
@@ -32,14 +35,14 @@ public class TranscodeService(
                 NodeEntity = file,
                 NodeIdEntity = file.Id
             };
-            await transcodeRepository.AddAsync(transcode);
+            await transcodeRepository.AddAsync(transcode, cancellationToken);
         }
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         
         Directory.CreateDirectory(cacheFolderSettings.Value.GetTranscodeFolder(transcode.Id.ToString()));
         logger.LogDebug("Transcode requested for {AbsoluteFilePath} ({Hash})", file.Path.AbsolutePath, transcode.Id);
 
-        _ = transcodeChannel.WriteAsync(new TranscodeRequest(transcode.Id, bitrate));
+        _ = transcodeChannel.WriteAsync(new TranscodeRequest(transcode.Id, bitrate), cancellationToken);
     }
 }

@@ -18,7 +18,7 @@ public class LoginUserCommandHandler(
         
         request.Audience = httpContextAccessor.GetRequestAuthority();
 
-        var response = await userAuthenticationService.LoginAsync(request);
+        var response = await userAuthenticationService.LoginAsync(request, cancellationToken);
 
         return new LoginCommandResponse(response);
     }

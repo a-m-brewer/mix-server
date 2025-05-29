@@ -18,7 +18,7 @@ public class RefreshUserCommandHandler(
 
         request.Audience = httpContextAccessor.GetRequestAuthority();
         
-        var response = await authenticationService.RefreshAsync(request);
+        var response = await authenticationService.RefreshAsync(request, cancellationToken);
 
         return new RefreshUserResponse(response);
     }

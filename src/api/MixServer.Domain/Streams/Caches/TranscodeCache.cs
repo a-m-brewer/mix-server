@@ -158,7 +158,7 @@ public class TranscodeCache(
         {
             using var scope = serviceProvider.CreateScope();
             var transcodeRepository = scope.ServiceProvider.GetRequiredService<ITranscodeRepository>();
-            var transcodeEntity = await transcodeRepository.GetAsync(transcodeId);
+            var transcodeEntity = await transcodeRepository.GetAsync(transcodeId, CancellationToken.None);
 
             var folder = new FolderCacheItem(e.Path, loggerFactory.CreateLogger<FolderCacheItem>(), fileExplorerConverter, rootFolder, LogLevel.None);
             folder.ItemAdded += TranscodeFolderOnItemAdded;

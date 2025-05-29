@@ -62,7 +62,7 @@ public class SetNextSessionCommandHandler(
             : await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
             {
                 NodePath = nextFile.Path
-            });
+            }, cancellationToken);
         
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

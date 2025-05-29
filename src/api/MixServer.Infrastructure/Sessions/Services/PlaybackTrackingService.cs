@@ -192,7 +192,10 @@ public class PlaybackTrackingService(
         session.PopulateState(playingItem);
     }
 
-    private async Task TrySavePlaybackStateAsync(IPlaybackState playbackState, AudioPlayerStateUpdateType type)
+    private async Task TrySavePlaybackStateAsync(
+        IPlaybackState playbackState,
+        AudioPlayerStateUpdateType type,
+        CancellationToken cancellationToken = default)
     {
         if (!playbackState.SessionId.HasValue || playbackState.SessionId.Value == Guid.Empty)
         {
@@ -218,7 +221,7 @@ public class PlaybackTrackingService(
                 currentUserRepository.SetUserId(playbackState.UserId);
                 var currentUser = await currentUserRepository.GetCurrentUserAsync();
 
-                var session = await playbackSessionRepository.GetAsync(playbackState.SessionId.Value);
+                var session = await playbackSessionRepository.GetAsync(playbackState.SessionId.Value, cancellationToken);
 
                 if (currentUser.Id != session.UserId)
                 {
@@ -227,12 +230,12 @@ public class PlaybackTrackingService(
 
                 session.CurrentTime = playbackState.CurrentTime;
 
-                await unitOfWork.SaveChangesAsync();
+                await unitOfWork.SaveChangesAsync(cancellationToken);
             }
             catch (Exception e)
             {
                 logger.LogError(e, "Failed to save playback state");
             }
-        });
+        }, cancellationToken);
     }
 }

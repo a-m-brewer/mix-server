@@ -33,7 +33,7 @@ public class SetFolderSortCommandHandler(
             Path = nodePath,
             Descending = request.Descending,
             SortMode = request.SortMode
-        });
+        }, cancellationToken);
 
         var nextFolder = await fileService.GetFolderAsync(nodePath);
 

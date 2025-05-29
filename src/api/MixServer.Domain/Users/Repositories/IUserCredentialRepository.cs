@@ -6,5 +6,5 @@ namespace MixServer.Domain.Users.Repositories;
 
 public interface IUserCredentialRepository : ITransientRepository
 {
-    Task<UserCredential> AddOrUpdateUserCredentialAsync(string userId, Guid deviceId, IToken token);
+    Task<UserCredential> AddOrUpdateUserCredentialAsync(string userId, Guid deviceId, IToken token, CancellationToken cancellationToken);
 }

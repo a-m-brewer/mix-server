@@ -28,7 +28,7 @@ public class SetQueuePositionCommandHandler(
         var session = await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
         {
             NodePath = file.Path
-        });
+        }, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

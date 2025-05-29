@@ -159,7 +159,7 @@ public class FileService(
         return null;
     }
 
-    public async Task SetFolderSortAsync(IFolderSortRequest request)
+    public async Task SetFolderSortAsync(IFolderSortRequest request, CancellationToken cancellationToken)
     {
         await currentUserRepository.LoadFileSortByAbsolutePathAsync(request.Path);
         var user = await currentUserRepository.GetCurrentUserAsync();
@@ -170,7 +170,7 @@ public class FileService(
 
         if (sort is null)
         {
-            var folder = await folderPersistenceService.GetFolderAsync(request.Path);
+            var folder = await folderPersistenceService.GetFolderAsync(request.Path, cancellationToken);
             var folderSort = new FolderSort
             {
                 Id = Guid.NewGuid(),
@@ -181,7 +181,7 @@ public class FileService(
                 UserId = user.UserName ?? throw new UnauthorizedRequestException()
             };
 
-            await folderSortRepository.AddAsync(folderSort);
+            await folderSortRepository.AddAsync(folderSort, cancellationToken);
             user.FolderSorts.Add(folderSort);
         }
         else
