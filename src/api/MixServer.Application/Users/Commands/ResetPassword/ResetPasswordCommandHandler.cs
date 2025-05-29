@@ -14,15 +14,15 @@ public class ResetPasswordCommandHandler(
     IValidator<ResetPasswordCommand> validator)
     : ICommandHandler<ResetPasswordCommand>
 {
-    public async Task HandleAsync(ResetPasswordCommand request)
+    public async Task HandleAsync(ResetPasswordCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
 
         var currentUserName =
             (await currentUserRepository.GetCurrentUserAsync()).UserName ?? throw new UnauthorizedRequestException();
 
         await userAuthenticationService.ResetPasswordAsync(currentUserName, request.CurrentPassword, request.NewPassword);
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

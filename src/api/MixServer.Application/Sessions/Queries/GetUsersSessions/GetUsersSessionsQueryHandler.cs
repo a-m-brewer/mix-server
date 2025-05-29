@@ -12,9 +12,9 @@ public class GetUsersSessionsQueryHandler(
     IValidator<GetUsersSessionsQuery> validator)
     : IQueryHandler<GetUsersSessionsQuery, GetUsersSessionsResponse>
 {
-    public async Task<GetUsersSessionsResponse> HandleAsync(GetUsersSessionsQuery request)
+    public async Task<GetUsersSessionsResponse> HandleAsync(GetUsersSessionsQuery request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
         var sessions = await sessionService.GetUsersPlaybackSessionHistoryAsync(request.StartIndex, request.PageSize);
 

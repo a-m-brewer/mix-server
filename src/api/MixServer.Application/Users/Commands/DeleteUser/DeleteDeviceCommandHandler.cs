@@ -15,9 +15,9 @@ public class DeleteDeviceCommandHandler(
     IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteUserCommand>
 {
-    public async Task HandleAsync(DeleteUserCommand request)
+    public async Task HandleAsync(DeleteUserCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
 
         var currentUser = await currentUserRepository.GetCurrentUserAsync();
 
@@ -27,6 +27,6 @@ public class DeleteDeviceCommandHandler(
         
         await userAuthenticationService.DeleteUserAsync(otherUser);
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

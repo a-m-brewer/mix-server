@@ -21,9 +21,9 @@ public class RequestTranscodeCommandHandler(
     IValidator<RequestTranscodeCommand> validator)
     : ICommandHandler<RequestTranscodeCommand>
 {
-    public async Task HandleAsync(RequestTranscodeCommand request)
+    public async Task HandleAsync(RequestTranscodeCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
         var nodePath = nodePathDtoConverter.Convert(request.NodePath);
         

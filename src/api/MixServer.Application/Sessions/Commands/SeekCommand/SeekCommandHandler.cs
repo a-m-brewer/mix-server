@@ -11,9 +11,9 @@ public class SeekCommandHandler(
     IValidator<SeekCommand> validator)
     : ICommandHandler<SeekCommand>
 {
-    public async Task HandleAsync(SeekCommand request)
+    public async Task HandleAsync(SeekCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
         playbackTrackingService.Seek(currentUserRepository.CurrentUserId, request.Time);
     }

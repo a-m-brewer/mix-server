@@ -21,9 +21,9 @@ public class SetFolderSortCommandHandler(
     IValidator<SetFolderSortCommand> validator)
     : ICommandHandler<SetFolderSortCommand>
 {
-    public async Task HandleAsync(SetFolderSortCommand request)
+    public async Task HandleAsync(SetFolderSortCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
         var nodePath = nodePathDtoConverter.Convert(request.NodePath);
 
@@ -49,6 +49,6 @@ public class SetFolderSortCommandHandler(
             await queueService.ResortQueueAsync();
         }
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

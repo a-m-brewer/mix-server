@@ -15,9 +15,9 @@ public class AddUserCommandHandler(
     IUnitOfWork unitOfWork)
     : ICommandHandler<AddUserCommand, AddUserCommandResponse>
 {
-    public async Task<AddUserCommandResponse> HandleAsync(AddUserCommand request)
+    public async Task<AddUserCommandResponse> HandleAsync(AddUserCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
 
         var currentUser = await currentUserRepository.GetCurrentUserAsync();
 
@@ -29,7 +29,7 @@ public class AddUserCommandHandler(
 
         var temporaryPassword = await userAuthenticationService.RegisterAsync(request.Username, request.Roles);
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new AddUserCommandResponse
         {

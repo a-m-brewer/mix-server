@@ -25,7 +25,7 @@ public class RequestPlaybackCommandHandler(
     IPlaybackTrackingAccessor playbackTrackingAccessor)
     : ICommandHandler<RequestPlaybackCommand, PlaybackGrantedDto>
 {
-    public async Task<PlaybackGrantedDto> HandleAsync(RequestPlaybackCommand request)
+    public async Task<PlaybackGrantedDto> HandleAsync(RequestPlaybackCommand request, CancellationToken cancellationToken = default)
     {
         var playbackState = await playbackTrackingAccessor.GetPlaybackStateAsync();
 

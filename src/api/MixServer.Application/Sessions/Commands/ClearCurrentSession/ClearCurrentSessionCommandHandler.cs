@@ -18,7 +18,7 @@ public class ClearCurrentSessionCommandHandler(
     IUnitOfWork unitOfWork)
     : ICommandHandler<ClearCurrentSessionCommand, CurrentSessionUpdatedDto>
 {
-    public async Task<CurrentSessionUpdatedDto> HandleAsync(ClearCurrentSessionCommand request)
+    public async Task<CurrentSessionUpdatedDto> HandleAsync(ClearCurrentSessionCommand request, CancellationToken cancellationToken = default)
     {
         await currentUserRepository.LoadCurrentPlaybackSessionAsync();
         var user = await currentUserRepository.GetCurrentUserAsync();
@@ -31,7 +31,7 @@ public class ClearCurrentSessionCommandHandler(
         await sessionService.ClearUsersCurrentSessionAsync();
         queueService.ClearQueue();
         
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return converter.Convert(null, QueueSnapshot.Empty, false);
     }

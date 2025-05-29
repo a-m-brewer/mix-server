@@ -15,11 +15,11 @@ public class GetAllUsersQueryHandler(
     UserManager<DbUser> userManager)
     : IQueryHandler<GetAllUsersResponse>
 {
-    public async Task<GetAllUsersResponse> HandleAsync()
+    public async Task<GetAllUsersResponse> HandleAsync(CancellationToken cancellationToken = default)
     {
         await AssertIsOwnerOrAdminAsync();
 
-        var users = await userManager.Users.ToListAsync();
+        var users = await userManager.Users.ToListAsync(cancellationToken);
 
         await Task.WhenAll(users.Select(PopulateUserRoleAsync));
 

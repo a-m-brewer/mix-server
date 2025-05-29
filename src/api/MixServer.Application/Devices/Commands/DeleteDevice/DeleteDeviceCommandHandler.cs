@@ -11,12 +11,12 @@ public class DeleteDeviceCommandHandler(
     IUnitOfWork unitOfWork)
     : ICommandHandler<DeleteDeviceCommand>
 {
-    public async Task HandleAsync(DeleteDeviceCommand request)
+    public async Task HandleAsync(DeleteDeviceCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
 
         await deviceService.DeleteDeviceAsync(request.DeviceId);
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

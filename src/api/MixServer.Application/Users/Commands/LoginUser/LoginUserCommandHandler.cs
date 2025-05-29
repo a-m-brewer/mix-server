@@ -12,9 +12,9 @@ public class LoginUserCommandHandler(
     IValidator<LoginUserCommand> validator)
     : ICommandHandler<LoginUserCommand, LoginCommandResponse>
 {
-    public async Task<LoginCommandResponse> HandleAsync(LoginUserCommand request)
+    public async Task<LoginCommandResponse> HandleAsync(LoginUserCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
         request.Audience = httpContextAccessor.GetRequestAuthority();
 

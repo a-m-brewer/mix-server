@@ -17,9 +17,9 @@ public class SetQueuePositionCommandHandler(
     IUnitOfWork unitOfWork)
     : ICommandHandler<SetQueuePositionCommand, CurrentSessionUpdatedDto>
 {
-    public async Task<CurrentSessionUpdatedDto> HandleAsync(SetQueuePositionCommand request)
+    public async Task<CurrentSessionUpdatedDto> HandleAsync(SetQueuePositionCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
 
         var queueSnapshot = await queueService.SetQueuePositionAsync(request.QueueItemId);
 
@@ -30,7 +30,7 @@ public class SetQueuePositionCommandHandler(
             NodePath = file.Path
         });
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return converter.Convert(session, queueSnapshot, true);
     }

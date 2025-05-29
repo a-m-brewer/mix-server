@@ -10,7 +10,7 @@ public class GetCurrentQueueQueryHandler(
     IQueueService queueService)
     : IQueryHandler<QueueSnapshotDto>
 {
-    public async Task<QueueSnapshotDto> HandleAsync()
+    public async Task<QueueSnapshotDto> HandleAsync(CancellationToken cancellationToken = default)
     {
         var queue = await queueService.GenerateQueueSnapshotAsync();
 

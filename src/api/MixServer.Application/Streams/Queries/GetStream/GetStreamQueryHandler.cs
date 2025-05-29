@@ -24,9 +24,9 @@ public class GetStreamQueryHandler(
     IValidator<GetStreamQuery> validator)
     : IQueryHandler<GetStreamQuery, StreamFile>
 {
-    public async Task<StreamFile> HandleAsync(GetStreamQuery query)
+    public async Task<StreamFile> HandleAsync(GetStreamQuery query, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(query);
+        await validator.ValidateAndThrowAsync(query, cancellationToken);
 
         var file = Guid.TryParse(query.Id, out var playbackSessionId)
             ? await GetPlaybackSessionAsync(playbackSessionId, query.SecurityParameters)

@@ -11,7 +11,7 @@ public class UpdateDevicePlaybackCapabilitiesCommandHandler(
     IDeviceTrackingService deviceTrackingService)
     : ICommandHandler<UpdateDevicePlaybackCapabilitiesCommand>
 {
-    public Task HandleAsync(UpdateDevicePlaybackCapabilitiesCommand request)
+    public Task HandleAsync(UpdateDevicePlaybackCapabilitiesCommand request, CancellationToken cancellationToken = default)
     {
         deviceTrackingService.UpdateCapabilities(
             currentUserRepository.CurrentUserId,

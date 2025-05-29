@@ -11,7 +11,7 @@ public class RequestPauseCommandHandler(
     IPlaybackTrackingAccessor playbackTrackingAccessor)
     : ICommandHandler<RequestPauseCommand>
 {
-    public async Task HandleAsync(RequestPauseCommand request)
+    public async Task HandleAsync(RequestPauseCommand request, CancellationToken cancellationToken = default)
     {
         var state = await playbackTrackingAccessor.GetPlaybackStateAsync();
         

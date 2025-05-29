@@ -21,9 +21,9 @@ public class SetCurrentSessionCommandHandler(
     IValidator<SetCurrentSessionCommand> validator)
     : ICommandHandler<SetCurrentSessionCommand, CurrentSessionUpdatedDto>
 {
-    public async Task<CurrentSessionUpdatedDto> HandleAsync(SetCurrentSessionCommand request)
+    public async Task<CurrentSessionUpdatedDto> HandleAsync(SetCurrentSessionCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
 
         var nextSession = await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
         {
@@ -32,7 +32,7 @@ public class SetCurrentSessionCommandHandler(
 
         var queueSnapshot = await queueService.SetQueueFolderAsync(nextSession);
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return converter.Convert(nextSession, queueSnapshot, true);
     }

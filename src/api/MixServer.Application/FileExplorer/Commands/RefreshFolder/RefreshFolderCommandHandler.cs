@@ -20,7 +20,7 @@ public class RefreshFolderCommandHandler(
     INodePathDtoConverter nodePathDtoConverter,
     IRootFileExplorerFolder rootFolder) : ICommandHandler<RefreshFolderCommand, FileExplorerFolderResponse>
 {
-    public async Task<FileExplorerFolderResponse> HandleAsync(RefreshFolderCommand request)
+    public async Task<FileExplorerFolderResponse> HandleAsync(RefreshFolderCommand request, CancellationToken cancellationToken = default)
     {
         var nodePath = request.NodePath is null ? null : nodePathDtoConverter.Convert(request.NodePath);
         

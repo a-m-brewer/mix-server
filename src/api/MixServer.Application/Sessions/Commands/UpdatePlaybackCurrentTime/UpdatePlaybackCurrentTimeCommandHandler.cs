@@ -13,9 +13,9 @@ public class UpdatePlaybackCurrentTimeCommandHandler(
     IValidator<UpdatePlaybackCurrentTimeCommand> validator)
     : ICommandHandler<UpdatePlaybackCurrentTimeCommand>
 {
-    public async Task HandleAsync(UpdatePlaybackCurrentTimeCommand request)
+    public async Task HandleAsync(UpdatePlaybackCurrentTimeCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
         playbackTrackingService.UpdateAudioPlayerCurrentTime(
             currentUserRepository.CurrentUserId,
