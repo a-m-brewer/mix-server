@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
+using MixServer.Domain.Exceptions;
 using MixServer.Domain.Utilities;
 using MixServer.Infrastructure.Queueing.Models;
 
@@ -7,41 +9,46 @@ namespace MixServer.Infrastructure.Queueing.Repositories;
 public interface IQueueRepository
 {
     UserQueue GetOrAddQueue(string userId);
+    UserQueue GetOrThrow(string userId);
     bool HasQueue(string userId);
     void Remove(string userId);
 }
 
-public class QueueRepository(IReadWriteLock readWriteLock, IServiceProvider serviceProvider)
+public class QueueRepository(IServiceProvider serviceProvider)
     : IQueueRepository
 {
-    private readonly Dictionary<string, UserQueue> _queues = new();
+    private readonly ConcurrentDictionary<string, UserQueue> _queues = new();
 
     public UserQueue GetOrAddQueue(string userId)
     {
-        return readWriteLock.ForUpgradeableRead(() =>
+        if (_queues.TryGetValue(userId, out var queue))
         {
-            if (_queues.TryGetValue(userId, out var queue))
-            {
-                return queue;
-            }
+            return queue;
+        }
+        
+        var newQueue = new UserQueue(userId, serviceProvider.GetRequiredService<IReadWriteLock>());
+        _queues[userId] = newQueue;
 
-            return readWriteLock.ForWrite(() =>
-            {
-                var newQueue = new UserQueue(userId, serviceProvider.GetRequiredService<IReadWriteLock>());
-                _queues[userId] = newQueue;
+        return newQueue;
+    }
 
-                return newQueue;
-            });
-        });
+    public UserQueue GetOrThrow(string userId)
+    {
+        if (_queues.TryGetValue(userId, out var queue))
+        {
+            return queue;
+        }
+        
+        throw new NotFoundException(nameof(UserQueue), userId);
     }
 
     public bool HasQueue(string userId)
     {
-        return readWriteLock.ForRead(() => _queues.ContainsKey(userId));
+        return _queues.ContainsKey(userId);
     }
 
     public void Remove(string userId)
     {
-        readWriteLock.ForWrite(() => _queues.Remove(userId));
+        _queues.TryRemove(userId, out _);
     }
 }

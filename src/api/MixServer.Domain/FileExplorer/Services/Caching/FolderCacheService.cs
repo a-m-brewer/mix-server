@@ -22,23 +22,33 @@ public interface IFolderCacheService
     
     event EventHandler<IFileExplorerFolder> FolderRemoved;
 
-    ICacheFolder GetOrAdd(NodePath nodePath);
-    IFileExplorerFileNode GetFile(NodePath nodePath);
-    (IFileExplorerFolder Parent, IFileExplorerFileNode File) GetFileAndFolder(NodePath nodePath);
+    Task<ICacheFolder> GetOrAddAsync(NodePath nodePath);
+    Task<IFileExplorerFileNode> GetFileAsync(NodePath nodePath);
+    Task<(IFileExplorerFolder Parent, IFileExplorerFileNode File)> GetFileAndFolderAsync(NodePath nodePath);
     void InvalidateFolder(NodePath nodePath);
 }
 
-public class FolderCacheService(
-    ILogger<FolderCacheService> logger,
-    ILoggerFactory loggerFactory,
-    IOptions<FolderCacheSettings> options,
-    IFileExplorerConverter fileExplorerConverter,
-    IRootFileExplorerFolder rootFolder) : IFolderCacheService
+public class FolderCacheService : IFolderCacheService
 {
-    private readonly MemoryCache _cache = new(new MemoryCacheOptions
+    private readonly SegmentedLruCache<string, IFolderCacheItem> _cache;
+
+    private readonly ILogger<FolderCacheService> _logger;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly IFileExplorerConverter _fileExplorerConverter;
+    private readonly IRootFileExplorerFolder _rootFolder;
+
+    public FolderCacheService(ILogger<FolderCacheService> logger,
+        ILoggerFactory loggerFactory,
+        IOptions<FolderCacheSettings> options,
+        IFileExplorerConverter fileExplorerConverter,
+        IRootFileExplorerFolder rootFolder)
     {
-        SizeLimit = options.Value.MaxCachedDirectories
-    });
+        _logger = logger;
+        _loggerFactory = loggerFactory;
+        _fileExplorerConverter = fileExplorerConverter;
+        _rootFolder = rootFolder;
+        _cache = new SegmentedLruCache<string, IFolderCacheItem>(options.Value.MaxCachedDirectories, PostEvictionCallback);
+    }
 
     public event EventHandler<IFileExplorerNode>? ItemAdded;
 
@@ -48,88 +58,67 @@ public class FolderCacheService(
     public event EventHandler<IFileExplorerFolder>? FolderAdded;
     public event EventHandler<IFileExplorerFolder>? FolderRemoved;
 
-    public ICacheFolder GetOrAdd(NodePath nodePath)
+    public async Task<ICacheFolder> GetOrAddAsync(NodePath nodePath)
     {
-        var maxDirectories = options.Value.MaxCachedDirectories;
-        if (maxDirectories > 0 && _cache.Count >= maxDirectories)
-        {
-            // Try and only remove one item, but memory cache only allows to specify in percentage
-            var percentage = 1d / maxDirectories;
-            logger.LogInformation("Cache is full, compacting by {Percentage}", percentage);
-            _cache.Compact(percentage);
-        }
-
         var cacheMiss = false;
-        var cacheItem = _cache.GetOrCreate<IFolderCacheItem>(nodePath, entry =>
+        var cacheItem = await _cache.GetOrAddAsync(nodePath.AbsolutePath, _ =>
         {
-            return new Lazy<IFolderCacheItem>(() =>
-            {
-                cacheMiss = true;
-                entry.Size = 1;
-                entry.RegisterPostEvictionCallback(PostEvictionCallback);
+            cacheMiss = true;
 
-                IFolderCacheItem item =
-                    new FolderCacheItem(nodePath,
-                        loggerFactory.CreateLogger<FolderCacheItem>(),
-                        fileExplorerConverter,
-                        rootFolder);
-                item.ItemAdded += OnItemAdded;
-                item.ItemUpdated += OnItemUpdated;
-                item.ItemRemoved += OnItemRemoved;
+            IFolderCacheItem item =
+                new FolderCacheItem(nodePath,
+                    _loggerFactory.CreateLogger<FolderCacheItem>(),
+                    _fileExplorerConverter,
+                    _rootFolder);
+            item.ItemAdded += OnItemAdded;
+            item.ItemUpdated += OnItemUpdated;
+            item.ItemRemoved += OnItemRemoved;
 
-                return item;
-            }, LazyThreadSafetyMode.ExecutionAndPublication).Value;
+            _logger.LogInformation("Cache miss for {NodePath}, adding to cache", nodePath.AbsolutePath);
+            return Task.FromResult(item);
         }) ?? throw new NotFoundException(nameof(FolderCacheService), nodePath.ToString());
 
         if (cacheItem.Folder.Node.Exists)
         {
             if (cacheMiss)
             {
-                Task.Run(() => FolderAdded?.Invoke(this, cacheItem.Folder));
+                _ = Task.Run(() => FolderAdded?.Invoke(this, cacheItem.Folder));
             }
         }
         else
         {
             // We don't want to keep missing folders in the cache.
-            _cache.Remove(nodePath);
+            _cache.Remove(nodePath.AbsolutePath);
         }
 
         return cacheItem;
     }
 
-    public IFileExplorerFileNode GetFile(NodePath nodePath)
+    public async Task<IFileExplorerFileNode> GetFileAsync(NodePath nodePath)
     {
-        var dir = _cache.TryGetValue<IFolderCacheItem>(nodePath.Parent, out var cacheItem) ? cacheItem : null;
-
-        if (dir is null)
-        {
-            logger.LogWarning("Directory {DirectoryAbsolutePath} not found in cache when retrieving file",
-                nodePath.Parent.AbsolutePath);
-
-            return fileExplorerConverter.Convert(nodePath);
-        }
+        var dir = await GetOrAddAsync(nodePath.Parent);
 
         var file = dir.Folder.Children.OfType<IFileExplorerFileNode>()
             .FirstOrDefault(f => f.Path.RootPath == nodePath.RootPath && f.Path.RelativePath == nodePath.RelativePath);
 
-        if (file is null)
+        if (file is not null)
         {
-            logger.LogWarning("File {FileAbsolutePath} not found in cache", nodePath.AbsolutePath);
-
-            if (Debugger.IsAttached && File.Exists(nodePath.AbsolutePath))
-            {
-                Debugger.Break();
-            }
-
-            return fileExplorerConverter.Convert(new FileInfo(nodePath.AbsolutePath), dir.Folder.Node);
+            return file;
         }
 
-        return file;
+        _logger.LogWarning("File {FileAbsolutePath} not found in cache", nodePath.AbsolutePath);
+
+        if (Debugger.IsAttached && File.Exists(nodePath.AbsolutePath))
+        {
+            Debugger.Break();
+        }
+
+        return _fileExplorerConverter.Convert(new FileInfo(nodePath.AbsolutePath), dir.Folder.Node);
     }
 
-    public (IFileExplorerFolder Parent, IFileExplorerFileNode File) GetFileAndFolder(NodePath nodePath)
+    public async Task<(IFileExplorerFolder Parent, IFileExplorerFileNode File)> GetFileAndFolderAsync(NodePath nodePath)
     {
-        var folder = GetOrAdd(nodePath.Parent);
+        var folder = await GetOrAddAsync(nodePath.Parent);
 
         var file = folder
                        .Folder
@@ -143,21 +132,20 @@ public class FolderCacheService(
 
     public void InvalidateFolder(NodePath nodePath)
     {
-        _cache.Remove(nodePath);
+        _cache.Remove(nodePath.AbsolutePath);
     }
 
-    private void PostEvictionCallback(object key, object? value, EvictionReason reason, object? state)
+    private void PostEvictionCallback(string key, IFolderCacheItem value)
     {
-        logger.LogInformation("Cache entry for {Key} has been evicted. Reason: {Reason}", key, reason);
-        if (!IsFolderCacheItem(value, out var item)) return;
+        _logger.LogInformation("Cache entry for {Key} has been evicted", key);
 
-        item.ItemAdded -= OnItemAdded;
-        item.ItemUpdated -= OnItemUpdated;
-        item.ItemRemoved -= OnItemRemoved;
+        value.ItemAdded -= OnItemAdded;
+        value.ItemUpdated -= OnItemUpdated;
+        value.ItemRemoved -= OnItemRemoved;
 
-        item.Dispose();
+        value.Dispose();
         
-        FolderRemoved?.Invoke(this, item.Folder);
+        FolderRemoved?.Invoke(this, value.Folder);
     }
 
     private void OnItemAdded(object? sender, IFileExplorerNode e)
@@ -176,12 +164,12 @@ public class FolderCacheService(
         });
     }
 
-    private void OnItemRemoved(object? sender, NodePath nodePath)
+    private void OnItemRemoved(object? sender, IFileExplorerNode node)
     {
         if (!IsFolderCacheItem(sender, out var parent)) return;
         ItemRemoved?.Invoke(parent.Folder, new FolderCacheServiceItemRemovedEventArgs
         {
-            Path = nodePath,
+            Node = node,
             Parent = parent.Folder.Node
         });
     }
@@ -190,7 +178,7 @@ public class FolderCacheService(
     {
         if (sender is not IFolderCacheItem folderCacheItem)
         {
-            logger.LogWarning("event raised by non-folder cache item Sender: {Sender}",
+            _logger.LogWarning("event raised by non-folder cache item Sender: {Sender}",
                 sender?.GetType().Name ?? "null");
             parent = null;
             return false;

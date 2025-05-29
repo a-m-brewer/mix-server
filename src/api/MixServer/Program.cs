@@ -1,5 +1,6 @@
 #region Builder
 
+using System.Diagnostics;
 using System.Reflection;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -32,7 +33,6 @@ using MixServer.Infrastructure.Extensions;
 using MixServer.Infrastructure.Server.Settings;
 using MixServer.Infrastructure.Users.Services;
 using MixServer.Infrastructure.Users.Settings;
-using MixServer.Middleware;
 using MixServer.NSwag;
 using MixServer.Services;
 using Newtonsoft.Json;
@@ -148,7 +148,11 @@ builder.Services
 builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
 
-builder.Services.AddHostedService<MediaInfoService>();
+builder.Services.AddHostedService<FolderMediaMetadataSubscriber>();
+builder.Services.AddHostedService<UpdateMediaMetadataBackgroundService>();
+builder.Services.AddHostedService<RemoveMediaMetadataBackgroundService>();
+builder.Services.AddHostedService<TranscodeBackgroundService>();
+builder.Services.AddHostedService<DeviceDetectionBackgroundService>();
 
 builder.Services.AddTransient<AbsolutePathMigrationService>();
 
@@ -190,6 +194,8 @@ builder.Services.Configure<FolderCacheSettings>(builder.Configuration.GetSection
 builder.Services.Configure<CacheFolderSettings>(builder.Configuration.GetSection(ConfigSection.CacheSettings));
 
 builder.Services.Configure<FfmpegSettings>(builder.Configuration.GetSection(ConfigSection.Ffmpeg));
+
+builder.Services.Configure<TranscodeSettings>(builder.Configuration.GetSection(ConfigSection.TranscodeSettings));
 
 // NSwag
 builder.Services.AddSwaggerDocument(settings =>
@@ -291,6 +297,28 @@ builder.Services
 
 var app = builder.Build();
 
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    var sw = Stopwatch.StartNew();
+
+    try
+    {
+        await next();
+    }
+    finally
+    {
+        sw.Stop();
+        var elapsedMilliseconds = sw.ElapsedMilliseconds;
+        logger.LogInformation(
+            "Request {Method} {Path} completed in {ElapsedMilliseconds} ms with status code {StatusCode}",
+            context.Request.Method,
+            context.Request.Path,
+            elapsedMilliseconds,
+            context.Response.StatusCode);
+    }
+});
+
 // Response Compression
 app.UseResponseCompression();
 
@@ -360,8 +388,6 @@ if (!runningFromNSwag)
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseMiddleware<CurrentUserMiddleware>();
 
 app.MapControllers();
 app.MapHub<SignalRCallbackHub>("/callbacks");

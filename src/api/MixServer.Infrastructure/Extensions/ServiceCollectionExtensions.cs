@@ -46,7 +46,9 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IPasswordGeneratorService, PasswordGeneratorService>();
 
         services.AddTransient<ISessionService, SessionService>();
-        services.AddSingleton<IPlaybackTrackingService, PlaybackTrackingService>();
+        services.AddSingleton<PlaybackTrackingService>();
+        services.AddSingleton<IPlaybackTrackingService>(sp => sp.GetRequiredService<PlaybackTrackingService>());
+        services.AddTransient<IPlaybackTrackingAccessor, PlaybackTrackingAccessor>();
         
         services.Scan(s => s.FromAssemblyOf<IRateLimiter>()
             .AddClasses(c => c.AssignableTo<IRateLimiter>())

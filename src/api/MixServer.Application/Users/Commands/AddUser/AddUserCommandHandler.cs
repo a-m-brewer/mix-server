@@ -19,7 +19,7 @@ public class AddUserCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request);
 
-        var currentUser = currentUserRepository.CurrentUser;
+        var currentUser = await currentUserRepository.GetCurrentUserAsync();
 
         if (!currentUser.InRole(Role.Administrator) &&
             !currentUser.InRole(Role.Owner))

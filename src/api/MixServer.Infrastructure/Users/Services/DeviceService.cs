@@ -5,6 +5,7 @@ using Microsoft.Extensions.Primitives;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Entities;
+using MixServer.Domain.Users.Models;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Domain.Utilities;
@@ -18,7 +19,7 @@ public class DeviceService(
     IDeviceRepository deviceRepository,
     IDeviceTrackingService deviceTrackingService,
     IHttpContextAccessor httpContextAccessor,
-    IServiceProvider serviceProvider,
+    IDeviceInfoChannel deviceInfoChannel,
     IUnitOfWork unitOfWork)
     : IDeviceService
 {
@@ -26,9 +27,11 @@ public class DeviceService(
     {
         await currentUserRepository.LoadAllDevicesAsync();
 
-        PopulateCurrentUserDevices();
+        await PopulateCurrentUserDevicesAsync();
+        
+        var user = await currentUserRepository.GetCurrentUserAsync();
 
-        return currentUserRepository.CurrentUser.Devices
+        return user.Devices
             .Cast<IDevice>()
             .ToList();
     }
@@ -74,24 +77,28 @@ public class DeviceService(
     {
         device.LastSeen = dateTimeProvider.UtcNow;
         
-        // Don't want this code to slow down login / refresh
+        Populate(device);
+        
+        unitOfWork.InvokeCallbackOnSaved(service => service.DeviceUpdated(device));
+        
         var headers = httpContextAccessor.HttpContext?.Request.Headers
             .ToDictionary(k => k.Key, v => v.Value);
         if (headers != null)
         {
-            Task.Run(() => PopulateDeviceInfoAsync(device.Id, headers));
+            unitOfWork.OnSaved(() => deviceInfoChannel.WriteAsync(new DeviceInfoRequest
+            {
+                DeviceId = device.Id,
+                Headers = headers
+            }));
         }
-        
-        Populate(device);
-        
-        unitOfWork.InvokeCallbackOnSaved(service => service.DeviceUpdated(device));
     }
 
     public async Task DeleteDeviceAsync(Guid deviceId)
     {
         await currentUserRepository.LoadDeviceByIdAsync(deviceId);
 
-        var device = currentUserRepository.CurrentUser.Devices.SingleOrDefault(s => s.Id == deviceId);
+        var user = await currentUserRepository.GetCurrentUserAsync();
+        var device = user.Devices.SingleOrDefault(s => s.Id == deviceId);
 
         if (device == null)
         {
@@ -100,7 +107,7 @@ public class DeviceService(
         
         deviceRepository.Delete(device);
 
-        unitOfWork.InvokeCallbackOnSaved(s => s.DeviceDeleted(currentUserRepository.CurrentUser.Id, deviceId));
+        unitOfWork.InvokeCallbackOnSaved(async s => await s.DeviceDeleted((await currentUserRepository.GetCurrentUserAsync()).Id, deviceId));
     }
 
     private void Populate(Device device)
@@ -108,55 +115,8 @@ public class DeviceService(
         deviceTrackingService.Populate(device);
     }
 
-    private void PopulateCurrentUserDevices()
+    private async Task PopulateCurrentUserDevicesAsync()
     {
-        deviceTrackingService.Populate(currentUserRepository.CurrentUser.Devices);
-    }
-
-    private async Task PopulateDeviceInfoAsync(
-        Guid deviceId,
-        IDictionary<string, StringValues> headers)
-    {
-        using var scope = serviceProvider.CreateScope();
-        var deviceDetectionService = scope.ServiceProvider.GetRequiredService<IDeviceDetectionService>();
-        var scopedDeviceRepository = scope.ServiceProvider.GetRequiredService<IDeviceRepository>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<DeviceService>>();
-        var scopedUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        
-        logger.LogInformation("Populating Device Info for device: {DeviceId}", deviceId);
-        
-        var device = await scopedDeviceRepository.SingleOrDefaultAsync(deviceId);
-
-        if (device == null)
-        {
-            logger.LogWarning("Failed to populate device: {DeviceId} as it could not be found", deviceId);
-            return;
-        }
-        
-        device.LastSeen = dateTimeProvider.UtcNow;
-        
-        try
-        {
-            logger.LogInformation("Fetching device info for device: {DeviceId}", deviceId);
-            var deviceInfo = deviceDetectionService.GetCurrentUsersDevice(headers);
-            logger.LogInformation("Device info fetched for device: {DeviceId}", deviceId);
-
-            device.UpdateDeviceInfo(deviceInfo);
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "Failed to set deviceInfo");
-        }
-        
-        Populate(device);
-
-        scopedUnitOfWork.InvokeCallbackOnSaved(cb =>
-        {
-            logger.LogInformation("Sending device updated message for device: {DeviceId}", deviceId);
-            return cb.DeviceUpdated(device);
-        });
-        
-        await scopedUnitOfWork.SaveChangesAsync();
-        logger.LogInformation("Finished fetching device info for device: {DeviceId}", deviceId);
+        deviceTrackingService.Populate((await currentUserRepository.GetCurrentUserAsync()).Devices);
     }
 }

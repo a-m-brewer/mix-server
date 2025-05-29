@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.FileExplorer.Converters;
 using DirectoryInfo = System.IO.DirectoryInfo;
@@ -16,7 +17,7 @@ public interface IFolderCacheItem : ICacheFolder, IDisposable
 
     event EventHandler<FolderItemUpdatedEventArgs> ItemUpdated;
 
-    event EventHandler<NodePath> ItemRemoved;
+    event EventHandler<IFileExplorerNode> ItemRemoved;
 }
 
 public class FolderCacheItem : IFolderCacheItem
@@ -92,7 +93,7 @@ public class FolderCacheItem : IFolderCacheItem
 
     public event EventHandler<IFileExplorerNode>? ItemAdded;
     public event EventHandler<FolderItemUpdatedEventArgs>? ItemUpdated;
-    public event EventHandler<NodePath>? ItemRemoved;
+    public event EventHandler<IFileExplorerNode>? ItemRemoved;
     
     public IFileExplorerFolder Folder => _folder;
 
@@ -158,8 +159,10 @@ public class FolderCacheItem : IFolderCacheItem
                 ItemAdded?.Invoke(this, newItem);
                 break;
             case ChangeType.Deleted:
-                Delete(e.fullName);
-                ItemRemoved?.Invoke(this, nodePath);
+                if (TryDelete(e.fullName, out var node))
+                {
+                    ItemRemoved?.Invoke(this, node);
+                }
                 break;
             case ChangeType.Changed:
                 var changedItem = Replace(isFile, e.fullName);
@@ -177,10 +180,10 @@ public class FolderCacheItem : IFolderCacheItem
 
     private IFileExplorerNode Replace(bool isFile, string fullName, string oldFullName)
     {
-        Delete(fullName);
+        TryDelete(fullName, out _);
         if (oldFullName != fullName)
         {
-            Delete(oldFullName);
+            TryDelete(oldFullName, out _);
         }
         
         return Create(isFile, fullName);
@@ -197,11 +200,12 @@ public class FolderCacheItem : IFolderCacheItem
         return info;
     }
 
-    private void Delete(string fullName)
+    private bool TryDelete(string fullName, [MaybeNullWhen(false)] out IFileExplorerNode node)
     {
         var name = Path.GetFileName(fullName);
-        _folder.RemoveChild(name);
+        var success = _folder.RemoveChild(name, out node);
         _logger.Log(_logLevel, "Removed: {AbsolutePath} from {CurrentFolder}", fullName, _nodePath.AbsolutePath);
+        return success;
     }
 
     private enum ChangeType

@@ -13,7 +13,7 @@ using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Application.Sessions.Commands.SyncPlaybackSession;
 
-public class SyncPlaybackSessionCommandCommandHandler(
+public class SyncPlaybackSessionCommandHandler(
     IConverter<IPlaybackSession, bool, PlaybackSessionDto> converter,
     ICurrentUserRepository currentUserRepository,
     ICurrentDeviceRepository currentDeviceRepository,
@@ -32,7 +32,7 @@ public class SyncPlaybackSessionCommandCommandHandler(
 
         if (serverSession.File is { Parent.BelongsToRootChild: false })
         {
-            sessionService.ClearUsersCurrentSession();
+            await sessionService.ClearUsersCurrentSessionAsync();
             await unitOfWork.SaveChangesAsync();
 
             return new SyncPlaybackSessionResponse

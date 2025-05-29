@@ -42,29 +42,29 @@ public class TranscodeCacheItem(ILogger<TranscodeCacheItem> logger)
         _hasCompletePlaylist = await HasCompletePlaylistAsync();
     }
     
-    public void CalculateHasCompletePlaylist()
+    public void CalculateHasCompletePlaylist(CancellationToken cancellationToken = default)
     {
         _calculateHasCompletePlaylistDebounceThrottle.Debounce(async void () =>
         {
             try
             {
-                HasCompletePlaylist = await HasCompletePlaylistAsync();
+                HasCompletePlaylist = await HasCompletePlaylistAsync(cancellationToken);
             }
             catch (Exception e)
             {
                 logger.LogError(e, "Failed to calculate HasCompletePlaylist");
             }
-        });
+        }, cancellationToken);
     }
 
-    private async Task<bool> HasCompletePlaylistAsync()
+    private async Task<bool> HasCompletePlaylistAsync(CancellationToken cancellationToken = default)
     {
         if (!TryGetPlaylistFile(out var playlistFile))
         {
             return false;
         }
 
-        var lines = await File.ReadAllLinesAsync(playlistFile.Path.AbsolutePath);
+        var lines = await File.ReadAllLinesAsync(playlistFile.Path.AbsolutePath, cancellationToken);
         
         return lines.LastOrDefault()?.StartsWith("#EXT-X-ENDLIST") ?? false;
     }

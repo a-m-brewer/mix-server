@@ -8,5 +8,5 @@ public interface IUnitOfWork
     TRepository GetRepository<TRepository>() where TRepository : IRepository;
     void OnSaved(Expression<Func<Task>> command);
     void InvokeCallbackOnSaved(Func<ICallbackService, Task> callback);
-    Task SaveChangesAsync();
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -23,6 +23,11 @@ public class DeviceTrackingService(
             : throw new NotFoundException(nameof(DeviceState), deviceId);
     }
 
+    public bool HasDeviceState(Guid deviceId)
+    {
+        return _states.ContainsKey(deviceId);
+    }
+
     public void SetOnline(string userId, Guid deviceId, bool online)
     {
         GetOrAdd(userId, deviceId, state =>
@@ -96,14 +101,21 @@ public class DeviceTrackingService(
             return;
         }
         
-        using var scope = serviceProvider.CreateScope();
-        var callbackService = scope.ServiceProvider.GetRequiredService<ICallbackService>();
+        try
+        {
+            using var scope = serviceProvider.CreateScope();
+            var callbackService = scope.ServiceProvider.GetRequiredService<ICallbackService>();
         
-        logger.LogInformation("Device: {DeviceId} online: {Online} interaction state: {InteractedWith} capabilities: {Capabilities}",
-            deviceState.DeviceId,
-            deviceState.Online,
-            deviceState.InteractedWith,
-            string.Join(", ", deviceState.Capabilities.Values.ToList()));
-        await callbackService.DeviceStateUpdated(deviceState);
+            logger.LogInformation("Device: {DeviceId} online: {Online} interaction state: {InteractedWith} capabilities: {Capabilities}",
+                deviceState.DeviceId,
+                deviceState.Online,
+                deviceState.InteractedWith,
+                string.Join(", ", deviceState.Capabilities.Keys.ToList()));
+            await callbackService.DeviceStateUpdated(deviceState);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error handling device state change for {DeviceId}", deviceState.DeviceId);
+        }
     }
 }

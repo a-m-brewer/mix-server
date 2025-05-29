@@ -21,14 +21,14 @@ public class ClearCurrentSessionCommandHandler(
     public async Task<CurrentSessionUpdatedDto> HandleAsync(ClearCurrentSessionCommand request)
     {
         await currentUserRepository.LoadCurrentPlaybackSessionAsync();
-        var user = currentUserRepository.CurrentUser;
+        var user = await currentUserRepository.GetCurrentUserAsync();
 
         if (user.CurrentPlaybackSession == null)
         {
             throw new InvalidRequestException(nameof(user.CurrentPlaybackSession),"User currently had no playback session");
         }
         
-        sessionService.ClearUsersCurrentSession();
+        await sessionService.ClearUsersCurrentSessionAsync();
         queueService.ClearQueue();
         
         await unitOfWork.SaveChangesAsync();

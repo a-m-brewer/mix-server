@@ -25,7 +25,7 @@ public interface ITranscodeCache : IDisposable
     Task InitializeAsync();
     TranscodeState GetTranscodeStatus(Guid transcodeId);
     TranscodeState GetTranscodeStatus(NodePath nodePath);
-    void CalculateHasCompletePlaylist(Guid transcodeId);
+    void CalculateHasCompletePlaylist(Guid transcodeId, CancellationToken cancellationToken = default);
     HlsPlaylistStreamFile GetPlaylistOrThrowAsync(Guid transcodeId);
     HlsSegmentStreamFile GetSegmentOrThrow(string segment);
 }
@@ -95,14 +95,14 @@ public class TranscodeCache(
             : TranscodeState.InProgress;
     }
 
-    public void CalculateHasCompletePlaylist(Guid transcodeId)
+    public void CalculateHasCompletePlaylist(Guid transcodeId, CancellationToken cancellationToken = default)
     {
         if (!_transcodeFolders.TryGetValue(transcodeId, out var transcode))
         {
             return;
         }
 
-        transcode.CalculateHasCompletePlaylist();
+        transcode.CalculateHasCompletePlaylist(cancellationToken);
     }
 
     public HlsPlaylistStreamFile GetPlaylistOrThrowAsync(Guid transcodeId)
@@ -190,8 +190,11 @@ public class TranscodeCache(
         }
     }
 
+    private void CacheFolderOnItemRemoved(object? sender, IFileExplorerNode path)
+        => CacheFolderOnItemRemoved(path.Path);
+    
     // ReSharper disable once AsyncVoidMethod
-    private async void CacheFolderOnItemRemoved(object? sender, NodePath path)
+    private async void CacheFolderOnItemRemoved(NodePath path)
     {
         var hash = path.FileName;
 
@@ -238,13 +241,13 @@ public class TranscodeCache(
             return;
         }
 
-        CacheFolderOnItemRemoved(sender, e.OldPath);
+        CacheFolderOnItemRemoved(e.OldPath);
         CacheFolderOnItemAdded(sender, e.Item);
     }
 
-    private void TranscodeFolderOnItemRemoved(object? sender, NodePath nodePath)
+    private void TranscodeFolderOnItemRemoved(object? sender, IFileExplorerNode e)
     {
-        CalculateHasCompletePlaylistFromPath(nodePath);
+        CalculateHasCompletePlaylistFromPath(e.Path);
     }
 
     private void TranscodeFolderOnItemUpdated(object? sender, FolderItemUpdatedEventArgs e)
@@ -273,7 +276,7 @@ public class TranscodeCache(
 
         foreach (var transcodeFolder in _transcodeFolders.Values)
         {
-            TranscodeFolderOnItemRemoved(this, transcodeFolder.TranscodeFolder.Folder.Node.Path);
+            TranscodeFolderOnItemRemoved(this, transcodeFolder.TranscodeFolder.Folder.Node);
         }
 
         _transcodeFolders.Clear();

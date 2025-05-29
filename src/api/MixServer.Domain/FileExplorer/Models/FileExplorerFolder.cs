@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using MixServer.Domain.FileExplorer.Enums;
 
 namespace MixServer.Domain.FileExplorer.Models;
@@ -49,8 +50,8 @@ public class FileExplorerFolder(IFileExplorerFolderNode node) : IFileExplorerFol
         }
     }
 
-    public void RemoveChild(string name)
+    public bool RemoveChild(string name, [MaybeNullWhen(false)] out IFileExplorerNode node)
     {
-        ChildNodes.TryRemove(name, out _);
+        return ChildNodes.TryRemove(name, out node);
     }
 }

@@ -14,16 +14,9 @@ export class HistoryRepositoryService {
   private _sessions$ = new BehaviorSubject<Array<PlaybackSession>>([]);
   private _moreItemsAvailable$ = new BehaviorSubject<boolean>(true);
 
-  constructor(authenticationService: AuthenticationService,
-              private _nodeCache: NodeCacheService,
+  constructor(private _nodeCache: NodeCacheService,
               private _playbackSessionConverter: PlaybackSessionConverterService,
               private _sessionClient: SessionApiService) {
-    authenticationService.connected$
-      .subscribe(connected => {
-        if (connected) {
-          this.loadMoreItems().then();
-        }
-      });
   }
 
   public get sessions$(): Observable<Array<PlaybackSession>> {

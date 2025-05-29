@@ -17,7 +17,7 @@ public class FolderPersistenceService(
 {
     public async Task<IFileExplorerFolderNodeWithEntity> GetFolderAsync(NodePath nodePath)
     {
-        var folder = folderCache.GetOrAdd(nodePath);
+        var folder = await folderCache.GetOrAddAsync(nodePath);
         
         var nodeEntity = await nodeRepository.GetOrDefaultAsync<FileExplorerFolderNodeEntity>(nodePath);
         
@@ -41,7 +41,7 @@ public class FolderPersistenceService(
 
     public async Task<IFileExplorerFileNodeWithEntity> GetFileAsync(NodePath nodePath)
     {
-        var file = folderCache.GetFile(nodePath);
+        var file = await folderCache.GetFileAsync(nodePath);
         
         var nodeEntity = await nodeRepository.GetOrDefaultAsync<FileExplorerFileNodeEntity>(nodePath);
 

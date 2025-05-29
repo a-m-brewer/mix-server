@@ -10,6 +10,7 @@ import {
 import {AudioPlayerStateService} from "../services/audio-player/audio-player-state.service";
 import {AudioPlayerStateModel} from "../services/audio-player/models/audio-player-state-model";
 import {SessionService} from "../services/sessions/session.service";
+import {AuthenticationService} from "../services/auth/authentication.service";
 
 @Component({
   selector: 'app-history-page',
@@ -29,13 +30,21 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
   public scrollUpDistance = 2;
   public selector: string = '#content-scroll-container';
 
-  constructor(private _audioPlayerStateService: AudioPlayerStateService,
+  constructor(private _authenticationService: AuthenticationService,
+              private _audioPlayerStateService: AudioPlayerStateService,
               private _historyRepository: HistoryRepositoryService,
               private _loadingRepository: LoadingRepositoryService,
               private _sessionService: SessionService) {
   }
 
   public ngOnInit(): void {
+    this._authenticationService.connected$
+      .subscribe(connected => {
+        if (connected) {
+          this._historyRepository.loadMoreItems().then();
+        }
+      });
+
     this._audioPlayerStateService.state$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(state => {

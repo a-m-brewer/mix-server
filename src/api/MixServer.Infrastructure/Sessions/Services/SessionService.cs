@@ -29,30 +29,11 @@ public class SessionService(
     IUnitOfWork unitOfWork)
     : ISessionService
 {
-    public async Task LoadPlaybackStateAsync()
-    {
-        if (playbackTrackingService.IsTracking(currentUserRepository.CurrentUserId))
-        {
-            logger.LogDebug("Skipping loading playback state as it is already being tracked");
-            return;
-        }
-
-        var session = await GetCurrentPlaybackSessionOrDefaultAsync();
-
-        if (session == null)
-        {
-            logger.LogDebug("Skipping loading playback state as there is currently no playback session to track");
-            return;
-        }
-
-        playbackTrackingService.UpdateSessionState(session);
-    }
-
     public async Task<PlaybackSession> AddOrUpdateSessionAsync(IAddOrUpdateSessionRequest request)
     {
-        var user = currentUserRepository.CurrentUser;
-        
-        var device = requestedPlaybackDeviceAccessor.PlaybackDevice;
+        var user = await currentUserRepository.GetCurrentUserAsync();
+
+        var device = await requestedPlaybackDeviceAccessor.GetPlaybackDeviceAsync();
         
         var file = await folderPersistenceService.GetFileAsync(request.NodePath);
 
@@ -87,15 +68,15 @@ public class SessionService(
         
         user.CurrentPlaybackSession = session;
 
-        sessionHydrationService.Hydrate(session);
+        await sessionHydrationService.HydrateAsync(session);
         
         unitOfWork.InvokeCallbackOnSaved(c => c.CurrentSessionUpdated(session.UserId, currentDeviceRepository.DeviceId, session));
         return session;
     }
 
-    public void ClearUsersCurrentSession()
+    public async Task ClearUsersCurrentSessionAsync()
     {
-        var user = currentUserRepository.CurrentUser;
+        var user = await currentUserRepository.GetCurrentUserAsync();
         
         if (user.CurrentPlaybackSession != null)
         {
@@ -111,7 +92,7 @@ public class SessionService(
     {
         var session = await playbackSessionRepository.GetAsync(id);
 
-        sessionHydrationService.Hydrate(session);
+        await sessionHydrationService.HydrateAsync(session);
         
         return session;
     }
@@ -120,7 +101,7 @@ public class SessionService(
     {
         var session = await GetCurrentPlaybackSessionAsync();
         
-        sessionHydrationService.Hydrate(session);
+        await sessionHydrationService.HydrateAsync(session);
 
         return session;
     }
@@ -140,7 +121,7 @@ public class SessionService(
     public async Task<PlaybackSession?> GetCurrentPlaybackSessionOrDefaultAsync()
     {
         await currentUserRepository.LoadCurrentPlaybackSessionAsync();
-        var user = currentUserRepository.CurrentUser;
+        var user = await currentUserRepository.GetCurrentUserAsync();
 
         var session = user.CurrentPlaybackSession;
 
@@ -150,14 +131,11 @@ public class SessionService(
     public async Task<List<PlaybackSession>> GetUsersPlaybackSessionHistoryAsync(int startIndex, int pageSize)
     {
         await currentUserRepository.LoadPagedPlaybackSessionsAsync(startIndex, pageSize);
-        var user = currentUserRepository.CurrentUser;
+        var user = await currentUserRepository.GetCurrentUserAsync();
 
         var sessions = user.PlaybackSessions;
 
-        foreach (var session in sessions)
-        {
-            sessionHydrationService.Hydrate(session);
-        }
+        await Task.WhenAll(sessions.Select(sessionHydrationService.HydrateAsync));
 
         return sessions;
     }
