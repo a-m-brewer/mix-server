@@ -14,11 +14,9 @@ public class ProcessTranscodeCommandHandler(
     IOptions<FfmpegSettings> ffmpegSettings,
     ILogger<ProcessTranscodeCommandHandler> logger,
     ITranscodeCache transcodeCache,
-    ITranscodeRepository transcodeRepository) : ICommandHandler2<TranscodeRequest>
+    ITranscodeRepository transcodeRepository,
+    IOptions<TranscodeSettings> transcodeSettings) : ICommandHandler2<TranscodeRequest>
 {
-    private const int HlsTime = 4;
-    private const int DefaultBitrate = 192;
-    
     public async Task HandleAsync(TranscodeRequest request, CancellationToken cancellationToken)
     {
         var transcode = await transcodeRepository.GetAsync(request.TranscodeId, cancellationToken);
@@ -27,7 +25,10 @@ public class ProcessTranscodeCommandHandler(
 
         var transcodeFolder = cacheFolderSettings.Value.GetTranscodeFolder(transcodeIdString);
         
-        var bitrate = request.Bitrate == 0 ? DefaultBitrate : request.Bitrate;
+        var bitrate = request.Bitrate == 0
+            ? transcodeSettings.Value.DefaultBitrate
+            : request.Bitrate;
+        var hlsTime = transcodeSettings.Value.HlsTimeInSeconds;
         
         logger.LogInformation("Starting transcode for {AbsoluteFilePath} ({TranscodeId})",
             transcode.NodeEntity.Path.AbsolutePath,
@@ -41,7 +42,7 @@ public class ProcessTranscodeCommandHandler(
                 "-b:a", $"{bitrate}k",
                 "-vn",
                 "-f", "hls",
-                "-hls_time", $"{HlsTime}",
+                "-hls_time", $"{hlsTime}",
                 "-hls_list_size", "0",
                 "-hls_flags", "append_list+program_date_time+independent_segments",
                 "-hls_segment_filename", $"{transcodeIdString}_%06d.ts",
@@ -69,7 +70,15 @@ public class ProcessTranscodeCommandHandler(
             logger.LogError("Transcode of {AbsoluteFilePath} ({Hash}) failed cleaning up resources", 
                 transcode.NodeEntity.Path.AbsolutePath,
                 transcodeIdString);
-            Directory.Delete(transcodeFolder, true);
+
+            try
+            {
+                Directory.Delete(transcodeFolder, true);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to delete transcode folder {TranscodeFolder}", transcodeFolder);
+            }
         }
     }
 }

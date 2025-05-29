@@ -195,6 +195,8 @@ builder.Services.Configure<CacheFolderSettings>(builder.Configuration.GetSection
 
 builder.Services.Configure<FfmpegSettings>(builder.Configuration.GetSection(ConfigSection.Ffmpeg));
 
+builder.Services.Configure<TranscodeSettings>(builder.Configuration.GetSection(ConfigSection.TranscodeSettings));
+
 // NSwag
 builder.Services.AddSwaggerDocument(settings =>
 {
