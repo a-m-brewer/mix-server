@@ -24,16 +24,16 @@ public class SyncPlaybackSessionCommandHandler(
     IUnitOfWork unitOfWork)
     : ICommandHandler<SyncPlaybackSessionCommand, SyncPlaybackSessionResponse>
 {
-    public async Task<SyncPlaybackSessionResponse> HandleAsync(SyncPlaybackSessionCommand request)
+    public async Task<SyncPlaybackSessionResponse> HandleAsync(SyncPlaybackSessionCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
-        var serverSession = await sessionService.GetCurrentPlaybackSessionWithFileAsync();
+        var serverSession = await sessionService.GetCurrentPlaybackSessionWithFileAsync(cancellationToken);
 
         if (serverSession.File is { Parent.BelongsToRootChild: false })
         {
             await sessionService.ClearUsersCurrentSessionAsync();
-            await unitOfWork.SaveChangesAsync();
+            await unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new SyncPlaybackSessionResponse
             {
@@ -72,7 +72,7 @@ public class SyncPlaybackSessionCommandHandler(
 
         playbackTrackingService.UpdateSessionStateIncludingPlaying(serverSession);
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new SyncPlaybackSessionResponse
         {

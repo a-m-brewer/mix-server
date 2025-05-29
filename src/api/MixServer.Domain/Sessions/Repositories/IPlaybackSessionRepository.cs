@@ -5,6 +5,6 @@ namespace MixServer.Domain.Sessions.Repositories;
 
 public interface IPlaybackSessionRepository : ITransientRepository
 {
-    Task<PlaybackSession> GetAsync(Guid id);
-    Task AddAsync(PlaybackSession session);
+    Task<PlaybackSession> GetAsync(Guid id, CancellationToken cancellationToken);
+    Task AddAsync(PlaybackSession session, CancellationToken cancellationToken);
 }

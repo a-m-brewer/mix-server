@@ -24,12 +24,12 @@ public class GetStreamQueryHandler(
     IValidator<GetStreamQuery> validator)
     : IQueryHandler<GetStreamQuery, StreamFile>
 {
-    public async Task<StreamFile> HandleAsync(GetStreamQuery query)
+    public async Task<StreamFile> HandleAsync(GetStreamQuery query, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(query);
+        await validator.ValidateAndThrowAsync(query, cancellationToken);
 
         var file = Guid.TryParse(query.Id, out var playbackSessionId)
-            ? await GetPlaybackSessionAsync(playbackSessionId, query.SecurityParameters)
+            ? await GetPlaybackSessionAsync(playbackSessionId, query.SecurityParameters, cancellationToken)
             : GetSegment(query.Id);
 
         return file;
@@ -45,18 +45,21 @@ public class GetStreamQueryHandler(
         return transcodeCache.GetSegmentOrThrow(segment);
     }
 
-    private async Task<StreamFile> GetPlaybackSessionAsync(Guid playbackSessionId, StreamSecurityParametersDto securityParameters)
+    private async Task<StreamFile> GetPlaybackSessionAsync(
+        Guid playbackSessionId,
+        StreamSecurityParametersDto securityParameters,
+        CancellationToken cancellationToken)
     {
         jwtService.ValidateKeyOrThrow(playbackSessionId.ToString(), securityParameters.Key, securityParameters.Expires);
         
-        var session = await sessionService.GetPlaybackSessionByIdAsync(playbackSessionId);
+        var session = await sessionService.GetPlaybackSessionByIdAsync(playbackSessionId, cancellationToken);
 
         if (session.File is null || !session.File.Exists)
         {
             throw new NotFoundException(nameof(PlaybackSession), session.NodeEntity.Path.AbsolutePath);
         }
 
-        var transcode = await transcodeRepository.GetOrDefaultAsync(session.File.Path);
+        var transcode = await transcodeRepository.GetOrDefaultAsync(session.File.Path, cancellationToken);
         // Specifically use the RequestDevice to determine if the file can be played
         // Because if playback device is switched we want the client to be seeing what version they can play
         // Rather than what the playback device can play e.g. switching from Transcode to DirectStream

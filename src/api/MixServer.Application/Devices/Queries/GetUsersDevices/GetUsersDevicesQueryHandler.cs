@@ -9,9 +9,9 @@ public class GetUsersDevicesQueryHandler(
     IConverter<List<IDevice>, GetUsersDevicesQueryResponse> getUsersDevicesQueryResponseConverter)
     : IQueryHandler<GetUsersDevicesQueryResponse>
 {
-    public async Task<GetUsersDevicesQueryResponse> HandleAsync()
+    public async Task<GetUsersDevicesQueryResponse> HandleAsync(CancellationToken cancellationToken = default)
     {
-        var devices = await deviceService.GetUsersDevicesAsync();
+        var devices = await deviceService.GetUsersDevicesAsync(cancellationToken);
 
         return getUsersDevicesQueryResponseConverter.Convert(devices);
     }

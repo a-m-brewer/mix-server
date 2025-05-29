@@ -14,7 +14,7 @@ public class DetectDeviceCommandHandler(
     IDeviceRepository deviceRepository,
     IDeviceTrackingService deviceTrackingService,
     ILogger<DetectDeviceCommandHandler> logger,
-    IUnitOfWork unitOfWork) : ICommandHandler2<DeviceInfoRequest>
+    IUnitOfWork unitOfWork) : ICommandHandler<DeviceInfoRequest>
 {
     public async Task HandleAsync(DeviceInfoRequest request, CancellationToken cancellationToken)
     {

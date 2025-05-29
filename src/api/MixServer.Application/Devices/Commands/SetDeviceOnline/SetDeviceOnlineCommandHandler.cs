@@ -13,7 +13,7 @@ public class SetDeviceOnlineCommandHandler(
     IPlaybackTrackingService playbackTrackingService)
     : ICommandHandler<SetDeviceOnlineCommand>
 {
-    public Task HandleAsync(SetDeviceOnlineCommand request)
+    public Task HandleAsync(SetDeviceOnlineCommand request, CancellationToken cancellationToken = default)
     {
         deviceTrackingService.SetOnline(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, request.Online);
         

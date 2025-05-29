@@ -21,13 +21,13 @@ public class RequestTranscodeCommandHandler(
     IValidator<RequestTranscodeCommand> validator)
     : ICommandHandler<RequestTranscodeCommand>
 {
-    public async Task HandleAsync(RequestTranscodeCommand request)
+    public async Task HandleAsync(RequestTranscodeCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
         var nodePath = nodePathDtoConverter.Convert(request.NodePath);
         
-        var file = await folderPersistenceService.GetFileAsync(nodePath);
+        var file = await folderPersistenceService.GetFileAsync(nodePath, cancellationToken);
 
         if (!file.Exists)
         {
@@ -39,7 +39,7 @@ public class RequestTranscodeCommandHandler(
             throw new InvalidRequestException(nameof(request.NodePath), $"{nodePath.AbsolutePath} is not supported for transcoding");
         }
 
-        var existingTranscode = await transcodeRepository.GetOrDefaultAsync(file.Path);
+        var existingTranscode = await transcodeRepository.GetOrDefaultAsync(file.Path, cancellationToken);
 
         if (existingTranscode is not null && transcodeCache.GetTranscodeStatus(existingTranscode.Id) != TranscodeState.None)
         {
@@ -47,6 +47,6 @@ public class RequestTranscodeCommandHandler(
         }
         
         var bitrate = mediaInfoCache.TryGet(file.Path, out var mediaInfo) ? mediaInfo.Bitrate : 0;
-        await transcodeService.RequestTranscodeAsync(file.Entity, bitrate);
+        await transcodeService.RequestTranscodeAsync(file.Entity, bitrate, cancellationToken);
     }
 }

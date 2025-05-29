@@ -11,9 +11,9 @@ public class CopyNodeCommandCommandHandler(
     IValidator<CopyNodeCommand> validator)
     : ICommandHandler<CopyNodeCommand>
 {
-    public async Task HandleAsync(CopyNodeCommand request)
+    public async Task HandleAsync(CopyNodeCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
 
         fileService.CopyNode(
             nodePathDtoConverter.Convert(request.SourcePath),

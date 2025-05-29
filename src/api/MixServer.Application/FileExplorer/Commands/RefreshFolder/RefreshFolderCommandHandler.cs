@@ -20,7 +20,7 @@ public class RefreshFolderCommandHandler(
     INodePathDtoConverter nodePathDtoConverter,
     IRootFileExplorerFolder rootFolder) : ICommandHandler<RefreshFolderCommand, FileExplorerFolderResponse>
 {
-    public async Task<FileExplorerFolderResponse> HandleAsync(RefreshFolderCommand request)
+    public async Task<FileExplorerFolderResponse> HandleAsync(RefreshFolderCommand request, CancellationToken cancellationToken = default)
     {
         var nodePath = request.NodePath is null ? null : nodePathDtoConverter.Convert(request.NodePath);
         
@@ -33,7 +33,7 @@ public class RefreshFolderCommandHandler(
             folderCacheService.InvalidateFolder(nodePath);
         }
         
-        var folder = await fileService.GetFolderOrRootAsync(nodePath);
+        var folder = await fileService.GetFolderOrRootAsync(nodePath, cancellationToken);
 
         // TODO: make a way of refreshing all users folders at once on cache invalidation with their folder sorts
         await callbackService.FolderRefreshed(

@@ -31,7 +31,7 @@ public class HostSettings
     private string[] GenerateValidUrlsSplit()
     {
         var initialValidUrls = string.IsNullOrWhiteSpace(ValidUrls)
-            ? Array.Empty<string>()
+            ? []
             : ValidUrls.Split(";");
         var validUrls = new List<string>(initialValidUrls);
 

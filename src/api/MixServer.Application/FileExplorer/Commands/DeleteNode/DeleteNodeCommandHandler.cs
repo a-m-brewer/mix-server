@@ -11,9 +11,9 @@ public class DeleteNodeCommandHandler(
     IValidator<DeleteNodeCommand> validator)
     : ICommandHandler<DeleteNodeCommand>
 {
-    public async Task HandleAsync(DeleteNodeCommand request)
+    public async Task HandleAsync(DeleteNodeCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
         fileService.DeleteNode(nodePathDtoConverter.Convert(request.NodePath));
     }

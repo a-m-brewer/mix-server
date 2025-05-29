@@ -7,7 +7,7 @@ namespace MixServer.Application.Tracklists.Commands.ImportTracklist;
 
 public class ImportTracklistCommandHandler : ICommandHandler<ImportTracklistCommand, ImportTracklistResponse>
 {
-    public async Task<ImportTracklistResponse> HandleAsync(ImportTracklistCommand request)
+    public async Task<ImportTracklistResponse> HandleAsync(ImportTracklistCommand request, CancellationToken cancellationToken = default)
     {
         await using var stream = request.File.OpenReadStream();
         using var reader = new StreamReader(stream);

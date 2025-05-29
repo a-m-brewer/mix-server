@@ -15,7 +15,7 @@ public class ProcessTranscodeCommandHandler(
     ILogger<ProcessTranscodeCommandHandler> logger,
     ITranscodeCache transcodeCache,
     ITranscodeRepository transcodeRepository,
-    IOptions<TranscodeSettings> transcodeSettings) : ICommandHandler2<TranscodeRequest>
+    IOptions<TranscodeSettings> transcodeSettings) : ICommandHandler<TranscodeRequest>
 {
     public async Task HandleAsync(TranscodeRequest request, CancellationToken cancellationToken)
     {

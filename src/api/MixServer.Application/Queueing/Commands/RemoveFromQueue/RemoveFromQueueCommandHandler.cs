@@ -12,11 +12,11 @@ public class RemoveFromQueueCommandHandler(
     IValidator<RemoveFromQueueCommand> validator)
     : ICommandHandler<RemoveFromQueueCommand, QueueSnapshotDto>
 {
-    public async Task<QueueSnapshotDto> HandleAsync(RemoveFromQueueCommand request)
+    public async Task<QueueSnapshotDto> HandleAsync(RemoveFromQueueCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var queueSnapshot = await queueService.RemoveUserQueueItemsAsync(request.QueueItems);
+        var queueSnapshot = await queueService.RemoveUserQueueItemsAsync(request.QueueItems, cancellationToken);
 
         return converter.Convert(queueSnapshot);
     }

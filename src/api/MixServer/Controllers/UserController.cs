@@ -30,9 +30,9 @@ public class UserController(
     [ProducesResponseType(typeof(GetAllUsersResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(await getAllUsersQueryHandler.HandleAsync());
+        return Ok(await getAllUsersQueryHandler.HandleAsync(cancellationToken));
     }
 
     [HttpPost]
@@ -41,9 +41,9 @@ public class UserController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> AddUser([FromBody] AddUserCommand command)
+    public async Task<IActionResult> AddUser([FromBody] AddUserCommand command, CancellationToken cancellationToken)
     {
-        return Ok(await addUserCommandHandler.HandleAsync(command));
+        return Ok(await addUserCommandHandler.HandleAsync(command, cancellationToken));
     }
     
     [HttpPut("{userId}")]
@@ -52,11 +52,11 @@ public class UserController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> UpdateUser([FromRoute] string userId, [FromBody] UpdateUserCommand command)
+    public async Task<IActionResult> UpdateUser([FromRoute] string userId, [FromBody] UpdateUserCommand command, CancellationToken cancellationToken)
     {
         command.UserId = userId;
         
-        await updateUserCommandHandler.HandleAsync(command);
+        await updateUserCommandHandler.HandleAsync(command, cancellationToken);
         
         return NoContent();
     }
@@ -67,12 +67,12 @@ public class UserController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> DeleteUser([FromRoute] string userId)
+    public async Task<IActionResult> DeleteUser([FromRoute] string userId, CancellationToken cancellationToken)
     {
         await deleteUserCommandHandler.HandleAsync(new DeleteUserCommand
         {
             UserId = userId
-        });
+        }, cancellationToken);
         
         return NoContent();
     }
@@ -82,9 +82,9 @@ public class UserController(
     [ProducesResponseType(typeof(LoginCommandResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Login([FromBody] LoginUserCommand command)
+    public async Task<IActionResult> Login([FromBody] LoginUserCommand command, CancellationToken cancellationToken)
     {
-        return Ok(await loginUserCommandHandler.HandleAsync(command));
+        return Ok(await loginUserCommandHandler.HandleAsync(command, cancellationToken));
     }
 
     [HttpPost("reset")]
@@ -93,9 +93,9 @@ public class UserController(
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken cancellationToken)
     {
-        await resetPasswordCommandHandler.HandleAsync(command);
+        await resetPasswordCommandHandler.HandleAsync(command, cancellationToken);
         
         return NoContent();
     }
@@ -105,8 +105,8 @@ public class UserController(
     [ProducesResponseType(typeof(RefreshUserResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Refresh([FromBody] RefreshUserCommand command)
+    public async Task<IActionResult> Refresh([FromBody] RefreshUserCommand command, CancellationToken cancellationToken)
     {
-        return Ok(await refreshUserCommandHandler.HandleAsync(command));
+        return Ok(await refreshUserCommandHandler.HandleAsync(command, cancellationToken));
     }
 }

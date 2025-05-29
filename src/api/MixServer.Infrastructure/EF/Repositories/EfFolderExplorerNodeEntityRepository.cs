@@ -7,7 +7,7 @@ namespace MixServer.Infrastructure.EF.Repositories;
 
 public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : IFolderExplorerNodeEntityRepository
 {
-    public async Task<TEntity?> GetOrDefaultAsync<TEntity>(NodePath nodePath) where TEntity : FileExplorerNodeEntity
+    public async Task<TEntity?> GetOrDefaultAsync<TEntity>(NodePath nodePath, CancellationToken cancellationToken) where TEntity : FileExplorerNodeEntity
     {
         IQueryable<TEntity> query = context.Nodes
             .OfType<TEntity>()
@@ -22,18 +22,18 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
         }
         
         return await query
-            .FirstOrDefaultAsync(f => f.RelativePath == nodePath.RelativePath && f.RootChild.RelativePath == nodePath.RootPath);
+            .FirstOrDefaultAsync(f => f.RelativePath == nodePath.RelativePath && f.RootChild.RelativePath == nodePath.RootPath, cancellationToken);
     }
 
-    public async Task<FileExplorerRootChildNodeEntity?> GetRootChildOrDefaultAsync(NodePath rootChild)
+    public async Task<FileExplorerRootChildNodeEntity?> GetRootChildOrDefaultAsync(NodePath rootChild, CancellationToken cancellationToken)
     {
         return await context.Nodes
             .OfType<FileExplorerRootChildNodeEntity>()
-            .FirstOrDefaultAsync(f => f.RelativePath == rootChild.RootPath);
+            .FirstOrDefaultAsync(f => f.RelativePath == rootChild.RootPath, cancellationToken);
     }
 
-    public async Task AddAsync(FileExplorerNodeEntityBase nodeEntity)
+    public async Task AddAsync(FileExplorerNodeEntityBase nodeEntity, CancellationToken cancellationToken)
     {
-        await context.Nodes.AddAsync(nodeEntity);
+        await context.Nodes.AddAsync(nodeEntity, cancellationToken);
     }
 }

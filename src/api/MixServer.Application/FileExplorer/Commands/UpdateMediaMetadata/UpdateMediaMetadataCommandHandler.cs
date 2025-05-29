@@ -14,7 +14,7 @@ public class UpdateMediaMetadataCommandHandler(
     ILogger<UpdateMediaMetadataCommandHandler> logger,
     IMediaInfoCache mediaInfoCache,
     ITagBuilderFactory tagBuilderFactory,
-    ITracklistTagService tracklistTagService) : ICommandHandler2<UpdateMediaMetadataRequest>
+    ITracklistTagService tracklistTagService) : ICommandHandler<UpdateMediaMetadataRequest>
 {
     public async Task HandleAsync(UpdateMediaMetadataRequest request, CancellationToken cancellationToken)
     {

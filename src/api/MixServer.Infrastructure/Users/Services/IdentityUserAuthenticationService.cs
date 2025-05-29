@@ -81,18 +81,18 @@ public class IdentityUserAuthenticationService(
         return user;
     }
 
-    public async Task<ITokenRefreshResponse> LoginAsync(IUserLoginRequest request)
+    public async Task<ITokenRefreshResponse> LoginAsync(IUserLoginRequest request, CancellationToken cancellationToken)
     {
         var user = await userManager.Users
             .Include(i => i.Devices)
-            .SingleOrDefaultAsync(s => s.UserName == request.Username);
+            .SingleOrDefaultAsync(s => s.UserName == request.Username, cancellationToken: cancellationToken);
 
         if (user?.UserName == null || !await userManager.CheckPasswordAsync(user,  request.Password))
         {
             throw new UnauthorizedRequestException();
         }
 
-        var device = await deviceService.GetOrAddAsync(request.DeviceId);
+        var device = await deviceService.GetOrAddAsync(request.DeviceId, cancellationToken);
 
         if (user.Devices.All(a => a.Id != device.Id))
         {
@@ -110,22 +110,22 @@ public class IdentityUserAuthenticationService(
 
         var newToken = GenerateTokens(request.Audience, claims);
 
-        var userCredential = await userCredentialRepository.AddOrUpdateUserCredentialAsync(user.Id, device.Id, newToken);
+        var userCredential = await userCredentialRepository.AddOrUpdateUserCredentialAsync(user.Id, device.Id, newToken, cancellationToken);
 
         deviceService.UpdateDevice(device);
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new UserLoginResponse(userCredential, user.PasswordResetRequired, roles.ToList());
     }
 
-    public async Task<ITokenRefreshResponse> RefreshAsync(IUserRefreshRequest request)
+    public async Task<ITokenRefreshResponse> RefreshAsync(IUserRefreshRequest request, CancellationToken cancellationToken)
     {
         var (username, claims) = await jwtService.GetUsernameAndClaimsFromTokenAsync(request.AccessToken);
 
         var user = await GetUserOrThrowAsync(username);
 
-        var device = await deviceService.SingleOrDefaultAsync(request.DeviceId);
+        var device = await deviceService.SingleOrDefaultAsync(request.DeviceId, cancellationToken);
 
         if (device == null)
         {
@@ -136,11 +136,11 @@ public class IdentityUserAuthenticationService(
         
         var newToken = GenerateTokens(request.Audience,  claims);
 
-        var userCredential = await userCredentialRepository.AddOrUpdateUserCredentialAsync(user.Id, device.Id, newToken);
+        var userCredential = await userCredentialRepository.AddOrUpdateUserCredentialAsync(user.Id, device.Id, newToken, cancellationToken);
 
         deviceService.UpdateDevice(device);
         
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new TokenRefreshResponse(userCredential, user.PasswordResetRequired, roles.ToList());
     }

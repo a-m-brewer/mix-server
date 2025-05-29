@@ -9,7 +9,7 @@ public class KeyedDebouncer<TKey>(TimeSpan interval, ILogger logger, TimeSpan? m
 {
     private readonly ConcurrentDictionary<TKey, DebounceDispatcher> _rateLimiters = new();
 
-    public async Task DebounceAsync(TKey key, Func<Task> action)
+    public async Task DebounceAsync(TKey key, Func<Task> action, CancellationToken cancellationToken)
     {
         if (!_rateLimiters.TryGetValue(key, out var dispatcher))
         {
@@ -27,6 +27,6 @@ public class KeyedDebouncer<TKey>(TimeSpan interval, ILogger logger, TimeSpan? m
             {
                 logger.LogError(ex, "Error during debounced action for key {Key}", key);
             }
-        });
+        }, cancellationToken);
     }
 }

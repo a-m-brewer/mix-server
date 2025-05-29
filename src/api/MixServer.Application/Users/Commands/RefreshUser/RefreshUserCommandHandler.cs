@@ -12,13 +12,13 @@ public class RefreshUserCommandHandler(
     IValidator<RefreshUserCommand> validator)
     : ICommandHandler<RefreshUserCommand, RefreshUserResponse>
 {
-    public async Task<RefreshUserResponse> HandleAsync(RefreshUserCommand request)
+    public async Task<RefreshUserResponse> HandleAsync(RefreshUserCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
 
         request.Audience = httpContextAccessor.GetRequestAuthority();
         
-        var response = await authenticationService.RefreshAsync(request);
+        var response = await authenticationService.RefreshAsync(request, cancellationToken);
 
         return new RefreshUserResponse(response);
     }

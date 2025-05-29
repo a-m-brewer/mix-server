@@ -14,10 +14,10 @@ public class SaveTracklistCommandHandler(
     ITracklistTagService tracklistTagService)
     : ICommandHandler<SaveTracklistCommand, SaveTracklistResponse>
 {
-    public async Task<SaveTracklistResponse> HandleAsync(SaveTracklistCommand request)
+    public async Task<SaveTracklistResponse> HandleAsync(SaveTracklistCommand request, CancellationToken cancellationToken = default)
     {
         var user = await currentUserRepository.GetCurrentUserAsync();
-        await currentUserRepository.LoadCurrentPlaybackSessionAsync();
+        await currentUserRepository.LoadCurrentPlaybackSessionAsync(cancellationToken);
 
         if (user.CurrentPlaybackSession is null)
         {

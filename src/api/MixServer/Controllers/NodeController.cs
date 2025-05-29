@@ -20,26 +20,26 @@ public class NodeController(
     [ProducesResponseType(typeof(FileExplorerFolderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetNode([FromQuery] NodePathRequestDto query)
+    public async Task<IActionResult> GetNode([FromQuery] NodePathRequestDto query, CancellationToken cancellationToken)
     {
-        return Ok(await getFolderNodeQueryHandler.HandleAsync(query));
+        return Ok(await getFolderNodeQueryHandler.HandleAsync(query, cancellationToken));
     }
     
     [HttpPost("refresh")]
     [ProducesResponseType(typeof(FileExplorerFolderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RefreshFolder([FromBody] RefreshFolderCommand command)
+    public async Task<IActionResult> RefreshFolder([FromBody] RefreshFolderCommand command, CancellationToken cancellationToken)
     {
-        return Ok(await refreshFolderCommandHandler.HandleAsync(command));
+        return Ok(await refreshFolderCommandHandler.HandleAsync(command, cancellationToken));
     }
 
     [HttpPost("sort")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SetFolderSortMode([FromBody] SetFolderSortCommand command)
+    public async Task<IActionResult> SetFolderSortMode([FromBody] SetFolderSortCommand command, CancellationToken cancellationToken)
     {
-        await setFolderSortCommandHandler.HandleAsync(command);
+        await setFolderSortCommandHandler.HandleAsync(command, cancellationToken);
 
         return NoContent();
     }

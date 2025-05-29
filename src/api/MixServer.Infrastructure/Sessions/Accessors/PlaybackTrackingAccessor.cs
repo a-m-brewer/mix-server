@@ -14,18 +14,18 @@ public class PlaybackTrackingAccessor(
     PlaybackTrackingService playbackTrackingService,
     ISessionService sessionService) : IPlaybackTrackingAccessor
 {
-    public async Task<PlaybackState> GetPlaybackStateAsync()
+    public async Task<PlaybackState> GetPlaybackStateAsync(CancellationToken cancellationToken)
     {
-        return await GetPlaybackStateOrDefaultAsync() ??
+        return await GetPlaybackStateOrDefaultAsync(cancellationToken) ??
                throw new NotFoundException(nameof(PlaybackState), currentUserRepository.CurrentUserId);
     }
 
-    public Task<PlaybackState?> GetPlaybackStateOrDefaultAsync()
+    public Task<PlaybackState?> GetPlaybackStateOrDefaultAsync(CancellationToken cancellationToken)
     {
-        return GetPlaybackStateAsync(currentUserRepository.CurrentUserId);
+        return GetPlaybackStateAsync(currentUserRepository.CurrentUserId, cancellationToken);
     }
     
-    private async Task<PlaybackState?> GetPlaybackStateAsync(string userId)
+    private async Task<PlaybackState?> GetPlaybackStateAsync(string userId, CancellationToken cancellationToken)
     {
         if (playbackTrackingService.IsTracking(userId))
         {
@@ -33,7 +33,7 @@ public class PlaybackTrackingAccessor(
             return playbackTrackingService.GetOrThrow(userId);
         }
 
-        var session = await sessionService.GetCurrentPlaybackSessionOrDefaultAsync();
+        var session = await sessionService.GetCurrentPlaybackSessionOrDefaultAsync(cancellationToken);
 
         if (session == null)
         {

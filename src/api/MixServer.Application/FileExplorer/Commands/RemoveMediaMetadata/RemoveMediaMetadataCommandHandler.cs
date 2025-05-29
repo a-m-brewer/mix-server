@@ -9,7 +9,7 @@ namespace MixServer.Application.FileExplorer.Commands.RemoveMediaMetadata;
 public class RemoveMediaMetadataCommandHandler(
     ICallbackService callbackService,
     ILogger<RemoveMediaMetadataCommandHandler> logger,
-    IMediaInfoCache mediaInfoCache) : ICommandHandler2<RemoveMediaMetadataRequest>
+    IMediaInfoCache mediaInfoCache) : ICommandHandler<RemoveMediaMetadataRequest>
 {
     public async Task HandleAsync(RemoveMediaMetadataRequest request, CancellationToken cancellationToken)
     {

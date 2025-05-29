@@ -10,7 +10,7 @@ namespace MixServer.Infrastructure.EF.Repositories;
 
 public class EfTranscodeRepository(MixServerDbContext context) : ITranscodeRepository
 {
-    public async Task<Transcode> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Transcode> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         return await context.Transcodes
                    .IncludeNode()
@@ -18,18 +18,18 @@ public class EfTranscodeRepository(MixServerDbContext context) : ITranscodeRepos
                ?? throw new NotFoundException(nameof(Transcode), id);
     }
 
-    public Task<Transcode?> GetOrDefaultAsync(NodePath nodePath)
+    public Task<Transcode?> GetOrDefaultAsync(NodePath nodePath, CancellationToken cancellationToken)
     {
         return context.Transcodes
             .IncludeNode()
             .SingleOrDefaultAsync(s => 
                 s.Node != null &&
-                s.Node.RootChild.RelativePath == nodePath.RootPath && s.Node.RelativePath == nodePath.RelativePath);
+                s.Node.RootChild.RelativePath == nodePath.RootPath && s.Node.RelativePath == nodePath.RelativePath, cancellationToken);
     }
 
-    public async Task AddAsync(Transcode transcode)
+    public async Task AddAsync(Transcode transcode, CancellationToken cancellationToken)
     {
-        await context.Transcodes.AddAsync(transcode);
+        await context.Transcodes.AddAsync(transcode, cancellationToken);
     }
 
     public void Remove(Guid transcodeId)

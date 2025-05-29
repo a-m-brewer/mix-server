@@ -18,12 +18,12 @@ public interface ICurrentUserRepository
     string CurrentUserId { get; }
     void SetUserId(string userId);
     Task<DbUser> GetCurrentUserAsync();
-    Task LoadCurrentPlaybackSessionAsync();
-    Task LoadPlaybackSessionByFileIdAsync(Guid fileId);
-    Task LoadPagedPlaybackSessionsAsync(int sessionStartIndex, int sessionPageSize);
-    Task LoadFileSortByAbsolutePathAsync(NodePath nodePath);
-    Task LoadAllDevicesAsync();
-    Task LoadDeviceByIdAsync(Guid deviceId);
+    Task LoadCurrentPlaybackSessionAsync(CancellationToken cancellationToken);
+    Task LoadPlaybackSessionByFileIdAsync(Guid fileId, CancellationToken cancellationToken);
+    Task LoadPagedPlaybackSessionsAsync(int sessionStartIndex, int sessionPageSize, CancellationToken cancellationToken);
+    Task LoadFileSortByAbsolutePathAsync(NodePath nodePath, CancellationToken cancellationToken);
+    Task LoadAllDevicesAsync(CancellationToken cancellationToken);
+    Task LoadDeviceByIdAsync(Guid deviceId, CancellationToken cancellationToken);
 }
 
 public class CurrentUserRepository : ICurrentUserRepository
@@ -96,26 +96,26 @@ public class CurrentUserRepository : ICurrentUserRepository
         return user;
     }
 
-    public async Task LoadCurrentPlaybackSessionAsync()
+    public async Task LoadCurrentPlaybackSessionAsync(CancellationToken cancellationToken)
     {
         await (await CurrentUserEntry())
             .Reference(u => u.CurrentPlaybackSession)
             .Query()
             .IncludeNode()
-            .LoadAsync();
+            .LoadAsync(cancellationToken);
     }
 
-    public async Task LoadPlaybackSessionByFileIdAsync(Guid fileId)
+    public async Task LoadPlaybackSessionByFileIdAsync(Guid fileId, CancellationToken cancellationToken)
     {
         await (await CurrentUserEntry())
             .Collection(u => u.PlaybackSessions)
             .Query()
             .IncludeNode()
             .Where(w => w.NodeId == fileId)
-            .LoadAsync();
+            .LoadAsync(cancellationToken);
     }
 
-    public async Task LoadPagedPlaybackSessionsAsync(int sessionStartIndex, int sessionPageSize)
+    public async Task LoadPagedPlaybackSessionsAsync(int sessionStartIndex, int sessionPageSize, CancellationToken cancellationToken)
     {
         await (await CurrentUserEntry())
             .Collection(u =>u.PlaybackSessions)
@@ -124,10 +124,10 @@ public class CurrentUserRepository : ICurrentUserRepository
             .OrderByDescending(o => o.LastPlayed)
             .Skip(sessionStartIndex)
             .Take(sessionPageSize)
-            .LoadAsync();
+            .LoadAsync(cancellationToken);
     }
 
-    public async Task LoadFileSortByAbsolutePathAsync(NodePath nodePath)
+    public async Task LoadFileSortByAbsolutePathAsync(NodePath nodePath, CancellationToken cancellationToken)
     {
         await (await CurrentUserEntry())
             .Collection(c => c.FolderSorts)
@@ -138,25 +138,25 @@ public class CurrentUserRepository : ICurrentUserRepository
                 w.Node != null &&
                 w.Node.RootChild.RelativePath == nodePath.RootPath &&
                 w.Node.RelativePath == nodePath.RelativePath)
-            .LoadAsync();
+            .LoadAsync(cancellationToken);
     }
 
-    public async Task LoadAllDevicesAsync()
+    public async Task LoadAllDevicesAsync(CancellationToken cancellationToken)
     {
         await (await CurrentUserEntry())
             .Collection(u => u.Devices)
             .Query()
             .OrderByDescending(o => o.LastSeen)
-            .LoadAsync();
+            .LoadAsync(cancellationToken);
     }
 
-    public async Task LoadDeviceByIdAsync(Guid deviceId)
+    public async Task LoadDeviceByIdAsync(Guid deviceId, CancellationToken cancellationToken)
     {
         await (await CurrentUserEntry())
             .Collection(c => c.Devices)
             .Query()
             .Where(w => w.Id == deviceId)
-            .LoadAsync();
+            .LoadAsync(cancellationToken);
     }
 
     private ClaimsPrincipal? User => _contextAccessor.HttpContext?.User;

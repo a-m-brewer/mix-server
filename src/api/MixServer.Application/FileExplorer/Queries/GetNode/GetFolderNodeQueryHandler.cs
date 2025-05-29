@@ -12,9 +12,9 @@ public class GetFolderNodeQueryHandler(
     IFileService fileService)
     : IQueryHandler<NodePathRequestDto, FileExplorerFolderResponse>
 {
-    public async Task<FileExplorerFolderResponse> HandleAsync(NodePathRequestDto request)
+    public async Task<FileExplorerFolderResponse> HandleAsync(NodePathRequestDto request, CancellationToken cancellationToken = default)
     {
-        var folder = await fileService.GetFolderOrRootAsync(nodePathConverter.Convert(request));
+        var folder = await fileService.GetFolderOrRootAsync(nodePathConverter.Convert(request), cancellationToken);
 
         var result = folderNodeConverter.Convert(folder);
 

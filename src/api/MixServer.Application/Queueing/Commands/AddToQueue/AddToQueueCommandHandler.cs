@@ -16,13 +16,13 @@ public class AddToQueueCommandHandler(
     IValidator<AddToQueueCommand> validator)
     : ICommandHandler<AddToQueueCommand, QueueSnapshotDto>
 {
-    public async Task<QueueSnapshotDto> HandleAsync(AddToQueueCommand request)
+    public async Task<QueueSnapshotDto> HandleAsync(AddToQueueCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
 
         var file = await fileService.GetFileAsync(nodePathDtoConverter.Convert(request.NodePath));
 
-        var queueSnapshot = await queueService.AddToQueueAsync(file);
+        var queueSnapshot = await queueService.AddToQueueAsync(file, cancellationToken);
 
         return converter.Convert(queueSnapshot);
     }

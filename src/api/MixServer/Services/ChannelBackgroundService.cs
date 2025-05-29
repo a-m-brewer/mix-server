@@ -30,7 +30,7 @@ public abstract class ChannelBackgroundService<T>(
                     try
                     {
                         using var scope = serviceProvider.CreateScope();
-                        await scope.ServiceProvider.GetRequiredService<ICommandHandler2<T>>()
+                        await scope.ServiceProvider.GetRequiredService<ICommandHandler<T>>()
                             .HandleAsync(request.Request, stoppingToken)
                             .ConfigureAwait(false);
                     }

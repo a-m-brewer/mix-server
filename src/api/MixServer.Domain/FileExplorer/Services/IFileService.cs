@@ -4,8 +4,8 @@ namespace MixServer.Domain.FileExplorer.Services;
 
 public interface IFileService
 {
-    Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath);
-    Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath);
+    Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath, CancellationToken cancellationToken);
+    Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath, CancellationToken cancellationToken);
     Task<List<IFileExplorerFileNode>> GetFilesAsync(IReadOnlyList<NodePath> nodePaths);
     Task<IFileExplorerFileNode> GetFileAsync(NodePath nodePath);
     void CopyNode(
@@ -14,5 +14,5 @@ public interface IFileService
         bool move,
         bool overwrite);
     void DeleteNode(NodePath nodePath);
-    Task SetFolderSortAsync(IFolderSortRequest request);
+    Task SetFolderSortAsync(IFolderSortRequest request, CancellationToken cancellationToken);
 }

@@ -15,9 +15,9 @@ public class UpdateUserCommandHandler(
     IUnitOfWork unitOfWork)
     : ICommandHandler<UpdateUserCommand>
 {
-    public async Task HandleAsync(UpdateUserCommand request)
+    public async Task HandleAsync(UpdateUserCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
         var currentUser = await currentUserRepository.GetCurrentUserAsync();
         var otherUser = await userAuthenticationService.GetUserByIdOrThrowAsync(request.UserId);
@@ -31,6 +31,6 @@ public class UpdateUserCommandHandler(
         
         unitOfWork.InvokeCallbackOnSaved(c => c.UserUpdated(otherUser));
         
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

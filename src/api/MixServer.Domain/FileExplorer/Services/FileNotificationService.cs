@@ -84,10 +84,14 @@ public class FileNotificationService(
         return true;
     }
 
-    private async Task<Dictionary<string, int>> GetExpectedIndexesAsync(IServiceProvider sp, IFileExplorerFolder parent, IFileExplorerNode node)
+    private async Task<Dictionary<string, int>> GetExpectedIndexesAsync(
+        IServiceProvider sp,
+        IFileExplorerFolder parent,
+        IFileExplorerNode node,
+        CancellationToken cancellationToken = default)
     {
         var sorts = await sp.GetRequiredService<IFolderSortRepository>()
-            .GetFolderSortsAsync(callbackService.ConnectedUserIds, parent.Node.Path);
+            .GetFolderSortsAsync(callbackService.ConnectedUserIds, parent.Node.Path, cancellationToken);
 
         var expectedIndexes = new Dictionary<string, int>();
         foreach (var (userId, sort) in sorts)

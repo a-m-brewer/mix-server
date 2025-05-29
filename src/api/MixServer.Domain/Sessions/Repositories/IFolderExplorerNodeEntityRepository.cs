@@ -6,9 +6,9 @@ namespace MixServer.Domain.Sessions.Repositories;
 
 public interface IFolderExplorerNodeEntityRepository : ITransientRepository
 {
-    Task<TEntity?> GetOrDefaultAsync<TEntity>(NodePath nodePath)
+    Task<TEntity?> GetOrDefaultAsync<TEntity>(NodePath nodePath, CancellationToken cancellationToken)
         where TEntity : FileExplorerNodeEntity;
 
-    Task<FileExplorerRootChildNodeEntity?> GetRootChildOrDefaultAsync(NodePath rootChild);
-    Task AddAsync(FileExplorerNodeEntityBase nodeEntity);
+    Task<FileExplorerRootChildNodeEntity?> GetRootChildOrDefaultAsync(NodePath rootChild, CancellationToken cancellationToken);
+    Task AddAsync(FileExplorerNodeEntityBase nodeEntity, CancellationToken cancellationToken);
 }

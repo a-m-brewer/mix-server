@@ -12,7 +12,6 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Application.FileExplorer.Commands.SetFolderSort;
 
 public class SetFolderSortCommandHandler(
-    ICallbackService callbackService,
     ICurrentUserRepository currentUserRepository,
     IFileService fileService,
     INodePathDtoConverter nodePathDtoConverter,
@@ -21,34 +20,34 @@ public class SetFolderSortCommandHandler(
     IValidator<SetFolderSortCommand> validator)
     : ICommandHandler<SetFolderSortCommand>
 {
-    public async Task HandleAsync(SetFolderSortCommand request)
+    public async Task HandleAsync(SetFolderSortCommand request, CancellationToken cancellationToken = default)
     {
-        await validator.ValidateAndThrowAsync(request);
+        await validator.ValidateAndThrowAsync(request, cancellationToken);
         
         var nodePath = nodePathDtoConverter.Convert(request.NodePath);
 
-        var previousFolder = await fileService.GetFolderAsync(nodePath);
+        var previousFolder = await fileService.GetFolderAsync(nodePath, cancellationToken);
 
         await fileService.SetFolderSortAsync(new FolderSortRequest
         {
             Path = nodePath,
             Descending = request.Descending,
             SortMode = request.SortMode
-        });
+        }, cancellationToken);
 
-        var nextFolder = await fileService.GetFolderAsync(nodePath);
+        var nextFolder = await fileService.GetFolderAsync(nodePath, cancellationToken);
 
-        unitOfWork.OnSaved(() => callbackService.FolderSorted(currentUserRepository.CurrentUserId, nextFolder));
+        unitOfWork.InvokeCallbackOnSaved(cb => cb.FolderSorted(currentUserRepository.CurrentUserId, nextFolder));
         
         // The folder being sorted is the queues current folder
-        var queueFolder = await queueService.GetCurrentQueueFolderPathAsync();
+        var queueFolder = await queueService.GetCurrentQueueFolderPathAsync(cancellationToken);
         
         if (nextFolder.Node.Path.IsEqualTo(queueFolder) &&
             !previousFolder.Sort.Equals(nextFolder.Sort))
         {
-            await queueService.ResortQueueAsync();
+            await queueService.ResortQueueAsync(cancellationToken);
         }
 
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

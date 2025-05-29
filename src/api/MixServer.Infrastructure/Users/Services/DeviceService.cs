@@ -23,9 +23,9 @@ public class DeviceService(
     IUnitOfWork unitOfWork)
     : IDeviceService
 {
-    public async Task<List<IDevice>> GetUsersDevicesAsync()
+    public async Task<List<IDevice>> GetUsersDevicesAsync(CancellationToken cancellationToken)
     {
-        await currentUserRepository.LoadAllDevicesAsync();
+        await currentUserRepository.LoadAllDevicesAsync(cancellationToken);
 
         await PopulateCurrentUserDevicesAsync();
         
@@ -36,10 +36,10 @@ public class DeviceService(
             .ToList();
     }
 
-    public async Task<Device> GetOrAddAsync(Guid? requestDeviceId)
+    public async Task<Device> GetOrAddAsync(Guid? requestDeviceId, CancellationToken cancellationToken)
     {
         var device = requestDeviceId.HasValue
-            ? await deviceRepository.SingleOrDefaultAsync(requestDeviceId.Value)
+            ? await deviceRepository.SingleOrDefaultAsync(requestDeviceId.Value, cancellationToken)
             : null;
 
         if (device != null)
@@ -54,14 +54,14 @@ public class DeviceService(
 
         Populate(device);
         
-        await deviceRepository.AddAsync(device);
+        await deviceRepository.AddAsync(device, cancellationToken);
 
         return device;
     }
 
-    public async Task<Device?> SingleOrDefaultAsync(Guid deviceId)
+    public async Task<Device?> SingleOrDefaultAsync(Guid deviceId, CancellationToken cancellationToken)
     {
-        var device = await deviceRepository.SingleOrDefaultAsync(deviceId);
+        var device = await deviceRepository.SingleOrDefaultAsync(deviceId, cancellationToken);
 
         if (device == null)
         {
@@ -85,17 +85,17 @@ public class DeviceService(
             .ToDictionary(k => k.Key, v => v.Value);
         if (headers != null)
         {
-            unitOfWork.OnSaved(() => deviceInfoChannel.WriteAsync(new DeviceInfoRequest
+            unitOfWork.OnSaved(ct => deviceInfoChannel.WriteAsync(new DeviceInfoRequest
             {
                 DeviceId = device.Id,
                 Headers = headers
-            }));
+            }, ct));
         }
     }
 
-    public async Task DeleteDeviceAsync(Guid deviceId)
+    public async Task DeleteDeviceAsync(Guid deviceId, CancellationToken cancellationToken)
     {
-        await currentUserRepository.LoadDeviceByIdAsync(deviceId);
+        await currentUserRepository.LoadDeviceByIdAsync(deviceId, cancellationToken);
 
         var user = await currentUserRepository.GetCurrentUserAsync();
         var device = user.Devices.SingleOrDefault(s => s.Id == deviceId);

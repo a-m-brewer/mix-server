@@ -12,9 +12,9 @@ namespace MixServer.Application.Sessions.Commands.SetNextSession;
 
 public interface ISetNextSessionCommandHandler : ICommandHandler
 {
-    Task<CurrentSessionUpdatedDto> BackAsync();
-    Task<CurrentSessionUpdatedDto> SkipAsync();
-    Task<CurrentSessionUpdatedDto> EndAsync();
+    Task<CurrentSessionUpdatedDto> BackAsync(CancellationToken cancellationToken);
+    Task<CurrentSessionUpdatedDto> SkipAsync(CancellationToken cancellationToken);
+    Task<CurrentSessionUpdatedDto> EndAsync(CancellationToken cancellationToken);
 }
 
 public class SetNextSessionCommandHandler(
@@ -25,13 +25,16 @@ public class SetNextSessionCommandHandler(
     IUnitOfWork unitOfWork)
     : ISetNextSessionCommandHandler
 {
-    public Task<CurrentSessionUpdatedDto> BackAsync() => SetNextPositionAsync(false, false);
-    public Task<CurrentSessionUpdatedDto> SkipAsync() => SetNextPositionAsync(true, false);
-    public Task<CurrentSessionUpdatedDto> EndAsync() => SetNextPositionAsync(true, true);
+    public Task<CurrentSessionUpdatedDto> BackAsync(CancellationToken cancellationToken) =>
+        SetNextPositionAsync(false, false, cancellationToken);
+    public Task<CurrentSessionUpdatedDto> SkipAsync(CancellationToken cancellationToken) =>
+        SetNextPositionAsync(true, false, cancellationToken);
+    public Task<CurrentSessionUpdatedDto> EndAsync(CancellationToken cancellationToken) =>
+        SetNextPositionAsync(true, true, cancellationToken);
     
-    private async Task<CurrentSessionUpdatedDto> SetNextPositionAsync(bool skip, bool resetSessionState)
+    private async Task<CurrentSessionUpdatedDto> SetNextPositionAsync(bool skip, bool resetSessionState, CancellationToken cancellationToken)
     {
-        var currentSession = await sessionService.GetCurrentPlaybackSessionAsync();
+        var currentSession = await sessionService.GetCurrentPlaybackSessionAsync(cancellationToken);
 
         if (resetSessionState)
         {
@@ -39,7 +42,7 @@ public class SetNextSessionCommandHandler(
             playbackTrackingService.ClearSession(currentSession.UserId);
         }
 
-        var queue = await queueService.GenerateQueueSnapshotAsync();
+        var queue = await queueService.GenerateQueueSnapshotAsync(cancellationToken);
         
         var nextQueuePosition = skip
             ? queue.NextQueuePosition
@@ -47,11 +50,11 @@ public class SetNextSessionCommandHandler(
         if (!nextQueuePosition.HasValue)
         {
             await sessionService.ClearUsersCurrentSessionAsync();
-            await unitOfWork.SaveChangesAsync();
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             return converter.Convert(null, QueueSnapshot.Empty, true);
         }
         
-        queue = await queueService.SetQueuePositionAsync(nextQueuePosition.Value);
+        queue = await queueService.SetQueuePositionAsync(nextQueuePosition.Value, cancellationToken);
 
         var nextFile = queue.CurrentQueuePositionItem?.File;
         var nextSession = nextFile is null
@@ -59,9 +62,9 @@ public class SetNextSessionCommandHandler(
             : await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
             {
                 NodePath = nextFile.Path
-            });
+            }, cancellationToken);
         
-        await unitOfWork.SaveChangesAsync();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return converter.Convert(nextSession, queue, true);
     }

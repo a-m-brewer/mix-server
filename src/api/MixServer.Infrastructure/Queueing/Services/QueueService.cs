@@ -29,16 +29,16 @@ public class QueueService(
     IUnitOfWork unitOfWork)
     : IQueueService
 {
-    public async Task<QueueSnapshot> SetQueueFolderAsync(PlaybackSession nextSession)
+    public async Task<QueueSnapshot> SetQueueFolderAsync(PlaybackSession nextSession, CancellationToken cancellationToken)
     {
-        var queue = await GetOrAddQueueAsync();
+        var queue = await GetOrAddQueueAsync(cancellationToken);
 
-        return await SetQueueFolderAsync(queue, nextSession);
+        return await SetQueueFolderAsync(queue, nextSession, cancellationToken);
     }
 
-    public async Task<QueueSnapshot> SetQueuePositionAsync(Guid queuePositionId)
+    public async Task<QueueSnapshot> SetQueuePositionAsync(Guid queuePositionId, CancellationToken cancellationToken)
     {
-        var queue = await GetOrAddQueueAsync();
+        var queue = await GetOrAddQueueAsync(cancellationToken);
         
         if (!queue.QueueItemExists(queuePositionId))
         {
@@ -47,32 +47,32 @@ public class QueueService(
 
         queue.SetQueuePosition(queuePositionId);
         
-        var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
+        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, cancellationToken);
         unitOfWork.InvokeCallbackOnSaved(c =>
             c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
 
         return queueSnapshot;
     }
 
-    public async Task<QueueSnapshot> AddToQueueAsync(IFileExplorerFileNode file)
+    public async Task<QueueSnapshot> AddToQueueAsync(IFileExplorerFileNode file, CancellationToken cancellationToken)
     {
         if (!file.PlaybackSupported)
         {
             throw new InvalidRequestException(nameof(file.PlaybackSupported), "Playback not supported for this file");
         }
 
-        var queue = await GetOrAddQueueAsync();
+        var queue = await GetOrAddQueueAsync(cancellationToken);
         queue.AddToQueue(file);
         
-        var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
+        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, cancellationToken);
         await callbackService.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot);
 
         return queueSnapshot;
     }
 
-    public async Task<QueueSnapshot> RemoveUserQueueItemsAsync(List<Guid> ids)
+    public async Task<QueueSnapshot> RemoveUserQueueItemsAsync(List<Guid> ids, CancellationToken cancellationToken)
     {
-        var queue = await GetOrAddQueueAsync();
+        var queue = await GetOrAddQueueAsync(cancellationToken);
 
         if (queue.CurrentQueuePositionId.HasValue && ids.Contains(queue.CurrentQueuePositionId.Value))
         {
@@ -86,15 +86,15 @@ public class QueueService(
 
         queue.RemoveUserQueueItems(ids);
         
-        var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
+        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, cancellationToken);
         await callbackService.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot);
 
         return queueSnapshot;
     }
 
-    public async Task<(PlaylistIncrementResult Result, QueueSnapshot Snapshot)> IncrementQueuePositionAsync(int offset)
+    public async Task<(PlaylistIncrementResult Result, QueueSnapshot Snapshot)> IncrementQueuePositionAsync(int offset, CancellationToken cancellationToken)
     {
-        var queue = await GetOrAddQueueAsync();
+        var queue = await GetOrAddQueueAsync(cancellationToken);
         var queueOrder = queue.QueueOrder;
         
         var currentQueueItemIndex = queueOrder.FindIndex(id => id == queue.CurrentQueuePositionId);
@@ -115,18 +115,18 @@ public class QueueService(
 
         queue.SetQueuePosition(nextQueuePositionId);
         
-        var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
+        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, cancellationToken);
         unitOfWork.InvokeCallbackOnSaved(c =>
             c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
         
         return (PlaylistIncrementResult.Success, queueSnapshot);
     }
 
-    public async Task ResortQueueAsync()
+    public async Task ResortQueueAsync(CancellationToken cancellationToken)
     {
-        var queue = await GetOrAddQueueAsync();
+        var queue = await GetOrAddQueueAsync(cancellationToken);
      
-        var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath);
+        var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath, cancellationToken);
 
         queue.Sort(files);
 
@@ -141,29 +141,29 @@ public class QueueService(
             c.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, QueueSnapshot.Empty));
     }
 
-    public async Task<IFileExplorerFileNode> GetCurrentPositionFileOrThrowAsync()
+    public async Task<IFileExplorerFileNode> GetCurrentPositionFileOrThrowAsync(CancellationToken cancellationToken)
     {
-        var queue = await GetOrAddQueueAsync();
-        var queueSnapshot = await GenerateQueueSnapshotAsync(queue);
+        var queue = await GetOrAddQueueAsync(cancellationToken);
+        var queueSnapshot = await GenerateQueueSnapshotAsync(queue, cancellationToken);
 
         return queueSnapshot.Items.FirstOrDefault(f => f.Id == queue.CurrentQueuePositionId)?.File
                ?? throw new NotFoundException(nameof(QueueSnapshot),
                    queue.CurrentQueuePositionId.ToString() ?? "unknown");
     }
 
-    public async Task<NodePath?> GetCurrentQueueFolderPathAsync()
+    public async Task<NodePath?> GetCurrentQueueFolderPathAsync(CancellationToken cancellationToken)
     {
-        return (await GetOrAddQueueAsync()).CurrentFolderPath;
+        return (await GetOrAddQueueAsync(cancellationToken)).CurrentFolderPath;
     }
 
-    public async Task<QueueSnapshot> GenerateQueueSnapshotAsync()
+    public async Task<QueueSnapshot> GenerateQueueSnapshotAsync(CancellationToken cancellationToken)
     {
-        var queue = await GetOrAddQueueAsync();
+        var queue = await GetOrAddQueueAsync(cancellationToken);
 
-        return await GenerateQueueSnapshotAsync(queue);
+        return await GenerateQueueSnapshotAsync(queue, cancellationToken);
     }
     
-    private async Task<UserQueue> GetOrAddQueueAsync()
+    private async Task<UserQueue> GetOrAddQueueAsync(CancellationToken cancellationToken)
     {
         var userId = currentUserRepository.CurrentUserId;
         if (queueRepository.HasQueue(userId))
@@ -174,21 +174,21 @@ public class QueueService(
         
         var currentUser = await currentUserRepository.GetCurrentUserAsync();
 
-        await currentUserRepository.LoadCurrentPlaybackSessionAsync();
+        await currentUserRepository.LoadCurrentPlaybackSessionAsync(cancellationToken);
         
         var queue = queueRepository.GetOrAddQueue(userId);
 
-        await SetQueueFolderAsync(queue, currentUser.CurrentPlaybackSession);
+        await SetQueueFolderAsync(queue, currentUser.CurrentPlaybackSession, cancellationToken);
         
         return queue;
     }
     
-    private async Task<QueueSnapshot> SetQueueFolderAsync(UserQueue queue, PlaybackSession? nextSession)
+    private async Task<QueueSnapshot> SetQueueFolderAsync(UserQueue queue, PlaybackSession? nextSession, CancellationToken cancellationToken)
     {
         queue.CurrentFolderPath = nextSession?.NodeEntity.Path.Parent;
         queue.ClearUserQueue();
         
-        var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath);
+        var files = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath, cancellationToken);
         var nextSessionPath = nextSession?.NodeEntity.Path;
         
         if (nextSessionPath is not null && files.All(a => !a.Path.IsEqualTo(nextSessionPath)))
@@ -211,9 +211,9 @@ public class QueueService(
         return queueSnapshot;
     }
     
-    private async Task<QueueSnapshot> GenerateQueueSnapshotAsync(UserQueue userQueue)
+    private async Task<QueueSnapshot> GenerateQueueSnapshotAsync(UserQueue userQueue, CancellationToken cancellationToken)
     {
-        return await GenerateQueueSnapshotAsync(userQueue, await GetPlayableFilesInFolderAsync(userQueue.CurrentFolderPath));
+        return await GenerateQueueSnapshotAsync(userQueue, await GetPlayableFilesInFolderAsync(userQueue.CurrentFolderPath, cancellationToken));
     }
     
     private async Task<QueueSnapshot> GenerateQueueSnapshotAsync(UserQueue userQueue, IEnumerable<IFileExplorerFileNode> folderFiles)
@@ -239,14 +239,14 @@ public class QueueService(
         return new QueueSnapshot(userQueue.CurrentQueuePositionId, previousValidOffset, nextValidOffset, items);
     }
 
-    private async Task<List<IFileExplorerFileNode>> GetPlayableFilesInFolderAsync(NodePath? nodePath)
+    private async Task<List<IFileExplorerFileNode>> GetPlayableFilesInFolderAsync(NodePath? nodePath, CancellationToken cancellationToken)
     {
         if (nodePath is null)
         {
             return [];
         }
 
-        var folder = await fileService.GetFolderAsync(nodePath);
+        var folder = await fileService.GetFolderAsync(nodePath, cancellationToken);
 
         return folder.GenerateSortedChildren<IFileExplorerFileNode>()
             .Where(w => w.PlaybackSupported)

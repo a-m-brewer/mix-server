@@ -11,7 +11,7 @@ public class SetDeviceInteractionCommandHandler(
     IDeviceTrackingService deviceTrackingService)
     : ICommandHandler<SetDeviceInteractionCommand>
 {
-    public Task HandleAsync(SetDeviceInteractionCommand request)
+    public Task HandleAsync(SetDeviceInteractionCommand request, CancellationToken cancellationToken = default)
     {
         deviceTrackingService.SetInteraction(
             currentUserRepository.CurrentUserId,

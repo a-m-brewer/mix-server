@@ -10,7 +10,7 @@ public class SetPlayingCommandHandler(
     IPlaybackTrackingService playbackTrackingService)
     : ICommandHandler<SetPlayingCommand>
 {
-    public Task HandleAsync(SetPlayingCommand request)
+    public Task HandleAsync(SetPlayingCommand request, CancellationToken cancellationToken = default)
     {
         playbackTrackingService.SetPlaying(
             currentUserRepository.CurrentUserId, 
