@@ -33,8 +33,6 @@ public static class ServiceCollectionExtensions
                 options.UseSqlite(dbConnectionString));
         services.AddScoped<IUnitOfWork, EfUnitOfWork<MixServerDbContext>>();
 
-
-        services.AddTransient<IUserRepository, UserRepository>();
         services.AddScoped<ICurrentUserRepository, CurrentUserRepository>();
         services.AddTransient<IUserAuthenticationService, IdentityUserAuthenticationService>();
         services.AddTransient<IIdentityUserAuthenticationService, IdentityUserAuthenticationService>();

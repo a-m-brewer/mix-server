@@ -7,12 +7,12 @@ namespace MixServer.Infrastructure.Users.Repository;
 
 public class DeviceRepository(MixServerDbContext context) : IDeviceRepository
 {
-    public Task<Device?> SingleOrDefaultAsync(Guid deviceId, CancellationToken cancellationToken = default)
+    public Task<Device?> SingleOrDefaultAsync(Guid deviceId, CancellationToken cancellationToken)
     {
         return context.Devices.SingleOrDefaultAsync(d => d.Id == deviceId, cancellationToken: cancellationToken);
     }
 
-    public async Task AddAsync(Device device, CancellationToken cancellationToken = default)
+    public async Task AddAsync(Device device, CancellationToken cancellationToken)
     {
         await context.Devices.AddAsync(device, cancellationToken);
     }

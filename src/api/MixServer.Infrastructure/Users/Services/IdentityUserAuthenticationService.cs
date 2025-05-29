@@ -92,7 +92,7 @@ public class IdentityUserAuthenticationService(
             throw new UnauthorizedRequestException();
         }
 
-        var device = await deviceService.GetOrAddAsync(request.DeviceId);
+        var device = await deviceService.GetOrAddAsync(request.DeviceId, cancellationToken);
 
         if (user.Devices.All(a => a.Id != device.Id))
         {
@@ -125,7 +125,7 @@ public class IdentityUserAuthenticationService(
 
         var user = await GetUserOrThrowAsync(username);
 
-        var device = await deviceService.SingleOrDefaultAsync(request.DeviceId);
+        var device = await deviceService.SingleOrDefaultAsync(request.DeviceId, cancellationToken);
 
         if (device == null)
         {

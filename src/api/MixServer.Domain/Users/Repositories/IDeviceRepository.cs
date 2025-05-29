@@ -5,7 +5,7 @@ namespace MixServer.Domain.Users.Repositories;
 
 public interface IDeviceRepository : ITransientRepository
 {
-    Task<Device?> SingleOrDefaultAsync(Guid deviceId, CancellationToken cancellationToken = default);
-    Task AddAsync(Device device, CancellationToken cancellationToken = default);
+    Task<Device?> SingleOrDefaultAsync(Guid deviceId, CancellationToken cancellationToken);
+    Task AddAsync(Device device, CancellationToken cancellationToken);
     void Delete(Device device);
 }

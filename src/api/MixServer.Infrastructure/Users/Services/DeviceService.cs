@@ -36,10 +36,10 @@ public class DeviceService(
             .ToList();
     }
 
-    public async Task<Device> GetOrAddAsync(Guid? requestDeviceId)
+    public async Task<Device> GetOrAddAsync(Guid? requestDeviceId, CancellationToken cancellationToken)
     {
         var device = requestDeviceId.HasValue
-            ? await deviceRepository.SingleOrDefaultAsync(requestDeviceId.Value)
+            ? await deviceRepository.SingleOrDefaultAsync(requestDeviceId.Value, cancellationToken)
             : null;
 
         if (device != null)
@@ -54,14 +54,14 @@ public class DeviceService(
 
         Populate(device);
         
-        await deviceRepository.AddAsync(device);
+        await deviceRepository.AddAsync(device, cancellationToken);
 
         return device;
     }
 
-    public async Task<Device?> SingleOrDefaultAsync(Guid deviceId)
+    public async Task<Device?> SingleOrDefaultAsync(Guid deviceId, CancellationToken cancellationToken)
     {
-        var device = await deviceRepository.SingleOrDefaultAsync(deviceId);
+        var device = await deviceRepository.SingleOrDefaultAsync(deviceId, cancellationToken);
 
         if (device == null)
         {
