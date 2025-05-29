@@ -11,7 +11,8 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
     {
         IQueryable<TEntity> query = context.Nodes
             .OfType<TEntity>()
-            .Include(i => i.RootChild);
+            .Include(i => i.RootChild)
+            .Include(i => i.Parent);
         
         if (typeof(TEntity).IsAssignableTo(typeof(FileExplorerFileNodeEntity)))
         {

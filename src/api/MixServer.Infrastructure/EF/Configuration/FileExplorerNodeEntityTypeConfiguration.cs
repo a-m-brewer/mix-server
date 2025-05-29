@@ -13,8 +13,13 @@ public class FileExplorerNodeEntityTypeConfiguration : IEntityTypeConfiguration<
             .IsUnique();
         
         builder.HasOne(o => o.RootChild)
-            .WithMany()
+            .WithMany(o => o.Children)
             .HasForeignKey(f => f.RootChildId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasOne(o => o.Parent)
+            .WithMany(o => o.Children)
+            .HasForeignKey(f => f.ParentId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Services;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.EF.Extensions;
 
@@ -8,6 +9,7 @@ namespace MixServer.Services;
 #pragma warning disable CS0618 // Type or member is obsolete - used for migration purposes
 public class AbsolutePathMigrationService(
     MixServerDbContext context,
+    IFileSystemHashService fileSystemHashService,
     ILogger<AbsolutePathMigrationService> logger,
     IRootFileExplorerFolder rootFolder)
 {
@@ -35,7 +37,10 @@ public class AbsolutePathMigrationService(
             var rootChildEntity = new FileExplorerRootChildNodeEntity
             {
                 Id = Guid.NewGuid(),
-                RelativePath = rootChild.Path.RootPath
+                RelativePath = rootChild.Path.RootPath,
+                Exists = rootChild.Exists,
+                CreationTimeUtc = rootChild.CreationTimeUtc,
+                Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(rootChild.Path)
             };
             await context.Nodes.AddAsync(rootChildEntity);
             rootChildNodes[rootChild.Path.RootPath] = rootChildEntity;
@@ -67,11 +72,17 @@ public class AbsolutePathMigrationService(
                 logger.LogInformation("File not found for session {SessionId} with absolute path {AbsolutePath}", session.Id, session.AbsolutePath);
                 
                 var root = rootChildNodes[nodePath.RootPath];
+                var fileInfo = new FileInfo(nodePath.AbsolutePath);
+                
                 file = new FileExplorerFileNodeEntity
                 {
                     Id = Guid.NewGuid(),
                     RelativePath = nodePath.RelativePath,
-                    RootChild = root
+                    RootChild = root,
+                    Exists = fileInfo.Exists,
+                    CreationTimeUtc = fileInfo.CreationTimeUtc,
+                    Hash = await fileSystemHashService.ComputeFileMd5HashAsync(nodePath),
+                    Parent = null 
                 };
                 await context.Nodes.AddAsync(file);
             }
@@ -116,11 +127,16 @@ public class AbsolutePathMigrationService(
                 logger.LogInformation("Folder not found for sort {FolderSortId} with absolute path {AbsolutePath}", sort.Id, sort.AbsoluteFolderPath);
                 
                 var root = rootChildNodes[nodePath.RootPath];
+                var directoryInfo = new DirectoryInfo(nodePath.AbsolutePath);
                 folder = new FileExplorerFolderNodeEntity
                 {
                     Id = Guid.NewGuid(),
                     RelativePath = nodePath.RelativePath,
-                    RootChild = root
+                    RootChild = root,
+                    Exists = directoryInfo.Exists,
+                    CreationTimeUtc = directoryInfo.CreationTimeUtc,
+                    Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(nodePath),
+                    Parent = null
                 };
                 await context.Nodes.AddAsync(folder);
             }
@@ -166,11 +182,16 @@ public class AbsolutePathMigrationService(
                 logger.LogInformation("File not found for transcode {TranscodeId} with absolute path {AbsolutePath}",
                     transcode.Id, transcode.AbsolutePath);
                 var root = rootChildNodes[nodePath.RootPath];
+                var fileInfo = new FileInfo(nodePath.AbsolutePath);
                 file = new FileExplorerFileNodeEntity
                 {
                     Id = Guid.NewGuid(),
                     RelativePath = nodePath.RelativePath,
-                    RootChild = root
+                    RootChild = root,
+                    Exists = fileInfo.Exists,
+                    CreationTimeUtc = fileInfo.CreationTimeUtc,
+                    Hash = await fileSystemHashService.ComputeFileMd5HashAsync(nodePath),
+                    Parent = null
                 };
                 await context.Nodes.AddAsync(file);
             }
