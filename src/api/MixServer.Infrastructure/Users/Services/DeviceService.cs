@@ -85,11 +85,11 @@ public class DeviceService(
             .ToDictionary(k => k.Key, v => v.Value);
         if (headers != null)
         {
-            unitOfWork.OnSaved(() => deviceInfoChannel.WriteAsync(new DeviceInfoRequest
+            unitOfWork.OnSaved(ct => deviceInfoChannel.WriteAsync(new DeviceInfoRequest
             {
                 DeviceId = device.Id,
                 Headers = headers
-            }));
+            }, ct));
         }
     }
 

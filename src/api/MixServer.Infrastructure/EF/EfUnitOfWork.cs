@@ -15,17 +15,17 @@ public class EfUnitOfWork<TDbContext>(
     : IUnitOfWork
     where TDbContext : DbContext
 {
-    private readonly List<Expression<Func<Task>>> _deferredCommands = [];
+    private readonly List<Expression<Func<CancellationToken, Task>>> _deferredCommands = [];
 
     public TRepository GetRepository<TRepository>() where TRepository : IRepository =>
         serviceProvider.GetRequiredService<TRepository>();
 
-    public void OnSaved(Expression<Func<Task>> command) => _deferredCommands.Add(command);
+    public void OnSaved(Expression<Func<CancellationToken, Task>> command) => _deferredCommands.Add(command);
+    public void OnSaved(Expression<Func<Task>> command) =>
+        OnSaved(cancellationToken => command.Compile().Invoke());
     
-    public void InvokeCallbackOnSaved(Func<ICallbackService, Task> callback)
-    {
+    public void InvokeCallbackOnSaved(Func<ICallbackService, Task> callback) =>
         OnSaved(() => callback.Invoke(callbackService));
-    }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -35,7 +35,7 @@ public class EfUnitOfWork<TDbContext>(
         {
             try
             {
-                await s.Compile().Invoke();
+                await s.Compile().Invoke(cancellationToken);
             }
             catch (Exception e)
             {

@@ -12,7 +12,6 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Application.FileExplorer.Commands.SetFolderSort;
 
 public class SetFolderSortCommandHandler(
-    ICallbackService callbackService,
     ICurrentUserRepository currentUserRepository,
     IFileService fileService,
     INodePathDtoConverter nodePathDtoConverter,
@@ -38,7 +37,7 @@ public class SetFolderSortCommandHandler(
 
         var nextFolder = await fileService.GetFolderAsync(nodePath);
 
-        unitOfWork.OnSaved(() => callbackService.FolderSorted(currentUserRepository.CurrentUserId, nextFolder));
+        unitOfWork.InvokeCallbackOnSaved(cb => cb.FolderSorted(currentUserRepository.CurrentUserId, nextFolder));
         
         // The folder being sorted is the queues current folder
         var queueFolder = await queueService.GetCurrentQueueFolderPathAsync();
