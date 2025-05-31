@@ -39,8 +39,7 @@ public class AbsolutePathMigrationService(
                 Id = Guid.NewGuid(),
                 RelativePath = rootChild.Path.RootPath,
                 Exists = rootChild.Exists,
-                CreationTimeUtc = rootChild.CreationTimeUtc,
-                Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(rootChild.Path)
+                CreationTimeUtc = rootChild.CreationTimeUtc
             };
             await context.Nodes.AddAsync(rootChildEntity);
             rootChildNodes[rootChild.Path.RootPath] = rootChildEntity;
@@ -81,7 +80,6 @@ public class AbsolutePathMigrationService(
                     RootChild = root,
                     Exists = fileInfo.Exists,
                     CreationTimeUtc = fileInfo.CreationTimeUtc,
-                    Hash = await fileSystemHashService.ComputeFileMd5HashAsync(nodePath),
                     Parent = null 
                 };
                 await context.Nodes.AddAsync(file);
@@ -135,7 +133,6 @@ public class AbsolutePathMigrationService(
                     RootChild = root,
                     Exists = directoryInfo.Exists,
                     CreationTimeUtc = directoryInfo.CreationTimeUtc,
-                    Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(nodePath),
                     Parent = null
                 };
                 await context.Nodes.AddAsync(folder);

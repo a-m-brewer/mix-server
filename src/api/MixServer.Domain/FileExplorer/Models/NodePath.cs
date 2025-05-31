@@ -3,7 +3,9 @@ namespace MixServer.Domain.FileExplorer.Models;
 public record NodePath(string RootPath, string RelativePath)
 {
     public string AbsolutePath => Path.Join(RootPath, RelativePath);
-    public string FileName => Path.GetFileName(AbsolutePath);
+    public string FileName => string.IsNullOrWhiteSpace(PathFileName) 
+        ? AbsolutePath
+        : PathFileName;
     public NodePath Parent => this with { RelativePath = Path.GetDirectoryName(RelativePath) ?? string.Empty };
     
     public string Extension => Path.GetExtension(RelativePath);
@@ -11,6 +13,8 @@ public record NodePath(string RootPath, string RelativePath)
     public bool IsRoot => string.IsNullOrWhiteSpace(RootPath) && string.IsNullOrWhiteSpace(RelativePath);
     
     public bool IsRootChild => !string.IsNullOrWhiteSpace(RootPath) && string.IsNullOrWhiteSpace(RelativePath);
+
+    public bool IsDirectory => Directory.Exists(AbsolutePath);
 
     public override string ToString()
     {
@@ -26,4 +30,6 @@ public record NodePath(string RootPath, string RelativePath)
         
         return RootPath == other.RootPath && RelativePath == other.RelativePath;
     }
+
+    private string PathFileName => Path.GetFileName(AbsolutePath);
 }

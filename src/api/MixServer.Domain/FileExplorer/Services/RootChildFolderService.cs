@@ -42,7 +42,7 @@ public class RootChildFolderService(
             {
                 logger.LogInformation("Adding new root child folder: {Path}", configPath);
                 var rootChildDirectoryInfo = new DirectoryInfo(configPath);
-                var rootChild = await fileExplorerEntityConverter.CreateRootChildEntityAsync(rootChildDirectoryInfo);
+                var rootChild = fileExplorerEntityConverter.CreateRootChildEntityAsync(rootChildDirectoryInfo);
                 await folderExplorerNodeRepository.AddAsync(rootChild, cancellationToken);
                 
                 rootChildren.Add(rootChild);

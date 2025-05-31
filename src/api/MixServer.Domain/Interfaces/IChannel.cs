@@ -21,6 +21,7 @@ public class RequestDto<T>(T request, Action onComplete) : IDisposable
 public interface IChannel<T> : ISingletonRepository where T : notnull
 {
     Task WriteAsync(T request, CancellationToken cancellationToken = default);
+    void Write(T request);
     Task<bool> WaitToReadAsync(CancellationToken stoppingToken);
     bool TryRead([MaybeNullWhen(false)] out RequestDto<T> request);
     void Complete();
@@ -41,11 +42,19 @@ public class ChannelBase<T>(
             AllowSynchronousContinuations = false
         });
 
-    public virtual async Task WriteAsync(T request, CancellationToken cancellationToken = default)
+    public async Task WriteAsync(T request, CancellationToken cancellationToken = default)
     {
         if (_inFlight is null || _inFlight.TryAdd(request, 0))
         {
             await _channel.Writer.WriteAsync(request, cancellationToken);
+        }
+    }
+    
+    public void Write(T request)
+    {
+        if (_inFlight is null || _inFlight.TryAdd(request, 0))
+        {
+            _channel.Writer.TryWrite(request);
         }
     }
 

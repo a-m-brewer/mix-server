@@ -36,7 +36,7 @@ public class FileExplorerNodeEntityBase : IFileExplorerNodeEntityBase
 
     public required DateTime CreationTimeUtc { get; set; }
     
-    public required string Hash { get; set; } = string.Empty;
+    public string Hash { get; set; } = string.Empty;
     
     public bool Hidden { get; set; }
 }

@@ -3,7 +3,7 @@ using MixServer.Domain.Interfaces;
 namespace MixServer.Services;
 
 public abstract class ChannelBackgroundService<T>(
-    IChannel<T> channel,
+    IChannel<T> requestChannel,
     IServiceProvider serviceProvider,
     ILogger logger,
     int? workers = null)
@@ -23,9 +23,9 @@ public abstract class ChannelBackgroundService<T>(
         try
         {
             while (stoppingToken.IsCancellationRequested == false &&
-                   await channel.WaitToReadAsync(stoppingToken))
+                   await requestChannel.WaitToReadAsync(stoppingToken))
             {
-                while (channel.TryRead(out var request))
+                while (requestChannel.TryRead(out var request))
                 {
                     try
                     {

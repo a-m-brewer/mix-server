@@ -28,6 +28,13 @@ public static class EfIncludeExtensions
             .ThenInclude(t => t!.RootChild);
     }
 
+    public static IQueryable<TEntity> IncludeParents<TEntity>(this IQueryable<TEntity> query)
+        where TEntity : FileExplorerNodeEntity
+    {
+        return query.Include(i => i.RootChild)
+            .Include(i => i.Parent);
+    }
+
     public static IQueryable<TEntity> IncludeIfType<TEntity, TTargetType>(
         this IQueryable<TEntity> query,
         Func<IQueryable<TTargetType>, IQueryable<TTargetType>> includes)

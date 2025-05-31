@@ -11,7 +11,6 @@ public interface IFolderPersistenceService
 }
 
 public class FolderPersistenceService(
-    IFileSystemHashService fileSystemHashService,
     IFolderCacheService folderCache,
     IFolderExplorerNodeEntityRepository nodeRepository,
     IRootFileExplorerFolder rootFolder) : IFolderPersistenceService
@@ -48,7 +47,6 @@ public class FolderPersistenceService(
             RootChild = root,
             Exists = folder.Folder.Node.Exists,
             CreationTimeUtc = folder.Folder.Node.CreationTimeUtc,
-            Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(folder.Folder.Node.Path, cancellationToken),
             Parent = parent
         };
         await nodeRepository.AddAsync(nodeEntity, cancellationToken);
@@ -77,7 +75,6 @@ public class FolderPersistenceService(
             RootChild = root,
             Exists = file.Exists,
             CreationTimeUtc = file.CreationTimeUtc,
-            Hash = await fileSystemHashService.ComputeFileMd5HashAsync(file.Path, cancellationToken),
             Parent = parent
         };
         await nodeRepository.AddAsync(nodeEntity, cancellationToken);
@@ -101,8 +98,7 @@ public class FolderPersistenceService(
             Id = Guid.NewGuid(),
             RelativePath = rootChild.Path.RootPath,
             Exists = rootChild.Exists,
-            CreationTimeUtc = rootChild.CreationTimeUtc,
-            Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(rootChild.Path, cancellationToken),
+            CreationTimeUtc = rootChild.CreationTimeUtc
         };
         await nodeRepository.AddAsync(rootEntity, cancellationToken);
         

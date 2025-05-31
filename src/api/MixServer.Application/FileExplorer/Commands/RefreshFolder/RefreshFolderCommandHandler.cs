@@ -2,6 +2,7 @@ using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
@@ -18,19 +19,25 @@ public class RefreshFolderCommandHandler(
     IFolderCacheService folderCacheService,
     IFileService fileService,
     INodePathDtoConverter nodePathDtoConverter,
-    IRootFileExplorerFolder rootFolder) : ICommandHandler<RefreshFolderCommand, FileExplorerFolderResponse>
+    IRootFileExplorerFolder rootFolder,
+    IScanFolderRequestChannel scanFolderRequestChannel) : ICommandHandler<RefreshFolderCommand, FileExplorerFolderResponse>
 {
     public async Task<FileExplorerFolderResponse> HandleAsync(RefreshFolderCommand request, CancellationToken cancellationToken = default)
     {
         var nodePath = request.NodePath is null ? null : nodePathDtoConverter.Convert(request.NodePath);
         
-        if (nodePath is null)
+        if (nodePath is null || nodePath.IsRoot)
         {
             rootFolder.RefreshChildren();
         }
         else
         {
             folderCacheService.InvalidateFolder(nodePath);
+            _ = scanFolderRequestChannel.WriteAsync(new ScanFolderRequest
+            {
+                NodePath = nodePath,
+                Recursive = false
+            }, cancellationToken);
         }
         
         var folder = await fileService.GetFolderOrRootAsync(nodePath, cancellationToken);
