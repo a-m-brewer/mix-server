@@ -11,7 +11,20 @@ public interface IHasChildren
     List<FileExplorerNodeEntity> Children { get; set; }
 }
 
-public class FileExplorerNodeEntityBase
+public interface IFileExplorerNodeEntityBase
+{
+    Guid Id { get; init; }
+    string RelativePath { get; set; }
+    FileExplorerEntityNodeType NodeType { get; init; }
+    bool Exists { get; set; }
+    DateTime CreationTimeUtc { get; set; }
+    string Hash { get; set; }
+    bool Hidden { get; set; }
+}
+
+public interface IFileExplorerFolderEntity : IFileExplorerNodeEntityBase, IHasChildren;
+
+public class FileExplorerNodeEntityBase : IFileExplorerNodeEntityBase
 {
     public required Guid Id { get; init; }
     
@@ -28,7 +41,7 @@ public class FileExplorerNodeEntityBase
     public bool Hidden { get; set; }
 }
 
-public class FileExplorerRootChildNodeEntity : FileExplorerNodeEntityBase, IHasChildren
+public class FileExplorerRootChildNodeEntity : FileExplorerNodeEntityBase, IFileExplorerFolderEntity
 {
     public List<FileExplorerNodeEntity> Children { get; set; } = [];
 }
@@ -60,7 +73,7 @@ public class FileExplorerFileNodeEntity : FileExplorerNodeEntity
     public FileMetadataEntity MetadataEntity => Metadata ?? throw new InvalidOperationException("Metadata is not set.");
 }
 
-public class FileExplorerFolderNodeEntity : FileExplorerNodeEntity, IHasChildren
+public class FileExplorerFolderNodeEntity : FileExplorerNodeEntity, IFileExplorerFolderEntity
 {
     public List<FileExplorerNodeEntity> Children { get; set; } = [];
 }

@@ -27,4 +27,21 @@ public static class EfIncludeExtensions
             .Include(session => session.Node)
             .ThenInclude(t => t!.RootChild);
     }
+
+    public static IQueryable<TEntity> IncludeIfType<TEntity, TTargetType>(
+        this IQueryable<TEntity> query,
+        Func<IQueryable<TTargetType>, IQueryable<TTargetType>> includes)
+    {
+        if (!typeof(TEntity).IsAssignableTo(typeof(TTargetType)))
+        {
+            return query;
+        }
+
+        var internalQuery = query.Cast<TTargetType>();
+            
+        internalQuery = includes(internalQuery);
+            
+        return internalQuery.Cast<TEntity>();
+
+    }
 }
