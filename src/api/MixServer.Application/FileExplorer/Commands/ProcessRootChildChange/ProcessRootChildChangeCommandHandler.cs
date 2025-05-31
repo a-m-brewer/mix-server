@@ -12,7 +12,7 @@ public class ProcessRootChildChangeCommandHandler(ILogger<ProcessRootChildChange
             request.FullName,
             request.RootFolderChangeType,
             request.WatcherChangeType,
-            request.OldFullName);
+            string .IsNullOrWhiteSpace(request.OldFullName) ? "N/A" : request.OldFullName);
         
         return Task.CompletedTask;
     }

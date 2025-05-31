@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using DebounceThrottle;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -31,7 +30,7 @@ public class RootChildDirectoryWatcher : IDisposable
                            | NotifyFilters.DirectoryName
                            | NotifyFilters.FileName
         };
-        _watcher.IncludeSubdirectories = false;
+        _watcher.IncludeSubdirectories = true;
         _watcher.InternalBufferSize = 64 * 1024; // 64 KB buffer size (maximum recommended size)
 
         _watcher.Created += OnCreated;
