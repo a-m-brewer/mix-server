@@ -10,5 +10,6 @@ public interface IFolderExplorerNodeEntityRepository : ITransientRepository
         where TEntity : FileExplorerNodeEntity;
 
     Task<FileExplorerRootChildNodeEntity?> GetRootChildOrDefaultAsync(NodePath rootChild, CancellationToken cancellationToken);
+    Task<ICollection<FileExplorerRootChildNodeEntity>> GetAllRootChildrenAsync(CancellationToken cancellationToken);
     Task AddAsync(FileExplorerNodeEntityBase nodeEntity, CancellationToken cancellationToken);
 }

@@ -16,7 +16,7 @@ namespace MixServer.Infrastructure.Migrations
                 table: "Nodes",
                 type: "TEXT",
                 nullable: false,
-                defaultValue: new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc));
+                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
 
             migrationBuilder.AddColumn<bool>(
                 name: "Exists",
@@ -31,6 +31,13 @@ namespace MixServer.Infrastructure.Migrations
                 type: "TEXT",
                 nullable: false,
                 defaultValue: "");
+
+            migrationBuilder.AddColumn<bool>(
+                name: "Hidden",
+                table: "Nodes",
+                type: "INTEGER",
+                nullable: false,
+                defaultValue: false);
 
             migrationBuilder.AddColumn<Guid>(
                 name: "ParentId",
@@ -215,6 +222,10 @@ namespace MixServer.Infrastructure.Migrations
 
             migrationBuilder.DropColumn(
                 name: "Hash",
+                table: "Nodes");
+
+            migrationBuilder.DropColumn(
+                name: "Hidden",
                 table: "Nodes");
 
             migrationBuilder.DropColumn(

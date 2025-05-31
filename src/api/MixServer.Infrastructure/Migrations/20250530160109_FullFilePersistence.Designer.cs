@@ -11,7 +11,7 @@ using MixServer.Infrastructure.EF;
 namespace MixServer.Infrastructure.Migrations
 {
     [DbContext(typeof(MixServerDbContext))]
-    [Migration("20250529201755_FullFilePersistence")]
+    [Migration("20250530160109_FullFilePersistence")]
     partial class FullFilePersistence
     {
         /// <inheritdoc />
@@ -178,6 +178,9 @@ namespace MixServer.Infrastructure.Migrations
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("Hidden")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("NodeType")
                         .HasColumnType("INTEGER");

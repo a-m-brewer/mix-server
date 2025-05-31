@@ -33,6 +33,13 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
             .FirstOrDefaultAsync(f => f.RelativePath == rootChild.RootPath, cancellationToken);
     }
 
+    public async Task<ICollection<FileExplorerRootChildNodeEntity>> GetAllRootChildrenAsync(CancellationToken cancellationToken)
+    {
+        return await context.Nodes
+            .OfType<FileExplorerRootChildNodeEntity>()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(FileExplorerNodeEntityBase nodeEntity, CancellationToken cancellationToken)
     {
         await context.Nodes.AddAsync(nodeEntity, cancellationToken);

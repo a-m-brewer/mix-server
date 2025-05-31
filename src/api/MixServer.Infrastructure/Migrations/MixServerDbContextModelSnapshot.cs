@@ -176,6 +176,9 @@ namespace MixServer.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("Hidden")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("NodeType")
                         .HasColumnType("INTEGER");
 

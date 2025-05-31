@@ -148,6 +148,8 @@ builder.Services
 builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
 
+builder.Services.AddHostedService<RootChildChangeBackgroundService>();
+builder.Services.AddHostedService<RootChildDirectoryWatcherService>();
 builder.Services.AddHostedService<FolderMediaMetadataSubscriber>();
 builder.Services.AddHostedService<UpdateMediaMetadataBackgroundService>();
 builder.Services.AddHostedService<RemoveMediaMetadataBackgroundService>();

@@ -24,6 +24,8 @@ public class FileExplorerNodeEntityBase
     public required DateTime CreationTimeUtc { get; set; }
     
     public required string Hash { get; set; } = string.Empty;
+    
+    public bool Hidden { get; set; }
 }
 
 public class FileExplorerRootChildNodeEntity : FileExplorerNodeEntityBase, IHasChildren

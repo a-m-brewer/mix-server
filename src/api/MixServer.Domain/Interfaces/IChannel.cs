@@ -23,17 +23,21 @@ public interface IChannel<T> : ISingletonRepository where T : notnull
     Task WriteAsync(T request, CancellationToken cancellationToken = default);
     Task<bool> WaitToReadAsync(CancellationToken stoppingToken);
     bool TryRead([MaybeNullWhen(false)] out RequestDto<T> request);
+    void Complete();
 }
 
-public class ChannelBase<T>(bool deDuplicateRequests = true) : IChannel<T>
+public class ChannelBase<T>(
+    bool deDuplicateRequests = true,
+    bool singleReader = false,
+    bool singleWriter = false) : IChannel<T>
     where T : notnull
 {
     private readonly ConcurrentDictionary<T, byte>? _inFlight = deDuplicateRequests ? new ConcurrentDictionary<T, byte>() : null;
     private readonly Channel<T> _channel = Channel.CreateUnbounded<T>(
         new UnboundedChannelOptions
         {
-            SingleReader = false,
-            SingleWriter = false,
+            SingleReader = singleReader,
+            SingleWriter = singleWriter,
             AllowSynchronousContinuations = false
         });
 
@@ -63,5 +67,10 @@ public class ChannelBase<T>(bool deDuplicateRequests = true) : IChannel<T>
         
         request = null;
         return false;
+    }
+
+    public void Complete()
+    {
+        _channel.Writer.Complete();
     }
 }

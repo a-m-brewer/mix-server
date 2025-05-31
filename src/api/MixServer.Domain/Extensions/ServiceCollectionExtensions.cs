@@ -34,6 +34,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMediaInfoCache, MediaInfoCache>();
         services.AddTransient<IFileSystemHashService, FileSystemHashService>();
 
+        services.AddTransient<IRootChildFolderService, RootChildFolderService>();
+
         services.AddDomainInterfaces();
         services.AddDomainUtilities();
         
