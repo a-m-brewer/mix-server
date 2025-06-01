@@ -55,7 +55,9 @@ export class CurrentPlaybackSessionRepositoryService {
               playbackSessionId: currentSession?.id,
               playing: audioElementRepository.audio.duration > 0 && !audioElementRepository.audio.paused,
               currentTime: audioElementRepository.audio.currentTime
-            })), 'Failed to sync playback session', [404])
+            })), 'Failed to sync playback session', {
+              validStatusCodes: [404]
+            })
             .then(result => result.success(dto => {
               if (dto.useClientState) {
                 return;

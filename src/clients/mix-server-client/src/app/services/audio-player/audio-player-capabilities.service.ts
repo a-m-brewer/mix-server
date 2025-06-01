@@ -36,7 +36,9 @@ export class AudioPlayerCapabilitiesService {
         this._devicesClient.request('UpdateDevicePlaybackCapabilities',
           client => client.updateDeviceCapabilities(new UpdateDevicePlaybackCapabilitiesCommand({
             capabilities
-          })), 'Error updating device capabilities')
+          })), 'Error updating device capabilities', {
+            triggerLoading: false
+          })
           .then();
       })
 

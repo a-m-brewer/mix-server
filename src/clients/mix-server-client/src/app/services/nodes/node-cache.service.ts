@@ -193,6 +193,7 @@ export class NodeCacheService {
 
     const result = await this._nodeClient.request(loadingKey,
       client => client.getNode(path.rootPath, path.relativePath), 'Error loading directory');
+    console.log('got node', result);
 
     if (result.result) {
       const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(result.result);
