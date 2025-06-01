@@ -45,11 +45,25 @@ export class TracklistFormComponent implements OnInit, OnDestroy {
     this._sessionRepository.currentSessionTracklistChanged$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(session => {
-        if (session?.currentNode && session.currentNode.metadata.mediaInfo) {
-          this.tracklistForm = session.currentNode.metadata.mediaInfo.tracklist;
-        } else {
+        if (!session) {
+          console.error('TracklistFormComponent: No session found');
           this.tracklistForm = undefined;
+          return;
         }
+
+        if (!session.currentNode?.metadata?.mediaInfo) {
+          console.error('TracklistFormComponent: No mediaInfo found in current node');
+          this.tracklistForm = undefined;
+          return;
+        }
+
+        if (!session.currentNode.metadata.mediaInfo.tracklist) {
+          console.error('TracklistFormComponent: No tracklist found in mediaInfo');
+          this.tracklistForm = undefined;
+          return;
+        }
+
+        this.tracklistForm = session.currentNode.metadata.mediaInfo.tracklist
       });
 
     this._audioPlayerService.currentCueIndex$
