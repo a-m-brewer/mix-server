@@ -109,7 +109,6 @@ export class FolderSignalrClientService implements ISignalrClient {
   }
 
   private handleMediaInfoUpdated(dto: MediaInfoUpdatedDto): void {
-    console.log('MediaInfoUpdated');
     const event: MediaInfoUpdatedEvent = {
       mediaInfo: dto.mediaInfo.map(item => {
         return {
@@ -122,7 +121,6 @@ export class FolderSignalrClientService implements ISignalrClient {
   }
 
   private handleMediaInfoRemoved(dto: MediaInfoRemovedDto): void {
-    console.log('MediaInfoRemoved');
     const event: MediaInfoRemovedEvent = {
       nodePaths: dto.nodePaths.map(item => {
         return this._nodePathConverter.fromDto(item)

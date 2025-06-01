@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {BehaviorSubject, combineLatestWith, firstValueFrom, map, Observable} from "rxjs";
+import {BehaviorSubject, combineLatestWith, map, Observable} from "rxjs";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {LoadingRepositoryService} from "../repositories/loading-repository.service";
 import {
@@ -8,7 +8,6 @@ import {
   SetFolderSortCommand
 } from "../../generated-clients/mix-server-clients";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
-import {cloneDeep} from "lodash";
 import {FolderSignalrClientService} from "../signalr/folder-signalr-client.service";
 import {Device} from "../repositories/models/device";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
@@ -35,7 +34,11 @@ export class NodeCacheService {
               private _playbackDeviceService: PlaybackDeviceRepositoryService) {
     this._playbackDeviceService.requestPlaybackDevice$
       .subscribe(device => {
-        const folders = cloneDeep(this._folders$.value);
+        const folders: { [key: string]: FileExplorerFolder } = {};
+        Object.entries(this._folders$.value)
+          .forEach(([key, value]) => {
+            folders[key] = value.copy();
+          });
         this.updateFolders(folders, device);
       });
 
@@ -193,7 +196,6 @@ export class NodeCacheService {
 
     const result = await this._nodeClient.request(loadingKey,
       client => client.getNode(path.rootPath, path.relativePath), 'Error loading directory');
-    console.log('got node', result);
 
     if (result.result) {
       const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(result.result);
@@ -251,7 +253,7 @@ export class NodeCacheService {
       })
     });
 
-    const existingFolders = cloneDeep(this._folders$.value);
+    const existingFolders = this._folders$.value;
     const nextFolders = {...existingFolders, ...updates};
     this._folders$.next(nextFolders);
   }
