@@ -109,7 +109,9 @@ export class DeviceRepositoryService {
       this._deviceClient.request('SetDeviceInteraction',
         client => client.setDeviceInteracted(new SetDeviceInteractionCommand({
           interacted
-        })), 'Failed to set device interaction')
+        })), 'Failed to set device interaction', {
+          triggerLoading: false
+        })
         .then();
     }
     else {

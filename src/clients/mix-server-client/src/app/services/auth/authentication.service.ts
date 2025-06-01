@@ -250,7 +250,9 @@ export class AuthenticationService {
        accessToken: accessToken.value,
        refreshToken: refreshToken,
        deviceId: deviceId,
-     })), undefined);
+     })), undefined, {
+        triggerLoading: false
+      });
 
     const refreshResponse = result.result ?? this.handleAuthError(result.err);
 
