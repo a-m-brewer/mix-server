@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
@@ -18,20 +20,47 @@ public class UpdateMediaMetadataCommandHandler(
 {
     public async Task HandleAsync(UpdateMediaMetadataRequest request, CancellationToken cancellationToken)
     {
-        // logger.LogDebug("Updating media metadata for {Path}", request.NodePath);
-        
-        using var tb = tagBuilderFactory.CreateReadOnly(request.NodePath.AbsolutePath);
-        var tracklist = tracklistTagService.GetTracklist(tb);
-        var mediaInfo = new MediaInfo
-        {
-            Bitrate = tb.Bitrate,
-            Duration = tb.Duration,
-            Tracklist = tracklist,
-            Path = request.NodePath
-        };
-        
-        mediaInfoCache.AddOrReplace([mediaInfo]);
+        var mediaInfos = new ConcurrentBag<MediaInfo>();
 
-        await callbackService.MediaInfoUpdated([mediaInfo]);
+        var transformBlock = new TransformBlock<NodePath, MediaInfo>(path =>
+        {
+            using var tb = tagBuilderFactory.CreateReadOnly(path.AbsolutePath);
+            var tracklist = tracklistTagService.GetTracklist(tb);
+            return new MediaInfo
+            {
+                Bitrate = tb.Bitrate,
+                Duration = tb.Duration,
+                Tracklist = tracklist,
+                Path = path
+            };
+        }, new ExecutionDataflowBlockOptions
+        {
+            CancellationToken = cancellationToken,
+            MaxDegreeOfParallelism = Environment.ProcessorCount
+        });
+
+        var actionBlock = new ActionBlock<MediaInfo>(mediaInfo =>
+        {
+            mediaInfos.Add(mediaInfo);
+        }, new ExecutionDataflowBlockOptions
+        {
+            CancellationToken = cancellationToken,
+            MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded
+        });
+
+        transformBlock.LinkTo(actionBlock, new DataflowLinkOptions { PropagateCompletion = true });
+
+        foreach (var path in request.NodePaths)
+        {
+            await transformBlock.SendAsync(path, cancellationToken);
+        }
+
+        transformBlock.Complete();
+        await actionBlock.Completion;
+        
+        var mediaInfosList = mediaInfos.ToList();
+
+        mediaInfoCache.AddOrReplace(mediaInfosList);
+        await callbackService.MediaInfoUpdated(mediaInfosList);
     }
 }

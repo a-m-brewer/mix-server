@@ -5,7 +5,7 @@ import {
   filter,
   map, merge,
   Observable,
-  Subject
+  Subject, Subscription
 } from "rxjs";
 import {PlaybackSession} from "./models/playback-session";
 import {
@@ -27,6 +27,7 @@ import {PlaybackGrantedEvent} from "./models/playback-granted-event";
 import {TracklistConverterService} from "../converters/tracklist-converter.service";
 import {markAllAsDirty} from "../../utils/form-utils";
 import {SessionApiService} from "../api.service";
+import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 
 @Injectable({
   providedIn: 'root'
@@ -37,6 +38,9 @@ export class CurrentPlaybackSessionRepositoryService {
   private _playbackGranted$ = new Subject<PlaybackGrantedEvent>();
   private _tracklistChanged$ = new Subject<void>();
   private _currentSession$ = new BehaviorSubject<PlaybackSession | null>(null);
+
+  private _currentNodeSub: Subscription | null | undefined = null;
+  private _currentSessionNode$ = new BehaviorSubject<FileExplorerFileNode | null>(null);
 
   constructor(audioElementRepository: AudioElementRepositoryService,
               private _playbackSessionConverter: PlaybackSessionConverterService,
@@ -55,7 +59,9 @@ export class CurrentPlaybackSessionRepositoryService {
               playbackSessionId: currentSession?.id,
               playing: audioElementRepository.audio.duration > 0 && !audioElementRepository.audio.paused,
               currentTime: audioElementRepository.audio.currentTime
-            })), 'Failed to sync playback session', [404])
+            })), 'Failed to sync playback session', {
+              validStatusCodes: [404]
+            })
             .then(result => result.success(dto => {
               if (dto.useClientState) {
                 return;
@@ -84,6 +90,14 @@ export class CurrentPlaybackSessionRepositoryService {
       this._currentSession$.value.destroy();
     }
 
+    if (this._currentNodeSub) {
+      this._currentNodeSub.unsubscribe();
+    }
+
+    this._currentNodeSub = value?.currentNode$.subscribe(node => {
+      this._currentSessionNode$.next(node);
+    })
+
     this._currentSession$.next(value);
   }
 
@@ -94,7 +108,8 @@ export class CurrentPlaybackSessionRepositoryService {
 
   public get currentSessionTracklistChanged$(): Observable<PlaybackSession | null> {
     return merge(
-      this.currentSession$,
+      this._currentSession$,
+      this._currentSessionNode$,
       this._tracklistChanged$
     )
       .pipe(map(() => this.currentSession));

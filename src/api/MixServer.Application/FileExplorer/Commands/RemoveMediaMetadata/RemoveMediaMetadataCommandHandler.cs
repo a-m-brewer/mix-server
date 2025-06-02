@@ -13,8 +13,7 @@ public class RemoveMediaMetadataCommandHandler(
 {
     public async Task HandleAsync(RemoveMediaMetadataRequest request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Removing media metadata for {Path}", request.NodePath);
-        var removedItems = mediaInfoCache.Remove([request.NodePath]);
+        var removedItems = mediaInfoCache.Remove(request.NodePaths);
         await callbackService.MediaInfoRemoved(removedItems);
     }
 }

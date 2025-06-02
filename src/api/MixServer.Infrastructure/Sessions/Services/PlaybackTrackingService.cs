@@ -164,9 +164,9 @@ public class PlaybackTrackingService(
             using var scope = serviceProvider.CreateScope();
             var callbackService = scope.ServiceProvider.GetRequiredService<ICallbackService>();
 
-            await TrySavePlaybackStateAsync(playbackState, type);
-
             await callbackService.PlaybackStateUpdated(playbackState, type);
+            
+            _ = TrySavePlaybackStateAsync(playbackState, type);
         }
         catch (Exception e)
         {

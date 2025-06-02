@@ -33,7 +33,9 @@ export class QueueRepositoryService {
     this._authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
-          this._queueClient.request('GetQueue', client => client.queue(), 'Failed to get queue', [404])
+          this._queueClient.request('GetQueue', client => client.queue(), 'Failed to get queue', {
+            validStatusCodes: [404]
+          })
             .then(result => result.success(dto => this.nextQueue(dto)))
         }
       });

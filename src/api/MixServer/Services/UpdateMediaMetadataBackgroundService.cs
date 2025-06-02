@@ -6,4 +6,4 @@ namespace MixServer.Services;
 public class UpdateMediaMetadataBackgroundService(
     IUpdateMediaMetadataChannel channel,
     IServiceProvider serviceProvider,
-    ILogger<UpdateMediaMetadataBackgroundService> logger) : ChannelBackgroundService<UpdateMediaMetadataRequest>(channel, serviceProvider, logger);
+    ILogger<UpdateMediaMetadataBackgroundService> logger) : ChannelBackgroundService<UpdateMediaMetadataRequest>(channel, serviceProvider, logger, 1);

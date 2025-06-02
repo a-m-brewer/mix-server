@@ -6,4 +6,4 @@ namespace MixServer.Services;
 public class RemoveMediaMetadataBackgroundService(
     IRemoveMediaMetadataChannel channel,
     IServiceProvider serviceProvider,
-    ILogger<RemoveMediaMetadataBackgroundService> logger) : ChannelBackgroundService<RemoveMediaMetadataRequest>(channel, serviceProvider, logger);
+    ILogger<RemoveMediaMetadataBackgroundService> logger) : ChannelBackgroundService<RemoveMediaMetadataRequest>(channel, serviceProvider, logger, 1);

@@ -301,28 +301,6 @@ builder.Services
 
 var app = builder.Build();
 
-app.Use(async (context, next) =>
-{
-    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-    var sw = Stopwatch.StartNew();
-
-    try
-    {
-        await next();
-    }
-    finally
-    {
-        sw.Stop();
-        var elapsedMilliseconds = sw.ElapsedMilliseconds;
-        logger.LogInformation(
-            "Request {Method} {Path} completed in {ElapsedMilliseconds} ms with status code {StatusCode}",
-            context.Request.Method,
-            context.Request.Path,
-            elapsedMilliseconds,
-            context.Response.StatusCode);
-    }
-});
-
 // Response Compression
 app.UseResponseCompression();
 

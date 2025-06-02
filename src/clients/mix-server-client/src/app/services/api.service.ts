@@ -32,6 +32,11 @@ export class ApiResult<T> {
   }
 }
 
+export interface ApiRequestOptions {
+  validStatusCodes?: Array<number>;
+  triggerLoading?: boolean;
+}
+
 export abstract class ApiService<TClient> {
 
   protected constructor(private _client: TClient,
@@ -41,13 +46,18 @@ export abstract class ApiService<TClient> {
 
   public async request<TResponse>(action: string | Array<string>,
                                   call: (client: TClient) => Observable<TResponse>,
-                                  message?: string,
-                                  validStatusCodes: Array<number> = []): Promise<ApiResult<TResponse>> {
-    if (Array.isArray(action)) {
-      this._loadingRepository.startLoadingIds(action);
-    }
-    else {
-      this._loadingRepository.startLoading(action);
+                                  message: string | undefined,
+                                  options: ApiRequestOptions = {}): Promise<ApiResult<TResponse>> {
+    const validStatusCodes = options.validStatusCodes ?? [];
+    const includeLoading = options.triggerLoading ?? true;
+
+    if (includeLoading) {
+      if (Array.isArray(action)) {
+        this._loadingRepository.startLoadingIds(action);
+      }
+      else {
+        this._loadingRepository.startLoading(action);
+      }
     }
 
     try {
@@ -60,11 +70,13 @@ export abstract class ApiService<TClient> {
 
       return new ApiResult(err);
     } finally {
-      if (Array.isArray(action)) {
-        this._loadingRepository.stopLoadingItems(action);
-      }
-      else {
-        this._loadingRepository.stopLoading(action);
+      if (includeLoading) {
+        if (Array.isArray(action)) {
+          this._loadingRepository.stopLoadingItems(action);
+        }
+        else {
+          this._loadingRepository.stopLoading(action);
+        }
       }
     }
   }

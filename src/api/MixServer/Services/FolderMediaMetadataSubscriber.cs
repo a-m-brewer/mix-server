@@ -35,22 +35,22 @@ public class FolderMediaMetadataSubscriber(
     
     private void FolderCacheServiceOnFolderAdded(object? sender, IFileExplorerFolder e)
     {
-        foreach (var file in e.Children
-                     .OfType<IFileExplorerFileNode>()
-                     .Where(w => w.Metadata.IsMedia))
-        {
-            _ = updateChannel.WriteAsync(new UpdateMediaMetadataRequest(file.Path));
-        }
+        var paths = e.Children
+            .OfType<IFileExplorerFileNode>()
+            .Where(w => w.Metadata.IsMedia)
+            .Select(s => s.Path)
+            .ToList();
+        _ = updateChannel.WriteAsync(new UpdateMediaMetadataRequest(paths));
     }
 
     private void FolderCacheServiceOnFolderRemoved(object? sender, IFileExplorerFolder e)
     {
-        foreach (var file in e.Children
-                     .OfType<IFileExplorerFileNode>()
-                     .Where(w => w.Metadata.IsMedia))
-        {
-            _ = removeChannel.WriteAsync(new RemoveMediaMetadataRequest(file.Path));
-        }
+        var paths = e.Children
+            .OfType<IFileExplorerFileNode>()
+            .Where(w => w.Metadata.IsMedia)
+            .Select(s => s.Path)
+            .ToList();
+        _ = removeChannel.WriteAsync(new RemoveMediaMetadataRequest(paths));
     }
 
     private void FolderCacheServiceOnItemAdded(object? sender, IFileExplorerNode e)
@@ -60,7 +60,7 @@ public class FolderMediaMetadataSubscriber(
             return;
         }
 
-        _ = updateChannel.WriteAsync(new UpdateMediaMetadataRequest(fileNode.Path));
+        _ = updateChannel.WriteAsync(new UpdateMediaMetadataRequest([fileNode.Path]));
     }
     
     private void FolderCacheServiceOnItemUpdated(object? sender, FolderCacheServiceItemUpdatedEventArgs e)
@@ -72,10 +72,10 @@ public class FolderMediaMetadataSubscriber(
         
         if (!e.OldPath.IsEqualTo(e.Item.Path))
         {
-            _ = removeChannel.WriteAsync(new RemoveMediaMetadataRequest(e.OldPath));
+            _ = removeChannel.WriteAsync(new RemoveMediaMetadataRequest([e.OldPath]));
         }
         
-        _ = updateChannel.WriteAsync(new UpdateMediaMetadataRequest(fileNode.Path));
+        _ = updateChannel.WriteAsync(new UpdateMediaMetadataRequest([fileNode.Path]));
     }
     
     private void FolderCacheServiceOnItemRemoved(object? sender, FolderCacheServiceItemRemovedEventArgs e)
@@ -85,6 +85,6 @@ public class FolderMediaMetadataSubscriber(
             return;
         }
         
-        _ = removeChannel.WriteAsync(new RemoveMediaMetadataRequest(fileNode.Path));
+        _ = removeChannel.WriteAsync(new RemoveMediaMetadataRequest([fileNode.Path]));
     }
 }
