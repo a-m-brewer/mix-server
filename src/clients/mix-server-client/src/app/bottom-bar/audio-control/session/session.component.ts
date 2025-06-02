@@ -19,18 +19,19 @@ import {PageRoutes} from "../../../page-routes.enum";
 export class SessionComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
   public fileName: string | undefined;
-  public sessionCurrentDirectory: FileExplorerFolderNode | undefined;
+  public tracklistDisabled: boolean = false;
 
   constructor(private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _router: Router){
   }
 
   public ngOnInit(): void {
-    this._playbackSessionRepository.currentSession$
+    this._playbackSessionRepository.currentSessionTracklistChanged$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(s => {
         this.fileName = s?.currentNode.path.fileName ?? '';
-        this.sessionCurrentDirectory = s?.currentNode.parent;
+        const parentDisabled = s?.currentNode.parent?.disabled ?? true;
+        this.tracklistDisabled = parentDisabled || !(!!s?.currentNode.metadata.mediaInfo?.tracklist);
       });
   }
 
@@ -40,7 +41,7 @@ export class SessionComponent implements OnInit, OnDestroy {
   }
 
   public async onClick(): Promise<void> {
-    if (!this.sessionCurrentDirectory) return;
+    if (this.tracklistDisabled) return;
 
     await this._router.navigate([PageRoutes.Tracklist]);
   }

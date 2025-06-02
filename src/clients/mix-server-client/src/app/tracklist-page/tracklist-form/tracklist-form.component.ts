@@ -51,14 +51,8 @@ export class TracklistFormComponent implements OnInit, OnDestroy {
           return;
         }
 
-        if (!session.currentNode?.metadata?.mediaInfo) {
+        if (!session.currentNode.metadata?.mediaInfo) {
           console.error('TracklistFormComponent: No mediaInfo found in current node');
-          this.tracklistForm = undefined;
-          return;
-        }
-
-        if (!session.currentNode.metadata.mediaInfo.tracklist) {
-          console.error('TracklistFormComponent: No tracklist found in mediaInfo');
           this.tracklistForm = undefined;
           return;
         }
