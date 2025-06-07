@@ -27,6 +27,7 @@ public interface IFileExplorerEntityConverter : IConverter
 
 public class FileExplorerEntityConverter(
     IFileSystemHashService fileSystemHashService,
+    IFileSystemFolderMetadataService fileSystemFolderMetadataService,
     IRootFileExplorerFolder rootFolder) : IFileExplorerEntityConverter
 {
     public FileExplorerRootChildNodeEntity CreateRootChildEntity(DirectoryInfo directoryInfo)
@@ -57,10 +58,11 @@ public class FileExplorerEntityConverter(
         CancellationToken cancellationToken)
     {
         var nodePath = rootFolder.GetNodePath(directoryInfo.FullName);
+        var metadata = await fileSystemFolderMetadataService.GetOrCreateAsync(nodePath, cancellationToken);
 
         return new FileExplorerFolderNodeEntity
         {
-            Id = Guid.NewGuid(),
+            Id = metadata.FolderId,
             RelativePath = nodePath.RelativePath,
             Exists = directoryInfo.Exists,
             CreationTimeUtc = directoryInfo.CreationTimeUtc,

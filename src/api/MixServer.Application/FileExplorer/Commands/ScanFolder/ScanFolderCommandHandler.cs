@@ -1,9 +1,11 @@
 ﻿using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Services;
+using MixServer.Domain.FileExplorer.Settings;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Repositories;
 
@@ -16,13 +18,6 @@ public class ScanFolderCommandHandler(
     IPersistFolderCommandChannel persistFolderCommandChannel,
     IRootFileExplorerFolder rootFolder) : ICommandHandler<ScanFolderRequest>
 {
-    private static readonly EnumerationOptions EnumerationOptions = new()
-    {
-        RecurseSubdirectories = false,
-        IgnoreInaccessible = true,
-        AttributesToSkip = 0
-    };
-    
     public async Task HandleAsync(ScanFolderRequest request, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Received scan folder request for {NodePath} with recursive={Recursive}", request.NodePath, request.Recursive);
@@ -36,45 +31,51 @@ public class ScanFolderCommandHandler(
         {
             throw new InvalidRequestException(nameof(request.NodePath), "The specified path is not a directory.");
         }
-        
-        var expectedHash = await fileSystemHashService.ComputeFolderMd5HashAsync(request.NodePath, cancellationToken);
-        var actualHash = await folderExplorerNodeEntityRepository.GetHashOrDefaultAsync(request.NodePath, cancellationToken);
 
-        if (expectedHash == actualHash)
+        var fsHeader = new FolderHeader
         {
-            logger.LogInformation("Folder {NodePath} is already up to date ({ExpectedHash}). Skipping...", request.NodePath, expectedHash);
+            NodePath = request.NodePath,
+            Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(request.NodePath, cancellationToken)
+        };
+        var dbHeader = await folderExplorerNodeEntityRepository.GetFolderHeaderOrDefaultAsync(fsHeader, cancellationToken);
+
+        var folderDiff = new FolderDiff
+        {
+            FileSystemHeader = fsHeader,
+            DatabaseHeader = dbHeader
+        };
+
+        if (!folderDiff.Dirty)
+        {
+            logger.LogInformation("Folder {NodePath} is already up to date ({ExpectedHash}). Skipping...", request.NodePath, fsHeader);
             return;
         }
 
-        await RunScanAsync(request.NodePath, request.Recursive, cancellationToken);
+        await RunScanAsync(folderDiff, request.Recursive, cancellationToken);
     }
 
-    private async Task RunScanAsync(NodePath path, bool recursive, CancellationToken cancellationToken)
+    private async Task RunScanAsync(FolderDiff diff, bool recursive, CancellationToken cancellationToken)
     {
-        var root = new DirectoryInfo(path.AbsolutePath);
+        var root = new DirectoryInfo(diff.FileSystemHeader.NodePath.AbsolutePath);
 
         List<FileSystemInfo> children;
         try
         {
-            children = root.EnumerateFileSystemInfos("*", EnumerationOptions).ToList();
+            children = root.MsEnumerateFileSystemInfos().ToList();
         }
         catch
         {
             return;
         }
         
-        if (children.Count == 0)
-        {
-            return;
-        }
-        
         _ = persistFolderCommandChannel.WriteAsync(new PersistFolderCommand
         {
+            DirectoryPath = diff.FileSystemHeader.NodePath,
             Directory = root,
             Children = children
         }, cancellationToken);
         
-        if (!recursive)
+        if (!recursive || children.Count == 0)
         {
             return;
         }
@@ -90,30 +91,38 @@ public class ScanFolderCommandHandler(
             return;
         }
         
-        var actualHashes = await folderExplorerNodeEntityRepository.GetHashesAsync(childNodePaths, cancellationToken);
-        var actualHashTasks =
-            childNodes.Select(async cnp => new KeyValuePair<NodePath, string?>(cnp.Key, await fileSystemHashService.ComputeFolderMd5HashAsync(cnp.Value, cancellationToken)));
-        var expectedHashes = (await Task.WhenAll(actualHashTasks))
-            .ToDictionary(k => k.Key, v => v.Value);
+        var actualHashes = await folderExplorerNodeEntityRepository.GetFolderHeadersAsync(childNodePaths, cancellationToken);
+        var expectedFolderHeaders =
+            childNodes.Select(async cnp => new FolderHeader
+            {
+                NodePath = cnp.Key,
+                Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(cnp.Value, cancellationToken)
+            });
+        var expectedHashes = (await Task.WhenAll(expectedFolderHeaders))
+            .ToDictionary(k => k.NodePath);
 
-        var folders = new List<NodePath>();
+        var folders = new List<FolderDiff>();
         foreach (var childNodePath in childNodePaths)
         {
-            if (!expectedHashes.TryGetValue(childNodePath, out var expectedHash))
+            if (!expectedHashes.TryGetValue(childNodePath, out var fsHeader))
             {
                 logger.LogWarning("Failed to compute hash for {NodePath}. Skipping...", childNodePath);
                 continue;
             }
             
-            var actualHash = actualHashes.GetValueOrDefault(childNodePath);
+            var dbHeader = actualHashes.GetValueOrDefault(childNodePath);
             
-            if (expectedHash == actualHash)
+            if (fsHeader.Equals(dbHeader))
             {
-                logger.LogInformation("Folder {NodePath} is already up to date ({ExpectedHash}). Skipping...", childNodePath, expectedHash);
+                logger.LogInformation("Folder {NodePath} is already up to date ({ExpectedHash}). Skipping...", childNodePath, fsHeader);
                 continue;
             }
 
-            folders.Add(childNodePath);
+            folders.Add(new FolderDiff
+            {
+                FileSystemHeader = fsHeader,
+                DatabaseHeader = dbHeader
+            });
         }
 
         var actionBlock = new ActionBlock<int>(async i =>

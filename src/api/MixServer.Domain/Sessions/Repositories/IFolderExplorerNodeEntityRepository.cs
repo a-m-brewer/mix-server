@@ -12,8 +12,12 @@ public interface IFolderExplorerNodeEntityRepository : ITransientRepository
         string rootPath,
         List<string> relativePaths,
         CancellationToken cancellationToken);
-    Task<string?> GetHashOrDefaultAsync(NodePath nodePath, CancellationToken cancellationToken);
-    Task<Dictionary<NodePath, string>> GetHashesAsync(List<NodePath> childNodePaths, CancellationToken cancellationToken);
+    Task<FolderHeader?> GetFolderHeaderOrDefaultAsync(FolderHeader header, CancellationToken cancellationToken);
+    Task<Dictionary<NodePath, FolderHeader>> GetFolderHeadersAsync(List<NodePath> childNodePaths, CancellationToken cancellationToken);
+    Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(
+        Guid id, 
+        bool includeChildren = true,
+        CancellationToken cancellationToken = default);
     Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(
         NodePath nodePath, 
         bool includeChildren = true,

@@ -42,33 +42,46 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<string?> GetHashOrDefaultAsync(NodePath nodePath, CancellationToken cancellationToken)
+    public async Task<FolderHeader?> GetFolderHeaderOrDefaultAsync(
+        FolderHeader header,
+        CancellationToken cancellationToken)
     {
-        if (nodePath.IsRoot)
+        if (header.NodePath.IsRoot)
         {
-            return string.Empty; // Root folder has no hash
+            return null; // Root folder has no hash
         }
 
-        if (nodePath.IsRootChild)
+        if (header.NodePath.IsRootChild)
         {
             return await context.Nodes.OfType<FileExplorerRootChildNodeEntity>()
-                .Where(w => w.RelativePath == nodePath.RootPath)
-                .Select(s => s.Hash)
+                .Where(w => w.RelativePath == header.NodePath.RootPath || w.Hash == header.Hash)
+                .Select(s => new FolderHeader
+                {
+                    NodePath = new NodePath(s.RelativePath, string.Empty),
+                    Hash = s.Hash
+                })
                 .FirstOrDefaultAsync(cancellationToken);
         }
         
         return await context.Nodes.OfType<FileExplorerFolderNodeEntity>()
             .Include(i => i.RootChild)
-            .Where(w => w.RelativePath == nodePath.RelativePath && w.RootChild.RelativePath == nodePath.RootPath)
-            .Select(s => s.Hash)
+            .Where(w => 
+                (w.RelativePath == header.NodePath.RelativePath && w.RootChild.RelativePath == header.NodePath.RootPath) ||
+                w.Hash == header.Hash)
+            .Select(s => new FolderHeader
+            {
+                NodePath = new NodePath(s.RootChild.RelativePath, s.RelativePath),
+                Hash = s.Hash
+            })
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<Dictionary<NodePath, string>> GetHashesAsync(List<NodePath> childNodePaths, CancellationToken cancellationToken)
+    public async Task<Dictionary<NodePath, FolderHeader>> GetFolderHeadersAsync(List<NodePath> childNodePaths,
+        CancellationToken cancellationToken)
     {
         if (childNodePaths.Count == 0)
         {
-            return new Dictionary<NodePath, string>();
+            return [];
         }
 
         var pathPairs = childNodePaths
@@ -78,14 +91,30 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
         return await context.Nodes.OfType<FileExplorerFolderNodeEntity>()
             .Include(i => i.RootChild)
             .Where(w => pathPairs.Contains(new { RootPath = w.RootChild.RelativePath, w.RelativePath }))
-            .Select(s => new { Path = new NodePath(s.RootChild.RelativePath, s.RelativePath), Hash = s.Hash})
-            .ToDictionaryAsync(k => k.Path, s => s.Hash, cancellationToken);
+            .Select(s => new FolderHeader
+            {
+                NodePath = new NodePath(s.RootChild.RelativePath, s.RelativePath),
+                Hash = s.Hash
+            })
+            .ToDictionaryAsync(k => k.NodePath, cancellationToken);
     }
     
     public async Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(
-        NodePath nodePath,
+        Guid id,
         bool includeChildren = true,
         CancellationToken cancellationToken = default)
+    {
+        return await GetFolderNodeQuery(includeChildren)
+            .FirstOrDefaultAsync(f => f.Id == id, cancellationToken);
+    }
+
+    public Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(NodePath nodePath, bool includeChildren = true, CancellationToken cancellationToken = default)
+    {
+        return GetFolderNodeQuery(includeChildren)
+            .FirstOrDefaultAsync(f => f.RelativePath == nodePath.RelativePath && f.RootChild.RelativePath == nodePath.RootPath, cancellationToken);
+    }
+
+    private IQueryable<FileExplorerFolderNodeEntity> GetFolderNodeQuery(bool includeChildren)
     {
         var query = context.Nodes
             .OfType<FileExplorerFolderNodeEntity>()
@@ -96,8 +125,7 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
             query = query.Include(i => i.Children);
         }
         
-        return await query
-            .FirstOrDefaultAsync(f => f.RelativePath == nodePath.RelativePath && f.RootChild.RelativePath == nodePath.RootPath, cancellationToken);
+        return query;
     }
 
     public async Task<FileExplorerRootChildNodeEntity> GetRootChildOrThrowAsync(string rootPath, CancellationToken cancellationToken)

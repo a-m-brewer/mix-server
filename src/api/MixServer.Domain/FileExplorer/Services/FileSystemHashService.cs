@@ -1,6 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
+using MixServer.Domain.Constants;
+using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Settings;
 
 namespace MixServer.Domain.FileExplorer.Services;
 
@@ -34,7 +37,7 @@ public class FileSystemHashService : IFileSystemHashService
         CancellationToken cancellationToken = default)
     {
         var childrenHashes = directoryInfo
-            .EnumerateFileSystemInfos("*", SearchOption.TopDirectoryOnly)
+            .MsEnumerateFileSystemInfos()
             .Select(ToHashString);
         
         var allPaths = childrenHashes

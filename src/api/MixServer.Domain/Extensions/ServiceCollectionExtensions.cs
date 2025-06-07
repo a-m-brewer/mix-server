@@ -33,6 +33,8 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ICanPlayOnDeviceValidator, CanPlayOnDeviceValidator>();
         services.AddSingleton<IMediaInfoCache, MediaInfoCache>();
         services.AddTransient<IFileSystemHashService, FileSystemHashService>();
+        services.AddTransient<IFileSystemFolderMetadataService, FileSystemFolderMetadataService>();
+        services.AddTransient<IFileSystemQueryService, FileSystemQueryService>();
 
         services.AddTransient<IRootChildFolderService, RootChildFolderService>();
 

@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.Constants;
+using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Converters;
 using DirectoryInfo = System.IO.DirectoryInfo;
 
@@ -62,12 +64,12 @@ public class FolderCacheItem : IFolderCacheItem
             return;
         }
         
-        foreach (var directory in directoryInfo.GetDirectories())
+        foreach (var directory in directoryInfo.MsEnumerateDirectories())
         {
             _folder.AddChild(fileExplorerConverter.Convert(directory));
         }
 
-        foreach (var file in directoryInfo.GetFiles())
+        foreach (var file in directoryInfo.MsEnumerateFiles())
         {
             _folder.AddChild(fileExplorerConverter.Convert(file, _folder.Node));
         }
@@ -147,6 +149,12 @@ public class FolderCacheItem : IFolderCacheItem
         var fileExists = File.Exists(e.fullName);
         var isFile = fileExists && !directoryExists;
         var nodePath = _rootFolder.GetNodePath(e.fullName);
+        
+        if (isFile && Path.GetFileName(e.fullName) == FolderMetadataConstants.MetadataFileName)
+        {
+            _logger.LogDebug("Ignoring change for metadata file: {FullName}", e.fullName);
+            return;
+        }
         
         switch (e.changeType)
         {

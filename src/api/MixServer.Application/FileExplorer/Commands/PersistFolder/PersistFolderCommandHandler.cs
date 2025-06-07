@@ -13,6 +13,7 @@ public class PersistFolderCommandHandler(
     IFileExplorerEntityConverter fileExplorerEntityConverter,
     IFolderExplorerNodeEntityRepository folderExplorerNodeEntityRepository,
     IFileSystemHashService fileSystemHashService,
+    IFileSystemQueryService fileSystemQueryService,
     ILogger<PersistFolderCommandHandler> logger,
     IRootFileExplorerFolder rootFolder,
     IUnitOfWork unitOfWork) : ICommandHandler<PersistFolderCommand>
@@ -21,36 +22,35 @@ public class PersistFolderCommandHandler(
     {
         logger.LogInformation("Received persist folder request for {Directory} with {ChildrenCount} children",
             request.Directory.FullName, request.Children.Count);
-
-        var dirNodePath = rootFolder.GetNodePath(request.Directory.FullName);
-        var root = await folderExplorerNodeEntityRepository.GetRootChildOrThrowAsync(dirNodePath.RootPath, cancellationToken);
+        
+        var root = await folderExplorerNodeEntityRepository.GetRootChildOrThrowAsync(request.DirectoryPath.RootPath, cancellationToken);
         var dirHash = await fileSystemHashService.ComputeFolderMd5HashAsync(request.Directory, cancellationToken);
 
         FileExplorerFolderNodeEntity? parentEntity = null;
-        if (dirNodePath.IsRootChild)
+        if (request.DirectoryPath.IsRootChild)
         {
-            root.Update(dirNodePath, request.Directory, dirHash);
+            root.Update(request.DirectoryPath, request.Directory, dirHash);
         }
         else
         {
-            var parentNodePath = dirNodePath.Parent;
-            var parentNodeEntity = parentNodePath.IsRootChild
+            var grandParentPath = request.DirectoryPath.Parent;
+            var grandParentEntity = grandParentPath.IsRootChild
                 ? null
-                : await folderExplorerNodeEntityRepository.GetFolderNodeOrDefaultAsync(parentNodePath, false, cancellationToken);
+                : await fileSystemQueryService.GetFolderNodeOrDefaultAsync(grandParentPath, false, cancellationToken);
             
-            parentEntity = await folderExplorerNodeEntityRepository.GetFolderNodeOrDefaultAsync(dirNodePath, cancellationToken: cancellationToken);
+            parentEntity = await fileSystemQueryService.GetFolderNodeOrDefaultAsync(request.DirectoryPath, cancellationToken: cancellationToken);
             if (parentEntity is null)
             {
                 parentEntity = await fileExplorerEntityConverter.CreateFolderEntityAsync(
                     request.Directory,
                     root,
-                    parentNodeEntity,
+                    grandParentEntity,
                     cancellationToken);
                 await folderExplorerNodeEntityRepository.AddAsync(parentEntity, cancellationToken);
             }
             else
             {
-                parentEntity.Update(dirNodePath, request.Directory, parentNodeEntity, dirHash);
+                parentEntity.Update(request.DirectoryPath, request.Directory, grandParentEntity, dirHash);
             }
         }
 
