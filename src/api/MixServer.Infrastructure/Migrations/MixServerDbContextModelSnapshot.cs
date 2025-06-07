@@ -219,7 +219,7 @@ namespace MixServer.Infrastructure.Migrations
                     b.HasIndex("NodeId")
                         .IsUnique();
 
-                    b.ToTable("FileMetadataEntity");
+                    b.ToTable("FileMetadata");
 
                     b.HasDiscriminator<int>("Type").HasValue(0);
 
@@ -327,7 +327,7 @@ namespace MixServer.Infrastructure.Migrations
 
                     b.HasIndex("TracklistId");
 
-                    b.ToTable("CueEntity");
+                    b.ToTable("Cues");
                 });
 
             modelBuilder.Entity("MixServer.Domain.Tracklists.Entities.TrackEntity", b =>
@@ -351,7 +351,7 @@ namespace MixServer.Infrastructure.Migrations
 
                     b.HasIndex("CueId");
 
-                    b.ToTable("TrackEntity");
+                    b.ToTable("Tracks");
                 });
 
             modelBuilder.Entity("MixServer.Domain.Tracklists.Entities.TracklistEntity", b =>
@@ -368,7 +368,7 @@ namespace MixServer.Infrastructure.Migrations
                     b.HasIndex("NodeId")
                         .IsUnique();
 
-                    b.ToTable("TracklistEntity");
+                    b.ToTable("Tracklists");
                 });
 
             modelBuilder.Entity("MixServer.Domain.Tracklists.Entities.TracklistPlayersEntity", b =>
@@ -391,7 +391,7 @@ namespace MixServer.Infrastructure.Migrations
 
                     b.HasIndex("TrackId");
 
-                    b.ToTable("TracklistPlayersEntity");
+                    b.ToTable("TracklistPlayers");
                 });
 
             modelBuilder.Entity("MixServer.Domain.Users.Entities.Device", b =>

@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.FileExplorer.Services;
@@ -11,7 +12,10 @@ using MixServer.Domain.Utilities;
 
 namespace MixServer.Domain.FileExplorer.Converters;
 
-public interface IFileMetadataConverter : IConverter<FileInfo, IFileMetadata>;
+public interface IFileMetadataConverter : IConverter<FileInfo, IFileMetadata>
+{
+    FileMetadataEntity ConvertToEntity(FileInfo fileInfo, FileExplorerFileNodeEntity node);
+}
 
 public partial class FileMetadataConverter(
     IMimeTypeService mimeTypeService,
@@ -39,7 +43,21 @@ public partial class FileMetadataConverter(
             IsMedia = isMedia
         };
     }
-    
+
+    public FileMetadataEntity ConvertToEntity(FileInfo fileInfo, FileExplorerFileNodeEntity node)
+    {
+        var metadata = Convert(fileInfo);
+
+        return new FileMetadataEntity
+        {
+            Id = Guid.NewGuid(),
+            MimeType = metadata.MimeType,
+            IsMedia = metadata.IsMedia,
+            Node = node,
+            NodeId = node.Id
+        };
+    }
+
     [GeneratedRegex(@"^(audio|video)\/(.*)")]
     private static partial Regex AudioVideoMimeTypeRegex();
 }

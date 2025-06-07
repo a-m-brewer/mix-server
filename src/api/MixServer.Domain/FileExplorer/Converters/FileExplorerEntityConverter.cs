@@ -26,6 +26,7 @@ public interface IFileExplorerEntityConverter : IConverter
 }
 
 public class FileExplorerEntityConverter(
+    IFileMetadataConverter fileMetadataConverter,
     IFileSystemHashService fileSystemHashService,
     IFileSystemFolderMetadataService fileSystemFolderMetadataService,
     IRootFileExplorerFolder rootFolder) : IFileExplorerEntityConverter
@@ -97,7 +98,7 @@ public class FileExplorerEntityConverter(
     {
         var nodePath = rootFolder.GetNodePath(fileInfo.FullName);
 
-        return new FileExplorerFileNodeEntity
+        var file = new FileExplorerFileNodeEntity
         {
             Id = Guid.NewGuid(),
             RelativePath = nodePath.RelativePath,
@@ -107,5 +108,9 @@ public class FileExplorerEntityConverter(
             Parent = parentEntity,
             Hash = await fileSystemHashService.ComputeFileMd5HashAsync(nodePath, cancellationToken)
         };
+        
+        file.Metadata = fileMetadataConverter.ConvertToEntity(fileInfo, file);
+
+        return file;
     }
 }

@@ -46,7 +46,7 @@ namespace MixServer.Infrastructure.Migrations
                 nullable: true);
 
             migrationBuilder.CreateTable(
-                name: "FileMetadataEntity",
+                name: "FileMetadata",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
@@ -59,9 +59,9 @@ namespace MixServer.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_FileMetadataEntity", x => x.Id);
+                    table.PrimaryKey("PK_FileMetadata", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_FileMetadataEntity_Nodes_NodeId",
+                        name: "FK_FileMetadata_Nodes_NodeId",
                         column: x => x.NodeId,
                         principalTable: "Nodes",
                         principalColumn: "Id",
@@ -69,7 +69,7 @@ namespace MixServer.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "TracklistEntity",
+                name: "Tracklists",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
@@ -77,9 +77,9 @@ namespace MixServer.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TracklistEntity", x => x.Id);
+                    table.PrimaryKey("PK_Tracklists", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_TracklistEntity_Nodes_NodeId",
+                        name: "FK_Tracklists_Nodes_NodeId",
                         column: x => x.NodeId,
                         principalTable: "Nodes",
                         principalColumn: "Id",
@@ -87,7 +87,7 @@ namespace MixServer.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CueEntity",
+                name: "Cues",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
@@ -96,17 +96,17 @@ namespace MixServer.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CueEntity", x => x.Id);
+                    table.PrimaryKey("PK_Cues", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_CueEntity_TracklistEntity_TracklistId",
+                        name: "FK_Cues_Tracklists_TracklistId",
                         column: x => x.TracklistId,
-                        principalTable: "TracklistEntity",
+                        principalTable: "Tracklists",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "TrackEntity",
+                name: "Tracks",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
@@ -116,17 +116,17 @@ namespace MixServer.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TrackEntity", x => x.Id);
+                    table.PrimaryKey("PK_Tracks", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_TrackEntity_CueEntity_CueId",
+                        name: "FK_Tracks_Cues_CueId",
                         column: x => x.CueId,
-                        principalTable: "CueEntity",
+                        principalTable: "Cues",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "TracklistPlayersEntity",
+                name: "TracklistPlayers",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
@@ -136,11 +136,11 @@ namespace MixServer.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TracklistPlayersEntity", x => x.Id);
+                    table.PrimaryKey("PK_TracklistPlayers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_TracklistPlayersEntity_TrackEntity_TrackId",
+                        name: "FK_TracklistPlayers_Tracks_TrackId",
                         column: x => x.TrackId,
-                        principalTable: "TrackEntity",
+                        principalTable: "Tracks",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -151,31 +151,31 @@ namespace MixServer.Infrastructure.Migrations
                 column: "ParentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CueEntity_TracklistId",
-                table: "CueEntity",
+                name: "IX_Cues_TracklistId",
+                table: "Cues",
                 column: "TracklistId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FileMetadataEntity_NodeId",
-                table: "FileMetadataEntity",
+                name: "IX_FileMetadata_NodeId",
+                table: "FileMetadata",
                 column: "NodeId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_TrackEntity_CueId",
-                table: "TrackEntity",
-                column: "CueId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TracklistEntity_NodeId",
-                table: "TracklistEntity",
-                column: "NodeId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TracklistPlayersEntity_TrackId",
-                table: "TracklistPlayersEntity",
+                name: "IX_TracklistPlayers_TrackId",
+                table: "TracklistPlayers",
                 column: "TrackId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tracklists_NodeId",
+                table: "Tracklists",
+                column: "NodeId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tracks_CueId",
+                table: "Tracks",
+                column: "CueId");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Nodes_Nodes_ParentId",
@@ -194,19 +194,19 @@ namespace MixServer.Infrastructure.Migrations
                 table: "Nodes");
 
             migrationBuilder.DropTable(
-                name: "FileMetadataEntity");
+                name: "FileMetadata");
 
             migrationBuilder.DropTable(
-                name: "TracklistPlayersEntity");
+                name: "TracklistPlayers");
 
             migrationBuilder.DropTable(
-                name: "TrackEntity");
+                name: "Tracks");
 
             migrationBuilder.DropTable(
-                name: "CueEntity");
+                name: "Cues");
 
             migrationBuilder.DropTable(
-                name: "TracklistEntity");
+                name: "Tracklists");
 
             migrationBuilder.DropIndex(
                 name: "IX_Nodes_ParentId",

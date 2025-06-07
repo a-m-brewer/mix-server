@@ -8,9 +8,12 @@ public interface IFolderExplorerNodeEntityRepository : ITransientRepository
 {
     Task<TEntity?> GetOrDefaultAsync<TEntity>(NodePath nodePath, CancellationToken cancellationToken)
         where TEntity : FileExplorerNodeEntity;
-    Task<List<FileExplorerNodeEntity>> GetNodesAsync(
+    Task<List<FileExplorerFileNodeEntity>> GetFileNodesAsync(
         string rootPath,
-        List<string> relativePaths,
+        IEnumerable<string> relativePaths,
+        CancellationToken cancellationToken);
+    Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(string rootPath,
+        IEnumerable<Guid> folderIds,
         CancellationToken cancellationToken);
     Task<FolderHeader?> GetFolderHeaderOrDefaultAsync(FolderHeader header, CancellationToken cancellationToken);
     Task<Dictionary<NodePath, FolderHeader>> GetFolderHeadersAsync(List<NodePath> childNodePaths, CancellationToken cancellationToken);

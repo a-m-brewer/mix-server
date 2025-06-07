@@ -58,10 +58,10 @@ public class PersistFolderCommandHandler(
             .Children
             .Select(s => rootFolder.GetNodePath(s.FullName))
             .ToList();
-        var childEntities = await folderExplorerNodeEntityRepository
+        var childEntities = await fileSystemQueryService
             .GetNodesAsync(
                 root.RelativePath,
-                fsChildPaths.Select(s => s.RelativePath).ToList(),
+                fsChildPaths,
                 cancellationToken);
         
         foreach (var child in request.Children)

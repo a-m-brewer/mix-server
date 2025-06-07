@@ -10,6 +10,8 @@ public interface IFileSystemQueryService
         NodePath nodePath,
         bool includeChildren = true,
         CancellationToken cancellationToken = default);
+
+    Task<List<FileExplorerNodeEntity>> GetNodesAsync(string rootPath, List<NodePath> fsChildPaths, CancellationToken cancellationToken);
 }
 
 public class FileSystemQueryService(
@@ -39,5 +41,24 @@ public class FileSystemQueryService(
             
         return node;
 
+    }
+
+    public async Task<List<FileExplorerNodeEntity>> GetNodesAsync(string rootPath, List<NodePath> fsChildPaths, CancellationToken cancellationToken)
+    {
+        var filePaths = fsChildPaths
+            .Where(w => !w.IsDirectory)
+            .Select(s => s.RelativePath);
+        var folderIds = (await Task.WhenAll(fsChildPaths
+            .Where(w => w.IsDirectory)
+            .Select(s => fileSystemFolderMetadataService.GetOrDefaultAsync(s, cancellationToken))))
+            .Where(w => w is not null)
+            .Select(s => s!.FolderId);
+        
+        var folders = (await folderExplorerNodeEntityRepository.GetFolderNodesAsync(rootPath, folderIds, cancellationToken))
+            .Cast<FileExplorerNodeEntity>();
+        var files = (await folderExplorerNodeEntityRepository.GetFileNodesAsync(rootPath, filePaths, cancellationToken))
+            .Cast<FileExplorerNodeEntity>();
+
+        return folders.Concat(files).ToList();
     }
 }

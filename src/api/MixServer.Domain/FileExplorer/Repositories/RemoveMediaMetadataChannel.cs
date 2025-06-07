@@ -6,4 +6,4 @@ namespace MixServer.Domain.FileExplorer.Repositories;
 
 public interface IRemoveMediaMetadataChannel : IChannel<RemoveMediaMetadataRequest>;
 
-public class RemoveMediaMetadataChannelBase(ILogger<RemoveMediaMetadataChannelBase> logger) : ChannelBase<RemoveMediaMetadataRequest>, IRemoveMediaMetadataChannel;
+public class RemoveMediaMetadataChannel() : ChannelBase<RemoveMediaMetadataRequest>(singleReader: true), IRemoveMediaMetadataChannel;

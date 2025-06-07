@@ -28,17 +28,23 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
             .FirstOrDefaultAsync(f => f.RelativePath == nodePath.RelativePath && f.RootChild.RelativePath == nodePath.RootPath, cancellationToken);
     }
 
-    public Task<List<FileExplorerNodeEntity>> GetNodesAsync(string rootPath, List<string> relativePaths, CancellationToken cancellationToken)
+    public Task<List<FileExplorerFileNodeEntity>> GetFileNodesAsync(string rootPath, IEnumerable<string> relativePaths, CancellationToken cancellationToken)
     {
-        if (relativePaths.Count == 0)
-        {
-            return Task.FromResult(new List<FileExplorerNodeEntity>());
-        }
-
         return context.Nodes
-            .OfType<FileExplorerNodeEntity>()
+            .OfType<FileExplorerFileNodeEntity>()
             .IncludeParents()
+            .Include(i => i.Metadata)
             .Where(w => w.RootChild.RelativePath == rootPath && relativePaths.Contains(w.RelativePath))
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(string rootPath, IEnumerable<Guid> folderIds,
+        CancellationToken cancellationToken)
+    {
+        return context.Nodes
+            .OfType<FileExplorerFolderNodeEntity>()
+            .IncludeParents()
+            .Where(w => w.RootChild.RelativePath == rootPath && folderIds.Contains(w.Id))
             .ToListAsync(cancellationToken);
     }
 
@@ -157,6 +163,10 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
 
     public async Task AddAsync(FileExplorerNodeEntityBase nodeEntity, CancellationToken cancellationToken)
     {
+        if (nodeEntity is FileExplorerFileNodeEntity { Metadata: not null } file)
+        {
+            await context.FileMetadata.AddAsync(file.Metadata, cancellationToken);
+        }
         await context.Nodes.AddAsync(nodeEntity, cancellationToken);
     }
 
