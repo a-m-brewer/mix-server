@@ -39,11 +39,24 @@ public class FileExplorerNodeEntityBase : IFileExplorerNodeEntityBase
     public string Hash { get; set; } = string.Empty;
     
     public bool Hidden { get; set; }
+
+    public void Update(FileSystemInfo fileSystemInfo, string hash)
+    {
+        Exists = fileSystemInfo.Exists;
+        CreationTimeUtc = fileSystemInfo.CreationTimeUtc;
+        Hash = hash;
+    }
 }
 
 public class FileExplorerRootChildNodeEntity : FileExplorerNodeEntityBase, IFileExplorerFolderEntity
 {
     public List<FileExplorerNodeEntity> Children { get; set; } = [];
+
+    public void Update(NodePath nodePath, DirectoryInfo directoryInfo, string hash)
+    {
+        base.Update(directoryInfo, hash);
+        RelativePath = nodePath.RootPath;
+    }
 }
 
 public class FileExplorerNodeEntity : FileExplorerNodeEntityBase
@@ -58,6 +71,18 @@ public class FileExplorerNodeEntity : FileExplorerNodeEntityBase
     
     [NotMapped]
     public NodePath Path => new(RootChild.RelativePath, RelativePath);
+
+    public void Update(
+        NodePath nodePath,
+        FileSystemInfo fileSystemInfo,
+        FileExplorerFolderNodeEntity? parent,
+        string hash)
+    {
+        base.Update(fileSystemInfo, hash);
+        RelativePath = nodePath.RelativePath;
+        Parent = parent;
+        ParentId = parent?.Id;
+    }
 }
 
 public class FileExplorerFileNodeEntity : FileExplorerNodeEntity

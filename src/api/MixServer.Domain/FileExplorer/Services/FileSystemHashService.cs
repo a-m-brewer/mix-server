@@ -11,6 +11,10 @@ public interface IFileSystemHashService
         CancellationToken cancellationToken = default);
 
     Task<string> ComputeFolderMd5HashAsync(
+        DirectoryInfo directoryInfo,
+        CancellationToken cancellationToken = default);
+
+    Task<string> ComputeFolderMd5HashAsync(
         NodePath nodePath,
         CancellationToken cancellationToken = default);
 }
@@ -26,15 +30,14 @@ public class FileSystemHashService : IFileSystemHashService
     }
 
     public async Task<string> ComputeFolderMd5HashAsync(
-        NodePath nodePath,
+        DirectoryInfo directoryInfo,
         CancellationToken cancellationToken = default)
     {
-        var dirs = Directory.EnumerateDirectories(nodePath.AbsolutePath, "*", SearchOption.TopDirectoryOnly)
-            .Select(dir => "D:" + dir);
-        var files = Directory.EnumerateFiles(nodePath.AbsolutePath, "*", SearchOption.TopDirectoryOnly)
-            .Select(file => "F:" + file);
+        var childrenHashes = directoryInfo
+            .EnumerateFileSystemInfos("*", SearchOption.TopDirectoryOnly)
+            .Select(ToHashString);
         
-        var allPaths = dirs.Concat(files)
+        var allPaths = childrenHashes
             .OrderBy(o => o, StringComparer.Ordinal)
             .ToList();
         
@@ -42,8 +45,20 @@ public class FileSystemHashService : IFileSystemHashService
         var bytes = Encoding.UTF8.GetBytes(joinedPaths);
         await using var memoryStream = new MemoryStream(bytes);
         return await ComputeMd5HashAsync(memoryStream, cancellationToken);
+
+        string ToHashString(FileSystemInfo info)
+        {
+            var typeMarker = info is FileInfo ? "F" : "D";
+            return $"{typeMarker}:{info.FullName}:{info.LastWriteTimeUtc.Ticks}";
+        }
     }
-    
+
+    public Task<string> ComputeFolderMd5HashAsync(NodePath nodePath, CancellationToken cancellationToken = default)
+    {
+        var directoryInfo = new DirectoryInfo(nodePath.AbsolutePath);
+        return ComputeFolderMd5HashAsync(directoryInfo, cancellationToken);
+    }
+
     private static async Task<string> ComputeMd5HashAsync(
         Stream fileStream,
         CancellationToken cancellationToken = default)

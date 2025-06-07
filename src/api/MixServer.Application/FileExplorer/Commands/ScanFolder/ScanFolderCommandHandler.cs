@@ -79,18 +79,20 @@ public class ScanFolderCommandHandler(
             return;
         }
         
-        var childNodePaths = children.OfType<DirectoryInfo>()
-            .Select(s => rootFolder.GetNodePath(s.FullName))
-            .ToList();
+        var childNodes = children.OfType<DirectoryInfo>()
+            .Select(s => new { NodePath = rootFolder.GetNodePath(s.FullName), DirectoryInfo = s})
+            .ToDictionary(k => k.NodePath, v => v.DirectoryInfo);
+        var childNodePaths = childNodes.Keys.ToList();
         
-        if (childNodePaths.Count == 0)
+        
+        if (childNodes.Count == 0)
         {
             return;
         }
         
         var actualHashes = await folderExplorerNodeEntityRepository.GetHashesAsync(childNodePaths, cancellationToken);
         var actualHashTasks =
-            childNodePaths.Select(async cnp => new KeyValuePair<NodePath, string?>(cnp, await fileSystemHashService.ComputeFolderMd5HashAsync(cnp, cancellationToken)));
+            childNodes.Select(async cnp => new KeyValuePair<NodePath, string?>(cnp.Key, await fileSystemHashService.ComputeFolderMd5HashAsync(cnp.Value, cancellationToken)));
         var expectedHashes = (await Task.WhenAll(actualHashTasks))
             .ToDictionary(k => k.Key, v => v.Value);
 

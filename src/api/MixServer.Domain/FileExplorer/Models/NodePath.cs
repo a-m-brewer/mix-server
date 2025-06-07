@@ -11,6 +11,8 @@ public record NodePath(string RootPath, string RelativePath)
     public bool IsRoot => string.IsNullOrWhiteSpace(RootPath) && string.IsNullOrWhiteSpace(RelativePath);
     
     public bool IsRootChild => !string.IsNullOrWhiteSpace(RootPath) && string.IsNullOrWhiteSpace(RelativePath);
+    
+    public bool IsDirectory => Directory.Exists(AbsolutePath);
 
     public override string ToString()
     {
