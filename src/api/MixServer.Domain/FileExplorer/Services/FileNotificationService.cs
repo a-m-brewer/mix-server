@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Caching;
+using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Sessions.Repositories;
 using MixServer.Domain.Streams.Caches;

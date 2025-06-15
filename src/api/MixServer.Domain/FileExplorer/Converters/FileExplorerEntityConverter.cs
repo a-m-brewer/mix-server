@@ -105,8 +105,7 @@ public class FileExplorerEntityConverter(
             Exists = fileInfo.Exists,
             CreationTimeUtc = fileInfo.CreationTimeUtc,
             RootChild = root,
-            Parent = parentEntity,
-            Hash = await fileSystemHashService.ComputeFileMd5HashAsync(nodePath, cancellationToken)
+            Parent = parentEntity
         };
         
         file.Metadata = fileMetadataConverter.ConvertToEntity(fileInfo, file);

@@ -45,11 +45,12 @@ public class ScanFolderCommandHandler(
             DatabaseHeader = dbHeader
         };
 
-        if (!folderDiff.Dirty)
-        {
-            logger.LogInformation("Folder {NodePath} is already up to date ({ExpectedHash}). Skipping...", request.NodePath, fsHeader);
-            return;
-        }
+        // TODO: reenable
+        // if (!folderDiff.Dirty)
+        // {
+        //     logger.LogInformation("Folder {NodePath} is already up to date ({ExpectedHash}). Skipping...", request.NodePath, fsHeader);
+        //     return;
+        // }
 
         await RunScanAsync(folderDiff, request.Recursive, cancellationToken);
     }

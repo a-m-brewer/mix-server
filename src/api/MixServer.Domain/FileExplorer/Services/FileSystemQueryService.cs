@@ -1,5 +1,6 @@
 ﻿using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.Sessions.Repositories;
 
 namespace MixServer.Domain.FileExplorer.Services;

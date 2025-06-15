@@ -6,7 +6,7 @@ namespace MixServer.Domain.FileExplorer.Entities;
 public class FileMetadataEntity : IFileMetadata
 {
     public required Guid Id { get; init; }
-    public required string MimeType { get; init; }
+    public required string MimeType { get; set; }
     public required bool IsMedia { get; init; }
     
     public Guid NodeId { get; set; }
@@ -17,8 +17,8 @@ public class FileMetadataEntity : IFileMetadata
 
 public class MediaMetadataEntity : FileMetadataEntity
 {
-    public required int Bitrate { get; init; }
+    public required int Bitrate { get; set; }
     
-    public required TimeSpan Duration { get; init; }
+    public required TimeSpan Duration { get; set; }
 }
 

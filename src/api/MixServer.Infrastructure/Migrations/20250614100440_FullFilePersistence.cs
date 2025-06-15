@@ -26,11 +26,16 @@ namespace MixServer.Infrastructure.Migrations
                 defaultValue: false);
 
             migrationBuilder.AddColumn<string>(
+                name: "FileExplorerRootChildNodeEntity_Hash",
+                table: "Nodes",
+                type: "TEXT",
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
                 name: "Hash",
                 table: "Nodes",
                 type: "TEXT",
-                nullable: false,
-                defaultValue: "");
+                nullable: true);
 
             migrationBuilder.AddColumn<bool>(
                 name: "Hidden",
@@ -218,6 +223,10 @@ namespace MixServer.Infrastructure.Migrations
 
             migrationBuilder.DropColumn(
                 name: "Exists",
+                table: "Nodes");
+
+            migrationBuilder.DropColumn(
+                name: "FileExplorerRootChildNodeEntity_Hash",
                 table: "Nodes");
 
             migrationBuilder.DropColumn(

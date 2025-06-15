@@ -172,10 +172,6 @@ namespace MixServer.Infrastructure.Migrations
                     b.Property<bool>("Exists")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<bool>("Hidden")
                         .HasColumnType("INTEGER");
 
@@ -553,6 +549,16 @@ namespace MixServer.Infrastructure.Migrations
                 {
                     b.HasBaseType("MixServer.Domain.FileExplorer.Entities.FileExplorerNodeEntityBase");
 
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.ToTable("Nodes", t =>
+                        {
+                            t.Property("Hash")
+                                .HasColumnName("FileExplorerRootChildNodeEntity_Hash");
+                        });
+
                     b.HasDiscriminator().HasValue(4);
                 });
 
@@ -579,6 +585,10 @@ namespace MixServer.Infrastructure.Migrations
             modelBuilder.Entity("MixServer.Domain.FileExplorer.Entities.FileExplorerFolderNodeEntity", b =>
                 {
                     b.HasBaseType("MixServer.Domain.FileExplorer.Entities.FileExplorerNodeEntity");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.HasDiscriminator().HasValue(3);
                 });

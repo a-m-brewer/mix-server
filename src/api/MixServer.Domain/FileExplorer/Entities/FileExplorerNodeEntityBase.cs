@@ -11,6 +11,11 @@ public interface IHasChildren
     List<FileExplorerNodeEntity> Children { get; set; }
 }
 
+public interface IHashable
+{
+    string Hash { get; set; }
+}
+
 public interface IFileExplorerNodeEntityBase
 {
     Guid Id { get; init; }
@@ -18,11 +23,10 @@ public interface IFileExplorerNodeEntityBase
     FileExplorerEntityNodeType NodeType { get; init; }
     bool Exists { get; set; }
     DateTime CreationTimeUtc { get; set; }
-    string Hash { get; set; }
     bool Hidden { get; set; }
 }
 
-public interface IFileExplorerFolderEntity : IFileExplorerNodeEntityBase, IHasChildren;
+public interface IFileExplorerFolderEntity : IFileExplorerNodeEntityBase, IHasChildren, IHashable;
 
 public class FileExplorerNodeEntityBase : IFileExplorerNodeEntityBase
 {
@@ -36,15 +40,14 @@ public class FileExplorerNodeEntityBase : IFileExplorerNodeEntityBase
 
     public required DateTime CreationTimeUtc { get; set; }
     
-    public string Hash { get; set; } = string.Empty;
+    // public string Hash { get; set; } = string.Empty;
     
     public bool Hidden { get; set; }
 
-    public void Update(FileSystemInfo fileSystemInfo, string hash)
+    public void Update(FileSystemInfo fileSystemInfo)
     {
         Exists = fileSystemInfo.Exists;
         CreationTimeUtc = fileSystemInfo.CreationTimeUtc;
-        Hash = hash;
     }
 }
 
@@ -54,9 +57,12 @@ public class FileExplorerRootChildNodeEntity : FileExplorerNodeEntityBase, IFile
 
     public void Update(NodePath nodePath, DirectoryInfo directoryInfo, string hash)
     {
-        base.Update(directoryInfo, hash);
+        base.Update(directoryInfo);
         RelativePath = nodePath.RootPath;
+        Hash = hash;
     }
+
+    public string Hash { get; set; } = string.Empty;
 }
 
 public class FileExplorerNodeEntity : FileExplorerNodeEntityBase
@@ -75,10 +81,9 @@ public class FileExplorerNodeEntity : FileExplorerNodeEntityBase
     public void Update(
         NodePath nodePath,
         FileSystemInfo fileSystemInfo,
-        FileExplorerFolderNodeEntity? parent,
-        string hash)
+        FileExplorerFolderNodeEntity? parent)
     {
-        base.Update(fileSystemInfo, hash);
+        base.Update(fileSystemInfo);
         RelativePath = nodePath.RelativePath;
         Parent = parent;
         ParentId = parent?.Id;
@@ -101,4 +106,6 @@ public class FileExplorerFileNodeEntity : FileExplorerNodeEntity
 public class FileExplorerFolderNodeEntity : FileExplorerNodeEntity, IFileExplorerFolderEntity
 {
     public List<FileExplorerNodeEntity> Children { get; set; } = [];
+
+    public string Hash { get; set; } = string.Empty;
 }

@@ -2,7 +2,7 @@ using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Persistence;
 
-namespace MixServer.Domain.Sessions.Repositories;
+namespace MixServer.Domain.FileExplorer.Repositories;
 
 public interface IFolderExplorerNodeEntityRepository : ITransientRepository
 {
@@ -12,6 +12,7 @@ public interface IFolderExplorerNodeEntityRepository : ITransientRepository
         string rootPath,
         IEnumerable<string> relativePaths,
         CancellationToken cancellationToken);
+    Task<IEnumerable<FileExplorerFileNodeEntity>> GetFileNodesAsync(List<Guid> fileIds, CancellationToken cancellationToken);
     Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(string rootPath,
         IEnumerable<Guid> folderIds,
         CancellationToken cancellationToken);
@@ -29,5 +30,6 @@ public interface IFolderExplorerNodeEntityRepository : ITransientRepository
     Task<FileExplorerRootChildNodeEntity?> GetRootChildOrDefaultAsync(NodePath rootChild, CancellationToken cancellationToken);
     Task<ICollection<FileExplorerRootChildNodeEntity>> GetAllRootChildrenAsync(CancellationToken cancellationToken);
     Task AddAsync(FileExplorerNodeEntityBase nodeEntity, CancellationToken cancellationToken);
+    Task AddRangeAsync(ICollection<FileExplorerNodeEntity> addedChildren, CancellationToken cancellationToken);
     void RemoveRange(IEnumerable<FileExplorerNodeEntity> nodes);
 }

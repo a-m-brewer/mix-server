@@ -187,7 +187,6 @@ public class AbsolutePathMigrationService(
                     RootChild = root,
                     Exists = fileInfo.Exists,
                     CreationTimeUtc = fileInfo.CreationTimeUtc,
-                    Hash = await fileSystemHashService.ComputeFileMd5HashAsync(nodePath),
                     Parent = null
                 };
                 await context.Nodes.AddAsync(file);

@@ -2,7 +2,7 @@ using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Persistence;
 
-namespace MixServer.Domain.Sessions.Repositories;
+namespace MixServer.Domain.FileExplorer.Repositories;
 
 public interface IFolderSortRepository : ITransientRepository
 {

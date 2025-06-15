@@ -11,5 +11,5 @@ public class TrackEntity
     public required CueEntity Cue { get; init; }
     public Guid CueId { get; set; }
     
-    public required List<TracklistPlayersEntity> Players { get; set; } = [];
+    public List<TracklistPlayersEntity> Players { get; set; } = [];
 }

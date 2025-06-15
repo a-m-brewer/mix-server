@@ -1,3 +1,3 @@
 namespace MixServer.Domain.FileExplorer.Models;
 
-public record UpdateMediaMetadataRequest(List<NodePath> NodePaths);
+public record UpdateMediaMetadataRequest(List<Guid> FileIds);

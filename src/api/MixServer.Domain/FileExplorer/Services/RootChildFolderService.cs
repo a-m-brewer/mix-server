@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Entities;
+using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Settings;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Repositories;

@@ -150,7 +150,6 @@ builder.Services
 
 builder.Services.AddHostedService<RootChildChangeBackgroundService>();
 builder.Services.AddHostedService<RootChildDirectoryWatcherService>();
-builder.Services.AddHostedService<FolderMediaMetadataSubscriber>();
 builder.Services.AddHostedService<UpdateMediaMetadataBackgroundService>();
 builder.Services.AddHostedService<RemoveMediaMetadataBackgroundService>();
 builder.Services.AddHostedService<TranscodeBackgroundService>();

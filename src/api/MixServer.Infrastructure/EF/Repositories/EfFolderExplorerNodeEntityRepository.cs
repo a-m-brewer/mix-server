@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.Sessions.Repositories;
 using MixServer.Infrastructure.EF.Extensions;
 
@@ -35,6 +36,17 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
             .IncludeParents()
             .Include(i => i.Metadata)
             .Where(w => w.RootChild.RelativePath == rootPath && relativePaths.Contains(w.RelativePath))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<FileExplorerFileNodeEntity>> GetFileNodesAsync(List<Guid> fileIds, CancellationToken cancellationToken)
+    {
+        return await context.Nodes
+            .OfType<FileExplorerFileNodeEntity>()
+            .IncludeParents()
+            .Include(i => i.Metadata)
+            .Include(i => i.Tracklist)
+            .Where(w => fileIds.Contains(w.Id))
             .ToListAsync(cancellationToken);
     }
 
@@ -168,6 +180,19 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
             await context.FileMetadata.AddAsync(file.Metadata, cancellationToken);
         }
         await context.Nodes.AddAsync(nodeEntity, cancellationToken);
+    }
+
+    public async Task AddRangeAsync(ICollection<FileExplorerNodeEntity> addedChildren, CancellationToken cancellationToken)
+    {
+        var metadata = addedChildren
+            .OfType<FileExplorerFileNodeEntity>()
+            .Select(s => s.Metadata)
+            .Where(w => w is not null)
+            .Cast<FileMetadataEntity>()
+            .ToList();
+        await context.FileMetadata.AddRangeAsync(metadata, cancellationToken);
+
+        await context.Nodes.AddRangeAsync(addedChildren, cancellationToken);
     }
 
     public void RemoveRange(IEnumerable<FileExplorerNodeEntity> nodes)
