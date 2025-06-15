@@ -54,7 +54,7 @@ public class UpdateMediaMetadataCommandHandler(
             .ToList();
 
         var results = new MetadataResultsBag();
-        await Parallel.ForEachAsync(files, cancellationToken, (entity, token) =>
+        await Parallel.ForEachAsync(files, cancellationToken, (entity, _) =>
         {
             var result = UpdateFileMetadata(entity);
             results.Add(result);
