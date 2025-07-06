@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations.Schema;
-using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Users.Enums;
 using MixServer.Domain.Users.Models;
 

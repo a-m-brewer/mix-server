@@ -1,7 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Entities;

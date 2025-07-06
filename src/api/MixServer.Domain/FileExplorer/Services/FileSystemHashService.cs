@@ -1,9 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
-using MixServer.Domain.Constants;
 using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Models;
-using MixServer.Domain.FileExplorer.Settings;
 
 namespace MixServer.Domain.FileExplorer.Services;
 

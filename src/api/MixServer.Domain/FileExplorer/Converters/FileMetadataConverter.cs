@@ -1,14 +1,9 @@
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Logging;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
-using MixServer.Domain.Streams.Models;
-using MixServer.Domain.Tracklists.Factories;
-using MixServer.Domain.Tracklists.Services;
-using MixServer.Domain.Utilities;
 
 namespace MixServer.Domain.FileExplorer.Converters;
 

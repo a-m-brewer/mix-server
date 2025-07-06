@@ -2,7 +2,6 @@
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Application.Sessions.Responses;
-using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;

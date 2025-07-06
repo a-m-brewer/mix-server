@@ -1,7 +1,5 @@
 using FluentValidation;
 using MixServer.Application.FileExplorer.Converters;
-using MixServer.Domain.Callbacks;
-using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;

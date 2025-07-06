@@ -4,7 +4,6 @@ using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
 using MixServer.Domain.Sessions.Models;
-using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Models;
 

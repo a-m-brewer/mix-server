@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
-using MixServer.Domain.Sessions.Repositories;
 using MixServer.Infrastructure.EF.Extensions;
 
 namespace MixServer.Infrastructure.EF.Repositories;

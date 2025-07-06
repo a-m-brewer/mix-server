@@ -1,5 +1,3 @@
-using MixServer.Domain.Users.Models;
-
 namespace MixServer.Domain.Queueing.Entities;
 
 public class QueueSnapshot(

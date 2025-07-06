@@ -4,7 +4,6 @@ using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Services;
-using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Repositories;
@@ -17,7 +16,6 @@ public class RefreshFolderCommandHandler(
     ICurrentUserRepository currentUserRepository,
     ICallbackService callbackService,
     IFileExplorerResponseConverter fileExplorerResponseConverter,
-    IFolderCacheService folderCacheService,
     IFileService fileService,
     INodePathDtoConverter nodePathDtoConverter,
     IRootFileExplorerFolder rootFolder,
@@ -38,7 +36,6 @@ public class RefreshFolderCommandHandler(
         }
         else
         {
-            folderCacheService.InvalidateFolder(nodePath);
             // Send request for a full update of the folder
             _ = scanFolderRequestChannel.WriteAsync(new ScanFolderRequest
             {

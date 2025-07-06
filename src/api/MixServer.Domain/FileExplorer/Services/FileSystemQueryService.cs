@@ -2,7 +2,6 @@
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
-using MixServer.Domain.Sessions.Repositories;
 
 namespace MixServer.Domain.FileExplorer.Services;
 
@@ -66,7 +65,11 @@ public class FileSystemQueryService(
 
         if (metadata is not null)
         {
-            return await fileExplorerNodeRepository.GetRootChildFolderNodeOrDefaultAsync(metadata.FolderId, queryOptions, cancellationToken);
+            var idNode = await fileExplorerNodeRepository.GetRootChildFolderNodeOrDefaultAsync(metadata.FolderId, queryOptions, cancellationToken);
+            if (idNode is not null)
+            {
+                return idNode;
+            }
         }
 
         var node = await fileExplorerNodeRepository.GetRootChildFolderNodeOrDefaultAsync(nodePath, queryOptions, cancellationToken);

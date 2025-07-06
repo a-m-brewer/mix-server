@@ -1,12 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
-using MixServer.Domain.FileExplorer.Models.Caching;
 using MixServer.Domain.FileExplorer.Repositories;
-using MixServer.Domain.FileExplorer.Services.Caching;
-using MixServer.Domain.Sessions.Repositories;
 using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Streams.Events;
 using MixServer.Domain.Utilities;
@@ -19,7 +15,6 @@ public interface IFileNotificationService : INotificationService
 
 public class FileNotificationService(
     ICallbackService callbackService,
-    IFolderCacheService folderCacheService,
     ILogger<FileNotificationService> logger,
     IServiceProvider serviceProvider,
     ITranscodeCache transcodeCache)
@@ -27,62 +22,18 @@ public class FileNotificationService(
 {
     public override void Initialize()
     {
-        folderCacheService.ItemAdded += CreateHandler<IFileExplorerNode>(FolderCacheServiceOnItemAdded);
-        folderCacheService.ItemUpdated += CreateHandler<FolderCacheServiceItemUpdatedEventArgs>(FolderCacheServiceOnItemUpdated);
-        folderCacheService.ItemRemoved += CreateHandler<FolderCacheServiceItemRemovedEventArgs>(FolderCacheServiceOnItemRemoved);
         transcodeCache.TranscodeStatusUpdated += CreateHandler<TranscodeStatusUpdatedEventArgs>(TranscodeCacheOnTranscodeStatusUpdated);
-    }
-
-    private async Task FolderCacheServiceOnItemAdded(object? sender, IServiceProvider sp, IFileExplorerNode e)
-    {
-        if (!IsFileExplorerFolder(sender, out var parent))
-        {
-            return;
-        }
-
-        var expectedIndexes = await GetExpectedIndexesAsync(sp, parent, e);
-        
-        await callbackService.FileExplorerNodeUpdated(expectedIndexes, e, null);
-    }
-
-    private async Task FolderCacheServiceOnItemUpdated(object? sender, IServiceProvider sp, FolderCacheServiceItemUpdatedEventArgs e)
-    {
-        if (!IsFileExplorerFolder(sender, out var parent))
-        {
-            return;
-        }
-        
-        var expectedIndexes = await GetExpectedIndexesAsync(sp, parent, e.Item);
-        
-        await callbackService.FileExplorerNodeUpdated(expectedIndexes, e.Item, e.OldPath);
-    }
-
-    private async Task FolderCacheServiceOnItemRemoved(object? sender, IServiceProvider sp, FolderCacheServiceItemRemovedEventArgs e)
-    {
-        await callbackService.FileExplorerNodeDeleted(e.Parent, e.Node.Path);
     }
     
     private async Task TranscodeCacheOnTranscodeStatusUpdated(object? sender, IServiceProvider sp, TranscodeStatusUpdatedEventArgs e)
     {
-        var (parent, file) = await folderCacheService.GetFileAndFolderAsync(e.Path);
+        var fileService = sp.GetRequiredService<IFileService>();
+
+        var (parent, file) = await fileService.GetFileAndFolderAsync(e.Path, CancellationToken.None);
         
         var expectedIndexes = await GetExpectedIndexesAsync(sp, parent, file);
         
         await callbackService.FileExplorerNodeUpdated(expectedIndexes, file, null);
-    }
-    
-    private bool IsFileExplorerFolder(object? sender, [MaybeNullWhen(false)] out IFileExplorerFolder parent)
-    {
-        if (sender is not IFileExplorerFolder fileExplorerFolder)
-        {
-            Logger.LogWarning("event raised by non-folder item Sender: {Sender}",
-                sender?.GetType().Name ?? "null");
-            parent = null;
-            return false;
-        }
-
-        parent = fileExplorerFolder;
-        return true;
     }
 
     private async Task<Dictionary<string, int>> GetExpectedIndexesAsync(

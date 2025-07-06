@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using MixServer.Domain.FileExplorer.Models;
 
 namespace MixServer.Domain.Users.Models;
 

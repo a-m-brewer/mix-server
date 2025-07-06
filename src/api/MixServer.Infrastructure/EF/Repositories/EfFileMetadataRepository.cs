@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 

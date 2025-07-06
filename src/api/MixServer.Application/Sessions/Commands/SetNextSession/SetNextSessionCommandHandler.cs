@@ -6,7 +6,6 @@ using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
-using MixServer.Domain.Sessions.Validators;
 
 namespace MixServer.Application.Sessions.Commands.SetNextSession;
 

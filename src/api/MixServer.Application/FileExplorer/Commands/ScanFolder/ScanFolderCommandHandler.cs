@@ -5,9 +5,7 @@ using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Services;
-using MixServer.Domain.FileExplorer.Settings;
 using MixServer.Domain.Interfaces;
-using MixServer.Domain.Sessions.Repositories;
 
 namespace MixServer.Application.FileExplorer.Commands.ScanFolder;
 

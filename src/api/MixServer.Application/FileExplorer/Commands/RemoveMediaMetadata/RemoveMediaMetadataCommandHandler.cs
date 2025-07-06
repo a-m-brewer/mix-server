@@ -1,7 +1,5 @@
-using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
-using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 
 namespace MixServer.Application.FileExplorer.Commands.RemoveMediaMetadata;

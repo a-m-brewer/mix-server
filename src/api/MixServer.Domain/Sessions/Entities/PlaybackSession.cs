@@ -1,7 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using MixServer.Domain.Extensions;
 using MixServer.Domain.FileExplorer.Entities;
-using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Sessions.Models;
 
 namespace MixServer.Domain.Sessions.Entities;

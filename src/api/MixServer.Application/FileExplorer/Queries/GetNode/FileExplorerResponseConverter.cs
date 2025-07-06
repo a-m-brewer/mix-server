@@ -4,7 +4,6 @@ using MixServer.Domain.FileExplorer.Converters;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
-using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Streams.Enums;

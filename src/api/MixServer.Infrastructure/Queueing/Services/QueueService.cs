@@ -19,7 +19,6 @@ namespace MixServer.Infrastructure.Queueing.Services;
 
 public class QueueService(
     ICanPlayOnDeviceValidator canPlayOnDeviceValidator,
-    ICallbackService callbackService,
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
     IRequestedPlaybackDeviceAccessor requestedPlaybackDeviceAccessor,

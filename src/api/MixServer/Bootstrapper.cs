@@ -1,10 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Streams.Caches;
-using MixServer.Domain.Streams.Services;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.EF;
-using MixServer.Infrastructure.Sessions.Services;
 using MixServer.Infrastructure.Users.Services;
 using MixServer.Services;
 

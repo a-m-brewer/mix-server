@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Domain.Sessions.Entities;

@@ -5,7 +5,6 @@ using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Settings;
 using MixServer.Domain.Persistence;
-using MixServer.Domain.Sessions.Repositories;
 
 namespace MixServer.Domain.FileExplorer.Services;
 

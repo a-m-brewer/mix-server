@@ -1,6 +1,5 @@
 #region Builder
 
-using System.Diagnostics;
 using System.Reflection;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -20,7 +19,6 @@ using MixServer.Auth.Requirements.PasswordReset;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Extensions;
-using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.FileExplorer.Settings;
 using MixServer.Domain.Settings;
 using MixServer.Domain.Streams.Models;
@@ -191,8 +189,6 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(ConfigS
 builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 
 builder.Services.Configure<InitialUserSettings>(builder.Configuration.GetSection(ConfigSection.InitialUser));
-
-builder.Services.Configure<FolderCacheSettings>(builder.Configuration.GetSection(ConfigSection.FolderCache));
 
 builder.Services.Configure<CacheFolderSettings>(builder.Configuration.GetSection(ConfigSection.CacheSettings));
 

@@ -8,7 +8,6 @@ using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Tracklists.Factories;
 using MixServer.Domain.Users.Services;
-using MixServer.Domain.Utilities;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.Files.Services;
 using MixServer.Infrastructure.Queueing.Repositories;

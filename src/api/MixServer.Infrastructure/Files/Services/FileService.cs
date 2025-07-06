@@ -4,10 +4,7 @@ using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
-using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Domain.FileExplorer.Services;
-using MixServer.Domain.FileExplorer.Services.Caching;
-using MixServer.Domain.Sessions.Repositories;
 using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Infrastructure.Files.Services;
@@ -70,6 +67,19 @@ public class FileService(
     {
         var entity = await folderPersistenceService.GetOrAddFileAsync(nodePath);
         return fileExplorerEntityConverter.Convert(entity);
+    }
+
+    public async Task<(IFileExplorerFolder Parent, IFileExplorerFileNode File)> GetFileAndFolderAsync(NodePath nodePath, CancellationToken cancellationToken)
+    {
+        var folder = await GetFolderOrRootAsync(nodePath, cancellationToken);
+        
+        var file = folder
+                       .Children
+                       .OfType<IFileExplorerFileNode>()
+                       .SingleOrDefault(f => f.Path.RootPath == nodePath.RootPath && f.Path.RelativePath == nodePath.RelativePath) ??
+                   throw new NotFoundException(nodePath.Parent.AbsolutePath, nodePath.FileName);
+
+        return (folder, file);
     }
 
     public void CopyNode(

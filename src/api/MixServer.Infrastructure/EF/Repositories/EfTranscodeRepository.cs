@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.Exceptions;
-using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Streams.Entities;
 using MixServer.Domain.Streams.Repositories;
