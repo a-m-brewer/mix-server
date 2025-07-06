@@ -16,6 +16,7 @@ public interface IFileSystemInfoToEntityConverter : IConverter
         DirectoryInfo directoryInfo,
         FileExplorerRootChildNodeEntity rootChild,
         FileExplorerFolderNodeEntity? parent,
+        bool createWithHash,
         CancellationToken cancellationToken);
 
     Task<FileExplorerNodeEntity> CreateNodeAsync(
@@ -61,6 +62,7 @@ public class FileSystemInfoToEntityConverter(
         DirectoryInfo directoryInfo,
         FileExplorerRootChildNodeEntity rootChild,
         FileExplorerFolderNodeEntity? parent,
+        bool createWithHash,
         CancellationToken cancellationToken)
     {
         var nodePath = rootFolder.GetNodePath(directoryInfo.FullName);
@@ -74,7 +76,10 @@ public class FileSystemInfoToEntityConverter(
             CreationTimeUtc = directoryInfo.CreationTimeUtc,
             RootChild = rootChild,
             Parent = parent,
-            Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(directoryInfo, cancellationToken)
+            // The hash represents if the folder has been scanned for the first time or not.
+            Hash = createWithHash
+                ? await fileSystemHashService.ComputeFolderMd5HashAsync(directoryInfo, cancellationToken)
+                : string.Empty
         };
     }
 
@@ -84,7 +89,7 @@ public class FileSystemInfoToEntityConverter(
     {
         if (child is DirectoryInfo directoryInfo) 
         {
-            return await CreateFolderEntityAsync(directoryInfo, root, parentEntity, cancellationToken);
+            return await CreateFolderEntityAsync(directoryInfo, root, parentEntity, false, cancellationToken);
         }
 
         if (child is FileInfo fileInfo)

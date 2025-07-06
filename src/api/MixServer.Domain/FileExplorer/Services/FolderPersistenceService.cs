@@ -42,7 +42,7 @@ public class FolderPersistenceService(
     {
         var existingFolder = await fileSystemQueryService.GetRootChildOrFolderNodeOrDefaultAsync(nodePath, GetFolderQueryOptions.Full, cancellationToken);
 
-        if (existingFolder is not null)
+        if (existingFolder is not null && !string.IsNullOrWhiteSpace(existingFolder.Hash))
         {
             return existingFolder;
         }
@@ -183,6 +183,7 @@ public class FolderPersistenceService(
                 directory,
                 root,
                 grandParentEntity,
+                true,
                 cancellationToken);
             await fileExplorerNodeRepository.AddAsync(parentEntity, cancellationToken);
             logger.LogTrace("Directory path {DirectoryPath} is not in database, created new folder entity", directoryPath.AbsolutePath);
