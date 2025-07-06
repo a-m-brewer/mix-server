@@ -9,9 +9,7 @@ namespace MixServer.Domain.FileExplorer.Converters;
 public interface IFileExplorerConverter
     : IConverter<NodePath, IFileExplorerFileNode>,
     IConverter<DirectoryInfo, IFileExplorerFolderNode>,
-    IConverter<FileInfo, IFileExplorerFolderNode, IFileExplorerFileNode>
-{
-}
+    IConverter<FileInfo, IFileExplorerFolderNode, IFileExplorerFileNode>;
 
 public class FileExplorerConverter(
     IFileMetadataConverter metadataConverter,

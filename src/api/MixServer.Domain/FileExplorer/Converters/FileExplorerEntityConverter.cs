@@ -1,115 +1,100 @@
-using MixServer.Domain.FileExplorer.Entities;
+﻿using MixServer.Domain.FileExplorer.Entities;
+using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models;
-using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 
 namespace MixServer.Domain.FileExplorer.Converters;
 
-public interface IFileExplorerEntityConverter : IConverter
+public interface IFileExplorerEntityConverter
+    : IConverter<IFileExplorerFolderEntity, IFileExplorerFolder>,
+        IConverter<FileExplorerFileNodeEntity, IFileExplorerFileNode>;
+
+public class FileExplorerEntityConverter(IRootFileExplorerFolder rootFolder) : IFileExplorerEntityConverter
 {
-    FileExplorerRootChildNodeEntity CreateRootChildEntity(DirectoryInfo directoryInfo);
-    Task<FileExplorerRootChildNodeEntity> CreateRootChildEntityAsync(
-        DirectoryInfo directoryInfo,
-        CancellationToken cancellationToken);
-
-    Task<FileExplorerFolderNodeEntity> CreateFolderEntityAsync(
-        DirectoryInfo directoryInfo,
-        FileExplorerRootChildNodeEntity rootChild,
-        FileExplorerFolderNodeEntity? parent,
-        CancellationToken cancellationToken);
-
-    Task<FileExplorerNodeEntity> CreateNodeAsync(
-        FileSystemInfo child,
-        FileExplorerRootChildNodeEntity root,
-        FileExplorerFolderNodeEntity? parentEntity,
-        CancellationToken cancellationToken);
-}
-
-public class FileExplorerEntityConverter(
-    IFileMetadataConverter fileMetadataConverter,
-    IFileSystemHashService fileSystemHashService,
-    IFileSystemFolderMetadataService fileSystemFolderMetadataService,
-    IRootFileExplorerFolder rootFolder) : IFileExplorerEntityConverter
-{
-    public FileExplorerRootChildNodeEntity CreateRootChildEntity(DirectoryInfo directoryInfo)
+    public IFileExplorerFolder Convert(IFileExplorerFolderEntity value)
     {
-        return new FileExplorerRootChildNodeEntity
+        var node = ConvertEntityToNode(value);
+        var folder = new FileExplorerFolder(node);
+
+        foreach (var childFolder in value.Children.OfType<FileExplorerFolderNodeEntity>())
         {
-            Id = Guid.NewGuid(),
-            RelativePath = directoryInfo.FullName,
-            Exists = directoryInfo.Exists,
-            CreationTimeUtc = directoryInfo.CreationTimeUtc
-        };
-    }
-
-    public async Task<FileExplorerRootChildNodeEntity> CreateRootChildEntityAsync(
-        DirectoryInfo directoryInfo,
-        CancellationToken cancellationToken)
-    {
-        var entity = CreateRootChildEntity(directoryInfo);
-        entity.Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(directoryInfo, cancellationToken);
-        
-        return entity;
-    }
-
-    public async Task<FileExplorerFolderNodeEntity> CreateFolderEntityAsync(
-        DirectoryInfo directoryInfo,
-        FileExplorerRootChildNodeEntity rootChild,
-        FileExplorerFolderNodeEntity? parent,
-        CancellationToken cancellationToken)
-    {
-        var nodePath = rootFolder.GetNodePath(directoryInfo.FullName);
-        var metadata = await fileSystemFolderMetadataService.GetOrCreateAsync(nodePath, cancellationToken);
-
-        return new FileExplorerFolderNodeEntity
-        {
-            Id = metadata.FolderId,
-            RelativePath = nodePath.RelativePath,
-            Exists = directoryInfo.Exists,
-            CreationTimeUtc = directoryInfo.CreationTimeUtc,
-            RootChild = rootChild,
-            Parent = parent,
-            Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(directoryInfo, cancellationToken)
-        };
-    }
-
-    public async Task<FileExplorerNodeEntity> CreateNodeAsync(
-        FileSystemInfo child, FileExplorerRootChildNodeEntity root,
-        FileExplorerFolderNodeEntity? parentEntity, CancellationToken cancellationToken)
-    {
-        if (child is DirectoryInfo directoryInfo) 
-        {
-            return await CreateFolderEntityAsync(directoryInfo, root, parentEntity, cancellationToken);
+            folder.AddChild(ConvertFolderEntityToNode(childFolder, node));
         }
 
-        if (child is FileInfo fileInfo)
+        foreach (var childFile in value.Children.OfType<FileExplorerFileNodeEntity>())
         {
-            return await CreateFileEntityAsync(fileInfo, root, parentEntity, cancellationToken);
+            folder.AddChild(ConvertFileEntityToNode(childFile, node));
         }
+
+        return folder;
+    }
+    
+    public IFileExplorerFileNode Convert(FileExplorerFileNodeEntity value)
+    {
+        var parent = value.Parent is null
+            ? ConvertRootChildEntityToNode(value.RootChild)
+            : ConvertFolderEntityToNode(value.Parent, false);
         
-        throw new NotSupportedException($"Unsupported FileSystemInfo type: {child.GetType().Name}");
+        return ConvertFileEntityToNode(value, parent);
     }
 
-    private async Task<FileExplorerFileNodeEntity> CreateFileEntityAsync(
-        FileInfo fileInfo,
-        FileExplorerRootChildNodeEntity root,
-        FileExplorerFolderNodeEntity? parentEntity,
-        CancellationToken cancellationToken)
+    private IFileExplorerFolderNode ConvertEntityToNode(IFileExplorerFolderEntity entity)
     {
-        var nodePath = rootFolder.GetNodePath(fileInfo.FullName);
-
-        var file = new FileExplorerFileNodeEntity
+        if (entity is FileExplorerRootChildNodeEntity rootChild)
         {
-            Id = Guid.NewGuid(),
-            RelativePath = nodePath.RelativePath,
-            Exists = fileInfo.Exists,
-            CreationTimeUtc = fileInfo.CreationTimeUtc,
-            RootChild = root,
-            Parent = parentEntity
-        };
-        
-        file.Metadata = fileMetadataConverter.ConvertToEntity(fileInfo, file);
+            return ConvertRootChildEntityToNode(rootChild);
+        }
 
-        return file;
+        if (entity is FileExplorerFolderNodeEntity folderEntity)
+        {
+            return ConvertFolderEntityToNode(folderEntity, true);
+        }
+        
+        throw new NotSupportedException($"Unsupported entity type: {entity.GetType().Name}");
+    }
+
+    private IFileExplorerFolderNode ConvertRootChildEntityToNode(FileExplorerRootChildNodeEntity rootChild)
+    {
+        return new FileExplorerFolderNode(rootChild.Path,
+            FileExplorerNodeType.Folder,
+            rootChild.Exists,
+            rootChild.CreationTimeUtc,
+            true,
+            true,
+            rootFolder.Node);
+    }
+    
+    private IFileExplorerFolderNode ConvertFolderEntityToNode(FileExplorerFolderNodeEntity folderEntity, bool includeParent)
+    {
+        IFileExplorerFolderNode? parent = null;
+        if (includeParent)
+        {
+            parent = folderEntity.Parent is null
+                ? ConvertRootChildEntityToNode(folderEntity.RootChild)
+                : ConvertFolderEntityToNode(folderEntity.Parent, false);
+        }
+        
+        return ConvertFolderEntityToNode(folderEntity, parent);
+    }
+    
+    private IFileExplorerFolderNode ConvertFolderEntityToNode(FileExplorerFolderNodeEntity folderEntity, IFileExplorerFolderNode? parent)
+    {
+        return new FileExplorerFolderNode(folderEntity.Path,
+            FileExplorerNodeType.Folder,
+            folderEntity.Exists,
+            folderEntity.CreationTimeUtc,
+            true,
+            true,
+            parent);
+    }
+    
+    private IFileExplorerFileNode ConvertFileEntityToNode(FileExplorerFileNodeEntity fileEntity, IFileExplorerFolderNode parent)
+    {
+        return new FileExplorerFileNode(fileEntity.Path,
+            FileExplorerNodeType.File,
+            fileEntity.Exists,
+            fileEntity.CreationTimeUtc,
+            fileEntity.MetadataEntity,
+            parent);
     }
 }

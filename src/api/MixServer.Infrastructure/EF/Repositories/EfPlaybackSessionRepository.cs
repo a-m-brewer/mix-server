@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Repositories;
 using MixServer.Infrastructure.EF.Extensions;
@@ -11,7 +12,7 @@ public class EfPlaybackSessionRepository(MixServerDbContext context) : IPlayback
     public async Task<PlaybackSession> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         return await context.PlaybackSessions
-                   .IncludeNode()
+                   .IncludeNode(GetFileQueryOptions.Full)
                    .SingleOrDefaultAsync(s => s.Id == id, cancellationToken)
                ?? throw new NotFoundException(nameof(context.PlaybackSessions), id);
     }

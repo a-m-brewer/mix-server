@@ -18,7 +18,7 @@ public interface IPlaybackSessionDtoConverter
 }
 
 public class PlaybackSessionDtoConverter(
-    IConverter<IFileExplorerFileNode, FileExplorerFileNodeResponse> fileNodeConverter,
+    IFileExplorerEntityToResponseConverter fileNodeConverter,
     IConverter<QueueSnapshot, QueueSnapshotDto> queueSnapshotDtoConverter)
     : IPlaybackSessionDtoConverter
         
@@ -28,7 +28,7 @@ public class PlaybackSessionDtoConverter(
         return new PlaybackSessionDto
         {
             Id = value.Id,
-            File = fileNodeConverter.Convert(value.File ?? throw new InvalidOperationException()),
+            File = fileNodeConverter.Convert(value.NodeEntity),
             StreamKey = new StreamKeyDto
             {
                 Key = value.StreamKey.Key,

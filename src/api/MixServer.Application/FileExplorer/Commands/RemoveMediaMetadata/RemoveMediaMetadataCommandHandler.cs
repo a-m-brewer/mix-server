@@ -6,14 +6,10 @@ using MixServer.Domain.Interfaces;
 
 namespace MixServer.Application.FileExplorer.Commands.RemoveMediaMetadata;
 
-public class RemoveMediaMetadataCommandHandler(
-    ICallbackService callbackService,
-    ILogger<RemoveMediaMetadataCommandHandler> logger,
-    IMediaInfoCache mediaInfoCache) : ICommandHandler<RemoveMediaMetadataRequest>
+public class RemoveMediaMetadataCommandHandler(ICallbackService callbackService) : ICommandHandler<RemoveMediaMetadataRequest>
 {
     public async Task HandleAsync(RemoveMediaMetadataRequest request, CancellationToken cancellationToken)
     {
-        var removedItems = mediaInfoCache.Remove(request.NodePaths);
-        await callbackService.MediaInfoRemoved(removedItems);
+        await callbackService.MediaInfoRemoved(request.NodePaths);
     }
 }

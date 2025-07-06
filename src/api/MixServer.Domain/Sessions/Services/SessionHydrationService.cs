@@ -10,18 +10,15 @@ public interface ISessionHydrationService
 }
 
 public class SessionHydrationService(
-    IFileService fileService,
     IPlaybackTrackingService playbackTrackingService,
     IStreamKeyService streamKeyService) : ISessionHydrationService
 {
-    public async Task HydrateAsync(IPlaybackSession session)
+    public Task HydrateAsync(IPlaybackSession session)
     {
-        var currentNode = await fileService.GetFileAsync(session.NodeEntity.Path);
-
         playbackTrackingService.Populate(session);
         
         session.StreamKey = streamKeyService.GenerateKey(session.Id.ToString());
-
-        session.File = currentNode;
+        
+        return Task.CompletedTask;
     }
 }

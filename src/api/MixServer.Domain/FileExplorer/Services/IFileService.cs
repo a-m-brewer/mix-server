@@ -1,3 +1,4 @@
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 
 namespace MixServer.Domain.FileExplorer.Services;
@@ -14,5 +15,6 @@ public interface IFileService
         bool move,
         bool overwrite);
     void DeleteNode(NodePath nodePath);
-    Task SetFolderSortAsync(IFolderSortRequest request, CancellationToken cancellationToken);
+    Task<IFileExplorerFolder> SetFolderSortAsync(IFolderSortRequest request,
+        CancellationToken cancellationToken);
 }

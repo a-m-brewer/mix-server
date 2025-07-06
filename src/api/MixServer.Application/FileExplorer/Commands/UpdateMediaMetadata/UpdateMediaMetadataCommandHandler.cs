@@ -19,14 +19,14 @@ using MixServer.Domain.Tracklists.Services;
 namespace MixServer.Application.FileExplorer.Commands.UpdateMediaMetadata;
 
 public class UpdateMediaMetadataCommandHandler(
-    IFolderExplorerNodeEntityRepository folderExplorerNodeEntityRepository,
+    IFileExplorerNodeRepository fileExplorerNodeRepository,
     IFileMetadataRepository fileMetadataRepository,
     ILogger<UpdateMediaMetadataCommandHandler> logger,
     IMediaMetadataEntityConverter mediaMetadataEntityConverter,
     IMimeTypeService mimeTypeService,
     ITagBuilderFactory tagBuilderFactory,
     ITracklistConverter tracklistConverter,
-    ITracklistTagService tracklistTagService,
+    ITracklistFileTaggingService tracklistFileTaggingService,
     ITracklistRepository tracklistRepository,
     IUnitOfWork unitOfWork) : ICommandHandler<UpdateMediaMetadataRequest>
 {
@@ -50,7 +50,7 @@ public class UpdateMediaMetadataCommandHandler(
     public async Task HandleAsync(UpdateMediaMetadataRequest request, CancellationToken cancellationToken)
     {
         logger.LogInformation("Updating metadata for {FileCount} files", request.FileIds.Count);
-        var files = (await folderExplorerNodeEntityRepository.GetFileNodesAsync(request.FileIds, cancellationToken))
+        var files = (await fileExplorerNodeRepository.GetFileNodesAsync(request.FileIds, cancellationToken))
             .ToList();
 
         var results = new MetadataResultsBag();
@@ -135,7 +135,7 @@ public class UpdateMediaMetadataCommandHandler(
     
     private TracklistEntity? ImportTracklistIfNotFound(FileExplorerFileNodeEntity fileEntity, IReadOnlyTagBuilder tb)
     {
-        var tracklist = tracklistTagService.GetTracklist(tb);
+        var tracklist = tracklistFileTaggingService.GetTracklist(tb);
 
         // The DB is becoming the source of truth for tracklists, so this only acts to import existing file based tracklists
         if (fileEntity.Tracklist is not null)

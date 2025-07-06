@@ -22,19 +22,19 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IUserValidator, UserValidator>();
         services.AddSingleton<IFolderCacheService, FolderCacheService>();
-        services.AddTransient<IFolderPersistenceService, FolderPersistenceService>();
         services.AddSingleton<IFileNotificationService, FileNotificationService>();
         services.AddTransient<FileExplorerConverter, FileExplorerConverter>();
         services.AddSingleton<IRootFileExplorerFolder, RootFileExplorerFolder>();
         services.AddTransient<ISessionHydrationService, SessionHydrationService>();
-        services.AddTransient<ITracklistTagService, TracklistTagService>();
+        services.AddTransient<ITracklistFileTaggingService, TracklistFileTaggingService>();
         services.AddSingleton<ITranscodeCache, TranscodeCache>();
         services.AddTransient<ITranscodeService, TranscodeService>();
         services.AddTransient<ICanPlayOnDeviceValidator, CanPlayOnDeviceValidator>();
-        services.AddSingleton<IMediaInfoCache, MediaInfoCache>();
         services.AddTransient<IFileSystemHashService, FileSystemHashService>();
         services.AddTransient<IFileSystemFolderMetadataService, FileSystemFolderMetadataService>();
         services.AddTransient<IFileSystemQueryService, FileSystemQueryService>();
+        services.AddTransient<IFolderPersistenceService, FolderPersistenceService>();
+        services.AddTransient<ITracklistPersistenceService, TracklistPersistenceService>();
 
         services.AddTransient<IRootChildFolderService, RootChildFolderService>();
 

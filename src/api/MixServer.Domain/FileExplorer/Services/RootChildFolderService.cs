@@ -15,8 +15,8 @@ public interface IRootChildFolderService
 }
 
 public class RootChildFolderService(
-    IFileExplorerEntityConverter fileExplorerEntityConverter,
-    IFolderExplorerNodeEntityRepository folderExplorerNodeRepository,
+    IFileSystemInfoToEntityConverter fileSystemInfoToEntityConverter,
+    IFileExplorerNodeRepository fileExplorerNodeRepository,
     ILogger<RootChildFolderService> logger,
     IOptions<RootFolderSettings> rootFolderSettings,
     IUnitOfWork unitOfWork) : IRootChildFolderService
@@ -24,7 +24,7 @@ public class RootChildFolderService(
     public async Task<ICollection<FileExplorerRootChildNodeEntity>> SyncRootChildFoldersAsync(CancellationToken cancellationToken)
     {
         var configRootFolders = rootFolderSettings.Value.ChildrenSplit.ToList();
-        var dbRootChildren = await folderExplorerNodeRepository.GetAllRootChildrenAsync(cancellationToken);
+        var dbRootChildren = await fileExplorerNodeRepository.GetAllRootChildrenAsync(cancellationToken);
 
         var allPaths = dbRootChildren
             .Select(f => f.RelativePath)
@@ -43,8 +43,8 @@ public class RootChildFolderService(
             {
                 logger.LogInformation("Adding new root child folder: {Path}", configPath);
                 var rootChildDirectoryInfo = new DirectoryInfo(configPath);
-                var rootChild = fileExplorerEntityConverter.CreateRootChildEntity(rootChildDirectoryInfo);
-                await folderExplorerNodeRepository.AddAsync(rootChild, cancellationToken);
+                var rootChild = fileSystemInfoToEntityConverter.CreateRootChildEntity(rootChildDirectoryInfo);
+                await fileExplorerNodeRepository.AddAsync(rootChild, cancellationToken);
                 
                 rootChildren.Add(rootChild);
             }

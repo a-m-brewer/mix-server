@@ -9,18 +9,19 @@ namespace MixServer.Domain.Sessions.Validators;
 
 public interface ICanPlayOnDeviceValidator
 {
-    void ValidateCanPlayOrThrow(IDeviceState deviceState, IFileExplorerFileNode file);
+    void ValidateCanPlayOrThrow(IDeviceState deviceState, NodePath nodePath, string? mimeType);
     Task<bool> CanPlayAsync(IFileExplorerFileNode itemFile);
 }
 
 public class CanPlayOnDeviceValidator(ITranscodeCache transcodeCache,
     IRequestedPlaybackDeviceAccessor requestedPlaybackDeviceAccessor) : ICanPlayOnDeviceValidator
 {
-    public void ValidateCanPlayOrThrow(IDeviceState deviceState, IFileExplorerFileNode file)
+    public void ValidateCanPlayOrThrow(IDeviceState deviceState, NodePath nodePath, string? mimeType)
     {
-        if (!deviceState.CanPlay(file) && transcodeCache.GetTranscodeStatus(file.Path) != TranscodeState.Completed)
+        if (!deviceState.GetMimeTypeSupported(mimeType) &&
+            transcodeCache.GetTranscodeStatus(nodePath) != TranscodeState.Completed)
         {
-            throw new InvalidRequestException(nameof(file), $"{file.Path.AbsolutePath} is not supported for playback on this device");
+            throw new InvalidRequestException(nameof(nodePath), $"{nodePath.AbsolutePath} is not supported for playback on this device");
         }
     }
 
@@ -32,7 +33,7 @@ public class CanPlayOnDeviceValidator(ITranscodeCache transcodeCache,
     private bool CanPlay(IDeviceState deviceState, IFileExplorerFileNode file)
     {
         return file.PlaybackSupported && 
-               (deviceState.CanPlay(file) ||
+               (deviceState.GetMimeTypeSupported(file.Metadata.MimeType) ||
                 transcodeCache.GetTranscodeStatus(file.Path) == TranscodeState.Completed);
     }
 }

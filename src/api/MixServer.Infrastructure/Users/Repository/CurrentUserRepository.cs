@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.EF.Entities;
 using MixServer.Infrastructure.EF.Extensions;
@@ -19,7 +20,7 @@ public interface ICurrentUserRepository
     void SetUserId(string userId);
     Task<DbUser> GetCurrentUserAsync();
     Task LoadCurrentPlaybackSessionAsync(CancellationToken cancellationToken);
-    Task LoadPlaybackSessionByFileIdAsync(Guid fileId, CancellationToken cancellationToken);
+    Task LoadPlaybackSessionByNodePathAsync(NodePath nodePath, CancellationToken cancellationToken);
     Task LoadPagedPlaybackSessionsAsync(int sessionStartIndex, int sessionPageSize, CancellationToken cancellationToken);
     Task LoadFileSortByAbsolutePathAsync(NodePath nodePath, CancellationToken cancellationToken);
     Task LoadAllDevicesAsync(CancellationToken cancellationToken);
@@ -101,17 +102,17 @@ public class CurrentUserRepository : ICurrentUserRepository
         await (await CurrentUserEntry())
             .Reference(u => u.CurrentPlaybackSession)
             .Query()
-            .IncludeNode()
+            .IncludeNode(GetFileQueryOptions.Full)
             .LoadAsync(cancellationToken);
     }
 
-    public async Task LoadPlaybackSessionByFileIdAsync(Guid fileId, CancellationToken cancellationToken)
+    public async Task LoadPlaybackSessionByNodePathAsync(NodePath nodePath, CancellationToken cancellationToken)
     {
         await (await CurrentUserEntry())
             .Collection(u => u.PlaybackSessions)
             .Query()
-            .IncludeNode()
-            .Where(w => w.NodeId == fileId)
+            .IncludeNode(GetFileQueryOptions.Full)
+            .Where(w => w.Node != null && w.Node.RootChild.RelativePath == nodePath.RootPath && w.Node.RelativePath == nodePath.RelativePath)
             .LoadAsync(cancellationToken);
     }
 
@@ -120,7 +121,7 @@ public class CurrentUserRepository : ICurrentUserRepository
         await (await CurrentUserEntry())
             .Collection(u =>u.PlaybackSessions)
             .Query()
-            .IncludeNode()
+            .IncludeNode(GetFileQueryOptions.Full)
             .OrderByDescending(o => o.LastPlayed)
             .Skip(sessionStartIndex)
             .Take(sessionPageSize)

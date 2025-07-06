@@ -3,40 +3,244 @@ using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
-using MixServer.Domain.Sessions.Repositories;
+using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Infrastructure.EF.Extensions;
 
 namespace MixServer.Infrastructure.EF.Repositories;
 
-public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : IFolderExplorerNodeEntityRepository
+public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExplorerNodeRepository
 {
-    public async Task<TEntity?> GetOrDefaultAsync<TEntity>(NodePath nodePath, CancellationToken cancellationToken) where TEntity : FileExplorerNodeEntity
+    public async Task<FileExplorerFileNodeEntity> GetFileNodeAsync(NodePath nodePath, GetFileQueryOptions options, CancellationToken cancellationToken)
     {
-        IQueryable<TEntity> query = context.Nodes
-            .OfType<TEntity>()
-            .Include(i => i.RootChild)
-            .Include(i => i.Parent);
-        
-        if (typeof(TEntity).IsAssignableTo(typeof(FileExplorerFileNodeEntity)))
-        {
-            query = query
-                .Cast<FileExplorerFileNodeEntity>()
-                .Include(i => i.Transcode)
-                .Cast<TEntity>();
-        }
-        
-        return await query
-            .FirstOrDefaultAsync(f => f.RelativePath == nodePath.RelativePath && f.RootChild.RelativePath == nodePath.RootPath, cancellationToken);
+        var query = GetFileQuery(options);
+
+        return await FirstAsync(query, nodePath, cancellationToken);
     }
 
-    public Task<List<FileExplorerFileNodeEntity>> GetFileNodesAsync(string rootPath, IEnumerable<string> relativePaths, CancellationToken cancellationToken)
+    public async Task<ICollection<FileExplorerFileNodeEntity>> GetFileNodesAsync(IEnumerable<NodePath> nodePaths, GetFileQueryOptions options, CancellationToken cancellationToken)
     {
-        return context.Nodes
-            .OfType<FileExplorerFileNodeEntity>()
-            .IncludeParents()
-            .Include(i => i.Metadata)
-            .Where(w => w.RootChild.RelativePath == rootPath && relativePaths.Contains(w.RelativePath))
-            .ToListAsync(cancellationToken);
+        var lookupPaths = nodePaths
+            .Select(np => np.RootPath + ";" + np.RelativePath)
+            .ToHashSet();
+        
+        if (lookupPaths.Count == 0)
+        {
+            return [];
+        }
+
+        var query = from file in GetFileQuery(options)
+            let path = file.RootChild.RelativePath + ";" + file.RelativePath
+            where lookupPaths.Contains(path)
+            select file;
+
+        return await query.ToListAsync(cancellationToken: cancellationToken);
+    }
+
+    public async Task<FileExplorerFileNodeEntity?> GetFileNodeOrDefaultAsync(NodePath nodePath, GetFileQueryOptions options, CancellationToken cancellationToken)
+    {
+        var query = GetFileQuery(options);
+
+        return await FirstOrDefaultAsync(query, nodePath, cancellationToken);
+    }
+
+    public Task<List<FileExplorerFileNodeEntity>> GetFileNodesAsync(string rootPath, IEnumerable<string> relativePaths, GetFileQueryOptions options, CancellationToken cancellationToken)
+    {
+        var query = GetFileQuery(options);
+
+        return 
+            query.Where(w => w.RootChild.RelativePath == rootPath && relativePaths.Contains(w.RelativePath))
+                .ToListAsync(cancellationToken: cancellationToken);
+    }
+
+    public async Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(string rootPath, IEnumerable<Guid> folderIds, GetFolderQueryOptions options, CancellationToken cancellationToken)
+    {
+        var query = GetFolderQuery(options);
+
+        var folders = await query
+            .Where(w => w.RootChild.RelativePath == rootPath && folderIds.Contains(w.Id))
+            .ToListAsync(cancellationToken: cancellationToken);
+        
+        await Task.WhenAll(folders.Select(f => LoadFolderQueryRelationshipsAsync(f, options, cancellationToken)));
+        
+        return folders;
+    }
+
+    public async Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(IEnumerable<NodePath> nodePaths,
+        CancellationToken cancellationToken)
+    {
+        var lookupPaths = nodePaths
+            .Select(np => np.RootPath + ";" + np.RelativePath)
+            .ToHashSet();
+        
+        if (lookupPaths.Count == 0)
+        {
+            return [];
+        }
+        
+        var query = from folder in GetFolderQuery(GetFolderQueryOptions.FolderOnly)
+            let path = folder.RootChild.RelativePath + ";" + folder.RelativePath
+            where lookupPaths.Contains(path)
+            select folder;
+        
+        
+        var folders = await query.ToListAsync(cancellationToken: cancellationToken);
+
+        return folders;
+    }
+
+    public async Task<FileExplorerFolderNodeEntity> GetFolderNodeAsync(NodePath nodePath, GetFolderQueryOptions options, CancellationToken cancellationToken)
+    {
+        var query = GetFolderQuery(options);
+        
+        var folder = await FirstAsync(query, nodePath, cancellationToken);
+        
+        await LoadFolderQueryRelationshipsAsync(folder, options, cancellationToken);
+        
+        return folder;
+    }
+
+    public async Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(NodePath nodePath, GetFolderQueryOptions options, CancellationToken cancellationToken)
+    {
+        var query = GetFolderQuery(options);
+
+        var folder = await FirstOrDefaultAsync(query, nodePath, cancellationToken);
+        
+        await LoadFolderQueryRelationshipsAsync(folder, options, cancellationToken);
+        
+        return folder;
+    }
+
+    public async Task<FileExplorerRootChildNodeEntity?> GetRootChildFolderNodeOrDefaultAsync(NodePath nodePath, GetFolderQueryOptions options,
+        CancellationToken cancellationToken)
+    {
+        var query = GetRootChildFolderQuery(options);
+        
+        var folder = await query.FirstOrDefaultAsync(f => f.RelativePath == nodePath.RootPath, cancellationToken);
+        
+        await LoadFolderQueryRelationshipsAsync(folder, options, cancellationToken);
+        
+        return folder;
+    }
+
+    public async Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(Guid nodeId, GetFolderQueryOptions options, CancellationToken cancellationToken)
+    {
+        var query = GetFolderQuery(options);
+
+        var folder = await query.FirstOrDefaultAsync(f => f.Id == nodeId, cancellationToken);
+
+        await LoadFolderQueryRelationshipsAsync(folder, options, cancellationToken);
+        
+        return folder;
+    }
+
+    public async Task<FileExplorerRootChildNodeEntity?> GetRootChildFolderNodeOrDefaultAsync(Guid nodeId, GetFolderQueryOptions options,
+        CancellationToken cancellationToken)
+    {
+        var query = GetRootChildFolderQuery(options);
+        
+        var folder = await query.FirstOrDefaultAsync(f => f.Id == nodeId, cancellationToken);
+
+        await LoadFolderQueryRelationshipsAsync(folder, options, cancellationToken);
+        
+        return folder;
+    }
+
+    private IQueryable<FileExplorerFolderNodeEntity> GetFolderQuery(GetFolderQueryOptions options)
+    {
+        var query = GetBaseQuery<FileExplorerFolderNodeEntity>();
+        
+        return GetFolderQuery(query, options);
+    }
+    
+    private IQueryable<FileExplorerRootChildNodeEntity> GetRootChildFolderQuery(GetFolderQueryOptions options)
+    {
+        var query = context.Nodes
+            .OfType<FileExplorerRootChildNodeEntity>();
+        
+        return GetRootChildFolderQuery(query, options);
+    }
+    
+    private IQueryable<FileExplorerFolderNodeEntity> GetFolderQuery(IQueryable<FileExplorerFolderNodeEntity> query, GetFolderQueryOptions options)
+    {
+        return query;
+    }
+    
+    private IQueryable<FileExplorerRootChildNodeEntity> GetRootChildFolderQuery(IQueryable<FileExplorerRootChildNodeEntity> query, GetFolderQueryOptions options)
+    {
+        return query;
+    }
+    
+    private IQueryable<FileExplorerFolderNodeEntity> GetChildFolderQuery(IQueryable<FileExplorerFolderNodeEntity> query, GetChildFolderQueryOptions options)
+    {
+        return query;
+    }
+    
+    private IQueryable<FileExplorerFileNodeEntity> GetFileQuery(GetFileQueryOptions options)
+    {
+        var query = GetBaseQuery<FileExplorerFileNodeEntity>();
+        return query.IncludeGetFileQueryOptions(options);
+    }
+    
+    private async Task LoadFolderQueryRelationshipsAsync(FileExplorerFolderNodeEntity? folder, GetFolderQueryOptions options, CancellationToken cancellationToken = default)
+    {
+        if (folder is null)
+        {
+            return;
+        }
+
+        if (options.ChildFolders is not null)
+        {
+            var folderQuery = context.Entry(folder)
+                .Collection(c => c.Children)
+                .Query()
+                .OfType<FileExplorerFolderNodeEntity>();
+            folderQuery = GetChildFolderQuery(folderQuery, options.ChildFolders);
+            await folderQuery.LoadAsync(cancellationToken: cancellationToken);
+        }
+
+        if (options.ChildFiles is not null)
+        {
+            var fileQuery = context.Entry(folder)
+                .Collection(c => c.Children)
+                .Query()
+                .OfType<FileExplorerFileNodeEntity>();
+            fileQuery = fileQuery.IncludeGetFileQueryOptions(options.ChildFiles);
+            await fileQuery.LoadAsync(cancellationToken: cancellationToken);
+        }
+    }
+    
+    private async Task LoadFolderQueryRelationshipsAsync(FileExplorerRootChildNodeEntity? folder, GetFolderQueryOptions options, CancellationToken cancellationToken = default)
+    {
+        if (folder is null)
+        {
+            return;
+        }
+
+        if (options.ChildFolders is not null)
+        {
+            var folderQuery = context.Entry(folder)
+                .Collection(c => c.Children)
+                .Query()
+                .OfType<FileExplorerFolderNodeEntity>()
+                // Everything is a child of the root child, so we only need to load files that are direct children
+                .IncludeParents()
+                .Where(w => w.Parent == null);
+            folderQuery = GetChildFolderQuery(folderQuery, options.ChildFolders);
+            await folderQuery.LoadAsync(cancellationToken: cancellationToken);
+        }
+
+        if (options.ChildFiles is not null)
+        {
+            var fileQuery = context.Entry(folder)
+                .Collection(c => c.Children)
+                .Query()
+                .OfType<FileExplorerFileNodeEntity>()
+                // Everything is a child of the root child, so we only need to load files that are direct children
+                .IncludeParents()
+                .Where(w => w.Parent == null);
+            fileQuery = fileQuery.IncludeGetFileQueryOptions(options.ChildFiles);
+            await fileQuery.LoadAsync(cancellationToken: cancellationToken);
+        }
     }
 
     public async Task<IEnumerable<FileExplorerFileNodeEntity>> GetFileNodesAsync(List<Guid> fileIds, CancellationToken cancellationToken)
@@ -116,35 +320,6 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
             })
             .ToDictionaryAsync(k => k.NodePath, cancellationToken);
     }
-    
-    public async Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(
-        Guid id,
-        bool includeChildren = true,
-        CancellationToken cancellationToken = default)
-    {
-        return await GetFolderNodeQuery(includeChildren)
-            .FirstOrDefaultAsync(f => f.Id == id, cancellationToken);
-    }
-
-    public Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(NodePath nodePath, bool includeChildren = true, CancellationToken cancellationToken = default)
-    {
-        return GetFolderNodeQuery(includeChildren)
-            .FirstOrDefaultAsync(f => f.RelativePath == nodePath.RelativePath && f.RootChild.RelativePath == nodePath.RootPath, cancellationToken);
-    }
-
-    private IQueryable<FileExplorerFolderNodeEntity> GetFolderNodeQuery(bool includeChildren)
-    {
-        var query = context.Nodes
-            .OfType<FileExplorerFolderNodeEntity>()
-            .IncludeParents();
-
-        if (includeChildren)
-        {
-            query = query.Include(i => i.Children);
-        }
-        
-        return query;
-    }
 
     public async Task<FileExplorerRootChildNodeEntity> GetRootChildOrThrowAsync(string rootPath, CancellationToken cancellationToken)
     {
@@ -162,8 +337,15 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
     {
         return await context.Nodes
             .OfType<FileExplorerRootChildNodeEntity>()
-            .Include(i => i.Children)
             .FirstOrDefaultAsync(f => f.RelativePath == rootChild.RootPath, cancellationToken);
+    }
+
+    public async Task<ICollection<FileExplorerRootChildNodeEntity>> GetRootChildrenAsync(IEnumerable<string> rootPaths, CancellationToken cancellationToken)
+    {
+        return await context.Nodes
+            .OfType<FileExplorerRootChildNodeEntity>()
+            .Where(w => rootPaths.Contains(w.RelativePath))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<ICollection<FileExplorerRootChildNodeEntity>> GetAllRootChildrenAsync(CancellationToken cancellationToken)
@@ -198,5 +380,28 @@ public class EfFolderExplorerNodeEntityRepository(MixServerDbContext context) : 
     public void RemoveRange(IEnumerable<FileExplorerNodeEntity> nodes)
     {
         context.Nodes.RemoveRange(nodes);
+    }
+    
+    private IQueryable<TEntity> GetBaseQuery<TEntity>()
+        where TEntity : FileExplorerNodeEntity
+    {
+        return context.Nodes
+            .OfType<TEntity>()
+            .IncludeParents();
+    }
+
+    private async Task<TEntity?> FirstOrDefaultAsync<TEntity>(IQueryable<TEntity> query, NodePath nodePath, CancellationToken cancellationToken)
+        where TEntity : FileExplorerNodeEntity
+    {
+        return await query.FirstOrDefaultAsync(
+            f => f.RelativePath == nodePath.RelativePath && f.RootChild.RelativePath == nodePath.RootPath,
+            cancellationToken);
+    }
+    
+    private async Task<TEntity> FirstAsync<TEntity>(IQueryable<TEntity> query, NodePath nodePath, CancellationToken cancellationToken)
+        where TEntity : FileExplorerNodeEntity
+    {
+        return await FirstOrDefaultAsync(query, nodePath, cancellationToken) 
+            ?? throw new NotFoundException(nameof(context.Nodes), nodePath.RelativePath);;
     }
 }

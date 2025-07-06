@@ -1,5 +1,7 @@
 using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Dtos;
+using MixServer.Domain.FileExplorer.Converters;
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.FileExplorer.Services.Caching;
@@ -9,8 +11,12 @@ using MixServer.Domain.Streams.Enums;
 
 namespace MixServer.Application.FileExplorer.Queries.GetNode;
 
+public interface IFileExplorerEntityToResponseConverter
+    : IConverter<FileExplorerFileNodeEntity, FileExplorerFileNodeResponse>;
+
 public interface IFileExplorerResponseConverter
-    : IConverter<IFileExplorerNode, FileExplorerNodeResponse>,
+    : IFileExplorerEntityToResponseConverter,
+        IConverter<IFileExplorerNode, FileExplorerNodeResponse>,
         IConverter<IFileExplorerFileNode, FileExplorerFileNodeResponse>,
         IConverter<IFileExplorerFolderNode, FileExplorerFolderNodeResponse>,
         IConverter<IFileExplorerFolder, FileExplorerFolderResponse>,
@@ -19,9 +25,9 @@ public interface IFileExplorerResponseConverter
 }
 
 public class FileExplorerResponseConverter(
-    IMediaInfoCache mediaInfoCache,
     IMediaInfoDtoConverter mediaInfoDtoConverter,
     INodePathDtoConverter nodePathDtoConverter,
+    IFileExplorerEntityConverter fileExplorerEntityConverter,
     ITranscodeCache transcodeCache) : IFileExplorerResponseConverter
 {
     public FileExplorerNodeResponse Convert(IFileExplorerNode value)
@@ -90,14 +96,18 @@ public class FileExplorerResponseConverter(
     {
         return new FileMetadataResponse
         {
-            MediaInfo = value.IsMedia && mediaInfoCache.TryGet(nodePath, out var mediaInfo)
-                ? mediaInfoDtoConverter.Convert(mediaInfo)
-                : null,
+            MediaInfo = mediaInfoDtoConverter.Convert(value),
             IsMedia = value.IsMedia,
             MimeType = value.MimeType,
             TranscodeStatus = value.IsMedia
                 ? transcodeCache.GetTranscodeStatus(nodePath)
                 : TranscodeState.None
         };
+    }
+
+    public FileExplorerFileNodeResponse Convert(FileExplorerFileNodeEntity value)
+    {
+        var file = fileExplorerEntityConverter.Convert(value);
+        return Convert(file);
     }
 }

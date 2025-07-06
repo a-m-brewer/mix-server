@@ -11,7 +11,6 @@ public interface IPlaybackSession : IPlaybackState
     Guid Id { get; set; }
     FileExplorerFileNodeEntity NodeEntity { get; }
     DateTime LastPlayed { get; set; }
-    IFileExplorerFileNode? File { get; set; }
     StreamKey StreamKey { get; set; }
     void PopulateState(IPlaybackState playingItem);
 }
@@ -43,9 +42,6 @@ public class PlaybackSession : IPlaybackSession
     public Guid? DeviceId { get; set; }
 
     public string UserId { get; set; } = string.Empty;
-
-    [NotMapped]
-    public IFileExplorerFileNode? File { get; set; }
 
     [NotMapped]
     public StreamKey StreamKey { get; set; } = new () { Expires = 0, Key = string.Empty };

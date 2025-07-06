@@ -1,15 +1,19 @@
 ﻿using System.Text;
 using MixServer.Application.FileExplorer.Dtos;
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Interfaces;
+using MixServer.Domain.Tracklists.Converters;
 
 namespace MixServer.Application.FileExplorer.Converters;
 
 public interface IMediaInfoDtoConverter :
-    IConverter<MediaInfo, MediaInfoDto>;
+    IConverter<MediaInfo, MediaInfoDto>,
+    IConverter<IFileMetadata, MediaInfoDto?>;
 
-public class MediaInfoDtoConverter(INodePathDtoConverter nodePathDtoConverter) : IMediaInfoDtoConverter
+public class MediaInfoDtoConverter(INodePathDtoConverter nodePathDtoConverter,
+    ITracklistDtoConverter tracklistDtoConverter) : IMediaInfoDtoConverter
 {
     public MediaInfoDto Convert(MediaInfo value)
     {
@@ -19,6 +23,22 @@ public class MediaInfoDtoConverter(INodePathDtoConverter nodePathDtoConverter) :
             Duration = FormatTimespan(value.Duration),
             NodePath = nodePathDtoConverter.ConvertToResponse(value.Path),
             Tracklist = value.Tracklist
+        };
+    }
+    
+    public MediaInfoDto? Convert(IFileMetadata value)
+    {
+        if (value is not MediaMetadataEntity mediaMetadata)
+        {
+            return null;
+        }
+
+        return new MediaInfoDto
+        {
+            NodePath = nodePathDtoConverter.ConvertToResponse(mediaMetadata.Node.Path),
+            Bitrate = mediaMetadata.Bitrate,
+            Duration = FormatTimespan(mediaMetadata.Duration),
+            Tracklist = tracklistDtoConverter.Convert(mediaMetadata.Node.Tracklist)
         };
     }
     

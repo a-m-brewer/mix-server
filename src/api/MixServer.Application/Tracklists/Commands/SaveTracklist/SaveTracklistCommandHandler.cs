@@ -1,9 +1,5 @@
-using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Interfaces;
-using MixServer.Domain.Tracklists.Builders;
-using MixServer.Domain.Tracklists.Factories;
-using MixServer.Domain.Tracklists.Models;
 using MixServer.Domain.Tracklists.Services;
 using MixServer.Infrastructure.Users.Repository;
 
@@ -11,7 +7,8 @@ namespace MixServer.Application.Tracklists.Commands.SaveTracklist;
 
 public class SaveTracklistCommandHandler(
     ICurrentUserRepository currentUserRepository,
-    ITracklistTagService tracklistTagService)
+    ITracklistPersistenceService tracklistPersistenceService,
+    ITracklistFileTaggingService tracklistFileTaggingService)
     : ICommandHandler<SaveTracklistCommand, SaveTracklistResponse>
 {
     public async Task<SaveTracklistResponse> HandleAsync(SaveTracklistCommand request, CancellationToken cancellationToken = default)
@@ -31,7 +28,8 @@ public class SaveTracklistCommandHandler(
             throw new NotFoundException("File", currentSessionFilePath);
         }
 
-        tracklistTagService.SaveTags(currentSessionFilePath, request.Tracklist);
+        await tracklistPersistenceService.AddOrUpdateTracklistAsync(request.Tracklist, cancellationToken);
+        tracklistFileTaggingService.SaveTags(currentSessionFilePath, request.Tracklist);
 
         return new SaveTracklistResponse
         {

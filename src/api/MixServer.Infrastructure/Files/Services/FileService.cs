@@ -4,6 +4,7 @@ using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
+using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Sessions.Repositories;
@@ -12,19 +13,17 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Infrastructure.Files.Services;
 
 public class FileService(
-    ICurrentUserRepository currentUserRepository,
-    IFileExplorerConverter fileExplorerConverter,
-    IFolderCacheService folderCacheService,
+    IFileExplorerEntityConverter fileExplorerEntityConverter,
     IFolderPersistenceService folderPersistenceService,
+    ICurrentUserRepository currentUserRepository,
     IFolderSortRepository folderSortRepository,
     IRootFileExplorerFolder rootFolder)
     : IFileService
 {
     public async Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath, CancellationToken cancellationToken)
     {
-        var cacheItem = await folderCacheService.GetOrAddAsync(nodePath);
-
-        var folder = cacheItem.Folder;
+        var folderEntity = await folderPersistenceService.GetOrAddFolderAsync(nodePath, cancellationToken);
+        var folder = fileExplorerEntityConverter.Convert(folderEntity);
 
         if (!folder.Node.Exists)
         {
@@ -58,31 +57,19 @@ public class FileService(
             : throw new NotFoundException("Folder", nodePath.AbsolutePath);
     }
 
-    public async Task<List<IFileExplorerFileNode>> GetFilesAsync(IReadOnlyList<NodePath> absoluteFilePaths)
+    public async Task<List<IFileExplorerFileNode>> GetFilesAsync(IReadOnlyList<NodePath> nodePaths)
     {
-        var groupedPaths = await Task.WhenAll(absoluteFilePaths
-            .Select(s => s.Parent)
-            .DistinctBy(d => d.AbsolutePath)
-            .Select(folderCacheService.GetOrAddAsync));
-
-        var files = new List<IFileExplorerFileNode>();
-        foreach (var nodePath in absoluteFilePaths)
-        {
-            var parent = groupedPaths.First(f => f.Folder.Node.Path.IsEqualTo(nodePath.Parent)).Folder;
-            var file = parent.Children
-                .OfType<IFileExplorerFileNode>()
-                .FirstOrDefault(f => f.Path.IsEqualTo(nodePath)) ?? 
-                       fileExplorerConverter.Convert(new FileInfo(nodePath.AbsolutePath), parent.Node);
-
-            files.Add(file);
-        }
+        var files = await folderPersistenceService.GetOrAddFileRangeAsync(nodePaths);
         
-        return files;
+        return files
+            .Select(fileExplorerEntityConverter.Convert)
+            .ToList();
     }
 
     public async Task<IFileExplorerFileNode> GetFileAsync(NodePath nodePath)
     {
-        return await folderCacheService.GetFileAsync(nodePath);
+        var entity = await folderPersistenceService.GetOrAddFileAsync(nodePath);
+        return fileExplorerEntityConverter.Convert(entity);
     }
 
     public void CopyNode(
@@ -160,7 +147,7 @@ public class FileService(
         return null;
     }
 
-    public async Task SetFolderSortAsync(IFolderSortRequest request, CancellationToken cancellationToken)
+    public async Task<IFileExplorerFolder> SetFolderSortAsync(IFolderSortRequest request, CancellationToken cancellationToken)
     {
         await currentUserRepository.LoadFileSortByAbsolutePathAsync(request.Path, cancellationToken);
         var user = await currentUserRepository.GetCurrentUserAsync();
@@ -168,26 +155,37 @@ public class FileService(
         var sort = user.FolderSorts.SingleOrDefault(s =>
             s.NodeEntity.RootChild.RelativePath == request.Path.RootPath &&
             s.NodeEntity.RelativePath == request.Path.RelativePath);
+        
+        var folderEntity = await folderPersistenceService.GetOrAddFolderAsync(request.Path, cancellationToken);
 
         if (sort is null)
         {
-            var folder = await folderPersistenceService.GetFolderAsync(request.Path, cancellationToken);
-            var folderSort = new FolderSort
+            if (folderEntity is not FileExplorerFolderNodeEntity folder)
+            {
+                throw new InvalidRequestException(request.Path.AbsolutePath, "The specified path does not point to a sortable folder");
+            }
+
+            sort = new FolderSort
             {
                 Id = Guid.NewGuid(),
-                NodeEntity = folder.Entity,
-                NodeIdEntity = folder.Entity.Id,
+                NodeEntity = folder,
+                NodeIdEntity = folder.Id,
                 Descending = request.Descending,
                 SortMode = request.SortMode,
                 UserId = user.UserName ?? throw new UnauthorizedRequestException()
             };
 
-            await folderSortRepository.AddAsync(folderSort, cancellationToken);
-            user.FolderSorts.Add(folderSort);
+            await folderSortRepository.AddAsync(sort, cancellationToken);
+            user.FolderSorts.Add(sort);
         }
         else
         {
             sort.Update(request);
         }
+        
+        var folderNode = fileExplorerEntityConverter.Convert(folderEntity);
+        folderNode.Sort = sort;
+
+        return folderNode;
     }
 }

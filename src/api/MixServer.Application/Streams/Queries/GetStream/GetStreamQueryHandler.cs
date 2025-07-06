@@ -54,28 +54,28 @@ public class GetStreamQueryHandler(
         
         var session = await sessionService.GetPlaybackSessionByIdAsync(playbackSessionId, cancellationToken);
 
-        if (session.File is null || !session.File.Exists)
+        if (!session.NodeEntity.Exists)
         {
             throw new NotFoundException(nameof(PlaybackSession), session.NodeEntity.Path.AbsolutePath);
         }
 
-        var transcode = await transcodeRepository.GetOrDefaultAsync(session.File.Path, cancellationToken);
+        var transcode = await transcodeRepository.GetOrDefaultAsync(session.NodeEntity.Path, cancellationToken);
         // Specifically use the RequestDevice to determine if the file can be played
         // Because if playback device is switched we want the client to be seeing what version they can play
         // Rather than what the playback device can play e.g. switching from Transcode to DirectStream
-        var canPlayDirect = deviceTrackingService.GetDeviceStateOrThrow(securityParameters.DeviceId).CanPlay(session.File);
+        var canPlayDirect = deviceTrackingService.GetDeviceStateOrThrow(securityParameters.DeviceId).GetMimeTypeSupported(session.NodeEntity.Metadata?.MimeType);
         
         if (transcode is not null || !canPlayDirect)
         {
             if (transcode is null)
             {
-                throw new NotFoundException(nameof(Transcode), session.File.Path.AbsolutePath);
+                throw new NotFoundException(nameof(Transcode), session.NodeEntity.Path.AbsolutePath);
             }
             
             return transcodeCache.GetPlaylistOrThrowAsync(transcode.Id);
         }
 
-        var mimeType = mimeTypeService.GetMimeType(session.File.Path);
+        var mimeType = mimeTypeService.GetMimeType(session.NodeEntity.Path);
         
         return new DirectStreamFile(mimeType)
         {

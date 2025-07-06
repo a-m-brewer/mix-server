@@ -23,7 +23,18 @@ public class EfUnitOfWork<TDbContext>(
     public void OnSaved(Expression<Func<CancellationToken, Task>> command) => _deferredCommands.Add(command);
     public void OnSaved(Expression<Func<Task>> command) =>
         OnSaved(cancellationToken => command.Compile().Invoke());
-    
+
+    public void OnSaved(Expression<Action> command)
+    {
+        OnSaved(() => InvokeSyncOnSaved(command));
+    }
+
+    private static Task InvokeSyncOnSaved(Expression<Action> command)
+    {
+        command.Compile().Invoke();
+        return Task.CompletedTask;
+    }
+
     public void InvokeCallbackOnSaved(Func<ICallbackService, Task> callback) =>
         OnSaved(() => callback.Invoke(callbackService));
 

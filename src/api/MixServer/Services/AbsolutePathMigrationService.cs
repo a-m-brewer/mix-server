@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.EF.Extensions;
@@ -55,7 +56,7 @@ public class AbsolutePathMigrationService(
     {
         logger.LogInformation("Clearing absolute paths in playback sessions...");
         await foreach (var session in context.PlaybackSessions
-                           .IncludeNode()
+                           .IncludeNode(GetFileQueryOptions.Full)
                            .Where(w => w.AbsolutePath != string.Empty)
                            .AsAsyncEnumerable())
         {

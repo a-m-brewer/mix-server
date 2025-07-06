@@ -34,14 +34,14 @@ public class Device : IDevice
     [NotMapped]
     public ConcurrentDictionary<string, bool> Capabilities { get; private set; } = new();
 
-    public bool CanPlay(IFileExplorerFileNode? sessionFile)
+    public bool GetMimeTypeSupported(string? mimeType)
     {
-        if (sessionFile is null)
+        if (string.IsNullOrWhiteSpace(mimeType))
         {
             return false;
         }
         
-        return Capabilities.TryGetValue(sessionFile.Metadata.MimeType, out var supported) && supported;
+        return Capabilities.TryGetValue(mimeType, out var supported) && supported;
     }
 
     public void Populate(IDeviceState state)

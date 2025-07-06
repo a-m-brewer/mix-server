@@ -65,7 +65,7 @@ public class QueueService(
         queue.AddToQueue(file);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue, cancellationToken);
-        await callbackService.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot);
+        unitOfWork.InvokeCallbackOnSaved(cb => cb.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
 
         return queueSnapshot;
     }
@@ -87,7 +87,7 @@ public class QueueService(
         queue.RemoveUserQueueItems(ids);
         
         var queueSnapshot = await GenerateQueueSnapshotAsync(queue, cancellationToken);
-        await callbackService.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot);
+        unitOfWork.InvokeCallbackOnSaved(cb => cb.CurrentQueueUpdated(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, queueSnapshot));
 
         return queueSnapshot;
     }

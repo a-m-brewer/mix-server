@@ -16,6 +16,11 @@ public interface IHashable
     string Hash { get; set; }
 }
 
+public interface IHasPath
+{
+    NodePath Path { get; }
+}
+
 public interface IFileExplorerNodeEntityBase
 {
     Guid Id { get; init; }
@@ -26,14 +31,13 @@ public interface IFileExplorerNodeEntityBase
     bool Hidden { get; set; }
 }
 
-public interface IFileExplorerFolderEntity : IFileExplorerNodeEntityBase, IHasChildren, IHashable;
+public interface IFileExplorerFolderEntity : IFileExplorerNodeEntityBase, IHasChildren, IHashable, IHasPath;
 
 public class FileExplorerNodeEntityBase : IFileExplorerNodeEntityBase
 {
     public required Guid Id { get; init; }
     
     public required string RelativePath { get; set; }
-    
     public FileExplorerEntityNodeType NodeType { get; init; }
     
     public required bool Exists { get; set; }
@@ -63,6 +67,8 @@ public class FileExplorerRootChildNodeEntity : FileExplorerNodeEntityBase, IFile
     }
 
     public string Hash { get; set; } = string.Empty;
+
+    [NotMapped] public NodePath Path => new(RelativePath, string.Empty);
 }
 
 public class FileExplorerNodeEntity : FileExplorerNodeEntityBase
@@ -101,6 +107,10 @@ public class FileExplorerFileNodeEntity : FileExplorerNodeEntity
     
     [NotMapped]
     public FileMetadataEntity MetadataEntity => Metadata ?? throw new InvalidOperationException("Metadata is not set.");
+    
+    [NotMapped]
+    public bool PlaybackSupported => Exists && 
+                                     MetadataEntity.IsMedia;
 }
 
 public class FileExplorerFolderNodeEntity : FileExplorerNodeEntity, IFileExplorerFolderEntity

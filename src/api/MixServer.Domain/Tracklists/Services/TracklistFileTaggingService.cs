@@ -7,15 +7,15 @@ using MixServer.Domain.Tracklists.Models;
 
 namespace MixServer.Domain.Tracklists.Services;
 
-public interface ITracklistTagService
+public interface ITracklistFileTaggingService
 {
     void SaveTags(string absoluteFilePath, ImportTracklistDto tracklist);
     ImportTracklistDto GetTracklist(IReadOnlyTagBuilder tagBuilder);
 }
 
-public class TracklistTagService(
+public class TracklistFileTaggingService(
     ITagBuilderFactory factory,
-    ILogger<TracklistTagService> logger) : ITracklistTagService
+    ILogger<TracklistFileTaggingService> logger) : ITracklistFileTaggingService
 {
     private const string IdPrefix = "ms-ch-";
     

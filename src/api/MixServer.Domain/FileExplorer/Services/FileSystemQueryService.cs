@@ -1,37 +1,52 @@
 ﻿using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
+using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Domain.Sessions.Repositories;
 
 namespace MixServer.Domain.FileExplorer.Services;
 
 public interface IFileSystemQueryService
 {
-    Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(
-        NodePath nodePath,
-        bool includeChildren = true,
+    Task<IFileExplorerFolderEntity?> GetRootChildOrFolderNodeOrDefaultAsync(NodePath nodePath,
+        GetFolderQueryOptions queryOptions,
+        CancellationToken cancellationToken = default);
+    
+    Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(NodePath nodePath,
+        GetFolderQueryOptions queryOptions,
         CancellationToken cancellationToken = default);
 
-    Task<List<FileExplorerNodeEntity>> GetNodesAsync(string rootPath, List<NodePath> fsChildPaths, CancellationToken cancellationToken);
+    Task<List<FileExplorerNodeEntity>> GetNodesAsync(string rootPath, List<NodePath> fsChildPaths,
+        GetFolderQueryOptions folderQuery, GetFileQueryOptions fileQuery, CancellationToken cancellationToken);
 }
 
 public class FileSystemQueryService(
     IFileSystemFolderMetadataService fileSystemFolderMetadataService,
-    IFolderExplorerNodeEntityRepository folderExplorerNodeEntityRepository) : IFileSystemQueryService
+    IFileExplorerNodeRepository fileExplorerNodeRepository) : IFileSystemQueryService
 {
-    public async Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(
-        NodePath nodePath,
-        bool includeChildren = true,
+    public async Task<IFileExplorerFolderEntity?> GetRootChildOrFolderNodeOrDefaultAsync(NodePath nodePath, GetFolderQueryOptions queryOptions,
+        CancellationToken cancellationToken = default)
+    {
+        if (nodePath.IsRootChild)
+        {
+            return await GetRootChildFolderNodeOrDefaultAsync(nodePath, queryOptions, cancellationToken);
+        }
+
+        return await GetFolderNodeOrDefaultAsync(nodePath, queryOptions, cancellationToken);
+    }
+
+    public async Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(NodePath nodePath,
+        GetFolderQueryOptions queryOptions,
         CancellationToken cancellationToken = default)
     {
         var metadata = await fileSystemFolderMetadataService.GetOrDefaultAsync(nodePath, cancellationToken);
 
         if (metadata is not null)
         {
-            return await folderExplorerNodeEntityRepository.GetFolderNodeOrDefaultAsync(metadata.FolderId, includeChildren, cancellationToken);
+            return await fileExplorerNodeRepository.GetFolderNodeOrDefaultAsync(metadata.FolderId, queryOptions, cancellationToken);
         }
 
-        var node = await folderExplorerNodeEntityRepository.GetFolderNodeOrDefaultAsync(nodePath, includeChildren, cancellationToken);
+        var node = await fileExplorerNodeRepository.GetFolderNodeOrDefaultAsync(nodePath, queryOptions, cancellationToken);
 
         if (node is null)
         {
@@ -41,10 +56,36 @@ public class FileSystemQueryService(
         await fileSystemFolderMetadataService.CreateMetadataAsync(nodePath, node.Id, cancellationToken);
             
         return node;
+    }
+    
+    private async Task<FileExplorerRootChildNodeEntity?> GetRootChildFolderNodeOrDefaultAsync(NodePath nodePath,
+        GetFolderQueryOptions queryOptions,
+        CancellationToken cancellationToken = default)
+    {
+        var metadata = await fileSystemFolderMetadataService.GetOrDefaultAsync(nodePath, cancellationToken);
 
+        if (metadata is not null)
+        {
+            return await fileExplorerNodeRepository.GetRootChildFolderNodeOrDefaultAsync(metadata.FolderId, queryOptions, cancellationToken);
+        }
+
+        var node = await fileExplorerNodeRepository.GetRootChildFolderNodeOrDefaultAsync(nodePath, queryOptions, cancellationToken);
+
+        if (node is null)
+        {
+            return null;
+        }
+
+        await fileSystemFolderMetadataService.CreateMetadataAsync(nodePath, node.Id, cancellationToken);
+            
+        return node;
     }
 
-    public async Task<List<FileExplorerNodeEntity>> GetNodesAsync(string rootPath, List<NodePath> fsChildPaths, CancellationToken cancellationToken)
+    public async Task<List<FileExplorerNodeEntity>> GetNodesAsync(string rootPath,
+        List<NodePath> fsChildPaths,
+        GetFolderQueryOptions folderQuery,
+        GetFileQueryOptions fileQuery,
+        CancellationToken cancellationToken)
     {
         var filePaths = fsChildPaths
             .Where(w => !w.IsDirectory)
@@ -55,9 +96,9 @@ public class FileSystemQueryService(
             .Where(w => w is not null)
             .Select(s => s!.FolderId);
         
-        var folders = (await folderExplorerNodeEntityRepository.GetFolderNodesAsync(rootPath, folderIds, cancellationToken))
+        var folders = (await fileExplorerNodeRepository.GetFolderNodesAsync(rootPath, folderIds, folderQuery, cancellationToken))
             .Cast<FileExplorerNodeEntity>();
-        var files = (await folderExplorerNodeEntityRepository.GetFileNodesAsync(rootPath, filePaths, cancellationToken))
+        var files = (await fileExplorerNodeRepository.GetFileNodesAsync(rootPath, filePaths, fileQuery, cancellationToken))
             .Cast<FileExplorerNodeEntity>();
 
         return folders.Concat(files).ToList();

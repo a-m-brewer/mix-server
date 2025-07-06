@@ -12,7 +12,7 @@ using MixServer.Domain.Sessions.Repositories;
 namespace MixServer.Application.FileExplorer.Commands.ScanFolder;
 
 public class ScanFolderCommandHandler(
-    IFolderExplorerNodeEntityRepository folderExplorerNodeEntityRepository,
+    IFileExplorerNodeRepository fileExplorerNodeRepository,
     IFileSystemHashService fileSystemHashService,
     ILogger<ScanFolderCommandHandler> logger,
     IPersistFolderCommandChannel persistFolderCommandChannel,
@@ -37,7 +37,7 @@ public class ScanFolderCommandHandler(
             NodePath = request.NodePath,
             Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(request.NodePath, cancellationToken)
         };
-        var dbHeader = await folderExplorerNodeEntityRepository.GetFolderHeaderOrDefaultAsync(fsHeader, cancellationToken);
+        var dbHeader = await fileExplorerNodeRepository.GetFolderHeaderOrDefaultAsync(fsHeader, cancellationToken);
 
         var folderDiff = new FolderDiff
         {
@@ -92,7 +92,7 @@ public class ScanFolderCommandHandler(
             return;
         }
         
-        var actualHashes = await folderExplorerNodeEntityRepository.GetFolderHeadersAsync(childNodePaths, cancellationToken);
+        var actualHashes = await fileExplorerNodeRepository.GetFolderHeadersAsync(childNodePaths, cancellationToken);
         var expectedFolderHeaders =
             childNodes.Select(async cnp => new FolderHeader
             {

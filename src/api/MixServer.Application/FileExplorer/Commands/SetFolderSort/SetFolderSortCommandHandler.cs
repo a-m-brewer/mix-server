@@ -26,24 +26,19 @@ public class SetFolderSortCommandHandler(
         
         var nodePath = nodePathDtoConverter.Convert(request.NodePath);
 
-        var previousFolder = await fileService.GetFolderAsync(nodePath, cancellationToken);
-
-        await fileService.SetFolderSortAsync(new FolderSortRequest
+        var folder = await fileService.SetFolderSortAsync(new FolderSortRequest
         {
             Path = nodePath,
             Descending = request.Descending,
             SortMode = request.SortMode
         }, cancellationToken);
 
-        var nextFolder = await fileService.GetFolderAsync(nodePath, cancellationToken);
-
-        unitOfWork.InvokeCallbackOnSaved(cb => cb.FolderSorted(currentUserRepository.CurrentUserId, nextFolder));
+        unitOfWork.InvokeCallbackOnSaved(cb => cb.FolderSorted(currentUserRepository.CurrentUserId, folder));
         
         // The folder being sorted is the queues current folder
         var queueFolder = await queueService.GetCurrentQueueFolderPathAsync(cancellationToken);
         
-        if (nextFolder.Node.Path.IsEqualTo(queueFolder) &&
-            !previousFolder.Sort.Equals(nextFolder.Sort))
+        if (folder.Node.Path.IsEqualTo(queueFolder))
         {
             await queueService.ResortQueueAsync(cancellationToken);
         }

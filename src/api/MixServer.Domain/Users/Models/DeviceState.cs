@@ -13,7 +13,7 @@ public interface IDeviceState
     bool Online { get;}
 
     ConcurrentDictionary<string, bool> Capabilities { get; }
-    bool CanPlay(IFileExplorerFileNode? sessionFile);
+    bool GetMimeTypeSupported(string? mimeType);
 }
 
 public class DeviceState(Guid deviceId) : IDeviceState
@@ -30,14 +30,14 @@ public class DeviceState(Guid deviceId) : IDeviceState
     
     public ConcurrentDictionary<string, bool> Capabilities { get; } = new();
 
-    public bool CanPlay(IFileExplorerFileNode? sessionFile)
+    public bool GetMimeTypeSupported(string? mimeType)
     {
-        if (sessionFile is null)
+        if (string.IsNullOrWhiteSpace(mimeType))
         {
             return false;
         }
         
-        return Capabilities.TryGetValue(sessionFile.Metadata.MimeType, out var supported) && supported;
+        return Capabilities.TryGetValue(mimeType, out var supported) && supported;
     }
 
     public void SetOnline(bool online)

@@ -3,6 +3,8 @@ using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Repositories;
+using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Domain.FileExplorer.Services.Caching;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Sessions.Accessors;
@@ -20,7 +22,7 @@ public class RequestPlaybackCommandHandler(
     IConnectionManager connectionManager,
     ICurrentDeviceRepository currentDeviceRepository,
     IDeviceTrackingService deviceTrackingService,
-    IFolderCacheService folderCacheService,
+    IFileExplorerNodeRepository fileExplorerNodeRepository,
     ILogger<RequestPlaybackCommandHandler> logger,
     IPlaybackTrackingAccessor playbackTrackingAccessor)
     : ICommandHandler<RequestPlaybackCommand, PlaybackGrantedDto>
@@ -38,9 +40,12 @@ public class RequestPlaybackCommandHandler(
             throw new InvalidRequestException(nameof(playbackState.NodePath), "Playback file state is not set");
         }
 
-        var file = await folderCacheService.GetFileAsync(playbackState.NodePath);
+        var file = await fileExplorerNodeRepository.GetFileNodeAsync(playbackState.NodePath, new GetFileQueryOptions
+        {
+            IncludeMetadata = true
+        }, cancellationToken);
 
-        canPlayOnDeviceValidator.ValidateCanPlayOrThrow(deviceState, file);
+        canPlayOnDeviceValidator.ValidateCanPlayOrThrow(deviceState, playbackState.NodePath, file.Metadata?.MimeType);
 
         if (!playbackState.HasDevice)
         {
