@@ -59,6 +59,10 @@ builder.Services
 builder.Services.AddProblemDetails(setup =>
 {
     setup.IncludeExceptionDetails = (_, _) => false;
+    
+    setup.Rethrow<OperationCanceledException>();
+    setup.ShouldLogUnhandledException += (_, exception, _) => exception is not OperationCanceledException;
+    
     setup.Map<ValidationException>(exception =>
     {
         var errors = exception.Errors

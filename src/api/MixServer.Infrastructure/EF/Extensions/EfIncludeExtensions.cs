@@ -20,6 +20,10 @@ public static class EfIncludeExtensions
         Expression<Func<T, FileExplorerFileNodeEntity?>> navigationPropertyPath,
         GetFileQueryOptions options) where T : class
     {
+        query = query
+            .Include(navigationPropertyPath)
+            .ThenInclude(t => t!.RootChild);
+        
         if (options.IncludeMetadata)
         {
             query = query

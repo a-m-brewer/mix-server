@@ -102,9 +102,9 @@ export class FileExplorerNodeRepositoryService {
   }
 
   private loadDirectory(root: string, relativePath: string): void {
-    this._nodeCache.loadDirectory(new NodePathHeader(root, relativePath))
+    this._nodeCache.loadDirectoriesForConsumer("file-explorer", [new NodePathHeader(root, relativePath)])
       .then(loadedPath => {
-        this._currentFolderPath$.next(loadedPath);
+        this._currentFolderPath$.next(loadedPath[0]);
       })
   }
 

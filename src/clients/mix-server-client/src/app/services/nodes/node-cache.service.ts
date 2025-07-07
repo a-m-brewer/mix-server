@@ -25,6 +25,8 @@ import {NodePathConverterService} from "../converters/node-path-converter.servic
 })
 export class NodeCacheService {
   private _folders$ = new BehaviorSubject<{ [nodeKey: string]: FileExplorerFolder }>({});
+  private _consumerFolders = new Map<string, Set<string>>();
+  private _folderConsumers = new Map<string, Set<string>>();
 
   constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
               private _folderSignalRClient: FolderSignalrClientService,
@@ -183,11 +185,46 @@ export class NodeCacheService {
       }));
   }
 
-  public async loadDirectory(path: NodePathHeader): Promise<NodePathHeader> {
-    if (this._folders$.value[path.key]) {
-      return path;
+  public async loadDirectoriesForConsumer(consumerId: string, requiredNodes: NodePathHeader[]): Promise<NodePathHeader[]> {
+    const prev = this._consumerFolders.get(consumerId) ?? new Set<string>();
+
+    const loadedNodes: NodePathHeader[] = [];
+
+    for (const nodeHeader of requiredNodes) {
+      const consumers = this._folderConsumers.get(nodeHeader.key) ?? new Set();
+      consumers.add(consumerId);
+      this._folderConsumers.set(nodeHeader.key, consumers);
+
+      if (this._folders$.value[nodeHeader.key]) {
+        loadedNodes.push(nodeHeader);
+      } else {
+        loadedNodes.push(await this.loadDirectoryByKey(nodeHeader));
+      }
     }
 
+    const next = new Set(requiredNodes.map(n => n.key));
+
+    for (const key of prev) {
+      if (!next.has(key)) {
+        const consumers = this._folderConsumers.get(key)!;
+        consumers.delete(consumerId);
+        if (consumers.size === 0) {
+          const nf = { ...this._folders$.value };
+          delete nf[key];
+          this._folders$.next(nf);
+          this._folderConsumers.delete(key);
+        } else {
+          this._folderConsumers.set(key, consumers);
+        }
+      }
+    }
+
+    this._consumerFolders.set(consumerId, next);
+
+    return loadedNodes;
+  }
+
+  private async loadDirectoryByKey(path: NodePathHeader): Promise<NodePathHeader> {
     const loadingKey = path.key === "" ? "root" : path.key;
 
     if (this._loadingRepository.isLoading(loadingKey)) {
@@ -197,15 +234,14 @@ export class NodeCacheService {
     const result = await this._nodeClient.request(loadingKey,
       client => client.getNode(path.rootPath, path.relativePath), 'Error loading directory');
 
-    if (result.result) {
-      const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(result.result);
-
-      this.updateFolder(folder);
-
-      return folder.node.path;
+    if (!result.result) {
+      return new NodePathHeader("", "");
     }
 
-    return new NodePathHeader("", "");
+    const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(result.result);
+    this.updateFolder(folder);
+
+    return folder.node.path;
   }
 
   public refreshFolder(nodePath: NodePathHeader): void {

@@ -129,9 +129,7 @@ export class QueueRepositoryService {
 
   public setNextQueue(queue: Queue) {
     const folders = [...new Set(queue.items.map(item => item.file.parent.path))];
-    folders.forEach(folder => {
-      void this._nodeCache.loadDirectory(folder)
-    })
+    this._nodeCache.loadDirectoriesForConsumer("queue", folders).then();
 
     this._queueBehaviourSubject$.value.destroy();
 
