@@ -11,6 +11,7 @@ export interface IPlaybackSession {
   currentNode$: Observable<FileExplorerFileNode>
   deviceId: string | null | undefined,
   streamKey: StreamKeyDto,
+  tracklist: FormGroup<TracklistForm>
 }
 
 export class PlaybackSession implements IPlaybackSession {
@@ -20,7 +21,8 @@ export class PlaybackSession implements IPlaybackSession {
               initialNode: FileExplorerFileNode,
               public currentNode$: Observable<FileExplorerFileNode>,
               public state: PlaybackState,
-              public streamKey: StreamKeyDto) {
+              public streamKey: StreamKeyDto,
+              public tracklist: FormGroup<TracklistForm>) {
     this.currentNode = initialNode;
     currentNode$.pipe(takeUntil(this._unsubscribe$)).subscribe(node => {
       this.currentNode = node;
@@ -44,7 +46,8 @@ export class PlaybackSession implements IPlaybackSession {
       new StreamKeyDto({
         key: session.streamKey.key,
         expires: session.streamKey.expires
-      }));
+      }),
+      session.tracklist);
   }
 
   public get deviceId(): string | null | undefined {

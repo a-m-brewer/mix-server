@@ -1,17 +1,30 @@
-﻿using MixServer.Domain.Tracklists.Dtos.Import;
+﻿using MixServer.Domain.FileExplorer.Entities;
+using MixServer.Domain.Tracklists.Converters;
+using MixServer.Domain.Tracklists.Dtos.Import;
+using MixServer.Domain.Tracklists.Entities;
+using MixServer.Domain.Tracklists.Repositories;
 
 namespace MixServer.Domain.Tracklists.Services;
 
 public interface ITracklistPersistenceService
 {
-    Task AddOrUpdateTracklistAsync(ImportTracklistDto tracklist, CancellationToken cancellationToken = default);
+    Task AddOrUpdateTracklistAsync(FileExplorerFileNodeEntity file, ImportTracklistDto updatedTracklist, CancellationToken cancellationToken = default);
 }
 
-public class TracklistPersistenceService : ITracklistPersistenceService
+public class TracklistPersistenceService(ITracklistConverter tracklistConverter,
+    ITracklistRepository tracklistRepository) : ITracklistPersistenceService
 {
-    public Task AddOrUpdateTracklistAsync(ImportTracklistDto tracklist, CancellationToken cancellationToken = default)
+    public async Task AddOrUpdateTracklistAsync(FileExplorerFileNodeEntity file, ImportTracklistDto updatedTracklist, CancellationToken cancellationToken = default)
     {
-        // TODO: Implement the logic to add or update the tracklist in the database or storage.
-        return Task.CompletedTask;
+        // Create new tracklist
+        if (file.Tracklist is null || file.Tracklist.Cues.Count == 0)
+        {
+            var tracklist = tracklistConverter.Convert(updatedTracklist, file);
+            await tracklistRepository.AddAsync(tracklist, cancellationToken);
+            file.Tracklist = tracklist;
+            return;
+        }
+
+        throw new NotImplementedException();
     }
 }

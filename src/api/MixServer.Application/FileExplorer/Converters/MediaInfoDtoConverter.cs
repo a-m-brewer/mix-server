@@ -21,7 +21,6 @@ public class MediaInfoDtoConverter(INodePathDtoConverter nodePathDtoConverter,
             Bitrate = value.Bitrate,
             Duration = FormatTimespan(value.Duration),
             NodePath = nodePathDtoConverter.ConvertToResponse(value.Path),
-            Tracklist = value.Tracklist
         };
     }
     
@@ -36,8 +35,7 @@ public class MediaInfoDtoConverter(INodePathDtoConverter nodePathDtoConverter,
         {
             NodePath = nodePathDtoConverter.ConvertToResponse(mediaMetadata.Node.Path),
             Bitrate = mediaMetadata.Bitrate,
-            Duration = FormatTimespan(mediaMetadata.Duration),
-            Tracklist = tracklistDtoConverter.Convert(mediaMetadata.Node.Tracklist)
+            Duration = FormatTimespan(mediaMetadata.Duration)
         };
     }
     

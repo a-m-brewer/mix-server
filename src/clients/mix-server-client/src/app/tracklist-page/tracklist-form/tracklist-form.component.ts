@@ -57,7 +57,7 @@ export class TracklistFormComponent implements OnInit, OnDestroy {
           return;
         }
 
-        this.tracklistForm = session.currentNode.metadata.mediaInfo.tracklist
+        this.tracklistForm = session.tracklist
       });
 
     this._audioPlayerService.currentCueIndex$

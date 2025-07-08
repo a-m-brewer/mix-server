@@ -211,8 +211,8 @@ export class AudioPlayerService {
       .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
       .pipe(map(([currentTime, session]) => {
         if (session?.currentNode.metadata.mediaInfo) {
-          for (let i = session.currentNode.metadata.mediaInfo.tracklist.controls.cues.controls.length - 1; i >= 0; i--) {
-            const cue = session.currentNode.metadata.mediaInfo.tracklist.controls.cues.controls[i].value.cue;
+          for (let i = session.tracklist.controls.cues.controls.length - 1; i >= 0; i--) {
+            const cue = session.tracklist.controls.cues.controls[i].value.cue;
             if (!cue) {
               continue;
             }
@@ -233,8 +233,8 @@ export class AudioPlayerService {
     return this.currentCueIndex$
       .pipe(combineLatestWith(this._playbackSessionRepository.currentSession$))
       .pipe(map(([cueIndex, session]) => {
-        if (session?.currentNode.metadata.mediaInfo) {
-          return session.currentNode.metadata.mediaInfo.tracklist.controls.cues.controls[cueIndex]?.value;
+        if (session) {
+          return session.tracklist.controls.cues.controls[cueIndex]?.value;
         }
 
         return null;

@@ -32,8 +32,8 @@ export class TracklistToolbarComponent implements OnInit, OnDestroy {
     this._sessionRepository.currentSessionTracklistChanged$
       .pipe(takeUntil(this._unsubscribe))
       .subscribe(session => {
-        if (session?.currentNode && session.currentNode.metadata.mediaInfo) {
-          this.form = session.currentNode.metadata.mediaInfo.tracklist;
+        if (session) {
+          this.form = session.tracklist;
         } else {
           this.form = undefined;
         }

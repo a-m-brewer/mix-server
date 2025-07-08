@@ -31,7 +31,7 @@ export class SessionComponent implements OnInit, OnDestroy {
       .subscribe(s => {
         this.fileName = s?.currentNode.path.fileName ?? '';
         const parentDisabled = s?.currentNode.parent?.disabled ?? true;
-        this.tracklistDisabled = parentDisabled || !(!!s?.currentNode.metadata.mediaInfo?.tracklist);
+        this.tracklistDisabled = parentDisabled || !(!!s?.tracklist);
       });
   }
 

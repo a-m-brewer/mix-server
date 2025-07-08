@@ -85,8 +85,8 @@ export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
         this._currentTime = currentTime;
         this.duration = duration;
 
-        const cues = session?.currentNode.metadata.mediaInfo
-          ? session.currentNode.metadata.mediaInfo.tracklist.value.cues
+        const cues = session
+          ? session.tracklist.value.cues
           : null;
         if (cues) {
           const markers: SliderMarker[] = cues.map(cue => ({

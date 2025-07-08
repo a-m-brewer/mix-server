@@ -256,7 +256,7 @@ export class DeviceClient implements IDeviceClient {
 }
 
 export interface INodeClient {
-    getNode(rootPath?: string | undefined, relativePath?: string | undefined): Observable<FileExplorerFolderResponse>;
+    getNode(rootPath?: string | null | undefined, relativePath?: string | null | undefined): Observable<FileExplorerFolderResponse>;
     refreshFolder(command: RefreshFolderCommand): Observable<FileExplorerFolderResponse>;
     setFolderSortMode(command: SetFolderSortCommand): Observable<void>;
 }
@@ -274,15 +274,11 @@ export class NodeClient implements INodeClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getNode(rootPath?: string | undefined, relativePath?: string | undefined): Observable<FileExplorerFolderResponse> {
+    getNode(rootPath?: string | null | undefined, relativePath?: string | null | undefined): Observable<FileExplorerFolderResponse> {
         let url_ = this.baseUrl + "/api/node?";
-        if (rootPath === null)
-            throw new Error("The parameter 'rootPath' cannot be null.");
-        else if (rootPath !== undefined)
+        if (rootPath !== undefined && rootPath !== null)
             url_ += "RootPath=" + encodeURIComponent("" + rootPath) + "&";
-        if (relativePath === null)
-            throw new Error("The parameter 'relativePath' cannot be null.");
-        else if (relativePath !== undefined)
+        if (relativePath !== undefined && relativePath !== null)
             url_ += "RelativePath=" + encodeURIComponent("" + relativePath) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -3043,8 +3039,8 @@ export interface IFileExplorerFolderNodeResponse extends IFileExplorerNodeRespon
 }
 
 export class NodePathRequestDto implements INodePathRequestDto {
-    rootPath!: string;
-    relativePath!: string;
+    rootPath?: string | undefined;
+    relativePath?: string | undefined;
 
     constructor(data?: INodePathRequestDto) {
         if (data) {
@@ -3078,8 +3074,8 @@ export class NodePathRequestDto implements INodePathRequestDto {
 }
 
 export interface INodePathRequestDto {
-    rootPath: string;
-    relativePath: string;
+    rootPath?: string | undefined;
+    relativePath?: string | undefined;
 }
 
 export class NodePathDto extends NodePathRequestDto implements INodePathDto {
@@ -3274,7 +3270,6 @@ export class MediaInfoDto implements IMediaInfoDto {
     nodePath!: NodePathDto;
     bitrate!: number;
     duration!: string;
-    tracklist!: ImportTracklistDto;
 
     constructor(data?: IMediaInfoDto) {
         if (data) {
@@ -3285,7 +3280,6 @@ export class MediaInfoDto implements IMediaInfoDto {
         }
         if (!data) {
             this.nodePath = new NodePathDto();
-            this.tracklist = new ImportTracklistDto();
         }
     }
 
@@ -3294,7 +3288,6 @@ export class MediaInfoDto implements IMediaInfoDto {
             this.nodePath = _data["nodePath"] ? NodePathDto.fromJS(_data["nodePath"]) : new NodePathDto();
             this.bitrate = _data["bitrate"];
             this.duration = _data["duration"];
-            this.tracklist = _data["tracklist"] ? ImportTracklistDto.fromJS(_data["tracklist"]) : new ImportTracklistDto();
         }
     }
 
@@ -3310,7 +3303,6 @@ export class MediaInfoDto implements IMediaInfoDto {
         data["nodePath"] = this.nodePath ? this.nodePath.toJSON() : <any>undefined;
         data["bitrate"] = this.bitrate;
         data["duration"] = this.duration;
-        data["tracklist"] = this.tracklist ? this.tracklist.toJSON() : <any>undefined;
         return data;
     }
 }
@@ -3319,227 +3311,6 @@ export interface IMediaInfoDto {
     nodePath: NodePathDto;
     bitrate: number;
     duration: string;
-    tracklist: ImportTracklistDto;
-}
-
-export class ImportTracklistDto implements IImportTracklistDto {
-    cues!: ImportCueDto[];
-
-    constructor(data?: IImportTracklistDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.cues = [];
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            if (Array.isArray(_data["cues"])) {
-                this.cues = [] as any;
-                for (let item of _data["cues"])
-                    this.cues!.push(ImportCueDto.fromJS(item));
-            }
-        }
-    }
-
-    static fromJS(data: any): ImportTracklistDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new ImportTracklistDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        if (Array.isArray(this.cues)) {
-            data["cues"] = [];
-            for (let item of this.cues)
-                data["cues"].push(item.toJSON());
-        }
-        return data;
-    }
-}
-
-export interface IImportTracklistDto {
-    cues: ImportCueDto[];
-}
-
-export class ImportCueDto implements IImportCueDto {
-    cue!: string;
-    tracks!: ImportTrackDto[];
-
-    constructor(data?: IImportCueDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.tracks = [];
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.cue = _data["cue"];
-            if (Array.isArray(_data["tracks"])) {
-                this.tracks = [] as any;
-                for (let item of _data["tracks"])
-                    this.tracks!.push(ImportTrackDto.fromJS(item));
-            }
-        }
-    }
-
-    static fromJS(data: any): ImportCueDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new ImportCueDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["cue"] = this.cue;
-        if (Array.isArray(this.tracks)) {
-            data["tracks"] = [];
-            for (let item of this.tracks)
-                data["tracks"].push(item.toJSON());
-        }
-        return data;
-    }
-}
-
-export interface IImportCueDto {
-    cue: string;
-    tracks: ImportTrackDto[];
-}
-
-export class ImportTrackDto implements IImportTrackDto {
-    name!: string;
-    artist!: string;
-    players!: ImportPlayerDto[];
-
-    constructor(data?: IImportTrackDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.players = [];
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["name"];
-            this.artist = _data["artist"];
-            if (Array.isArray(_data["players"])) {
-                this.players = [] as any;
-                for (let item of _data["players"])
-                    this.players!.push(ImportPlayerDto.fromJS(item));
-            }
-        }
-    }
-
-    static fromJS(data: any): ImportTrackDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new ImportTrackDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["name"] = this.name;
-        data["artist"] = this.artist;
-        if (Array.isArray(this.players)) {
-            data["players"] = [];
-            for (let item of this.players)
-                data["players"].push(item.toJSON());
-        }
-        return data;
-    }
-}
-
-export interface IImportTrackDto {
-    name: string;
-    artist: string;
-    players: ImportPlayerDto[];
-}
-
-export class ImportPlayerDto implements IImportPlayerDto {
-    type!: TracklistPlayerType;
-    urls!: string[];
-
-    constructor(data?: IImportPlayerDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.urls = [];
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.type = _data["type"];
-            if (Array.isArray(_data["urls"])) {
-                this.urls = [] as any;
-                for (let item of _data["urls"])
-                    this.urls!.push(item);
-            }
-        }
-    }
-
-    static fromJS(data: any): ImportPlayerDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new ImportPlayerDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["type"] = this.type;
-        if (Array.isArray(this.urls)) {
-            data["urls"] = [];
-            for (let item of this.urls)
-                data["urls"].push(item);
-        }
-        return data;
-    }
-}
-
-export interface IImportPlayerDto {
-    type: TracklistPlayerType;
-    urls: string[];
-}
-
-export enum TracklistPlayerType {
-    Unknown = "Unknown",
-    Beatport = "Beatport",
-    Apple = "Apple",
-    Deezer = "Deezer",
-    Traxsource = "Traxsource",
-    Bandcamp = "Bandcamp",
-    Volumo = "Volumo",
-    Soundcloud = "Soundcloud",
-    Youtube = "Youtube",
-    Mixcloud = "Mixcloud",
-    Spotify = "Spotify",
-    Hearthis = "Hearthis",
-    Affiliate = "Affiliate",
 }
 
 export enum TranscodeState {
@@ -4165,6 +3936,7 @@ export class PlaybackSessionDto implements IPlaybackSessionDto {
     currentTime!: number;
     deviceId?: string | undefined;
     autoPlay!: boolean;
+    tracklist!: ImportTracklistDto;
 
     constructor(data?: IPlaybackSessionDto) {
         if (data) {
@@ -4176,6 +3948,7 @@ export class PlaybackSessionDto implements IPlaybackSessionDto {
         if (!data) {
             this.file = new FileExplorerFileNodeResponse();
             this.streamKey = new StreamKeyDto();
+            this.tracklist = new ImportTracklistDto();
         }
     }
 
@@ -4190,6 +3963,7 @@ export class PlaybackSessionDto implements IPlaybackSessionDto {
             this.currentTime = _data["currentTime"];
             this.deviceId = _data["deviceId"];
             this.autoPlay = _data["autoPlay"];
+            this.tracklist = _data["tracklist"] ? ImportTracklistDto.fromJS(_data["tracklist"]) : new ImportTracklistDto();
         }
     }
 
@@ -4211,6 +3985,7 @@ export class PlaybackSessionDto implements IPlaybackSessionDto {
         data["currentTime"] = this.currentTime;
         data["deviceId"] = this.deviceId;
         data["autoPlay"] = this.autoPlay;
+        data["tracklist"] = this.tracklist ? this.tracklist.toJSON() : <any>undefined;
         return data;
     }
 }
@@ -4225,6 +4000,7 @@ export interface IPlaybackSessionDto {
     currentTime: number;
     deviceId?: string | undefined;
     autoPlay: boolean;
+    tracklist: ImportTracklistDto;
 }
 
 export class StreamKeyDto implements IStreamKeyDto {
@@ -4265,6 +4041,226 @@ export class StreamKeyDto implements IStreamKeyDto {
 export interface IStreamKeyDto {
     key: string;
     expires: number;
+}
+
+export class ImportTracklistDto implements IImportTracklistDto {
+    cues!: ImportCueDto[];
+
+    constructor(data?: IImportTracklistDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.cues = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["cues"])) {
+                this.cues = [] as any;
+                for (let item of _data["cues"])
+                    this.cues!.push(ImportCueDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): ImportTracklistDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportTracklistDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.cues)) {
+            data["cues"] = [];
+            for (let item of this.cues)
+                data["cues"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IImportTracklistDto {
+    cues: ImportCueDto[];
+}
+
+export class ImportCueDto implements IImportCueDto {
+    cue!: string;
+    tracks!: ImportTrackDto[];
+
+    constructor(data?: IImportCueDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.tracks = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.cue = _data["cue"];
+            if (Array.isArray(_data["tracks"])) {
+                this.tracks = [] as any;
+                for (let item of _data["tracks"])
+                    this.tracks!.push(ImportTrackDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): ImportCueDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportCueDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["cue"] = this.cue;
+        if (Array.isArray(this.tracks)) {
+            data["tracks"] = [];
+            for (let item of this.tracks)
+                data["tracks"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IImportCueDto {
+    cue: string;
+    tracks: ImportTrackDto[];
+}
+
+export class ImportTrackDto implements IImportTrackDto {
+    name!: string;
+    artist!: string;
+    players!: ImportPlayerDto[];
+
+    constructor(data?: IImportTrackDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.players = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.artist = _data["artist"];
+            if (Array.isArray(_data["players"])) {
+                this.players = [] as any;
+                for (let item of _data["players"])
+                    this.players!.push(ImportPlayerDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): ImportTrackDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportTrackDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["artist"] = this.artist;
+        if (Array.isArray(this.players)) {
+            data["players"] = [];
+            for (let item of this.players)
+                data["players"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IImportTrackDto {
+    name: string;
+    artist: string;
+    players: ImportPlayerDto[];
+}
+
+export class ImportPlayerDto implements IImportPlayerDto {
+    type!: TracklistPlayerType;
+    urls!: string[];
+
+    constructor(data?: IImportPlayerDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.urls = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.type = _data["type"];
+            if (Array.isArray(_data["urls"])) {
+                this.urls = [] as any;
+                for (let item of _data["urls"])
+                    this.urls!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): ImportPlayerDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ImportPlayerDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["type"] = this.type;
+        if (Array.isArray(this.urls)) {
+            data["urls"] = [];
+            for (let item of this.urls)
+                data["urls"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IImportPlayerDto {
+    type: TracklistPlayerType;
+    urls: string[];
+}
+
+export enum TracklistPlayerType {
+    Unknown = "Unknown",
+    Beatport = "Beatport",
+    Apple = "Apple",
+    Deezer = "Deezer",
+    Traxsource = "Traxsource",
+    Bandcamp = "Bandcamp",
+    Volumo = "Volumo",
+    Soundcloud = "Soundcloud",
+    Youtube = "Youtube",
+    Mixcloud = "Mixcloud",
+    Spotify = "Spotify",
+    Hearthis = "Hearthis",
+    Affiliate = "Affiliate",
 }
 
 export class SetQueuePositionCommand implements ISetQueuePositionCommand {

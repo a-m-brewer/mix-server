@@ -8,9 +8,6 @@ import {MediaInfo} from "../../main-content/file-explorer/models/media-info";
   providedIn: 'root'
 })
 export class FileMetadataConverterService {
-
-  constructor(private _tracklistConverter: TracklistConverterService) { }
-
   public fromResponse(dto: FileMetadataResponse): FileMetadata {
     return new FileMetadata(
       dto.mimeType,
@@ -23,8 +20,7 @@ export class FileMetadataConverterService {
   public fromMediaInfoDto(dto: MediaInfoDto): MediaInfo {
     return new MediaInfo(
       dto.duration,
-      dto.bitrate,
-      this._tracklistConverter.createTracklistForm(dto.tracklist)
+      dto.bitrate
     )
   }
 }

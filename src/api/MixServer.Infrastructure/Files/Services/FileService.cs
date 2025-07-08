@@ -27,8 +27,11 @@ public class FileService(
             return folder;
         }
 
-        await currentUserRepository.LoadFileSortByAbsolutePathAsync(nodePath, cancellationToken);
-        folder.Sort = (await currentUserRepository.GetCurrentUserAsync()).GetSortOrDefault(nodePath);
+        if (currentUserRepository.HasUserId)
+        {
+            await currentUserRepository.LoadFileSortByAbsolutePathAsync(nodePath, cancellationToken);
+            folder.Sort = (await currentUserRepository.GetCurrentUserAsync()).GetSortOrDefault(nodePath);
+        }
     
         return folder;
     }
@@ -71,7 +74,7 @@ public class FileService(
 
     public async Task<(IFileExplorerFolder Parent, IFileExplorerFileNode File)> GetFileAndFolderAsync(NodePath nodePath, CancellationToken cancellationToken)
     {
-        var folder = await GetFolderOrRootAsync(nodePath, cancellationToken);
+        var folder = await GetFolderOrRootAsync(nodePath.Parent, cancellationToken);
         
         var file = folder
                        .Children

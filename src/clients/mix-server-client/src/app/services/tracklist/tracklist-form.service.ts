@@ -27,8 +27,8 @@ export class TracklistFormService {
 
 
   public async saveTracklist(): Promise<void> {
-    const currentTracklist = !!this._sessionRepository.currentSession?.currentNode?.metadata.mediaInfo
-      ? this._sessionRepository.currentSession.currentNode.metadata.mediaInfo.tracklist
+    const currentTracklist = !!this._sessionRepository.currentSession
+      ? this._sessionRepository.currentSession?.tracklist
       : undefined;
     if (!currentTracklist) {
       return;

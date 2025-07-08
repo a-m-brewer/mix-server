@@ -22,7 +22,9 @@ public static class EfIncludeExtensions
     {
         query = query
             .Include(navigationPropertyPath)
-            .ThenInclude(t => t!.RootChild);
+            .ThenInclude(t => t!.RootChild)
+            .Include(navigationPropertyPath)
+            .ThenInclude(t => t!.Parent);
         
         if (options.IncludeMetadata)
         {
@@ -36,6 +38,16 @@ public static class EfIncludeExtensions
             query = query
                 .Include(navigationPropertyPath)
                 .ThenInclude(t => t!.Transcode);
+        }
+        
+        if (options.IncludeTracklist)
+        {
+            query = query
+                .Include(navigationPropertyPath)
+                .ThenInclude(t => t!.Tracklist)
+                .ThenInclude(t => t!.Cues)
+                .ThenInclude(t => t.Tracks)
+                .ThenInclude(t => t.Players);
         }
 
         return query;

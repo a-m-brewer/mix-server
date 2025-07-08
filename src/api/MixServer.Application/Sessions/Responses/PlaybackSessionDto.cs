@@ -1,4 +1,5 @@
 ﻿using MixServer.Application.FileExplorer.Queries.GetNode;
+using MixServer.Domain.Tracklists.Dtos.Import;
 
 namespace MixServer.Application.Sessions.Responses;
 
@@ -21,4 +22,6 @@ public class PlaybackSessionDto
     public Guid? DeviceId { get; set; }
 
     public bool AutoPlay { get; set; }
+
+    public ImportTracklistDto Tracklist { get; set; } = new();
 }

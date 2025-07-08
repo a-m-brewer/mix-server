@@ -13,6 +13,7 @@ import {NodeCacheService} from "../nodes/node-cache.service";
 export class PlaybackSessionConverterService {
 
   constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
+              private _tracklistConverter: TracklistConverterService,
               private _nodeCache: NodeCacheService) { }
 
   public fromDto(dto: PlaybackSessionDto): PlaybackSession {
@@ -22,7 +23,8 @@ export class PlaybackSessionConverterService {
       initialNode,
       this._nodeCache.getFileByNode$(initialNode),
       this.stateFromSessionDto(dto),
-      dto.streamKey);
+      dto.streamKey,
+      this._tracklistConverter.createTracklistForm(dto.tracklist));
   }
 
   public stateFromSessionDto(dto: PlaybackSessionDto): PlaybackState {

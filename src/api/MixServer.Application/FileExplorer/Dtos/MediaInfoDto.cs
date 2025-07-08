@@ -9,6 +9,4 @@ public class MediaInfoDto
     public required int Bitrate { get; init; }
     
     public required string Duration { get; init; }
-    
-    public required ImportTracklistDto Tracklist { get; init; }
 }

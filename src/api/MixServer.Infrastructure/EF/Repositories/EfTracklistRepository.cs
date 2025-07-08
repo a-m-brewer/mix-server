@@ -23,4 +23,7 @@ public class EfTracklistRepository(MixServerDbContext context) : ITracklistRepos
         
         await context.Tracklists.AddRangeAsync(tracklists, cancellationToken);
     }
+
+    public Task AddAsync(TracklistEntity tracklist, CancellationToken cancellationToken) =>
+        AddRangeAsync([tracklist], cancellationToken);
 }

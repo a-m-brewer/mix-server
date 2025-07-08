@@ -95,9 +95,11 @@ export class CurrentPlaybackSessionRepositoryService {
     }
 
     this._currentNodeSub = value?.currentNode$.subscribe(node => {
+      console.log('nodeSub', node);
       this._currentSessionNode$.next(node);
     })
 
+    console.log(value);
     this._currentSession$.next(value);
   }
 
@@ -194,14 +196,15 @@ export class CurrentPlaybackSessionRepositoryService {
     }
 
     const form = this._tracklistConverter.createTracklistForm(tracklist);
+    console.log(form, tracklist);
     if (dirty) {
       markAllAsDirty(form);
     }
 
     const nextSession = PlaybackSession.copy(previousSession, previousSession.state);
 
-    if (nextSession.currentNode.metadata.mediaInfo) {
-      nextSession.currentNode.metadata.mediaInfo.tracklist = form;
+    if (nextSession) {
+      nextSession.tracklist = form;
     }
 
     this.currentSession = nextSession;

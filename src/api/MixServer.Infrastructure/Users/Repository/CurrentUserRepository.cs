@@ -17,6 +17,7 @@ namespace MixServer.Infrastructure.Users.Repository;
 public interface ICurrentUserRepository
 {
     string CurrentUserId { get; }
+    bool HasUserId { get; }
     void SetUserId(string userId);
     Task<DbUser> GetCurrentUserAsync();
     Task LoadCurrentPlaybackSessionAsync(CancellationToken cancellationToken);
@@ -62,6 +63,8 @@ public class CurrentUserRepository : ICurrentUserRepository
             return internalUserId;
         }
     }
+
+    public bool HasUserId => !string.IsNullOrWhiteSpace(InternalUserId);
 
     public void SetUserId(string userId)
     {

@@ -5,6 +5,7 @@ using MixServer.Application.Sessions.Responses;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
+using MixServer.Domain.Tracklists.Converters;
 
 namespace MixServer.Application.Sessions.Converters;
 
@@ -18,12 +19,15 @@ public interface IPlaybackSessionDtoConverter
 
 public class PlaybackSessionDtoConverter(
     IFileExplorerEntityToResponseConverter fileNodeConverter,
-    IConverter<QueueSnapshot, QueueSnapshotDto> queueSnapshotDtoConverter)
+    IConverter<QueueSnapshot, QueueSnapshotDto> queueSnapshotDtoConverter,
+    ITracklistDtoConverter tracklistDtoConverter)
     : IPlaybackSessionDtoConverter
         
 {
     public PlaybackSessionDto Convert(IPlaybackSession value, bool value2)
     {
+        var tracklist = tracklistDtoConverter.Convert(value.NodeEntity.Tracklist);
+        
         return new PlaybackSessionDto
         {
             Id = value.Id,
@@ -37,7 +41,8 @@ public class PlaybackSessionDtoConverter(
             AutoPlay = value2,
             Playing = value.Playing,
             CurrentTime = value.CurrentTime.TotalSeconds,
-            DeviceId = value.DeviceId
+            DeviceId = value.DeviceId,
+            Tracklist = tracklist
         };
     }
 

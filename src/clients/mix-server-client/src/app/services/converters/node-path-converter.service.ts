@@ -11,8 +11,8 @@ export class NodePathConverterService {
 
   public fromDto(dto: NodePathDto): NodePath {
     return new NodePath(
-      dto.rootPath,
-      dto.relativePath,
+      dto.rootPath ?? '',
+      dto.relativePath ?? '',
       dto.fileName,
       dto.absolutePath,
       dto.extension,
@@ -24,8 +24,8 @@ export class NodePathConverterService {
 
   public fromHeaderDto(dto: NodePathHeaderDto): NodePathHeader {
     return new NodePathHeader(
-      dto.rootPath,
-      dto.relativePath
+      dto.rootPath ?? '',
+      dto.relativePath ?? ''
     );
   }
 
