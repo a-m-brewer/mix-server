@@ -81,7 +81,7 @@ export class AudioPlayerCapabilitiesService {
   private updateAudioCapabilities(mimeTypes: string[]) {
     const update: { [mimeType: string]: boolean } = {}
     mimeTypes.forEach(mimeType => {
-      update[mimeType] = this._audioElementRepository.audio.canPlayType(mimeType) !== '';
+      update[mimeType] = this._audioElementRepository.canPlayType(mimeType) !== '';
     });
 
     this._capabilitiesCache = {...this._capabilitiesCache, ...update};

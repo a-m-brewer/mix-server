@@ -57,8 +57,8 @@ export class CurrentPlaybackSessionRepositoryService {
           this._sessionClient.request('SyncPlaybackSession',
             client => client.syncPlaybackSession(new SyncPlaybackSessionCommand({
               playbackSessionId: currentSession?.id,
-              playing: audioElementRepository.audio.duration > 0 && !audioElementRepository.audio.paused,
-              currentTime: audioElementRepository.audio.currentTime
+              playing: audioElementRepository.duration > 0 && !audioElementRepository.paused,
+              currentTime: audioElementRepository.currentTime
             })), 'Failed to sync playback session', {
               validStatusCodes: [404]
             })

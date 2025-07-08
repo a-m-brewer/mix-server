@@ -33,7 +33,7 @@ export class AudioPlayerService {
 
   private _timeChangedBehaviourSubject$ = new BehaviorSubject<number>(0);
 
-  private _clientDurationBehaviourSubject$ = new BehaviorSubject<number>(this.getSanitizedClientDuration());
+  private _clientDurationBehaviourSubject$ = new BehaviorSubject<number>(this._audioElementRepository.sanitizedDuration);
   private _serverDurationBehaviourSubject$ = new BehaviorSubject<number>(0);
 
   private _streamUrl: string = '';
@@ -55,17 +55,20 @@ export class AudioPlayerService {
               private _sessionService: SessionService,
               private _streamUrlService: StreamUrlService,
               private _toastService: ToastService) {
-    this.audio.ontimeupdate = () => {
-      this.updateTimeChangedBehaviourSubject();
-    }
+    this._audioElementRepository.onTimeUpdate$
+      .subscribe(() => {
+        this.updateTimeChangedBehaviourSubject();
+      })
 
-    this.audio.onended = () => {
-      this.handleOnSessionEnded();
-    }
+    this._audioElementRepository.onEnded$
+      .subscribe(() => {
+        this.handleOnSessionEnded();
+      });
 
-    this.audio.ondurationchange = () => {
-      this._clientDurationBehaviourSubject$.next(this.getSanitizedClientDuration());
-    }
+    this._audioElementRepository.onDurationChange$
+      .subscribe(() => {
+        this._clientDurationBehaviourSubject$.next(this._audioElementRepository.sanitizedDuration);
+      });
 
     this._playbackSessionRepository
       .currentSession$
@@ -247,7 +250,7 @@ export class AudioPlayerService {
   }
 
   public get playing(): boolean {
-    return this._playbackGranted && this.audio.duration > 0 && !this.audio.paused
+    return this._playbackGranted && this._audioElementRepository.duration > 0 && !this._audioElementRepository.paused
   }
 
   public get currentTime(): number {
@@ -256,7 +259,7 @@ export class AudioPlayerService {
 
   public set currentTime(value: number) {
     this._timeChangedBehaviourSubject$.next(value);
-    this.audio.currentTime = value;
+    this._audioElementRepository.currentTime = value;
   }
 
   public get duration$(): Observable<number> {
@@ -270,19 +273,19 @@ export class AudioPlayerService {
   }
 
   public get volume(): number {
-    return this.audio.volume;
+    return this._audioElementRepository.volume;
   }
 
   public set volume(value: number) {
-    this.audio.volume = value;
+    this._audioElementRepository.volume = value;
   }
 
   public get muted(): boolean {
-    return this.audio.muted;
+    return this._audioElementRepository.muted;
   }
 
   public set muted(value: boolean) {
-    this.audio.muted = value;
+    this._audioElementRepository.muted = value;
   }
 
   public async requestPlaybackOnCurrentPlaybackDevice(): Promise<void> {
@@ -389,12 +392,8 @@ export class AudioPlayerService {
   }
 
   private internalPause(): void {
-    this.audio.pause();
+    this._audioElementRepository.pause();
     this.setPaused();
-  }
-
-  private get audio(): HTMLAudioElement {
-    return this._audioElementRepository.audio;
   }
 
   private setCurrentSession(session: PlaybackSession): void {
@@ -441,8 +440,8 @@ export class AudioPlayerService {
   }
 
   private clearSession(): void {
-    this.audio.src = '';
-    this.audio.load();
+    this._audioElementRepository.src = '';
+    this._audioElementRepository.load();
     this.updateTimeChangedBehaviourSubject();
     this._audioPlayerState.clear();
     this._serverDurationBehaviourSubject$.next(0);
@@ -466,7 +465,7 @@ export class AudioPlayerService {
   }
 
   private updateTimeChangedBehaviourSubject() {
-    this._timeChangedBehaviourSubject$.next(this.audio.currentTime);
+    this._timeChangedBehaviourSubject$.next(this._audioElementRepository.currentTime);
   }
 
   private handlePauseRequested(): void {
@@ -491,10 +490,6 @@ export class AudioPlayerService {
 
   private setDevicePlaying(playing: boolean) {
     this._playbackSessionRepository.setDevicePlaying(this.currentTime, playing);
-  }
-
-  private getSanitizedClientDuration(): number {
-    return !!this.audio && !isNaN(this.audio.duration) ? this.audio.duration : 0
   }
 
   private getDuration(serverDuration: number, clientDuration: number): number {

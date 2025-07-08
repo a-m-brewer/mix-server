@@ -48,7 +48,7 @@ export class FileExplorerNodeConverterService {
 
   public fromFileExplorerFileNode(dto: FileExplorerFileNodeResponse): FileExplorerFileNode {
     const metadata = this._fileMetadataConverter.fromResponse(dto.metadata);
-    const clientPlaybackSupported = this._audioElementRepository.audio.canPlayType(metadata.mimeType) !== '';
+    const clientPlaybackSupported = this._audioElementRepository.canPlayType(metadata.mimeType) !== '';
 
     return new FileExplorerFileNode(
       this._nodePathConverter.fromDto(dto.path),

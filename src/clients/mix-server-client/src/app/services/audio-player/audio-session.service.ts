@@ -21,9 +21,9 @@ export class AudioSessionService {
 
   public updatePositionState(): AudioSessionService {
     this.session.setPositionState({
-      duration: this.audio.duration,
-      playbackRate: this.audio.playbackRate,
-      position: this.audio.currentTime
+      duration: this._audioElementRepository.duration,
+      playbackRate: this._audioElementRepository.playbackRate,
+      position: this._audioElementRepository.currentTime
     });
 
     return this;
@@ -63,13 +63,8 @@ export class AudioSessionService {
     try {
       this.session.setActionHandler('seekto', (e) => {
         if (!e.seekTime) { return; }
-        if (e.fastSeek && ('fastSeek' in this.audio)) {
-          this.audio.fastSeek(e.seekTime);
-        }
-        else {
-          this.audio.currentTime = e.seekTime;
-          this.updatePositionState();
-        }
+        this._audioElementRepository.seek(e.seekTime, e.fastSeek);
+        this.updatePositionState();
       })
     } catch (e) {
       console.error('seekto not supported by browser');
@@ -97,9 +92,5 @@ export class AudioSessionService {
 
   private set metadata(metadata: MediaMetadata | null) {
     this.session.metadata = metadata;
-  }
-
-  private get audio(): HTMLAudioElement {
-    return this._audioElementRepository.audio;
   }
 }
