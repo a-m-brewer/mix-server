@@ -1,4 +1,5 @@
-﻿using MixServer.Domain.FileExplorer.Models;
+﻿using MixServer.Domain.FileExplorer.Entities;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
@@ -32,4 +33,5 @@ public interface ICallbackService
     Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, NodePath path);
     Task MediaInfoUpdated(IReadOnlyCollection<MediaInfo> mediaInfo);
     Task MediaInfoRemoved(IReadOnlyCollection<NodePath> removedItems);
+    Task TracklistUpdated(FileExplorerFileNodeEntity file);
 }

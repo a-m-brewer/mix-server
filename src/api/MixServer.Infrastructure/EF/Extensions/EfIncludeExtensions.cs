@@ -45,9 +45,9 @@ public static class EfIncludeExtensions
             query = query
                 .Include(navigationPropertyPath)
                 .ThenInclude(t => t!.Tracklist)
-                .ThenInclude(t => t!.Cues)
-                .ThenInclude(t => t.Tracks)
-                .ThenInclude(t => t.Players);
+                .ThenInclude(t => t!.Cues.OrderBy(o => o.Cue.ToString()))
+                .ThenInclude(t => t.Tracks.OrderBy(o => o.Name).ThenBy(tb => tb.Artist))
+                .ThenInclude(t => t.Players.OrderBy(b => b.Type));
         }
 
         return query;

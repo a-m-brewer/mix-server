@@ -4,7 +4,7 @@ import {HubConnection, HubConnectionState} from "@microsoft/signalr";
 import {
   CurrentSessionUpdatedEventDto, PlaybackGrantedDto,
   PlaybackStateDto,
-  SignalRUpdatePlaybackStateCommand
+  SignalRUpdatePlaybackStateCommand, TracklistUpdatedDto
 } from "../../generated-clients/mix-server-clients";
 import {Observable, Subject} from "rxjs";
 import {PlaybackSession} from "../repositories/models/playback-session";
@@ -12,6 +12,9 @@ import {PlaybackSessionConverterService} from "../converters/playback-session-co
 import {PlaybackState} from "../repositories/models/playback-state";
 import {SignalrClientBase} from "./signalr-client-base";
 import {PlaybackGranted} from "../repositories/models/playback-granted";
+import {TracklistUpdatedEvent} from "./models/tracklist-updated-event";
+import {TracklistConverterService} from "../converters/tracklist-converter.service";
+import {NodePathConverterService} from "../converters/node-path-converter.service";
 
 @Injectable({
   providedIn: 'root'
@@ -21,8 +24,11 @@ export class SessionSignalrClientService extends SignalrClientBase implements IS
   private _playbackState$ = new Subject<PlaybackState>();
   private _playbackGranted$ = new Subject<PlaybackGranted>();
   private _pauseRequested$ = new Subject<boolean>();
+  private _tracklistUpdated$ = new Subject<TracklistUpdatedEvent>();
 
-  constructor(private _playbackSessionConverter: PlaybackSessionConverterService) {
+  constructor(private _nodePathConverter: NodePathConverterService,
+              private _playbackSessionConverter: PlaybackSessionConverterService,
+              private _tracklistConverter: TracklistConverterService) {
     super();
   }
 
@@ -40,6 +46,10 @@ export class SessionSignalrClientService extends SignalrClientBase implements IS
 
   public get pauseRequested$(): Observable<boolean> {
     return this._pauseRequested$.asObservable();
+  }
+
+  public get tracklistUpdated$(): Observable<TracklistUpdatedEvent> {
+    return this._tracklistUpdated$.asObservable();
   }
 
   public registerMethods(connection: HubConnection): void {
@@ -62,6 +72,11 @@ export class SessionSignalrClientService extends SignalrClientBase implements IS
       'PlaybackGranted',
       (obj: object) => this.handlePlaybackGranted(PlaybackGrantedDto.fromJS(obj))
     )
+
+    connection.on(
+      'TracklistUpdated',
+      (obj: object) => this.handleTracklistUpdated(TracklistUpdatedDto.fromJS(obj))
+    )
   }
 
   private handleCurrentSessionUpdated(playbackSessionDto: CurrentSessionUpdatedEventDto): void {
@@ -82,6 +97,13 @@ export class SessionSignalrClientService extends SignalrClientBase implements IS
 
   private handlePlaybackGranted(dto: PlaybackGrantedDto): void {
     this._playbackGranted$.next(this._playbackSessionConverter.fromPlaybackGrantedDto(dto));
+  }
+
+  public handleTracklistUpdated(dto: TracklistUpdatedDto): void {
+    const path = this._nodePathConverter.fromDto(dto.path);
+    const tracklist = this._tracklistConverter.createTracklistForm(dto.tracklist);
+    const event = new TracklistUpdatedEvent(path, tracklist);
+    this._tracklistUpdated$.next(event);
   }
 
   public updatePlaybackState(currentTime: number): void {

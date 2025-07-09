@@ -5705,6 +5705,50 @@ export interface IMediaInfoRemovedDto {
     nodePaths: NodePathDto[];
 }
 
+export class TracklistUpdatedDto implements ITracklistUpdatedDto {
+    path!: NodePathDto;
+    tracklist!: ImportTracklistDto;
+
+    constructor(data?: ITracklistUpdatedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.path = new NodePathDto();
+            this.tracklist = new ImportTracklistDto();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.path = _data["path"] ? NodePathDto.fromJS(_data["path"]) : new NodePathDto();
+            this.tracklist = _data["tracklist"] ? ImportTracklistDto.fromJS(_data["tracklist"]) : new ImportTracklistDto();
+        }
+    }
+
+    static fromJS(data: any): TracklistUpdatedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new TracklistUpdatedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["path"] = this.path ? this.path.toJSON() : <any>undefined;
+        data["tracklist"] = this.tracklist ? this.tracklist.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface ITracklistUpdatedDto {
+    path: NodePathDto;
+    tracklist: ImportTracklistDto;
+}
+
 export class SignalRUpdatePlaybackStateCommand implements ISignalRUpdatePlaybackStateCommand {
     currentTime!: number;
 

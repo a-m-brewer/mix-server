@@ -229,12 +229,30 @@ export class CurrentPlaybackSessionRepositoryService {
     this._sessionSignalRClient.playbackGranted$
       .subscribe({
         next: playbackGranted => this.handlePlaybackGranted(playbackGranted)
-      })
+      });
 
     this._sessionSignalRClient.pauseRequested$
       .subscribe({
         next: value => {
           this._pauseRequested$.next(value);
+        }
+      });
+
+    this._sessionSignalRClient.tracklistUpdated$
+      .subscribe({
+        next: event => {
+          const previousSession = this.currentSession;
+          if (!previousSession) {
+            return;
+          }
+
+          if (!previousSession.currentNode.path.isEqual(event.path)) {
+            return;
+          }
+
+          const nextSession = PlaybackSession.copy(previousSession, previousSession.state);
+          nextSession.tracklist = event.tracklist;
+          this.currentSession = nextSession;
         }
       })
   }

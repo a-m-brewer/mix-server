@@ -7,6 +7,7 @@ using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Responses;
 using MixServer.Application.Users.Dtos;
 using MixServer.Domain.Callbacks;
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Interfaces;
@@ -14,6 +15,7 @@ using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
 using MixServer.Domain.Sessions.Models;
+using MixServer.Domain.Tracklists.Converters;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Enums;
 using MixServer.Domain.Users.Models;
@@ -29,6 +31,7 @@ public class SignalRCallbackService(
     INodePathDtoConverter nodePathDtoConverter,
     IConverter<IPlaybackSession, bool, PlaybackSessionDto> playbackSessionConverter,
     IPlaybackStateConverter playbackStateConverter,
+    ITracklistDtoConverter tracklistDtoConverter,
     IHubContext<SignalRCallbackHub, ISignalRCallbackClient> context,
     IConverter<QueueSnapshot, QueueSnapshotDto> queueSnapshotDtoConverter,
     IConverter<IUser, UserDto> userDtoConverter,
@@ -257,6 +260,20 @@ public class SignalRCallbackService(
         };
         
         return context.Clients.All.MediaInfoRemoved(eventDto);
+    }
+
+    public async Task TracklistUpdated(FileExplorerFileNodeEntity file)
+    {
+        var tracklistDto = tracklistDtoConverter.Convert(file.Tracklist);
+        var dto = new TracklistUpdatedDto
+        {
+            Path = nodePathDtoConverter.ConvertToResponse(file.Path),
+            Tracklist = tracklistDto
+        };
+        
+        await context.Clients
+            .All
+            .TracklistUpdated(dto);
     }
 
     public async Task UserDeleted(string userId)

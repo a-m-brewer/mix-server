@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
@@ -8,6 +9,7 @@ namespace MixServer.Application.Tracklists.Commands.SaveTracklist;
 
 public class SaveTracklistCommandHandler(
     ICurrentUserRepository currentUserRepository,
+    ILogger<SaveTracklistCommandHandler> logger,
     ITracklistPersistenceService tracklistPersistenceService,
     ITracklistFileTaggingService tracklistFileTaggingService,
     IUnitOfWork unitOfWork)
@@ -32,7 +34,15 @@ public class SaveTracklistCommandHandler(
 
         await tracklistPersistenceService.AddOrUpdateTracklistAsync(user.CurrentPlaybackSession.NodeEntity, 
             request.Tracklist, cancellationToken);
-        tracklistFileTaggingService.SaveTags(currentSessionFilePath, request.Tracklist);
+
+        try
+        {
+            tracklistFileTaggingService.SaveTags(currentSessionFilePath, request.Tracklist);
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "Failed to save tracklist tags for file {FilePath}", currentSessionFilePath);
+        }
         
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

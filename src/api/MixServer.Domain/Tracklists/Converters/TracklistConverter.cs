@@ -15,7 +15,8 @@ public interface ITracklistEntityConverter :
     IConverter<ImportTracklistDto, FileExplorerFileNodeEntity, TracklistEntity>,
     IConverter<ImportCueDto, TracklistEntity, CueEntity>,
     IConverter<ImportTrackDto, CueEntity, TrackEntity>,
-    IConverter<ImportPlayerDto, TrackEntity, List<TracklistPlayersEntity>>;
+    IConverter<ImportPlayerDto, TrackEntity, List<TracklistPlayersEntity>>,
+    IConverter<ImportPlayerDto, TrackEntity, string, TracklistPlayersEntity> ;
 
 public interface ITracklistConverter
     : ITracklistDtoConverter, ITracklistEntityConverter;
@@ -111,12 +112,17 @@ public class TracklistConverter : ITracklistConverter
 
     public List<TracklistPlayersEntity> Convert(ImportPlayerDto value, TrackEntity track)
     {
-        return value.Urls.Select(s => new TracklistPlayersEntity
+        return value.Urls.Select(s => Convert(value, track, s)).ToList();
+    }
+
+    public TracklistPlayersEntity Convert(ImportPlayerDto value, TrackEntity track, string url)
+    {
+        return new TracklistPlayersEntity
         {
             Id = Guid.NewGuid(),
             Type = value.Type,
-            Url = s,
+            Url = url,
             Track = track
-        }).ToList();
+        };
     }
 }
