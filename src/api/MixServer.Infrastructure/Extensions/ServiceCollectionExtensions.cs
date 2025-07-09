@@ -27,9 +27,10 @@ public static class ServiceCollectionExtensions
         services.AddTransient<FileExtensionContentTypeProvider>();
         services.AddTransient<IMimeTypeService, MimeTypeService>();
 
-        services.AddDbContext<MixServerDbContext>(
-            options =>
-                options.UseSqlite(dbConnectionString));
+        services.AddDbContext<MixServerDbContext>(options =>
+        {
+            options.UseSqlite(dbConnectionString, builder => builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery));
+        });
         services.AddScoped<IUnitOfWork, EfUnitOfWork<MixServerDbContext>>();
 
         services.AddScoped<ICurrentUserRepository, CurrentUserRepository>();
