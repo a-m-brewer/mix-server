@@ -92,4 +92,5 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   }
 
   protected readonly FileExplorerFileNode = FileExplorerFileNode;
+  protected readonly FileExplorerFolderNode = FileExplorerFolderNode;
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using MixServer.Application.Devices.Responses;
 using MixServer.Application.FileExplorer.Converters;
+using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Converters;
@@ -126,6 +127,16 @@ public class SignalRCallbackService(
         await context.Clients
             .Clients(otherDevicesConnections)
             .FolderRefreshed(dto);
+    }
+
+    public Task FolderScanStatusChanged(bool scanInProgress)
+    {
+        return context.Clients
+            .All
+            .FolderScanStatusChanged(new FolderScanStatusDto
+            {
+                ScanInProgress = scanInProgress
+            });
     }
 
     public async Task DeviceDeleted(string userId, Guid deviceId)

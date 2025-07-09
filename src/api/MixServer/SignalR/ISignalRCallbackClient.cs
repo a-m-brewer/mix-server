@@ -1,4 +1,5 @@
 using MixServer.Application.Devices.Responses;
+using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Dtos;
@@ -15,6 +16,7 @@ public interface ISignalRCallbackClient
     Task DeviceStateUpdated(DeviceStateDto dto);
     Task FolderRefreshed(FileExplorerFolderResponse dto);
     Task FolderSorted(FileExplorerFolderResponse dto);
+    Task FolderScanStatusChanged(FolderScanStatusDto dto);
     Task DeviceDeleted(DeviceDeletedDto dto);
     Task PlaybackStateUpdated(PlaybackStateDto dto);
     Task PlaybackGranted(PlaybackGrantedDto dto);

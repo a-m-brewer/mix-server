@@ -1,7 +1,10 @@
-﻿namespace MixServer.Domain.FileExplorer.Models;
+﻿using MixServer.Domain.Interfaces;
 
-public class PersistFolderCommand
+namespace MixServer.Domain.FileExplorer.Models;
+
+public class PersistFolderCommand : IChannelMessage
 {
+    public string Identifier => DirectoryPath.AbsolutePath;
     public required NodePath DirectoryPath { get; init; }
     public required DirectoryInfo Directory { get; init; }
     

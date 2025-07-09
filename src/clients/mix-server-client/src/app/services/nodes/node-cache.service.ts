@@ -19,6 +19,8 @@ import {MediaInfoUpdatedEventItem} from "../signalr/models/media-info-event";
 import {NodeApiService} from "../api.service";
 import {NodePath, NodePathHeader} from "../../main-content/file-explorer/models/node-path";
 import {NodePathConverterService} from "../converters/node-path-converter.service";
+import {AuthenticationService} from "../auth/authentication.service";
+import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 
 @Injectable({
   providedIn: 'root'
@@ -28,12 +30,28 @@ export class NodeCacheService {
   private _consumerFolders = new Map<string, Set<string>>();
   private _folderConsumers = new Map<string, Set<string>>();
 
-  constructor(private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
+  private _folderScanInProgress$ = new BehaviorSubject(false);
+
+  constructor(private _authenticationService: AuthenticationService,
+              private _fileExplorerNodeConverter: FileExplorerNodeConverterService,
               private _folderSignalRClient: FolderSignalrClientService,
               private _loadingRepository: LoadingRepositoryService,
               private _nodeClient: NodeApiService,
               private _nodePathConverter: NodePathConverterService,
               private _playbackDeviceService: PlaybackDeviceRepositoryService) {
+    this._authenticationService.serverConnectionStatus$
+      .subscribe(serverConnectionStatus => {
+        const loggedIn = serverConnectionStatus === ServerConnectionState.Connected;
+        if (loggedIn) {
+          this._nodeClient.request("GetScanInProgress", client => client.getFolderScanStatus(), 'Error loading folder scan status')
+            .then(dto => {
+              if (dto.result) {
+                this._folderScanInProgress$.next(dto.result.scanInProgress);
+              }
+            })
+        }
+      });
+
     this._playbackDeviceService.requestPlaybackDevice$
       .subscribe(device => {
         const folders: { [key: string]: FileExplorerFolder } = {};
@@ -152,6 +170,11 @@ export class NodeCacheService {
 
         this.updateFolders(updatedFolders);
       });
+
+    this._folderSignalRClient.folderScanStatusChanged$()
+      .subscribe(scanInProgress => {
+        this._folderScanInProgress$.next(scanInProgress);
+      });
   }
 
   public getFolder$(query$: Observable<NodePathHeader>): Observable<FileExplorerFolder> {
@@ -183,6 +206,10 @@ export class NodeCacheService {
 
         return node;
       }));
+  }
+
+  public get folderScanInProgress$(): Observable<boolean> {
+    return this._folderScanInProgress$.asObservable();
   }
 
   public async loadDirectoriesForConsumer(consumerId: string, requiredNodes: NodePathHeader[]): Promise<NodePathHeader[]> {

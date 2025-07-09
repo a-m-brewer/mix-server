@@ -43,6 +43,6 @@ public class TranscodeService(
         Directory.CreateDirectory(cacheFolderSettings.Value.GetTranscodeFolder(transcode.Id.ToString()));
         logger.LogDebug("Transcode requested for {AbsoluteFilePath} ({Hash})", file.Path.AbsolutePath, transcode.Id);
 
-        _ = transcodeChannel.WriteAsync(new TranscodeRequest(transcode.Id, bitrate), cancellationToken);
+        _ = transcodeChannel.WriteAsync(new TranscodeRequest(file.Path, transcode.Id, bitrate), cancellationToken);
     }
 }

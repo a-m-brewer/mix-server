@@ -12,6 +12,7 @@ namespace MixServer.Application.FileExplorer.Commands.ScanFolder;
 public class ScanFolderCommandHandler(
     IFileExplorerNodeRepository fileExplorerNodeRepository,
     IFileSystemHashService fileSystemHashService,
+    IFolderScanTrackingStore folderScanTrackingStore,
     ILogger<ScanFolderCommandHandler> logger,
     IPersistFolderCommandChannel persistFolderCommandChannel,
     IRootFileExplorerFolder rootFolder) : ICommandHandler<ScanFolderRequest>
@@ -50,6 +51,7 @@ public class ScanFolderCommandHandler(
         //     return;
         // }
 
+        folderScanTrackingStore.ScanInProgress = true;
         await RunScanAsync(folderDiff, request.Recursive, cancellationToken);
     }
 

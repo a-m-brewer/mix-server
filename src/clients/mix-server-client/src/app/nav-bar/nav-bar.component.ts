@@ -22,6 +22,9 @@ import { WindowSizeRepositoryService } from "../services/repositories/window-siz
 import {WindowType} from "../services/repositories/enums/window-type";
 import {TracklistToolbarComponent} from "../tracklist-page/tracklist-toolbar/tracklist-toolbar.component";
 import {FolderPasteFormComponent} from "../main-content/file-explorer/folder-paste-form/folder-paste-form.component";
+import {
+  RefreshFolderButtonComponent
+} from "../components/nodes/buttons/refresh-folder-button/refresh-folder-button.component";
 
 @Component({
   selector: 'app-nav-bar',
@@ -41,7 +44,8 @@ import {FolderPasteFormComponent} from "../main-content/file-explorer/folder-pas
     QueueEditFormComponent,
     NgClass,
     TracklistToolbarComponent,
-    FolderPasteFormComponent
+    FolderPasteFormComponent,
+    RefreshFolderButtonComponent
   ],
   templateUrl: './nav-bar.component.html',
   styleUrl: './nav-bar.component.scss'
@@ -194,11 +198,6 @@ export class NavBarComponent implements OnInit, OnDestroy {
         this._loadingRepository.stopLoading(item.label);
       }
     }
-  }
-
-
-  public refreshFolder(): void {
-    this._nodeRepository.refreshFolder();
   }
 
   private get pathname(): string {

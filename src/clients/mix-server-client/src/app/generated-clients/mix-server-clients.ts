@@ -259,6 +259,7 @@ export interface INodeClient {
     getNode(rootPath?: string | null | undefined, relativePath?: string | null | undefined): Observable<FileExplorerFolderResponse>;
     refreshFolder(command: RefreshFolderCommand): Observable<FileExplorerFolderResponse>;
     setFolderSortMode(command: SetFolderSortCommand): Observable<void>;
+    getFolderScanStatus(): Observable<FolderScanStatusDto>;
 }
 
 @Injectable({
@@ -452,6 +453,54 @@ export class NodeClient implements INodeClient {
             let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getFolderScanStatus(): Observable<FolderScanStatusDto> {
+        let url_ = this.baseUrl + "/api/node/scan";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetFolderScanStatus(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetFolderScanStatus(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<FolderScanStatusDto>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<FolderScanStatusDto>;
+        }));
+    }
+
+    protected processGetFolderScanStatus(response: HttpResponseBase): Observable<FolderScanStatusDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = FolderScanStatusDto.fromJS(resultData200);
+            return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -3593,6 +3642,42 @@ export interface ISetFolderSortCommand {
     nodePath: NodePathRequestDto;
     descending: boolean;
     sortMode: FolderSortMode;
+}
+
+export class FolderScanStatusDto implements IFolderScanStatusDto {
+    scanInProgress!: boolean;
+
+    constructor(data?: IFolderScanStatusDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.scanInProgress = _data["scanInProgress"];
+        }
+    }
+
+    static fromJS(data: any): FolderScanStatusDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new FolderScanStatusDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["scanInProgress"] = this.scanInProgress;
+        return data;
+    }
+}
+
+export interface IFolderScanStatusDto {
+    scanInProgress: boolean;
 }
 
 export class CopyNodeCommand implements ICopyNodeCommand {

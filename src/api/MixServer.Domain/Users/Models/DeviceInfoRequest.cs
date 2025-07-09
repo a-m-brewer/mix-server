@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Primitives;
+using MixServer.Domain.Interfaces;
 
 namespace MixServer.Domain.Users.Models;
 
-public class DeviceInfoRequest : IEquatable<DeviceInfoRequest>
+public class DeviceInfoRequest : IEquatable<DeviceInfoRequest>, IChannelMessage
 {
     public required Guid DeviceId { get; init; } 
+    public string Identifier => DeviceId.ToString();
     public required Dictionary<string, StringValues> Headers { get; init; }
 
     public bool Equals(DeviceInfoRequest? other)

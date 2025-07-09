@@ -68,13 +68,7 @@
   <mat-toolbar-row id="file-explorer-toolbar"
                    *ngIf="currentPage === MenuLabel.Files">
     <div class="file-explorer-toolbar-buttons">
-      <button mat-icon-button
-              *ngIf="currentFolder"
-              [disabled]="loadingStatus.loading"
-              (click)="refreshFolder()"
-      >
-        <mat-icon>refresh</mat-icon>
-      </button>
+      <app-refresh-folder-button />
     </div>
     <app-folder-paste-form />
     <app-folder-sort-form />

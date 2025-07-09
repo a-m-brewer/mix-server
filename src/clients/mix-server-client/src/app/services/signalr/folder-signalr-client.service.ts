@@ -4,7 +4,7 @@ import {HubConnection} from "@microsoft/signalr";
 import {Observable, Subject} from "rxjs";
 import {
   FileExplorerFolderResponse,
-  FileExplorerNodeDeletedDto, FileExplorerNodeUpdatedDto, MediaInfoRemovedDto, MediaInfoUpdatedDto
+  FileExplorerNodeDeletedDto, FileExplorerNodeUpdatedDto, FolderScanStatusDto, MediaInfoRemovedDto, MediaInfoUpdatedDto
 } from "../../generated-clients/mix-server-clients";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {NodeUpdatedEvent} from "./models/node-updated-event";
@@ -24,6 +24,7 @@ export class FolderSignalrClientService implements ISignalrClient {
   private _nodeDeletedSubject$ = new Subject<NodeDeletedEvent>();
   private _mediaInfoUpdatedSubject$ = new Subject<MediaInfoUpdatedEvent>();
   private _mediaInfoRemovedSubject$ = new Subject<MediaInfoRemovedEvent>();
+  private _folderScanStatusChangedSubject$ = new Subject<boolean>();
 
   constructor(private _fileMetadataConverter: FileMetadataConverterService,
               private _folderNodeConverter: FileExplorerNodeConverterService,
@@ -54,6 +55,10 @@ export class FolderSignalrClientService implements ISignalrClient {
     return this._mediaInfoRemovedSubject$.asObservable();
   }
 
+  public folderScanStatusChanged$(): Observable<boolean> {
+    return this._folderScanStatusChangedSubject$.asObservable();
+  }
+
   registerMethods(connection: HubConnection): void {
     connection.on(
       'FolderRefreshed',
@@ -81,6 +86,11 @@ export class FolderSignalrClientService implements ISignalrClient {
     connection.on(
       'MediaInfoRemoved',
       (obj: object) => this.handleMediaInfoRemoved(MediaInfoRemovedDto.fromJS(obj))
+    );
+
+    connection.on(
+      'FolderScanStatusChanged',
+      (obj: object) => this.handleFolderScanStatusChanged(FolderScanStatusDto.fromJS(obj))
     );
   }
 
@@ -127,5 +137,9 @@ export class FolderSignalrClientService implements ISignalrClient {
       })
     };
     this._mediaInfoRemovedSubject$.next(event);
+  }
+
+  private handleFolderScanStatusChanged(dto: FolderScanStatusDto) {
+    this._folderScanStatusChangedSubject$.next(dto.scanInProgress);
   }
 }

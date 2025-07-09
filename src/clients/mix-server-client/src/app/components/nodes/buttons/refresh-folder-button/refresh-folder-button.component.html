@@ -1,0 +1,7 @@
+<button mat-icon-button
+        *ngIf="currentFolder"
+        [disabled]="disabled"
+        (click)="refreshFolder()"
+>
+  <mat-icon>refresh</mat-icon>
+</button>

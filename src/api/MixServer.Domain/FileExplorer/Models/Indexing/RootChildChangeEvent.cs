@@ -1,10 +1,12 @@
 using MixServer.Domain.FileExplorer.Enums;
+using MixServer.Domain.Interfaces;
 
 namespace MixServer.Domain.FileExplorer.Models.Indexing;
 
-public class RootChildChangeEvent : IEquatable<RootChildChangeEvent>
+public class RootChildChangeEvent : IEquatable<RootChildChangeEvent>, IChannelMessage
 {
     public required string FullName { get; init; }
+    public string Identifier => $"{FullName}-{RootFolderChangeType}-{WatcherChangeType}-{OldFullName}";
     public required RootFolderChangeType RootFolderChangeType { get; init; }
     public required WatcherChangeTypes WatcherChangeType { get; init; }
     public required string OldFullName { get; init; }

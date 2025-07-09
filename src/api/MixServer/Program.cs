@@ -150,6 +150,7 @@ builder.Services
 builder.Services
     .AddTransient<IBootstrapper, Bootstrapper>();
 
+builder.Services.AddHostedService<FolderScanTrackingService>();
 builder.Services.AddHostedService<RootChildChangeBackgroundService>();
 builder.Services.AddHostedService<RootChildDirectoryWatcherService>();
 builder.Services.AddHostedService<UpdateMediaMetadataBackgroundService>();

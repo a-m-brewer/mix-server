@@ -6,4 +6,4 @@ namespace MixServer.Domain.Users.Repositories;
 
 public interface IDeviceInfoChannel : IChannel<DeviceInfoRequest>;
 
-public class DeviceInfoChannelBase(ILogger<DeviceInfoChannelBase> logger) : ChannelBase<DeviceInfoRequest>(), IDeviceInfoChannel;
+public class DeviceInfoChannelBase(ILogger<DeviceInfoChannelBase> logger) : ChannelBase<DeviceInfoRequest>(logger), IDeviceInfoChannel;

@@ -7,4 +7,4 @@ namespace MixServer.Domain.Streams.Repositories;
 
 public interface ITranscodeChannel : IChannel<TranscodeRequest>, ISingletonRepository;
 
-public class TranscodeChannel(ILogger<TranscodeChannel> logger) : ChannelBase<TranscodeRequest>(), ITranscodeChannel;
+public class TranscodeChannel(ILogger<TranscodeChannel> logger) : ChannelBase<TranscodeRequest>(logger), ITranscodeChannel;

@@ -12,6 +12,7 @@ namespace MixServer.Controllers;
 [Route("api/[controller]")]
 public class NodeController(
     IQueryHandler<NodePathRequestDto, FileExplorerFolderResponse> getFolderNodeQueryHandler,
+    IQueryHandler<FolderScanStatusDto> getFolderScanStatusQueryHandler,
     ICommandHandler<RefreshFolderCommand, FileExplorerFolderResponse> refreshFolderCommandHandler,
     ICommandHandler<SetFolderSortCommand> setFolderSortCommandHandler)
     : ControllerBase
@@ -42,5 +43,12 @@ public class NodeController(
         await setFolderSortCommandHandler.HandleAsync(command, cancellationToken);
 
         return NoContent();
+    }
+    
+    [HttpGet("scan")]
+    [ProducesResponseType(typeof(FolderScanStatusDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetFolderScanStatus(CancellationToken cancellationToken)
+    {
+        return Ok(await getFolderScanStatusQueryHandler.HandleAsync(cancellationToken));
     }
 }

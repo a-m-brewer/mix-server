@@ -13,6 +13,10 @@
     <div appNodeListItemTitle>
       ..
     </div>
+
+    <app-index-folder-button
+      [node]="currentFolder.node"
+    />
   </app-node-list-item>
 
   <app-node-list-item
@@ -34,6 +38,12 @@
                                 *ngIf="node | instanceOf:FileExplorerFileNode as fileNode"
       [metadata]="fileNode.metadata"
     />
+
+    @if (node | instanceOf:FileExplorerFolderNode; as folderNode) {
+      <app-index-folder-button
+        [node]="folderNode"
+      />
+    }
 
     @if (node | instanceOf:FileExplorerFileNode; as fileNode) {
       <app-add-to-queue-button
