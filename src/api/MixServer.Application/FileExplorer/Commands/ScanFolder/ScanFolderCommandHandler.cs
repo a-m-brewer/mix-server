@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Extensions;
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Services;
@@ -33,21 +34,21 @@ public class ScanFolderCommandHandler(
             throw new InvalidRequestException(nameof(request.NodePath), "The specified path is not a directory.");
         }
         
-        using var scope = serviceProvider.CreateScope();
-        var fileExplorerNodeRepository = scope.ServiceProvider.GetRequiredService<IFileExplorerNodeRepository>();
+        // using var scope = serviceProvider.CreateScope();
+        // var fileExplorerNodeRepository = scope.ServiceProvider.GetRequiredService<IFileExplorerNodeRepository>();
 
-        var fsHeader = new FolderHeader
-        {
-            NodePath = request.NodePath,
-            Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(request.NodePath, cancellationToken)
-        };
-        var dbHeader = await fileExplorerNodeRepository.GetFolderHeaderOrDefaultAsync(fsHeader, cancellationToken);
-
-        var folderDiff = new FolderDiff
-        {
-            FileSystemHeader = fsHeader,
-            DatabaseHeader = dbHeader
-        };
+        // var fsHeader = new FolderHeader
+        // {
+        //     NodePath = request.NodePath,
+        //     Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(request.NodePath, cancellationToken)
+        // };
+        // var dbHeader = await fileExplorerNodeRepository.GetFolderHeaderOrDefaultAsync(fsHeader, cancellationToken);
+        //
+        // var folderDiff = new FolderDiff
+        // {
+        //     FileSystemHeader = fsHeader,
+        //     DatabaseHeader = dbHeader
+        // };
 
         // TODO: reenable
         // if (!folderDiff.Dirty)
@@ -57,94 +58,54 @@ public class ScanFolderCommandHandler(
         // }
 
         folderScanTrackingStore.ScanInProgress = true;
-        await RunScanAsync(folderDiff, request.Recursive, cancellationToken);
+
+        var dirInfo = new DirectoryInfo(request.NodePath.AbsolutePath);
+        
+        await RunScanAsync(dirInfo, request.Recursive, cancellationToken);
     }
 
-    private async Task RunScanAsync(FolderDiff diff, bool recursive, CancellationToken cancellationToken)
+    private async Task RunScanAsync(DirectoryInfo root, bool recursive, CancellationToken cancellationToken)
     {
-        var root = new DirectoryInfo(diff.FileSystemHeader.NodePath.AbsolutePath);
-
-        List<FileSystemInfo> children;
+        var nodePath = rootFolder.GetNodePath(root.FullName);
+        
+        var childNodes = new List<DirectoryInfo>();
         try
         {
-            children = root.MsEnumerateFileSystemInfos().ToList();
-        }
-        catch
-        {
-            return;
-        }
-
-        using (var scope = serviceProvider.CreateScope())
-        {
-            await scope.ServiceProvider.GetRequiredService<IFolderPersistenceService>()
-                .AddOrUpdateFolderAsync(diff.FileSystemHeader.NodePath, root, children, cancellationToken);
+            using var scope = serviceProvider.CreateScope();
+            await foreach (var map in scope.ServiceProvider.GetRequiredService<IFolderPersistenceService>()
+                               .AddOrUpdateFolderAsync(nodePath, root, root.MsEnumerateDirectories(), cancellationToken))
+            {
+                if (map is { IsParent: false, FsInfo: DirectoryInfo d })
+                {
+                    childNodes.Add(d);
+                }
+            }
+            
             await scope.ServiceProvider.GetRequiredService<IUnitOfWork>()
                 .SaveChangesAsync(cancellationToken);
         }
-
-        if (!recursive || children.Count == 0)
+        catch (Exception ex)
         {
+            logger.LogError(ex, "Failed to persist folder {NodePath}", nodePath);
             return;
         }
-        
-        var childNodes = children.OfType<DirectoryInfo>()
-            .Select(s => new { NodePath = rootFolder.GetNodePath(s.FullName), DirectoryInfo = s})
-            .ToDictionary(k => k.NodePath, v => v.DirectoryInfo);
-        var childNodePaths = childNodes.Keys.ToList();
-        
-        
-        if (childNodes.Count == 0)
+
+        if (!recursive || childNodes.Count == 0)
         {
             return;
-        }
-        
-        using var readScope = serviceProvider.CreateScope();
-        var fileExplorerNodeRepository = readScope.ServiceProvider.GetRequiredService<IFileExplorerNodeRepository>();
-        var actualHashes = await fileExplorerNodeRepository.GetFolderHeadersAsync(childNodePaths, cancellationToken);
-        var expectedFolderHeaders =
-            childNodes.Select(async cnp => new FolderHeader
-            {
-                NodePath = cnp.Key,
-                Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(cnp.Value, cancellationToken)
-            });
-        var expectedHashes = (await Task.WhenAll(expectedFolderHeaders))
-            .ToDictionary(k => k.NodePath);
-
-        var folders = new List<FolderDiff>();
-        foreach (var childNodePath in childNodePaths)
-        {
-            if (!expectedHashes.TryGetValue(childNodePath, out var fsHeader))
-            {
-                logger.LogWarning("Failed to compute hash for {NodePath}. Skipping...", childNodePath);
-                continue;
-            }
-            
-            var dbHeader = actualHashes.GetValueOrDefault(childNodePath);
-            
-            // TODO: reenable
-            // if (fsHeader.Equals(dbHeader))
-            // {
-            //     logger.LogInformation("Folder {NodePath} is already up to date ({ExpectedHash}). Skipping...", childNodePath, fsHeader);
-            //     continue;
-            // }
-
-            folders.Add(new FolderDiff
-            {
-                FileSystemHeader = fsHeader,
-                DatabaseHeader = dbHeader
-            });
         }
 
         var actionBlock = new ActionBlock<int>(async i =>
             {
-                await RunScanAsync(folders[i], recursive, cancellationToken).ConfigureAwait(false);
+                await RunScanAsync(childNodes[i], recursive, cancellationToken).ConfigureAwait(false);
             },
             new ExecutionDataflowBlockOptions
             {
                 MaxDegreeOfParallelism = Environment.ProcessorCount
             });
 
-        for (var i = 0; i < folders.Count; i++)
+        logger.LogInformation("Sending {Count} child nodes for scanning in parallel", childNodes.Count);
+        for (var i = 0; i < childNodes.Count; i++)
         {
             await actionBlock.SendAsync(i, cancellationToken).ConfigureAwait(false);
         }

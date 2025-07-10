@@ -12,14 +12,14 @@ public class PersistFolderCommandHandler(
 {
     public async Task HandleAsync(PersistFolderCommand request, CancellationToken cancellationToken = default)
     {
-        await folderPersistenceService.AddOrUpdateFolderAsync(request.DirectoryPath, request.Directory, request.Children, cancellationToken);
-        try
-        {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException e)
-        {
-            throw;
-        }
+        // await folderPersistenceService.AddOrUpdateFolderAsync(request.DirectoryPath, request.Directory, request.Children, cancellationToken);
+        // try
+        // {
+        //     await unitOfWork.SaveChangesAsync(cancellationToken);
+        // }
+        // catch (DbUpdateException e)
+        // {
+        //     throw;
+        // }
     }
 }
