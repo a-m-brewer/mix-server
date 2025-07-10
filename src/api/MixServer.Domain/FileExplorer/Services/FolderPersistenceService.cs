@@ -147,7 +147,7 @@ public class FolderPersistenceService(
 
         var removedChildren = RemoveChildrenMissingInFileSystem(parentEntity is null ? root.Children : parentEntity.Children, fsChildren);
 
-        unitOfWork.OnSaved(() => NotifyChanges(fsChildren, removedChildren));
+        // unitOfWork.OnSaved(() => NotifyChanges(fsChildren, removedChildren));
 
         logger.LogInformation("Persisted folder {Directory} with {ChildrenCount} children, removed {RemovedChildrenCount} children",
             directory.FullName, fsChildren.Count, removedChildren.Count);

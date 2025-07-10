@@ -7,7 +7,7 @@ import {MatListModule} from "@angular/material/list";
 import {AsyncPipe, NgClass, NgForOf, NgIf} from "@angular/common";
 import {MenuItem, MenuLabel} from "./menu-item.interface";
 import {PageRoutes} from "../page-routes.enum";
-import {NavigationEnd, Router, RouterLink} from "@angular/router";
+import {NavigationEnd, Router} from "@angular/router";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
 import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../services/repositories/models/loading-node-status";
 import {BehaviorSubject, filter, map, Observable, Subject, takeUntil} from "rxjs";
@@ -25,9 +25,6 @@ import {FolderPasteFormComponent} from "../main-content/file-explorer/folder-pas
 import {
   RefreshFolderButtonComponent
 } from "../components/nodes/buttons/refresh-folder-button/refresh-folder-button.component";
-import {
-  FolderScanProgressComponent
-} from "../main-content/file-explorer/folder-scan-progress/folder-scan-progress.component";
 
 @Component({
   selector: 'app-nav-bar',
@@ -39,7 +36,6 @@ import {
     MatIconModule,
     MatListModule,
     NgForOf,
-    RouterLink,
     MatProgressSpinnerModule,
     NgIf,
     AsyncPipe,
@@ -48,8 +44,7 @@ import {
     NgClass,
     TracklistToolbarComponent,
     FolderPasteFormComponent,
-    RefreshFolderButtonComponent,
-    FolderScanProgressComponent
+    RefreshFolderButtonComponent
   ],
   templateUrl: './nav-bar.component.html',
   styleUrl: './nav-bar.component.scss'

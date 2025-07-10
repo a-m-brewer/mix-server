@@ -56,7 +56,8 @@ public class FolderScanTrackingService(
                 }
 
                 folderScanTrackingStore.ScanInProgress = false;
-                logger.LogInformation("Folder scan completed, no requests in flight.");
+                logger.LogInformation("Folder scan completed, no requests in flight elapsed: {Elapsed}",
+                    folderScanTrackingStore.ScanDuration);
             });
         }
     }
