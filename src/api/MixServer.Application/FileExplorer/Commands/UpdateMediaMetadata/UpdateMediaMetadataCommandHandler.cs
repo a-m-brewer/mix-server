@@ -55,8 +55,15 @@ public class UpdateMediaMetadataCommandHandler(
         var results = new MetadataResultsBag();
         await Parallel.ForEachAsync(files, cancellationToken, (entity, _) =>
         {
-            var result = UpdateFileMetadata(entity);
-            results.Add(result);
+            try
+            {
+                var result = UpdateFileMetadata(entity);
+                results.Add(result);
+            }
+            catch (Exception e)
+            {
+                logger.LogWarning(e, "Failed to update metadata for file {FilePath}", entity.Path.AbsolutePath);
+            }
             return ValueTask.CompletedTask;
         });
         

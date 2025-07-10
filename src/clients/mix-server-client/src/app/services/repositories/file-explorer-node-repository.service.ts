@@ -88,6 +88,10 @@ export class FileExplorerNodeRepositoryService {
     this.loadDirectory(root, dir);
   }
 
+  public indexFolder(path: NodePathHeader): void {
+    this._nodeCache.refreshFolder(path, true);
+  }
+
   public refreshFolder(): void {
     this._nodeCache.refreshFolder(this._currentFolderPath$.value)
   }

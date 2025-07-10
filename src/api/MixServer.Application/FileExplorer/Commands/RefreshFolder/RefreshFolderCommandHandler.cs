@@ -1,6 +1,7 @@
 using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Domain.Callbacks;
+using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Services;
@@ -16,6 +17,7 @@ public class RefreshFolderCommandHandler(
     ICurrentUserRepository currentUserRepository,
     ICallbackService callbackService,
     IFileExplorerResponseConverter fileExplorerResponseConverter,
+    IFolderScanTrackingStore folderScanTrackingStore,
     IFileService fileService,
     INodePathDtoConverter nodePathDtoConverter,
     IRootFileExplorerFolder rootFolder,
@@ -25,6 +27,16 @@ public class RefreshFolderCommandHandler(
     public async Task<FileExplorerFolderResponse> HandleAsync(RefreshFolderCommand request, CancellationToken cancellationToken = default)
     {
         var nodePath = request.NodePath is null ? null : nodePathDtoConverter.Convert(request.NodePath);
+
+        if (folderScanTrackingStore.ScanInProgress)
+        {
+            throw new InvalidRequestException("A folder scan is already in progress. Please wait until it completes.");
+        }
+
+        if (request.Recursive && (nodePath is null || nodePath.IsRoot))
+        {
+            throw new InvalidRequestException("Recursive refresh is not allowed for the root folder.");
+        }
         
         // Return the current state of the folder
         var folder = await fileService.GetFolderOrRootAsync(nodePath, cancellationToken);
@@ -40,7 +52,7 @@ public class RefreshFolderCommandHandler(
             _ = scanFolderRequestChannel.WriteAsync(new ScanFolderRequest
             {
                 NodePath = nodePath,
-                Recursive = false
+                Recursive = request.Recursive
             }, cancellationToken);
         }
 

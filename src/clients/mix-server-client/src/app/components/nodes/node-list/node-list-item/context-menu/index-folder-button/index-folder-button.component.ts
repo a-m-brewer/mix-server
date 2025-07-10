@@ -6,6 +6,9 @@ import {ContextMenuButton} from "../context-menu-button";
 import {FileExplorerFolderNode} from "../../../../../../main-content/file-explorer/models/file-explorer-folder-node";
 import {NodeCacheService} from "../../../../../../services/nodes/node-cache.service";
 import {Subject, takeUntil} from "rxjs";
+import {
+  FileExplorerNodeRepositoryService
+} from "../../../../../../services/repositories/file-explorer-node-repository.service";
 
 @Component({
   selector: 'app-index-folder-button',
@@ -27,7 +30,8 @@ export class IndexFolderButtonComponent extends ContextMenuButton implements OnI
   public nodeVar?: FileExplorerFolderNode;
   public disabled: boolean = false;
 
-  constructor(private _nodeCache: NodeCacheService) {
+  constructor(private _nodeRepository: FileExplorerNodeRepositoryService,
+              private _nodeCache: NodeCacheService) {
     super();
   }
 
@@ -51,8 +55,12 @@ export class IndexFolderButtonComponent extends ContextMenuButton implements OnI
     this._unsubscribe$.complete();
   }
 
-  async indexFolder() {
+  indexFolder() {
+    if (!this.nodeVar) {
+      return;
+    }
 
+    this._nodeRepository.indexFolder(this.nodeVar.path);
   }
 
   private getDisabledState(): boolean {

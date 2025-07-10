@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Tracklists.Builders;
 using MixServer.Domain.Tracklists.Dtos.Import;
 using MixServer.Domain.Tracklists.Enums;
@@ -15,46 +16,50 @@ public interface ITracklistFileTaggingService
 
 public class TracklistFileTaggingService(
     ITagBuilderFactory factory,
+    IFileWriteLockService fileWriteLockService,
     ILogger<TracklistFileTaggingService> logger) : ITracklistFileTaggingService
 {
     private const string IdPrefix = "ms-ch-";
     
     public void SaveTags(string absoluteFilePath, ImportTracklistDto tracklist)
     {
-        using var tagBuilder = factory.Create(absoluteFilePath);
-        
-        // TODO: actually compare tags
-        tagBuilder.ClearChapters(c => c.Id.StartsWith(IdPrefix));
-
-        foreach (var cue in tracklist.Cues)
+        fileWriteLockService.WriteAsync(absoluteFilePath, () =>
         {
-            if (cue.Tracks.Count == 0)
+            using var tagBuilder = factory.Create(absoluteFilePath);
+
+            // TODO: actually compare tags
+            tagBuilder.ClearChapters(c => c.Id.StartsWith(IdPrefix));
+
+            foreach (var cue in tracklist.Cues)
             {
-                logger.LogWarning("Skipping cue: {Cue} with no tracks", cue.Cue);
-                continue;
+                if (cue.Tracks.Count == 0)
+                {
+                    logger.LogWarning("Skipping cue: {Cue} with no tracks", cue.Cue);
+                    continue;
+                }
+
+                var primaryTrack = cue.Tracks.First();
+                var additionalTracks = cue.Tracks.Skip(1).ToList();
+
+                var customTags = (from track in cue.Tracks
+                    let lines =
+                        (from player in track.Players
+                            let urls = string.Join(",", player.Urls)
+                            where urls.Length > 0
+                            select $"{player.Type};{urls}").ToArray()
+                    where lines.Length > 0
+                    select new CustomTag($"{track.Name};{track.Artist};Players", lines)).ToList();
+
+                tagBuilder.AddChapter(
+                    $"{IdPrefix}{cue.Cue}",
+                    primaryTrack.Name,
+                    additionalTracks.Select(t => t.Name).ToArray(),
+                    cue.Tracks.Select(t => t.Artist).ToArray(),
+                    customTags);
             }
 
-            var primaryTrack = cue.Tracks.First();
-            var additionalTracks = cue.Tracks.Skip(1).ToList();
-
-            var customTags = (from track in cue.Tracks
-                let lines =
-                    (from player in track.Players
-                        let urls = string.Join(",", player.Urls)
-                        where urls.Length > 0
-                        select $"{player.Type};{urls}").ToArray()
-                where lines.Length > 0
-                select new CustomTag($"{track.Name};{track.Artist};Players", lines)).ToList();
-
-            tagBuilder.AddChapter(
-                $"{IdPrefix}{cue.Cue}",
-                primaryTrack.Name,
-                additionalTracks.Select(t => t.Name).ToArray(),
-                cue.Tracks.Select(t => t.Artist).ToArray(),
-                customTags);
-        }
-
-        tagBuilder.Save();
+            tagBuilder.Save();
+        });
     }
     
     public ImportTracklistDto GetTracklist(IReadOnlyTagBuilder tagBuilder)

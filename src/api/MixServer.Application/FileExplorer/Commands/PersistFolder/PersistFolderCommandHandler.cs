@@ -1,4 +1,5 @@
-﻿using MixServer.Domain.FileExplorer.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
@@ -12,6 +13,13 @@ public class PersistFolderCommandHandler(
     public async Task HandleAsync(PersistFolderCommand request, CancellationToken cancellationToken = default)
     {
         await folderPersistenceService.AddOrUpdateFolderAsync(request.DirectoryPath, request.Directory, request.Children, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException e)
+        {
+            throw;
+        }
     }
 }

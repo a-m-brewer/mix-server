@@ -3563,6 +3563,7 @@ export interface IValidationProblemDetails extends IHttpValidationProblemDetails
 
 export class RefreshFolderCommand implements IRefreshFolderCommand {
     nodePath?: NodePathRequestDto | undefined;
+    recursive!: boolean;
 
     constructor(data?: IRefreshFolderCommand) {
         if (data) {
@@ -3576,6 +3577,7 @@ export class RefreshFolderCommand implements IRefreshFolderCommand {
     init(_data?: any) {
         if (_data) {
             this.nodePath = _data["nodePath"] ? NodePathRequestDto.fromJS(_data["nodePath"]) : <any>undefined;
+            this.recursive = _data["recursive"];
         }
     }
 
@@ -3589,12 +3591,14 @@ export class RefreshFolderCommand implements IRefreshFolderCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["nodePath"] = this.nodePath ? this.nodePath.toJSON() : <any>undefined;
+        data["recursive"] = this.recursive;
         return data;
     }
 }
 
 export interface IRefreshFolderCommand {
     nodePath?: NodePathRequestDto | undefined;
+    recursive: boolean;
 }
 
 export class SetFolderSortCommand implements ISetFolderSortCommand {

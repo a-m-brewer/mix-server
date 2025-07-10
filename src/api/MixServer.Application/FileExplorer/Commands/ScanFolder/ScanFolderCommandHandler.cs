@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks.Dataflow;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Extensions;
@@ -6,16 +7,17 @@ using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
+using MixServer.Domain.Persistence;
 
 namespace MixServer.Application.FileExplorer.Commands.ScanFolder;
 
 public class ScanFolderCommandHandler(
-    IFileExplorerNodeRepository fileExplorerNodeRepository,
     IFileSystemHashService fileSystemHashService,
     IFolderScanTrackingStore folderScanTrackingStore,
     ILogger<ScanFolderCommandHandler> logger,
     IPersistFolderCommandChannel persistFolderCommandChannel,
-    IRootFileExplorerFolder rootFolder) : ICommandHandler<ScanFolderRequest>
+    IRootFileExplorerFolder rootFolder,
+    IServiceProvider serviceProvider) : ICommandHandler<ScanFolderRequest>
 {
     public async Task HandleAsync(ScanFolderRequest request, CancellationToken cancellationToken = default)
     {
@@ -30,6 +32,9 @@ public class ScanFolderCommandHandler(
         {
             throw new InvalidRequestException(nameof(request.NodePath), "The specified path is not a directory.");
         }
+        
+        using var scope = serviceProvider.CreateScope();
+        var fileExplorerNodeRepository = scope.ServiceProvider.GetRequiredService<IFileExplorerNodeRepository>();
 
         var fsHeader = new FolderHeader
         {
@@ -68,14 +73,15 @@ public class ScanFolderCommandHandler(
         {
             return;
         }
-        
-        _ = persistFolderCommandChannel.WriteAsync(new PersistFolderCommand
+
+        using (var scope = serviceProvider.CreateScope())
         {
-            DirectoryPath = diff.FileSystemHeader.NodePath,
-            Directory = root,
-            Children = children
-        }, cancellationToken);
-        
+            await scope.ServiceProvider.GetRequiredService<IFolderPersistenceService>()
+                .AddOrUpdateFolderAsync(diff.FileSystemHeader.NodePath, root, children, cancellationToken);
+            await scope.ServiceProvider.GetRequiredService<IUnitOfWork>()
+                .SaveChangesAsync(cancellationToken);
+        }
+
         if (!recursive || children.Count == 0)
         {
             return;
@@ -92,6 +98,8 @@ public class ScanFolderCommandHandler(
             return;
         }
         
+        using var readScope = serviceProvider.CreateScope();
+        var fileExplorerNodeRepository = readScope.ServiceProvider.GetRequiredService<IFileExplorerNodeRepository>();
         var actualHashes = await fileExplorerNodeRepository.GetFolderHeadersAsync(childNodePaths, cancellationToken);
         var expectedFolderHeaders =
             childNodes.Select(async cnp => new FolderHeader
@@ -113,11 +121,12 @@ public class ScanFolderCommandHandler(
             
             var dbHeader = actualHashes.GetValueOrDefault(childNodePath);
             
-            if (fsHeader.Equals(dbHeader))
-            {
-                logger.LogInformation("Folder {NodePath} is already up to date ({ExpectedHash}). Skipping...", childNodePath, fsHeader);
-                continue;
-            }
+            // TODO: reenable
+            // if (fsHeader.Equals(dbHeader))
+            // {
+            //     logger.LogInformation("Folder {NodePath} is already up to date ({ExpectedHash}). Skipping...", childNodePath, fsHeader);
+            //     continue;
+            // }
 
             folders.Add(new FolderDiff
             {

@@ -25,6 +25,9 @@ import {FolderPasteFormComponent} from "../main-content/file-explorer/folder-pas
 import {
   RefreshFolderButtonComponent
 } from "../components/nodes/buttons/refresh-folder-button/refresh-folder-button.component";
+import {
+  FolderScanProgressComponent
+} from "../main-content/file-explorer/folder-scan-progress/folder-scan-progress.component";
 
 @Component({
   selector: 'app-nav-bar',
@@ -45,7 +48,8 @@ import {
     NgClass,
     TracklistToolbarComponent,
     FolderPasteFormComponent,
-    RefreshFolderButtonComponent
+    RefreshFolderButtonComponent,
+    FolderScanProgressComponent
   ],
   templateUrl: './nav-bar.component.html',
   styleUrl: './nav-bar.component.scss'

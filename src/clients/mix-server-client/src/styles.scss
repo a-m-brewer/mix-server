@@ -62,6 +62,18 @@ body {
   display: flex;
 }
 
+.align-items-center {
+  align-items: center;
+}
+
+.mr-1 {
+    margin-right: 0.25rem;
+}
+
+.mr-2 {
+    margin-right: 0.5rem;
+}
+
 .node-list-item-content-text-subtitle {
   font-size: 14px;
   font-weight: lighter;

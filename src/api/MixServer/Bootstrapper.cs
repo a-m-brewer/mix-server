@@ -18,6 +18,7 @@ public class Bootstrapper(
     IWebHostEnvironment environment,
     MixServerDbContext context,
     IFileNotificationService fileNotificationService,
+    IFileSystemFolderMetadataService fileSystemFolderMetadataService,
     IFirstUserInitializationService firstUserInitializationService,
     ITranscodeCache transcodeCache,
     IUserRoleService userRoleService)
@@ -29,6 +30,8 @@ public class Bootstrapper(
         {
             await context.Database.MigrateAsync();
         }
+        
+        fileSystemFolderMetadataService.Initialize();
         
         await absolutePathMigrationService.MigrateAsync();
 

@@ -232,6 +232,7 @@ public class FolderPersistenceService(
         }
 
         var addedChildrenResults = await Task.WhenAll(addedChildren);
+        
         await fileExplorerNodeRepository.AddRangeAsync(addedChildrenResults, cancellationToken);
         logger.LogDebug("Ensured {ChildrenCount} children entities are up to date for {ParentPath}",
             fsChildren.Count, parentEntity?.RelativePath ?? root.RelativePath);

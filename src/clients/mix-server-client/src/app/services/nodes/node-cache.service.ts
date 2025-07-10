@@ -271,10 +271,11 @@ export class NodeCacheService {
     return folder.node.path;
   }
 
-  public refreshFolder(nodePath: NodePathHeader): void {
+  public refreshFolder(nodePath: NodePathHeader, recursive?: boolean): void {
     this._nodeClient.request(nodePath.key,
       client => client.refreshFolder(new RefreshFolderCommand({
-        nodePath: this._nodePathConverter.toRequestDto(nodePath)
+        nodePath: this._nodePathConverter.toRequestDto(nodePath),
+        recursive: recursive ?? false
       })), 'Failed to refresh folder')
       .then(result => result.success(dto => {
         const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(dto);

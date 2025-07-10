@@ -1,20 +1,39 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MixServer.Domain.Constants;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.Settings;
 
 namespace MixServer.Domain.FileExplorer.Services;
 
 public interface IFileSystemFolderMetadataService
 {
+    void Initialize();
+    
     Task<FileSystemFolderMetadataFileDto> GetOrCreateAsync(NodePath nodePath, CancellationToken cancellationToken = default);
     Task<FileSystemFolderMetadataFileDto?> GetOrDefaultAsync(NodePath nodePath, CancellationToken cancellationToken);
 
     Task<FileSystemFolderMetadataFileDto> CreateMetadataAsync(NodePath nodePath, Guid? folderId = null, CancellationToken cancellationToken = default);
 }
 
-public class FileSystemFolderMetadataService(ILogger<FileSystemFolderMetadataService> logger) : IFileSystemFolderMetadataService
+public class FileSystemFolderMetadataService(
+    IOptions<CacheFolderSettings> cacheFolderSettings,
+    IPathUuidGenerator pathUuidGenerator,
+    IFileWriteLockService fileWriteLockService,
+    ILogger<FileSystemFolderMetadataService> logger)
+    : IFileSystemFolderMetadataService
 {
+    public void Initialize()
+    {
+        if (!Directory.Exists(GetFolderMetadataPath()))
+        {
+            Directory.CreateDirectory(GetFolderMetadataPath());
+        }
+        
+        logger.LogInformation("File system folder metadata service initialized at {MetadataPath}", GetFolderMetadataPath());
+    }
+
     public async Task<FileSystemFolderMetadataFileDto> GetOrCreateAsync(NodePath nodePath, CancellationToken cancellationToken = default)
     {
         var metadata = await GetOrDefaultAsync(nodePath, cancellationToken);
@@ -58,6 +77,7 @@ public class FileSystemFolderMetadataService(ILogger<FileSystemFolderMetadataSer
 
     public async Task<FileSystemFolderMetadataFileDto> CreateMetadataAsync(NodePath nodePath, Guid? folderId = null, CancellationToken cancellationToken = default)
     {
+        var tempMetadataPath = Path.GetTempFileName();
         var metadataPath = GetMetadataPath(nodePath);
         var metadataJson = new FileSystemFolderMetadataFileJson
         {
@@ -65,8 +85,15 @@ public class FileSystemFolderMetadataService(ILogger<FileSystemFolderMetadataSer
         };
         try
         {
-            await using var stream = File.OpenWrite(metadataPath);
-            await JsonSerializer.SerializeAsync(stream, metadataJson, cancellationToken: cancellationToken);
+            await using (var stream = File.OpenWrite(tempMetadataPath))
+            {
+                await JsonSerializer.SerializeAsync(stream, metadataJson, cancellationToken: cancellationToken);
+            }
+
+            _ = fileWriteLockService.WriteAsync(metadataPath, () =>
+            {
+                File.Move(tempMetadataPath, metadataPath, true);
+            });
         }
         catch (Exception ex)
         {
@@ -81,5 +108,10 @@ public class FileSystemFolderMetadataService(ILogger<FileSystemFolderMetadataSer
         };
     }
 
-    private static string GetMetadataPath(NodePath nodePath) => Path.Join(nodePath.AbsolutePath, FolderMetadataConstants.MetadataFileName);
+    private string GetMetadataPath(NodePath nodePath) => Path.Join(GetFolderMetadataPath(), $"{pathUuidGenerator.GetUuidForPath(nodePath.AbsolutePath).ToString()}.json");
+
+    private string GetFolderMetadataPath()
+    {
+        return Path.Join(cacheFolderSettings.Value.DirectoryAbsolutePath, "folder-metadata");
+    }
 }

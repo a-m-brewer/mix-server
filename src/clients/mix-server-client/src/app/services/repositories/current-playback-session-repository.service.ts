@@ -95,11 +95,9 @@ export class CurrentPlaybackSessionRepositoryService {
     }
 
     this._currentNodeSub = value?.currentNode$.subscribe(node => {
-      console.log('nodeSub', node);
       this._currentSessionNode$.next(node);
     })
 
-    console.log(value);
     this._currentSession$.next(value);
   }
 

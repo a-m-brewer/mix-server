@@ -306,18 +306,20 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
             return [];
         }
 
-        var pathPairs = childNodePaths
-            .Select(np => new { np.RootPath, np.RelativePath })
-            .ToList();
+        var lookupPaths = childNodePaths
+            .Select(np => np.RootPath + ";" + np.RelativePath)
+            .ToHashSet();
 
-        return await context.Nodes.OfType<FileExplorerFolderNodeEntity>()
-            .Include(i => i.RootChild)
-            .Where(w => pathPairs.Contains(new { RootPath = w.RootChild.RelativePath, w.RelativePath }))
-            .Select(s => new FolderHeader
+        var query = from folder in GetFolderQuery(GetFolderQueryOptions.FolderOnly)
+            let path = folder.RootChild.RelativePath + ";" + folder.RelativePath
+            where lookupPaths.Contains(path)
+            select new FolderHeader
             {
-                NodePath = new NodePath(s.RootChild.RelativePath, s.RelativePath),
-                Hash = s.Hash
-            })
+                NodePath = folder.Path,
+                Hash = folder.Hash
+            };
+
+        return await query
             .ToDictionaryAsync(k => k.NodePath, cancellationToken);
     }
 
