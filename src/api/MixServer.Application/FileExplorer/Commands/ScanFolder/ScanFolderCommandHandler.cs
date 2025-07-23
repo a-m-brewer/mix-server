@@ -66,21 +66,11 @@ public class ScanFolderCommandHandler(
     {
         var nodePath = rootFolder.GetNodePath(root.FullName);
         
-        var childNodes = new List<DirectoryInfo>();
+        List<DirectoryInfo> childNodes;
         try
         {
-            using var scope = serviceProvider.CreateScope();
-            await foreach (var map in scope.ServiceProvider.GetRequiredService<IFolderPersistenceService>()
-                               .AddOrUpdateFolderAsync(nodePath, root, cancellationToken))
-            {
-                if (map is { IsParent: false, FsInfo: DirectoryInfo d })
-                {
-                    childNodes.Add(d);
-                }
-            }
-            
-            await scope.ServiceProvider.GetRequiredService<IUnitOfWork>()
-                .SaveChangesAsync(cancellationToken);
+            var folders = await ProcessDirectoryAsync(nodePath, root, cancellationToken);
+            childNodes = folders;
         }
         catch (Exception ex)
         {
@@ -111,5 +101,44 @@ public class ScanFolderCommandHandler(
         actionBlock.Complete();
 
         await actionBlock.Completion.ConfigureAwait(false);
+    }
+
+    private async Task<List<DirectoryInfo>> ProcessDirectoryAsync(NodePath nodePath, DirectoryInfo root, CancellationToken cancellationToken)
+    {
+        await ExecuteScopedAndSaveChangesAsync(async (service, token) =>
+        {
+            await service.EnsureParentUpdatedAsync(nodePath, root, token);
+        }, cancellationToken);
+
+        var hashBuilder = new FsHashBuilder();
+        var directories = new List<DirectoryInfo>();
+
+        foreach (var childrenChunk in root.MsEnumerateFileSystemInfos().Chunk(500))
+        {
+            await ExecuteScopedAndSaveChangesAsync(async (service, token) =>
+            {
+                var directoryInfos = await service.EnsureChildrenUpdatedAsync(nodePath, childrenChunk, hashBuilder, token);
+                directories.AddRange(directoryInfos);
+            }, cancellationToken);
+        }
+        
+        var hash = hashBuilder.ComputeHash();
+        
+        await ExecuteScopedAndSaveChangesAsync(async (service, token) =>
+        {
+            await service.UpdateHashAsync(nodePath, hash, token);
+        }, cancellationToken);
+
+        return directories;
+    }
+
+    private async Task ExecuteScopedAndSaveChangesAsync(Func<IFolderPersistenceService, CancellationToken, Task> task, CancellationToken cancellationToken)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        
+        await task(scope.ServiceProvider.GetRequiredService<IFolderPersistenceService>(), cancellationToken);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

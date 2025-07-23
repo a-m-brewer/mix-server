@@ -16,8 +16,9 @@ public interface IFileExplorerNodeRepository : ITransientRepository
         IEnumerable<string> relativePaths,
         GetFileQueryOptions options,
         CancellationToken cancellationToken);
-    Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(string rootPath,
-        IEnumerable<Guid> folderIds,
+    Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(
+        string rootPath,
+        IEnumerable<string> relativePaths,
         GetFolderQueryOptions options,
         CancellationToken cancellationToken);
     Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(IEnumerable<NodePath> nodePaths,

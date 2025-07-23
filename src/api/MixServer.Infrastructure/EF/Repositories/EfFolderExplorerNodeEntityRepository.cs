@@ -74,15 +74,13 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
                 .ToListAsync(cancellationToken: cancellationToken);
     }
 
-    public async Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(string rootPath, IEnumerable<Guid> folderIds, GetFolderQueryOptions options, CancellationToken cancellationToken)
+    public async Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(string rootPath, IEnumerable<string> relativePaths, GetFolderQueryOptions options, CancellationToken cancellationToken)
     {
         var query = GetFolderQuery(options);
 
         var folders = await query
-            .Where(w => w.RootChild.RelativePath == rootPath && folderIds.Contains(w.Id))
+            .Where(w => w.RootChild.RelativePath == rootPath && relativePaths.Contains(w.RelativePath))
             .ToListAsync(cancellationToken: cancellationToken);
-        
-        await Task.WhenAll(folders.Select(f => LoadFolderQueryRelationshipsAsync(f, options, cancellationToken)));
         
         return folders;
     }
