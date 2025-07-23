@@ -10,7 +10,6 @@ namespace MixServer.Services;
 #pragma warning disable CS0618 // Type or member is obsolete - used for migration purposes
 public class AbsolutePathMigrationService(
     MixServerDbContext context,
-    IFileSystemHashService fileSystemHashService,
     ILogger<AbsolutePathMigrationService> logger,
     IRootFileExplorerFolder rootFolder)
 {

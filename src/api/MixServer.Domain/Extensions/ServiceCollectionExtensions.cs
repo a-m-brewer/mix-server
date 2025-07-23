@@ -28,7 +28,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITranscodeCache, TranscodeCache>();
         services.AddTransient<ITranscodeService, TranscodeService>();
         services.AddTransient<ICanPlayOnDeviceValidator, CanPlayOnDeviceValidator>();
-        services.AddTransient<IFileSystemHashService, FileSystemHashService>();
         services.AddTransient<IFileSystemFolderMetadataService, FileSystemFolderMetadataService>();
         services.AddTransient<IFileSystemQueryService, FileSystemQueryService>();
         services.AddTransient<IFolderPersistenceService, FolderPersistenceService>();

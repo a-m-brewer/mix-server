@@ -9,6 +9,7 @@ public interface IFileExplorerNodeRepository : ITransientRepository
 {
     Task<FileExplorerFileNodeEntity> GetFileNodeAsync(NodePath nodePath, GetFileQueryOptions options, CancellationToken cancellationToken);
     Task<ICollection<FileExplorerFileNodeEntity>> GetFileNodesAsync(IEnumerable<NodePath> nodePaths, GetFileQueryOptions options, CancellationToken cancellationToken);
+    Task<ICollection<FileExplorerFileNodeEntity>> GetFileNodesAsync(NodePath parentNodePath, GetFileQueryOptions options, CancellationToken cancellationToken);
     Task<FileExplorerFileNodeEntity?> GetFileNodeOrDefaultAsync(NodePath nodePath, GetFileQueryOptions options, CancellationToken cancellationToken);
     Task<List<FileExplorerFileNodeEntity>> GetFileNodesAsync(
         string rootPath,
@@ -21,6 +22,7 @@ public interface IFileExplorerNodeRepository : ITransientRepository
         CancellationToken cancellationToken);
     Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(IEnumerable<NodePath> nodePaths,
         CancellationToken cancellationToken);
+    Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(NodePath parentNodePath, GetFolderQueryOptions options, CancellationToken cancellationToken);
     Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(NodePath nodePath, GetFolderQueryOptions options, CancellationToken cancellationToken);
     Task<FileExplorerRootChildNodeEntity?> GetRootChildFolderNodeOrDefaultAsync(NodePath nodePath, GetFolderQueryOptions options, CancellationToken cancellationToken);
     Task<FileExplorerFolderNodeEntity?> GetFolderNodeOrDefaultAsync(Guid nodeId, GetFolderQueryOptions options, CancellationToken cancellationToken);

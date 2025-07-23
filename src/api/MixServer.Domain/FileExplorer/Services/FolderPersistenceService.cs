@@ -26,14 +26,12 @@ public interface IFolderPersistenceService
     Task<List<FileExplorerFileNodeEntity>>  GetOrAddFileRangeAsync(IReadOnlyList<NodePath> nodePaths, CancellationToken cancellationToken = default);
     IAsyncEnumerable<ChildEntityMap> AddOrUpdateFolderAsync(NodePath directoryPath,
         DirectoryInfo directory,
-        IEnumerable<FileSystemInfo> children,
         CancellationToken cancellationToken = default);
 }
 
 public class FolderPersistenceService(
     IFileSystemInfoToEntityConverter fileSystemInfoToEntityConverter,
     IFileExplorerNodeRepository fileExplorerNodeRepository,
-    IFileSystemHashService fileSystemHashService,
     IFileSystemQueryService fileSystemQueryService,
     ILogger<FolderPersistenceService> logger,
     IRemoveMediaMetadataChannel removeMediaMetadataChannel,
@@ -54,8 +52,7 @@ public class FolderPersistenceService(
         var directory = new DirectoryInfo(nodePath.AbsolutePath);
 
         IFileExplorerFolderEntity folderEntity = null!;
-        await foreach (var map in AddOrUpdateFolderAsync(nodePath, directory, directory.MsEnumerateFileSystemInfos(),
-                           cancellationToken))
+        await foreach (var map in AddOrUpdateFolderAsync(nodePath, directory, cancellationToken))
         {
             if (map is { IsParent: true, DbEntity: IFileExplorerFolderEntity f })
             {
@@ -127,25 +124,29 @@ public class FolderPersistenceService(
         return files;
     }
 
-    public async IAsyncEnumerable<ChildEntityMap> AddOrUpdateFolderAsync(NodePath directoryPath, DirectoryInfo directory, IEnumerable<FileSystemInfo> children,
+    public async IAsyncEnumerable<ChildEntityMap> AddOrUpdateFolderAsync(
+        NodePath directoryPath,
+        DirectoryInfo directory,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Received persist folder request for {Directory}", directory.FullName);
         
         var root = await fileExplorerNodeRepository.GetRootChildOrThrowAsync(directoryPath.RootPath, cancellationToken);
-        var dirHash = await fileSystemHashService.ComputeFolderMd5HashAsync(directory, cancellationToken);
+
+        using var hashBuilder = new FsHashBuilder();
         
         var parentEntity = await EnsureParentUpdatedAsync(
             directoryPath,
             directory,
-            dirHash,
             root,
             cancellationToken);
 
         await foreach (var map in EnsureChildrenUpdatedAsync(
-                     children,
-                     root,
+                     directoryPath,
                      parentEntity,
+                     directory.MsEnumerateFileSystemInfos(),
+                     root,
+                     hashBuilder,
                      cancellationToken))
         {
             yield return map;
@@ -154,6 +155,8 @@ public class FolderPersistenceService(
         IFileExplorerFolderEntity parentEntityOrRoot = parentEntity is null ? root : parentEntity;
         var parentInfoOrRoot = parentEntity is null ? directory : new DirectoryInfo(root.Path.AbsolutePath);
 
+        parentEntityOrRoot.Hash = hashBuilder.ComputeHash();
+
         yield return new ChildEntityMap
         {
             Path = directoryPath,
@@ -161,28 +164,21 @@ public class FolderPersistenceService(
             DbEntity = parentEntityOrRoot,
             IsParent = true
         };
-
-        // var removedChildren = RemoveChildrenMissingInFileSystem(parentEntity is null ? root.Children : parentEntity.Children, fsChildren);
+        
+        logger.LogInformation("Persisted folder {Directory} ({Hash})", directory.FullName, parentEntityOrRoot.Hash);
 
         // unitOfWork.OnSaved(() => NotifyChanges(fsChildren, removedChildren));
-
-        // logger.LogInformation("Persisted folder {Directory}", directory.FullName);
-        //
-        // 
-        //
-        // return parentEntityOrRoot;
     }
     
     private async Task<FileExplorerFolderNodeEntity?> EnsureParentUpdatedAsync(
         NodePath directoryPath,
         DirectoryInfo directory,
-        string directoryHash,
         FileExplorerRootChildNodeEntity root,
         CancellationToken cancellationToken)
     {
         if (directoryPath.IsRootChild)
         {
-            root.Update(directoryPath, directory, directoryHash);
+            root.Update(directoryPath, directory);
             logger.LogTrace("Directory path {DirectoryPath} is root child, updated root entity", directoryPath.AbsolutePath);
             return null;
         }
@@ -199,7 +195,6 @@ public class FolderPersistenceService(
                 directory,
                 root,
                 grandParentEntity,
-                true,
                 cancellationToken);
             await fileExplorerNodeRepository.AddAsync(parentEntity, cancellationToken);
             logger.LogTrace("Directory path {DirectoryPath} is not in database, created new folder entity", directoryPath.AbsolutePath);
@@ -207,7 +202,6 @@ public class FolderPersistenceService(
         else
         {
             parentEntity.Update(directoryPath, directory, grandParentEntity);
-            parentEntity.Hash = directoryHash; // Only update the hash if it's the directory being processed and not a child.
             logger.LogTrace("Directory path {DirectoryPath} is in database, updated existing folder entity", directoryPath.AbsolutePath);
         }
 
@@ -216,12 +210,16 @@ public class FolderPersistenceService(
     }
 
     private async IAsyncEnumerable<ChildEntityMap> EnsureChildrenUpdatedAsync(
+        NodePath parentNodePath,
+        FileExplorerFolderNodeEntity? parentEntity,
         IEnumerable<FileSystemInfo> children,
         FileExplorerRootChildNodeEntity root,
-        FileExplorerFolderNodeEntity? parentEntity,
+        FsHashBuilder hashBuilder,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        await foreach (var chunk in GetChildEntitiesAsync(root.RelativePath, children, cancellationToken))
+        var dbNodes = await fileSystemQueryService.GetNodesAsync(parentNodePath, GetFileQueryOptions.MetadataOnly, GetFolderQueryOptions.FolderOnly, cancellationToken);
+        
+        foreach (var chunk in GetChildEntitiesAsync(dbNodes, children).Chunk(100))
         {
             var addedChildren = new List<FileExplorerNodeEntity>();
             foreach (var fsChild in chunk)
@@ -239,26 +237,19 @@ public class FolderPersistenceService(
                     logger.LogDebug("Created new child entity for {ChildPath} with ID {ChildEntityId}", fsChild.Path.RelativePath, fsChild.DbEntity.Id);
                 }
 
+                hashBuilder.Add(fsChild.FsInfo);
                 yield return fsChild;
             }
 
             await fileExplorerNodeRepository.AddRangeAsync(addedChildren, cancellationToken);
         }
-    }
-    
-    private List<FileExplorerNodeEntity> RemoveChildrenMissingInFileSystem(
-        List<FileExplorerNodeEntity> dbChildren,
-        List<ChildEntityMap> fsChildren)
-    {
-        var fsChildPaths = fsChildren.Select(s => s.Path.RelativePath)
-            .ToHashSet();
-        var removedChildren = dbChildren
-            .Where(db => fsChildPaths.All(fsRelativePath => fsRelativePath != db.RelativePath))
-            .ToList();
-        fileExplorerNodeRepository.RemoveRange(removedChildren);
 
-        logger.LogDebug("Removed {RemovedChildrenCount} children that are missing in file system", removedChildren.Count);
-        return removedChildren;
+        // If there are any nodes in the database that were not found in the file system, remove them.
+        // Nodes are removed in GetChildEntitiesAsync, so we can just check the remaining dbNodes.
+        if (dbNodes.Count > 0)
+        {
+            fileExplorerNodeRepository.RemoveRange(dbNodes);
+        }
     }
     
     private void NotifyChanges(List<ChildEntityMap> fsChildren, List<FileExplorerNodeEntity> removedChildren)
@@ -311,32 +302,42 @@ public class FolderPersistenceService(
         _ = removeMediaMetadataChannel.WriteAsync(new RemoveMediaMetadataRequest(removedFiles));
     }
 
-    private async IAsyncEnumerable<IEnumerable<ChildEntityMap>> GetChildEntitiesAsync(
-        string rootPath,
-        IEnumerable<FileSystemInfo> children,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+    private IEnumerable<ChildEntityMap> GetChildEntitiesAsync(
+        HashSet<FileExplorerNodeEntity> dbChildren,
+        IEnumerable<FileSystemInfo> fsChildren)
     {
-        foreach (var fsChild in children.Chunk(100))
+        foreach (var fsChild in fsChildren)
         {
-            var fsNodePath = fsChild.Select(s => new { NodePath = rootFolder.GetNodePath(s.FullName), Info = s }).ToList();
-            
-            var childEntities = await fileSystemQueryService
-                .GetNodesAsync(
-                    rootPath,
-                    fsNodePath.Select(s => s.NodePath).ToList(),
-                    new GetFolderQueryOptions(),
-                    GetFileQueryOptions.MetadataOnly,
-                    cancellationToken);
-
-            yield return from fs in fsNodePath
-                join dbChildEntity in childEntities on fs.NodePath.RelativePath equals dbChildEntity.RelativePath into dbEntityGroup
-                from dbChildEntity in dbEntityGroup.DefaultIfEmpty()
-                select new ChildEntityMap
+            if (dbChildren.Count == 0)
+            {
+                yield return new ChildEntityMap
                 {
-                    Path = fs.NodePath,
-                    FsInfo = fs.Info,
-                    DbEntity = dbChildEntity
+                    Path = rootFolder.GetNodePath(fsChild.FullName),
+                    FsInfo = fsChild,
+                    DbEntity = null,
+                    IsParent = false
                 };
+                continue;
+            }
+            
+            var path = rootFolder.GetNodePath(fsChild.FullName);
+            var dbEntity = dbChildren.FirstOrDefault(f => f.RelativePath == path.RelativePath);
+            if (dbEntity is not null)
+            {
+                // Remove the entity from the dbChildren set so we can identify which ones are missing later.
+                dbChildren.Remove(dbEntity);
+            }
+            else
+            {
+                logger.LogWarning("File system child {ChildPath} not found in database, creating new entity", fsChild.FullName);
+            }
+            
+            yield return new ChildEntityMap
+            {
+                Path = path,
+                FsInfo = fsChild,
+                DbEntity = dbEntity
+            };
         }
     }
 }

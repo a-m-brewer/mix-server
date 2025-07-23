@@ -8,17 +8,20 @@ public static class FileSystemInfoExtensions
     public static IEnumerable<FileSystemInfo> MsEnumerateFileSystemInfos(this DirectoryInfo directoryInfo)
     {
         return directoryInfo.EnumerateFileSystemInfos("*", FileSystemEnumeration.Options)
-            .Where(w => w is DirectoryInfo || w.Name != FolderMetadataConstants.MetadataFileName);
+            .Where(w => w is DirectoryInfo || w.Name != FolderMetadataConstants.MetadataFileName)
+            .OrderBy(o => o.FullName, StringComparer.Ordinal);
     }
     
     public static IEnumerable<FileInfo> MsEnumerateFiles(this DirectoryInfo directoryInfo)
     {
         return directoryInfo.EnumerateFiles("*", FileSystemEnumeration.Options)
-            .Where(w => w.Name != FolderMetadataConstants.MetadataFileName);
+            .Where(w => w.Name != FolderMetadataConstants.MetadataFileName)
+            .OrderBy(o => o.FullName, StringComparer.Ordinal);
     }
     
     public static IEnumerable<DirectoryInfo> MsEnumerateDirectories(this DirectoryInfo directoryInfo)
     {
-        return directoryInfo.EnumerateDirectories("*", FileSystemEnumeration.Options);
+        return directoryInfo.EnumerateDirectories("*", FileSystemEnumeration.Options)
+            .OrderBy(o => o.FullName, StringComparer.Ordinal);
     }
 }

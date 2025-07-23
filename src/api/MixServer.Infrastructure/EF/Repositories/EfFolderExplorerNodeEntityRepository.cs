@@ -5,6 +5,7 @@ using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Infrastructure.EF.Extensions;
+using EEF = Microsoft.EntityFrameworkCore.EF;
 
 namespace MixServer.Infrastructure.EF.Repositories;
 
@@ -33,6 +34,27 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
             where lookupPaths.Contains(path)
             select file;
 
+        return await query.ToListAsync(cancellationToken: cancellationToken);
+    }
+
+    public async Task<ICollection<FileExplorerFileNodeEntity>> GetFileNodesAsync(NodePath parentNodePath, GetFileQueryOptions options, CancellationToken cancellationToken)
+    {
+        var parentPath = parentNodePath.RelativePath;
+        var hasPath = !string.IsNullOrWhiteSpace(parentPath);
+
+        var childPattern = hasPath
+            ? $"{parentPath}{Path.DirectorySeparatorChar}%"
+            : "%";
+        var descendantPattern = hasPath
+            ? $"{parentPath}{Path.DirectorySeparatorChar}%{Path.DirectorySeparatorChar}%"
+            : $"%{Path.DirectorySeparatorChar}%";
+        
+        var query = GetFileQuery(options)
+            .Where(w =>
+                w.RootChild.RelativePath == parentNodePath.RootPath &&
+                EEF.Functions.Like(w.RelativePath, childPattern) &&
+                !EEF.Functions.Like(w.RelativePath, descendantPattern));
+        
         return await query.ToListAsync(cancellationToken: cancellationToken);
     }
 
@@ -86,6 +108,28 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
         var folders = await query.ToListAsync(cancellationToken: cancellationToken);
 
         return folders;
+    }
+
+    public Task<List<FileExplorerFolderNodeEntity>> GetFolderNodesAsync(NodePath parentNodePath,
+        GetFolderQueryOptions options, CancellationToken cancellationToken)
+    {
+        var parentPath = parentNodePath.RelativePath;
+        var hasPath = !string.IsNullOrWhiteSpace(parentPath);
+
+        var childPattern = hasPath
+            ? $"{parentPath}{Path.DirectorySeparatorChar}%"
+            : "%";
+        var descendantPattern = hasPath
+            ? $"{parentPath}{Path.DirectorySeparatorChar}%{Path.DirectorySeparatorChar}%"
+            : $"%{Path.DirectorySeparatorChar}%";
+        
+        var query = GetFolderQuery(options)
+            .Where(w =>
+                w.RootChild.RelativePath == parentNodePath.RootPath &&
+                EEF.Functions.Like(w.RelativePath, childPattern) &&
+                !EEF.Functions.Like(w.RelativePath, descendantPattern));
+        
+        return query.ToListAsync(cancellationToken: cancellationToken);
     }
 
     public async Task<FileExplorerFolderNodeEntity> GetFolderNodeAsync(NodePath nodePath, GetFolderQueryOptions options, CancellationToken cancellationToken)

@@ -59,11 +59,10 @@ public class FileExplorerRootChildNodeEntity : FileExplorerNodeEntityBase, IFile
 {
     public List<FileExplorerNodeEntity> Children { get; set; } = [];
 
-    public void Update(NodePath nodePath, DirectoryInfo directoryInfo, string hash)
+    public void Update(NodePath nodePath, DirectoryInfo directoryInfo)
     {
         base.Update(directoryInfo);
         RelativePath = nodePath.RootPath;
-        Hash = hash;
     }
 
     public string Hash { get; set; } = string.Empty;

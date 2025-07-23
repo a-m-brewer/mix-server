@@ -17,6 +17,11 @@ public interface IFileSystemQueryService
 
     Task<List<FileExplorerNodeEntity>> GetNodesAsync(string rootPath, List<NodePath> fsChildPaths,
         GetFolderQueryOptions folderQuery, GetFileQueryOptions fileQuery, CancellationToken cancellationToken);
+    
+    Task<HashSet<FileExplorerNodeEntity>> GetNodesAsync(NodePath parentNodePath,
+        GetFileQueryOptions fileOptions,
+        GetFolderQueryOptions folderOptions,
+        CancellationToken cancellationToken);
 }
 
 public class FileSystemQueryService(
@@ -105,5 +110,19 @@ public class FileSystemQueryService(
             .Cast<FileExplorerNodeEntity>();
 
         return folders.Concat(files).ToList();
+    }
+
+    public async Task<HashSet<FileExplorerNodeEntity>> GetNodesAsync(NodePath parentNodePath,
+        GetFileQueryOptions fileOptions,
+        GetFolderQueryOptions folderOptions,
+        CancellationToken cancellationToken)
+    {
+        var folders = await fileExplorerNodeRepository.GetFolderNodesAsync(parentNodePath, folderOptions, cancellationToken);
+        var files = await fileExplorerNodeRepository.GetFileNodesAsync(parentNodePath, fileOptions, cancellationToken);
+        
+        return folders
+            .Cast<FileExplorerNodeEntity>()
+            .Concat(files)
+            .ToHashSet();
     }
 }

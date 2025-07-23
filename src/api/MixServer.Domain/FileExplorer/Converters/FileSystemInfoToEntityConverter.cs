@@ -16,7 +16,6 @@ public interface IFileSystemInfoToEntityConverter : IConverter
         DirectoryInfo directoryInfo,
         FileExplorerRootChildNodeEntity rootChild,
         FileExplorerFolderNodeEntity? parent,
-        bool createWithHash,
         CancellationToken cancellationToken);
 
     Task<FileExplorerNodeEntity> CreateNodeAsync(
@@ -33,7 +32,6 @@ public interface IFileSystemInfoToEntityConverter : IConverter
 
 public class FileSystemInfoToEntityConverter(
     IFileMetadataConverter fileMetadataConverter,
-    IFileSystemHashService fileSystemHashService,
     IFileSystemFolderMetadataService fileSystemFolderMetadataService,
     IRootFileExplorerFolder rootFolder) : IFileSystemInfoToEntityConverter
 {
@@ -48,21 +46,18 @@ public class FileSystemInfoToEntityConverter(
         };
     }
 
-    public async Task<FileExplorerRootChildNodeEntity> CreateRootChildEntityAsync(
+    public Task<FileExplorerRootChildNodeEntity> CreateRootChildEntityAsync(
         DirectoryInfo directoryInfo,
         CancellationToken cancellationToken)
     {
         var entity = CreateRootChildEntity(directoryInfo);
-        entity.Hash = await fileSystemHashService.ComputeFolderMd5HashAsync(directoryInfo, cancellationToken);
-        
-        return entity;
+        return Task.FromResult(entity);
     }
 
     public async Task<FileExplorerFolderNodeEntity> CreateFolderEntityAsync(
         DirectoryInfo directoryInfo,
         FileExplorerRootChildNodeEntity rootChild,
         FileExplorerFolderNodeEntity? parent,
-        bool createWithHash,
         CancellationToken cancellationToken)
     {
         var nodePath = rootFolder.GetNodePath(directoryInfo.FullName);
@@ -75,21 +70,18 @@ public class FileSystemInfoToEntityConverter(
             Exists = directoryInfo.Exists,
             CreationTimeUtc = directoryInfo.CreationTimeUtc,
             RootChild = rootChild,
-            Parent = parent,
-            // The hash represents if the folder has been scanned for the first time or not.
-            Hash = createWithHash
-                ? await fileSystemHashService.ComputeFolderMd5HashAsync(directoryInfo, cancellationToken)
-                : string.Empty
+            Parent = parent
         };
     }
 
     public async Task<FileExplorerNodeEntity> CreateNodeAsync(
-        FileSystemInfo child, FileExplorerRootChildNodeEntity root,
+        FileSystemInfo child,
+        FileExplorerRootChildNodeEntity root,
         FileExplorerFolderNodeEntity? parentEntity, CancellationToken cancellationToken)
     {
         if (child is DirectoryInfo directoryInfo) 
         {
-            return await CreateFolderEntityAsync(directoryInfo, root, parentEntity, false, cancellationToken);
+            return await CreateFolderEntityAsync(directoryInfo, root, parentEntity, cancellationToken);
         }
 
         if (child is FileInfo fileInfo)

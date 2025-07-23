@@ -13,10 +13,8 @@ using MixServer.Domain.Persistence;
 namespace MixServer.Application.FileExplorer.Commands.ScanFolder;
 
 public class ScanFolderCommandHandler(
-    IFileSystemHashService fileSystemHashService,
     IFolderScanTrackingStore folderScanTrackingStore,
     ILogger<ScanFolderCommandHandler> logger,
-    IPersistFolderCommandChannel persistFolderCommandChannel,
     IRootFileExplorerFolder rootFolder,
     IServiceProvider serviceProvider) : ICommandHandler<ScanFolderRequest>
 {
@@ -73,7 +71,7 @@ public class ScanFolderCommandHandler(
         {
             using var scope = serviceProvider.CreateScope();
             await foreach (var map in scope.ServiceProvider.GetRequiredService<IFolderPersistenceService>()
-                               .AddOrUpdateFolderAsync(nodePath, root, root.MsEnumerateDirectories(), cancellationToken))
+                               .AddOrUpdateFolderAsync(nodePath, root, cancellationToken))
             {
                 if (map is { IsParent: false, FsInfo: DirectoryInfo d })
                 {

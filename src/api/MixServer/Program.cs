@@ -157,7 +157,6 @@ builder.Services.AddHostedService<UpdateMediaMetadataBackgroundService>();
 builder.Services.AddHostedService<RemoveMediaMetadataBackgroundService>();
 builder.Services.AddHostedService<TranscodeBackgroundService>();
 builder.Services.AddHostedService<DeviceDetectionBackgroundService>();
-builder.Services.AddHostedService<PersistFolderBackgroundService>();
 builder.Services.AddHostedService<ScanFolderBackgroundService>();
 
 builder.Services.AddTransient<AbsolutePathMigrationService>();
