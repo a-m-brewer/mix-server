@@ -214,7 +214,7 @@ public class FolderPersistenceService(
             ? null
             : await fileSystemQueryService.GetFolderNodeOrDefaultAsync(grandParentPath, GetFolderQueryOptions.FolderOnly, cancellationToken);
             
-        var parentEntity = await fileSystemQueryService.GetFolderNodeOrDefaultAsync(directoryPath, GetFolderQueryOptions.FolderAndChildrenWithBasicMetadata, cancellationToken: cancellationToken);
+        var parentEntity = await fileSystemQueryService.GetFolderNodeOrDefaultAsync(directoryPath, GetFolderQueryOptions.FolderOnly, cancellationToken: cancellationToken);
         if (parentEntity is null)
         {
             parentEntity = await fileSystemInfoToEntityConverter.CreateFolderEntityAsync(
@@ -286,7 +286,7 @@ public class FolderPersistenceService(
     {
         var root = await fileExplorerNodeRepository.GetRootChildOrThrowAsync(parentNodePath.RootPath, cancellationToken);
         var parentEntity = await fileSystemQueryService.GetFolderNodeOrDefaultAsync(parentNodePath,
-            GetFolderQueryOptions.FolderAndChildrenWithBasicMetadata, cancellationToken: cancellationToken);
+            GetFolderQueryOptions.FolderOnly, cancellationToken: cancellationToken);
         
         var dbNodes = await fileSystemQueryService.GetNodesAsync(
             parentNodePath.RootPath,
