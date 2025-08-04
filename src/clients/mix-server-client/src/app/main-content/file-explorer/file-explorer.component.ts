@@ -16,6 +16,7 @@ import {SessionService} from "../../services/sessions/session.service";
 import {RoleRepositoryService} from "../../services/repositories/role-repository.service";
 import {Role} from "../../generated-clients/mix-server-clients";
 import {PagedFileExplorerFolder} from "./models/paged-file-explorer-folder";
+import {FileExplorerNodeDataSource} from "../../services/data-sources/file-explorer-node-data-source";
 
 @Component({
   selector: 'app-file-explorer',
@@ -30,11 +31,14 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
   public isAdmin: boolean = false;
 
+  public nodes: FileExplorerNodeDataSource;
+
   constructor(private _audioPlayerStateService: AudioPlayerStateService,
               private _loadingRepository: LoadingRepositoryService,
               private _nodeRepository: FileExplorerNodeRepositoryService,
               private _roleRepository: RoleRepositoryService,
               private _sessionService: SessionService) {
+    this.nodes = new FileExplorerNodeDataSource(_nodeRepository);
   }
 
   public ngOnInit(): void {

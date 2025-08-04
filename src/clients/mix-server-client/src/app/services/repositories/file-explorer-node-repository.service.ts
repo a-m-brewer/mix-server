@@ -7,7 +7,6 @@ import {PageRoutes} from "../../page-routes.enum";
 import {AuthenticationService} from "../auth/authentication.service";
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
-import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {NodeCacheService} from "../nodes/node-cache.service";
 import {NodePathHeader} from "../../main-content/file-explorer/models/node-path";
 import {PagedFileExplorerFolder} from "../../main-content/file-explorer/models/paged-file-explorer-folder";
@@ -48,6 +47,10 @@ export class FileExplorerNodeRepositoryService {
 
   public get currentFolder$(): Observable<PagedFileExplorerFolder> {
     return this._nodeCache.getFolder$(this._currentFolderPath$);
+  }
+
+  public get pageSize(): number {
+    return this._nodeCache.pageSize;
   }
 
   public changeDirectory(node?: FileExplorerFolderNode | null): void {
@@ -95,6 +98,10 @@ export class FileExplorerNodeRepositoryService {
 
   public refreshFolder(): void {
     this._nodeCache.refreshFolder(this._currentFolderPath$.value)
+  }
+
+  public loadPage(pageIndex: number): Promise<void> {
+    return this._nodeCache.loadPage(this._currentFolderPath$.value, pageIndex);
   }
 
   public setFolderSort(sortMode: FileExplorerFolderSortMode, descending: boolean) {

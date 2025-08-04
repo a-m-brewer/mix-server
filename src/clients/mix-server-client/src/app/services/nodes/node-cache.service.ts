@@ -156,7 +156,7 @@ export class NodeCacheService {
   public getFolder$(query$: Observable<NodePathHeader>): Observable<PagedFileExplorerFolder> {
     return this._folders$
       .pipe(combineLatestWith(query$))
-      .pipe(map(([folders, header]) => folders[header.key] ?? FileExplorerFolder.Default));
+      .pipe(map(([folders, header]) => folders[header.key] ?? PagedFileExplorerFolder.Default));
   }
 
   getFileByNode$(initialNode: FileExplorerFileNode): Observable<FileExplorerFileNode> {
@@ -186,6 +186,10 @@ export class NodeCacheService {
 
   public get folderScanInProgress$(): Observable<boolean> {
     return this._folderScanInProgress$.asObservable();
+  }
+
+  public get pageSize(): number {
+    return this._pageSize;
   }
 
   public async loadDirectoriesForConsumer(consumerId: string, requiredNodes: NodePathHeader[]): Promise<NodePathHeader[]> {
@@ -227,7 +231,7 @@ export class NodeCacheService {
     return loadedNodes;
   }
 
-  private async loadDirectoryByKey(path: NodePathHeader): Promise<NodePathHeader> {
+  private async loadDirectoryByKey(path: NodePathHeader, pageIndex?: number): Promise<NodePathHeader> {
     const loadingKey = path.key === "" ? "root" : path.key;
 
     if (this._loadingRepository.isLoading(loadingKey)) {
@@ -235,14 +239,14 @@ export class NodeCacheService {
     }
 
     const result = await this._nodeClient.request(loadingKey,
-      client => client.getNode(0, this._pageSize, path.rootPath, path.relativePath), 'Error loading directory');
+      client => client.getNode(pageIndex ?? 0, this._pageSize, path.rootPath, path.relativePath), 'Error loading directory');
 
     if (!result.result) {
       return new NodePathHeader("", "");
     }
 
     const folder = this._fileExplorerNodeConverter.fromPagedFileExplorerFolder(result.result);
-    this.updateFolder(folder, true);
+    this.updateFolder(folder, pageIndex === undefined);
 
     return folder.node.path;
   }
@@ -258,6 +262,15 @@ export class NodeCacheService {
         const folder = this._fileExplorerNodeConverter.fromPagedFileExplorerFolder(dto);
         this.updateFolder(folder, true);
       }))
+  }
+
+  public async loadPage(nodePath: NodePathHeader, pageIndex: number): Promise<void> {
+    const currentFolder = this._folders$.value[nodePath.key];
+    if (currentFolder && currentFolder.pages.some(p => p.pageIndex === pageIndex)) {
+      return;
+    }
+
+    await this.loadDirectoryByKey(nodePath, pageIndex);
   }
 
   public async setFolderSort(nodePath: NodePathHeader, sortMode: FileExplorerFolderSortMode, descending: boolean): Promise<void> {
@@ -304,7 +317,9 @@ export class NodeCacheService {
 
           // If the page is not in the update, we need to add it.
           updatedFolder.pages.push(page);
-        })
+        });
+
+        updatedFolder.refreshFlatChildren();
       }
 
       updatedFolder.flatChildren.forEach(node => {

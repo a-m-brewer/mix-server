@@ -13,7 +13,7 @@ export class FileExplorerFolderPage {
 }
 
 export class PagedFileExplorerFolder {
-  public flatChildren: FileExplorerNode[];
+  public flatChildren: FileExplorerNode[] = [];
 
   constructor(public node: FileExplorerFolderNode,
               public pages: FileExplorerFolderPage[],
@@ -34,6 +34,10 @@ export class PagedFileExplorerFolder {
   }
 
   private static getFlatChildren(pages: FileExplorerFolderPage[]): FileExplorerNode[] {
-    return pages.sort(s => s.pageIndex).flatMap(page => page.children);
+    return pages.sort((a, b) => a.pageIndex - b.pageIndex).flatMap(page => page.children);
+  }
+
+  refreshFlatChildren() {
+    this.flatChildren = PagedFileExplorerFolder.getFlatChildren(this.pages);
   }
 }
