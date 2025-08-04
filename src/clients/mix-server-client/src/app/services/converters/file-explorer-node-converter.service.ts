@@ -1,11 +1,9 @@
 import {Injectable} from '@angular/core';
 import {
-  FileExplorerFileNodeResponse,
+  FileExplorerFileNodeResponse, FileExplorerFolderChildPageResponse,
   FileExplorerFolderNodeResponse,
-  FileExplorerFolderResponse,
-  FileExplorerNodeResponse,
-  FolderSortDto,
-  FolderSortMode,
+  FileExplorerNodeResponse, FolderSortDto,
+  FolderSortMode, PagedFileExplorerFolderResponse,
 } from "../../generated-clients/mix-server-clients";
 import {FolderSort} from "../../main-content/file-explorer/models/folder-sort";
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
@@ -16,6 +14,10 @@ import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-e
 import {FileMetadataConverterService} from "./file-metadata-converter.service";
 import {AudioElementRepositoryService} from "../audio-player/audio-element-repository.service";
 import {NodePathConverterService} from "./node-path-converter.service";
+import {
+  FileExplorerFolderPage,
+  PagedFileExplorerFolder
+} from "../../main-content/file-explorer/models/paged-file-explorer-folder";
 
 @Injectable({
   providedIn: 'root'
@@ -26,11 +28,18 @@ export class FileExplorerNodeConverterService {
               private _audioElementRepository: AudioElementRepositoryService) {
   }
 
-  public fromFileExplorerFolder(dto: FileExplorerFolderResponse): FileExplorerFolder {
-    return new FileExplorerFolder(
-      this.fromFileExplorerFolderNode(dto.node),
-      dto.children.map(child => this.fromFileExplorerNode(child)),
-      this.fromFolderSortDto(dto.sort)
+  public fromPagedFileExplorerFolder(dto: PagedFileExplorerFolderResponse): PagedFileExplorerFolder {
+    return new PagedFileExplorerFolder(this.fromFileExplorerFolderNode(dto.node),
+      [
+        this.fromFileExplorerFolderPage(dto.page)
+      ],
+      this.fromFolderSortDto(dto.sort));
+  }
+
+  public fromFileExplorerFolderPage(dto: FileExplorerFolderChildPageResponse): FileExplorerFolderPage {
+    return new FileExplorerFolderPage(
+      dto.pageIndex,
+      dto.children.map(child => this.fromFileExplorerNode(child))
     );
   }
 

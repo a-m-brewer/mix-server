@@ -1,34 +1,32 @@
-﻿namespace MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
+﻿using MixServer.Domain.FileExplorer.Models;
+
+namespace MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 
 public class GetFolderQueryOptions
 {
-    public GetFolderQueryOptions()
+    public GetFolderQueryOptions(
+        Page? page,
+        IFolderSort? sort)
     {
+        Page = page;
+        Sort = sort ?? FolderSortModel.Default;
     }
 
-    public GetFolderQueryOptions(GetChildFolderQueryOptions childFolder, GetFileQueryOptions childFiles)
-    {
-        ChildFolders = childFolder;
-        ChildFiles = childFiles;
-    }
+    public Page? Page { get; set; }
     
+    public IFolderSort Sort { get; set; }
+
     public GetChildFolderQueryOptions? ChildFolders { get; init; }
     
     public GetFileQueryOptions? ChildFiles { get; init; }
     
-    public static GetFolderQueryOptions FolderOnly => new()
+    public static GetFolderQueryOptions FolderOnly => new(null, null)
     {
         ChildFolders = null,
         ChildFiles = null
     };
     
-    public static GetFolderQueryOptions FolderAndChildrenWithBasicMetadata => new()
-    {
-        ChildFolders = new GetChildFolderQueryOptions(),
-        ChildFiles = GetFileQueryOptions.MetadataOnly
-    };
-    
-    public static GetFolderQueryOptions Full => new()
+    public static GetFolderQueryOptions Full(Page page, IFolderSort sort) => new(page, sort)
     {
         ChildFolders = GetChildFolderQueryOptions.Full,
         ChildFiles = GetFileQueryOptions.Full

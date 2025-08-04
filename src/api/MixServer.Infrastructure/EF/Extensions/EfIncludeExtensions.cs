@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.FileExplorer.Entities;
+using MixServer.Domain.FileExplorer.Enums;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Streams.Entities;
@@ -88,5 +90,36 @@ public static class EfIncludeExtensions
     {
         return query.Include(i => i.RootChild)
             .Include(i => i.Parent);
+    }
+
+    public static IQueryable<FileExplorerNodeEntity> ApplySort(this IQueryable<FileExplorerNodeEntity> query, IFolderSort sort, Page? page)
+    {
+        Expression<Func<FileExplorerNodeEntity, object>> func = sort.SortMode switch
+        {
+            FolderSortMode.Name => i => i.RelativePath,
+            FolderSortMode.Created => i => i.CreationTimeUtc,
+            _ => i => i.RelativePath
+        };
+        
+        var (directoryIndex, fileIndex) = sort.SortMode == FolderSortMode.Name
+            ? (0, 1)
+            : (1, 0);
+
+        var orderedQuery = query.OrderBy(o => o is FileExplorerFolderNodeEntity ? directoryIndex : fileIndex);
+        
+        orderedQuery = sort.Descending
+            ? orderedQuery.ThenByDescending(func)
+            : orderedQuery.ThenBy(func);
+
+        if (page is null)
+        {
+            return orderedQuery;
+        }
+
+        var queryable = orderedQuery
+            .Skip(page.PageIndex * page.PageSize)
+            .Take(page.PageSize);
+        
+        return queryable;
     }
 }

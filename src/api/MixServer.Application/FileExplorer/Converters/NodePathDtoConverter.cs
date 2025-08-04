@@ -9,9 +9,11 @@ public interface INodePathDtoConverter :
     IConverter<NodePathRequestDto, NodePath>
 {
     NodePathDto ConvertToResponse(NodePath value);
+    
+    Page ConvertToPage(PagedNodePathRequestDto value);
 }
 
-public class NodePathDtoConverter : INodePathDtoConverter
+public class NodePathDtoConverter(IPageConverter pageConverter) : INodePathDtoConverter
 {
     public NodePathHeaderDto Convert(NodePath value)
     {
@@ -44,5 +46,10 @@ public class NodePathDtoConverter : INodePathDtoConverter
             IsRoot = value.IsRoot,
             IsRootChild = value.IsRootChild
         };
+    }
+
+    public Page ConvertToPage(PagedNodePathRequestDto value)
+    {
+        return pageConverter.Convert(value.Page);
     }
 }

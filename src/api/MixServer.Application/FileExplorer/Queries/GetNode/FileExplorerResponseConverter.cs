@@ -13,8 +13,13 @@ namespace MixServer.Application.FileExplorer.Queries.GetNode;
 public interface IFileExplorerEntityToResponseConverter
     : IConverter<FileExplorerFileNodeEntity, FileExplorerFileNodeResponse>;
 
+public interface IPagedFileExplorerResponseConverter
+    : IConverter<IFileExplorerFolderPage, PagedFileExplorerFolderResponse>,
+        IConverter<IChildPage, FileExplorerFolderChildPageResponse>;
+
 public interface IFileExplorerResponseConverter
     : IFileExplorerEntityToResponseConverter,
+        IPagedFileExplorerResponseConverter,
         IConverter<IFileExplorerNode, FileExplorerNodeResponse>,
         IConverter<IFileExplorerFileNode, FileExplorerFileNodeResponse>,
         IConverter<IFileExplorerFolderNode, FileExplorerFolderNodeResponse>,
@@ -108,5 +113,24 @@ public class FileExplorerResponseConverter(
     {
         var file = fileExplorerEntityConverter.Convert(value);
         return Convert(file);
+    }
+
+    public PagedFileExplorerFolderResponse Convert(IFileExplorerFolderPage value)
+    {
+        return new PagedFileExplorerFolderResponse
+        {
+            Node = Convert(value.Node),
+            Page = Convert(value.Page),
+            Sort = new FolderSortDto(value.Sort)
+        };
+    }
+
+    public FileExplorerFolderChildPageResponse Convert(IChildPage value)
+    {
+        return new FileExplorerFolderChildPageResponse
+        {
+            PageIndex = value.PageIndex,
+            Children = value.Children.Select(Convert).ToList()
+        };
     }
 }

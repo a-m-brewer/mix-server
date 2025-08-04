@@ -3,25 +3,26 @@ import {ISignalrClient} from "./signalr-client.interface";
 import {HubConnection} from "@microsoft/signalr";
 import {Observable, Subject} from "rxjs";
 import {
-  FileExplorerFolderResponse,
-  FileExplorerNodeDeletedDto, FileExplorerNodeUpdatedDto, FolderScanStatusDto, MediaInfoRemovedDto, MediaInfoUpdatedDto
+  FileExplorerNodeDeletedDto,
+  FileExplorerNodeUpdatedDto,
+  FolderScanStatusDto,
+  MediaInfoRemovedDto,
+  MediaInfoUpdatedDto,
+  PagedFileExplorerFolderResponse
 } from "../../generated-clients/mix-server-clients";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
 import {NodeUpdatedEvent} from "./models/node-updated-event";
-import {NodeDeletedEvent} from "./models/node-deleted-event";
-import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {MediaInfoRemovedEvent, MediaInfoUpdatedEvent} from "./models/media-info-event";
 import {FileMetadataConverterService} from "../converters/file-metadata-converter.service";
 import {NodePathConverterService} from "../converters/node-path-converter.service";
+import {PagedFileExplorerFolder} from "../../main-content/file-explorer/models/paged-file-explorer-folder";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FolderSignalrClientService implements ISignalrClient {
-  private _folderRefreshed$ = new Subject<FileExplorerFolder>();
-  private _folderSortedSubject$ = new Subject<FileExplorerFolder>();
-  private _nodeUpdatedSubject$ = new Subject<NodeUpdatedEvent>();
-  private _nodeDeletedSubject$ = new Subject<NodeDeletedEvent>();
+  private _folderRefreshed$ = new Subject<PagedFileExplorerFolder>();
+  private _folderSortedSubject$ = new Subject<PagedFileExplorerFolder>();
   private _mediaInfoUpdatedSubject$ = new Subject<MediaInfoUpdatedEvent>();
   private _mediaInfoRemovedSubject$ = new Subject<MediaInfoRemovedEvent>();
   private _folderScanStatusChangedSubject$ = new Subject<boolean>();
@@ -31,20 +32,12 @@ export class FolderSignalrClientService implements ISignalrClient {
               private _nodePathConverter: NodePathConverterService) {
   }
 
-  public folderRefreshed$(): Observable<FileExplorerFolder> {
+  public folderRefreshed$(): Observable<PagedFileExplorerFolder> {
     return this._folderRefreshed$.asObservable();
   }
 
-  public folderSorted$(): Observable<FileExplorerFolder> {
+  public folderSorted$(): Observable<PagedFileExplorerFolder> {
     return this._folderSortedSubject$.asObservable();
-  }
-
-  public nodeUpdated$(): Observable<NodeUpdatedEvent> {
-    return this._nodeUpdatedSubject$.asObservable();
-  }
-
-  public nodeDeleted$(): Observable<NodeDeletedEvent> {
-    return this._nodeDeletedSubject$.asObservable();
   }
 
   public mediaInfoUpdated$(): Observable<MediaInfoUpdatedEvent> {
@@ -62,21 +55,11 @@ export class FolderSignalrClientService implements ISignalrClient {
   registerMethods(connection: HubConnection): void {
     connection.on(
       'FolderRefreshed',
-      (dtoObject: object) => this.handleFolderRefreshed(FileExplorerFolderResponse.fromJS(dtoObject)));
+      (dtoObject: object) => this.handleFolderRefreshed(PagedFileExplorerFolderResponse.fromJS(dtoObject)));
 
     connection.on(
       'FolderSorted',
-      (dtoObject: object) => this.handleFolderSorted(FileExplorerFolderResponse.fromJS(dtoObject)));
-
-    connection.on(
-      'FileExplorerNodeUpdated',
-      (obj: object) => this.handleFileExplorerNodeUpdated(FileExplorerNodeUpdatedDto.fromJS(obj))
-    );
-
-    connection.on(
-      'FileExplorerNodeDeleted',
-      (obj: object) => this.handleFileExplorerNodeDeleted(FileExplorerNodeDeletedDto.fromJS(obj))
-    );
+      (dtoObject: object) => this.handleFolderSorted(PagedFileExplorerFolderResponse.fromJS(dtoObject)));
 
     connection.on(
       'MediaInfoUpdated',
@@ -94,28 +77,16 @@ export class FolderSignalrClientService implements ISignalrClient {
     );
   }
 
-  private handleFolderRefreshed(dto: FileExplorerFolderResponse): void {
-    const converted = this._folderNodeConverter.fromFileExplorerFolder(dto);
+  private handleFolderRefreshed(dto: PagedFileExplorerFolderResponse): void {
+    const converted = this._folderNodeConverter.fromPagedFileExplorerFolder(dto);
 
     this._folderRefreshed$.next(converted);
   }
 
-  private handleFolderSorted(dto: FileExplorerFolderResponse): void {
-    const converted = this._folderNodeConverter.fromFileExplorerFolder(dto);
+  private handleFolderSorted(dto: PagedFileExplorerFolderResponse): void {
+    const converted = this._folderNodeConverter.fromPagedFileExplorerFolder(dto);
 
     this._folderSortedSubject$.next(converted);
-  }
-
-  private handleFileExplorerNodeUpdated(dto: FileExplorerNodeUpdatedDto): void {
-    const node = this._folderNodeConverter.fromFileExplorerNode(dto.node);
-    const oldPath = dto.oldPath && this._nodePathConverter.fromDto(dto.oldPath);
-    this._nodeUpdatedSubject$.next(new NodeUpdatedEvent(node, dto.index, oldPath));
-  }
-
-  private handleFileExplorerNodeDeleted(dto: FileExplorerNodeDeletedDto): void {
-    const parent = this._folderNodeConverter.fromFileExplorerFolderNode(dto.parent);
-    const nodePath = this._nodePathConverter.fromDto(dto.nodePath);
-    this._nodeDeletedSubject$.next(new NodeDeletedEvent(parent, nodePath));
   }
 
   private handleMediaInfoUpdated(dto: MediaInfoUpdatedDto): void {

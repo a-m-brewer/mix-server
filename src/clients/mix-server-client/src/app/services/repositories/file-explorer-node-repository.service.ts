@@ -10,6 +10,7 @@ import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
 import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {NodeCacheService} from "../nodes/node-cache.service";
 import {NodePathHeader} from "../../main-content/file-explorer/models/node-path";
+import {PagedFileExplorerFolder} from "../../main-content/file-explorer/models/paged-file-explorer-folder";
 
 @Injectable({
   providedIn: 'root'
@@ -45,7 +46,7 @@ export class FileExplorerNodeRepositoryService {
       });
   }
 
-  public get currentFolder$(): Observable<FileExplorerFolder> {
+  public get currentFolder$(): Observable<PagedFileExplorerFolder> {
     return this._nodeCache.getFolder$(this._currentFolderPath$);
   }
 

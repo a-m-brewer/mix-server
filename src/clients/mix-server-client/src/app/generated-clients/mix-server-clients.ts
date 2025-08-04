@@ -256,8 +256,8 @@ export class DeviceClient implements IDeviceClient {
 }
 
 export interface INodeClient {
-    getNode(rootPath?: string | null | undefined, relativePath?: string | null | undefined): Observable<FileExplorerFolderResponse>;
-    refreshFolder(command: RefreshFolderCommand): Observable<FileExplorerFolderResponse>;
+    getNode(page_PageIndex?: number | undefined, page_PageSize?: number | undefined, rootPath?: string | null | undefined, relativePath?: string | null | undefined): Observable<PagedFileExplorerFolderResponse>;
+    refreshFolder(command: RefreshFolderCommand): Observable<PagedFileExplorerFolderResponse>;
     setFolderSortMode(command: SetFolderSortCommand): Observable<void>;
     getFolderScanStatus(): Observable<FolderScanStatusDto>;
 }
@@ -275,8 +275,16 @@ export class NodeClient implements INodeClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getNode(rootPath?: string | null | undefined, relativePath?: string | null | undefined): Observable<FileExplorerFolderResponse> {
+    getNode(page_PageIndex?: number | undefined, page_PageSize?: number | undefined, rootPath?: string | null | undefined, relativePath?: string | null | undefined): Observable<PagedFileExplorerFolderResponse> {
         let url_ = this.baseUrl + "/api/node?";
+        if (page_PageIndex === null)
+            throw new Error("The parameter 'page_PageIndex' cannot be null.");
+        else if (page_PageIndex !== undefined)
+            url_ += "Page.PageIndex=" + encodeURIComponent("" + page_PageIndex) + "&";
+        if (page_PageSize === null)
+            throw new Error("The parameter 'page_PageSize' cannot be null.");
+        else if (page_PageSize !== undefined)
+            url_ += "Page.PageSize=" + encodeURIComponent("" + page_PageSize) + "&";
         if (rootPath !== undefined && rootPath !== null)
             url_ += "RootPath=" + encodeURIComponent("" + rootPath) + "&";
         if (relativePath !== undefined && relativePath !== null)
@@ -298,14 +306,14 @@ export class NodeClient implements INodeClient {
                 try {
                     return this.processGetNode(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<FileExplorerFolderResponse>;
+                    return _observableThrow(e) as any as Observable<PagedFileExplorerFolderResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<FileExplorerFolderResponse>;
+                return _observableThrow(response_) as any as Observable<PagedFileExplorerFolderResponse>;
         }));
     }
 
-    protected processGetNode(response: HttpResponseBase): Observable<FileExplorerFolderResponse> {
+    protected processGetNode(response: HttpResponseBase): Observable<PagedFileExplorerFolderResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -316,7 +324,7 @@ export class NodeClient implements INodeClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = FileExplorerFolderResponse.fromJS(resultData200);
+            result200 = PagedFileExplorerFolderResponse.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status === 400) {
@@ -341,7 +349,7 @@ export class NodeClient implements INodeClient {
         return _observableOf(null as any);
     }
 
-    refreshFolder(command: RefreshFolderCommand): Observable<FileExplorerFolderResponse> {
+    refreshFolder(command: RefreshFolderCommand): Observable<PagedFileExplorerFolderResponse> {
         let url_ = this.baseUrl + "/api/node/refresh";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -364,14 +372,14 @@ export class NodeClient implements INodeClient {
                 try {
                     return this.processRefreshFolder(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<FileExplorerFolderResponse>;
+                    return _observableThrow(e) as any as Observable<PagedFileExplorerFolderResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<FileExplorerFolderResponse>;
+                return _observableThrow(response_) as any as Observable<PagedFileExplorerFolderResponse>;
         }));
     }
 
-    protected processRefreshFolder(response: HttpResponseBase): Observable<FileExplorerFolderResponse> {
+    protected processRefreshFolder(response: HttpResponseBase): Observable<PagedFileExplorerFolderResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -382,7 +390,7 @@ export class NodeClient implements INodeClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = FileExplorerFolderResponse.fromJS(resultData200);
+            result200 = PagedFileExplorerFolderResponse.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status === 400) {
@@ -2914,14 +2922,12 @@ export interface IUpdateDevicePlaybackCapabilitiesCommand {
     capabilities: { [key: string]: boolean; };
 }
 
-export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
+export class PagedFileExplorerFolderResponse implements IPagedFileExplorerFolderResponse {
     node!: FileExplorerFolderNodeResponse;
-    children!: FileExplorerNodeResponse[];
+    page!: FileExplorerFolderChildPageResponse;
     sort!: FolderSortDto;
 
-    protected _discriminator: string;
-
-    constructor(data?: IFileExplorerFolderResponse) {
+    constructor(data?: IPagedFileExplorerFolderResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -2930,53 +2936,38 @@ export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
         }
         if (!data) {
             this.node = new FileExplorerFolderNodeResponse();
-            this.children = [];
+            this.page = new FileExplorerFolderChildPageResponse();
             this.sort = new FolderSortDto();
         }
-        this._discriminator = "FileExplorerFolderResponse";
     }
 
     init(_data?: any) {
         if (_data) {
             this.node = _data["node"] ? FileExplorerFolderNodeResponse.fromJS(_data["node"]) : new FileExplorerFolderNodeResponse();
-            if (Array.isArray(_data["children"])) {
-                this.children = [] as any;
-                for (let item of _data["children"])
-                    this.children!.push(FileExplorerNodeResponse.fromJS(item));
-            }
+            this.page = _data["page"] ? FileExplorerFolderChildPageResponse.fromJS(_data["page"]) : new FileExplorerFolderChildPageResponse();
             this.sort = _data["sort"] ? FolderSortDto.fromJS(_data["sort"]) : new FolderSortDto();
         }
     }
 
-    static fromJS(data: any): FileExplorerFolderResponse {
+    static fromJS(data: any): PagedFileExplorerFolderResponse {
         data = typeof data === 'object' ? data : {};
-        if (data["discriminator"] === "RootFileExplorerFolderResponse") {
-            let result = new RootFileExplorerFolderResponse();
-            result.init(data);
-            return result;
-        }
-        let result = new FileExplorerFolderResponse();
+        let result = new PagedFileExplorerFolderResponse();
         result.init(data);
         return result;
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["discriminator"] = this._discriminator;
         data["node"] = this.node ? this.node.toJSON() : <any>undefined;
-        if (Array.isArray(this.children)) {
-            data["children"] = [];
-            for (let item of this.children)
-                data["children"].push(item.toJSON());
-        }
+        data["page"] = this.page ? this.page.toJSON() : <any>undefined;
         data["sort"] = this.sort ? this.sort.toJSON() : <any>undefined;
         return data;
     }
 }
 
-export interface IFileExplorerFolderResponse {
+export interface IPagedFileExplorerFolderResponse {
     node: FileExplorerFolderNodeResponse;
-    children: FileExplorerNodeResponse[];
+    page: FileExplorerFolderChildPageResponse;
     sort: FolderSortDto;
 }
 
@@ -3368,6 +3359,57 @@ export enum TranscodeState {
     Completed = "Completed",
 }
 
+export class FileExplorerFolderChildPageResponse implements IFileExplorerFolderChildPageResponse {
+    pageIndex!: number;
+    children!: FileExplorerNodeResponse[];
+
+    constructor(data?: IFileExplorerFolderChildPageResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.children = [];
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.pageIndex = _data["pageIndex"];
+            if (Array.isArray(_data["children"])) {
+                this.children = [] as any;
+                for (let item of _data["children"])
+                    this.children!.push(FileExplorerNodeResponse.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): FileExplorerFolderChildPageResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new FileExplorerFolderChildPageResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pageIndex"] = this.pageIndex;
+        if (Array.isArray(this.children)) {
+            data["children"] = [];
+            for (let item of this.children)
+                data["children"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IFileExplorerFolderChildPageResponse {
+    pageIndex: number;
+    children: FileExplorerNodeResponse[];
+}
+
 export class FolderSortDto implements IFolderSortDto {
     descending!: boolean;
     sortMode!: FolderSortMode;
@@ -3411,34 +3453,6 @@ export interface IFolderSortDto {
 export enum FolderSortMode {
     Name = "Name",
     Created = "Created",
-}
-
-export class RootFileExplorerFolderResponse extends FileExplorerFolderResponse implements IRootFileExplorerFolderResponse {
-
-    constructor(data?: IRootFileExplorerFolderResponse) {
-        super(data);
-        this._discriminator = "RootFileExplorerFolderResponse";
-    }
-
-    override init(_data?: any) {
-        super.init(_data);
-    }
-
-    static override fromJS(data: any): RootFileExplorerFolderResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new RootFileExplorerFolderResponse();
-        result.init(data);
-        return result;
-    }
-
-    override toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        super.toJSON(data);
-        return data;
-    }
-}
-
-export interface IRootFileExplorerFolderResponse extends IFileExplorerFolderResponse {
 }
 
 export class HttpValidationProblemDetails extends ProblemDetails implements IHttpValidationProblemDetails {
@@ -3563,6 +3577,7 @@ export interface IValidationProblemDetails extends IHttpValidationProblemDetails
 
 export class RefreshFolderCommand implements IRefreshFolderCommand {
     nodePath?: NodePathRequestDto | undefined;
+    pageSize!: number;
     recursive!: boolean;
 
     constructor(data?: IRefreshFolderCommand) {
@@ -3577,6 +3592,7 @@ export class RefreshFolderCommand implements IRefreshFolderCommand {
     init(_data?: any) {
         if (_data) {
             this.nodePath = _data["nodePath"] ? NodePathRequestDto.fromJS(_data["nodePath"]) : <any>undefined;
+            this.pageSize = _data["pageSize"];
             this.recursive = _data["recursive"];
         }
     }
@@ -3591,6 +3607,7 @@ export class RefreshFolderCommand implements IRefreshFolderCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["nodePath"] = this.nodePath ? this.nodePath.toJSON() : <any>undefined;
+        data["pageSize"] = this.pageSize;
         data["recursive"] = this.recursive;
         return data;
     }
@@ -3598,6 +3615,7 @@ export class RefreshFolderCommand implements IRefreshFolderCommand {
 
 export interface IRefreshFolderCommand {
     nodePath?: NodePathRequestDto | undefined;
+    pageSize: number;
     recursive: boolean;
 }
 
@@ -3605,6 +3623,7 @@ export class SetFolderSortCommand implements ISetFolderSortCommand {
     nodePath!: NodePathRequestDto;
     descending!: boolean;
     sortMode!: FolderSortMode;
+    pageSize!: number;
 
     constructor(data?: ISetFolderSortCommand) {
         if (data) {
@@ -3623,6 +3642,7 @@ export class SetFolderSortCommand implements ISetFolderSortCommand {
             this.nodePath = _data["nodePath"] ? NodePathRequestDto.fromJS(_data["nodePath"]) : new NodePathRequestDto();
             this.descending = _data["descending"];
             this.sortMode = _data["sortMode"];
+            this.pageSize = _data["pageSize"];
         }
     }
 
@@ -3638,6 +3658,7 @@ export class SetFolderSortCommand implements ISetFolderSortCommand {
         data["nodePath"] = this.nodePath ? this.nodePath.toJSON() : <any>undefined;
         data["descending"] = this.descending;
         data["sortMode"] = this.sortMode;
+        data["pageSize"] = this.pageSize;
         return data;
     }
 }
@@ -3646,6 +3667,7 @@ export interface ISetFolderSortCommand {
     nodePath: NodePathRequestDto;
     descending: boolean;
     sortMode: FolderSortMode;
+    pageSize: number;
 }
 
 export class FolderScanStatusDto implements IFolderScanStatusDto {

@@ -10,6 +10,7 @@ import {
   FileExplorerNodeRepositoryService
 } from "../../../../services/repositories/file-explorer-node-repository.service";
 import {NodeCacheService} from "../../../../services/nodes/node-cache.service";
+import {PagedFileExplorerFolder} from "../../../../main-content/file-explorer/models/paged-file-explorer-folder";
 
 @Component({
   selector: 'app-refresh-folder-button',
@@ -33,7 +34,7 @@ export class RefreshFolderButtonComponent implements OnInit, OnDestroy {
               private _nodeRepository: FileExplorerNodeRepositoryService) {
   }
 
-  public currentFolder?: FileExplorerFolder | null;
+  public currentFolder?: PagedFileExplorerFolder | null;
   public disabled = false;
 
   ngOnInit() {

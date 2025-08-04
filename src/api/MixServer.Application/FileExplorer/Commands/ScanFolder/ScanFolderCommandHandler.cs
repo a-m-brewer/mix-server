@@ -113,13 +113,26 @@ public class ScanFolderCommandHandler(
         var hashBuilder = new FsHashBuilder();
         var directories = new List<DirectoryInfo>();
 
-        foreach (var childrenChunk in root.MsEnumerateFileSystemInfos().Chunk(500))
+        var page = 0;
+        var hasMore = true;
+
+        while (hasMore)
         {
-            await ExecuteScopedAndSaveChangesAsync(async (service, token) =>
+            var (blockHasMore, dirs) = await ExecuteScopedAndSaveChangesAsync(async (service, token) =>
             {
-                var directoryInfos = await service.EnsureChildrenUpdatedAsync(nodePath, childrenChunk, hashBuilder, token);
-                directories.AddRange(directoryInfos);
+                var fsChildrenChunk = await service.EnsureChildrenUpdatedAsync(nodePath, root, new Page
+                {
+                    PageIndex = page,
+                    PageSize = 500
+                }, hashBuilder, token);
+
+                return (fsChildrenChunk.Count > 0, fsChildrenChunk.OfType<DirectoryInfo>());
             }, cancellationToken);
+            
+            hasMore = blockHasMore;
+            directories.AddRange(dirs);
+            
+            page++;
         }
         
         var hash = hashBuilder.ComputeHash();
@@ -134,11 +147,22 @@ public class ScanFolderCommandHandler(
 
     private async Task ExecuteScopedAndSaveChangesAsync(Func<IFolderPersistenceService, CancellationToken, Task> task, CancellationToken cancellationToken)
     {
+        await ExecuteScopedAndSaveChangesAsync(async (service, token) =>
+        {
+            await task(service, token);
+            return true;
+        }, cancellationToken);
+    }
+    
+    private async Task<TResult> ExecuteScopedAndSaveChangesAsync<TResult>(Func<IFolderPersistenceService, CancellationToken, Task<TResult>> task, CancellationToken cancellationToken)
+    {
         using var scope = serviceProvider.CreateScope();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         
-        await task(scope.ServiceProvider.GetRequiredService<IFolderPersistenceService>(), cancellationToken);
+        var res = await task(scope.ServiceProvider.GetRequiredService<IFolderPersistenceService>(), cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        
+        return res;
     }
 }

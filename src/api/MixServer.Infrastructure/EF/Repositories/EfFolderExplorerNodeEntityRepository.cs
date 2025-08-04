@@ -4,6 +4,7 @@ using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
+using MixServer.Domain.Streams.Entities;
 using MixServer.Infrastructure.EF.Extensions;
 using EEF = Microsoft.EntityFrameworkCore.EF;
 
@@ -230,25 +231,14 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
             return;
         }
 
-        if (options.ChildFolders is not null)
-        {
-            var folderQuery = context.Entry(folder)
-                .Collection(c => c.Children)
-                .Query()
-                .OfType<FileExplorerFolderNodeEntity>();
-            folderQuery = GetChildFolderQuery(folderQuery, options.ChildFolders);
-            await folderQuery.LoadAsync(cancellationToken: cancellationToken);
-        }
-
-        if (options.ChildFiles is not null)
-        {
-            var fileQuery = context.Entry(folder)
-                .Collection(c => c.Children)
-                .Query()
-                .OfType<FileExplorerFileNodeEntity>();
-            fileQuery = fileQuery.IncludeGetFileQueryOptions(options.ChildFiles);
-            await fileQuery.LoadAsync(cancellationToken: cancellationToken);
-        }
+        await context.Entry(folder)
+            .Collection(c => c.Children)
+            .Query()
+            .ApplySort(options.Sort, options.Page)
+            .IncludeParents()
+            .LoadAsync(cancellationToken: cancellationToken);
+        
+        await LoadFileEntityRelationshipsAsync(folder, options, cancellationToken);
     }
     
     private async Task LoadFolderQueryRelationshipsAsync(FileExplorerRootChildNodeEntity? folder, GetFolderQueryOptions options, CancellationToken cancellationToken = default)
@@ -258,30 +248,46 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
             return;
         }
 
-        if (options.ChildFolders is not null)
-        {
-            var folderQuery = context.Entry(folder)
-                .Collection(c => c.Children)
-                .Query()
-                .OfType<FileExplorerFolderNodeEntity>()
-                // Everything is a child of the root child, so we only need to load files that are direct children
-                .IncludeParents()
-                .Where(w => w.Parent == null);
-            folderQuery = GetChildFolderQuery(folderQuery, options.ChildFolders);
-            await folderQuery.LoadAsync(cancellationToken: cancellationToken);
-        }
+        await context.Entry(folder)
+            .Collection(c => c.Children)
+            .Query()
+            .Where(w => w.Parent == null)
+            .ApplySort(options.Sort, options.Page)
+            .IncludeParents()
+            .LoadAsync(cancellationToken: cancellationToken);
+        
+        await LoadFileEntityRelationshipsAsync(folder, options, cancellationToken);
+    }
 
+    private async Task LoadFileEntityRelationshipsAsync(IFileExplorerFolderEntity folder, GetFolderQueryOptions options, CancellationToken cancellationToken = default)
+    {
         if (options.ChildFiles is not null)
         {
-            var fileQuery = context.Entry(folder)
-                .Collection(c => c.Children)
-                .Query()
-                .OfType<FileExplorerFileNodeEntity>()
-                // Everything is a child of the root child, so we only need to load files that are direct children
-                .IncludeParents()
-                .Where(w => w.Parent == null);
-            fileQuery = fileQuery.IncludeGetFileQueryOptions(options.ChildFiles);
-            await fileQuery.LoadAsync(cancellationToken: cancellationToken);
+            var fileIds = folder.Children.OfType<FileExplorerFileNodeEntity>().Select(s => s.Id).Distinct().ToHashSet();
+
+            var metadata = options.ChildFiles.IncludeMetadata
+                ? await context.FileMetadata.Where(w => fileIds.Contains(w.NodeId))
+                    .ToDictionaryAsync(k => k.NodeId, cancellationToken)
+                : new Dictionary<Guid, FileMetadataEntity>();
+
+            var transcodes = options.ChildFiles.IncludeTranscode
+                ? await context.Transcodes.Where(w => w.NodeId.HasValue && fileIds.Contains(w.NodeId.Value))
+                    .ToDictionaryAsync(k => k.NodeId!.Value, cancellationToken)
+                : new Dictionary<Guid, Transcode>();
+
+
+            foreach (var fileEntity in folder.Children.OfType<FileExplorerFileNodeEntity>())
+            {
+                if (metadata.TryGetValue(fileEntity.Id, out var fileMetadata))
+                {
+                    fileEntity.Metadata = fileMetadata;
+                }
+
+                if (transcodes.TryGetValue(fileEntity.Id, out var transcode))
+                {
+                    fileEntity.Transcode = transcode;
+                }
+            }
         }
     }
 

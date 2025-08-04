@@ -7,7 +7,7 @@
     [loadingStatus]="loadingStatus"
     [audioPlayerState]="audioPlayerState"
     [disabled]="currentFolder.node.parent.disabled"
-    [last]="currentFolder.children.length === 0"
+    [last]="currentFolder.flatChildren.length === 0"
     (contentClick)="onNodeClick($event)"
   >
     <div appNodeListItemTitle>
@@ -20,7 +20,7 @@
   </app-node-list-item>
 
   <app-node-list-item
-    *ngFor="let node of currentFolder.children; last as last"
+    *ngFor="let node of currentFolder.flatChildren; last as last"
     [key]="node.path.key"
     [nodeType]="node.type"
     [defaultIcon]="node.mdIcon"

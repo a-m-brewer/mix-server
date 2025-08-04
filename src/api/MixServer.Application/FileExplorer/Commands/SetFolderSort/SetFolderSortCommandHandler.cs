@@ -28,7 +28,8 @@ public class SetFolderSortCommandHandler(
         {
             Path = nodePath,
             Descending = request.Descending,
-            SortMode = request.SortMode
+            SortMode = request.SortMode,
+            PageSize = request.PageSize
         }, cancellationToken);
 
         unitOfWork.InvokeCallbackOnSaved(cb => cb.FolderSorted(currentUserRepository.CurrentUserId, folder));

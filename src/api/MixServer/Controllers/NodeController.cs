@@ -11,23 +11,23 @@ namespace MixServer.Controllers;
 [Produces("application/json")]
 [Route("api/[controller]")]
 public class NodeController(
-    IQueryHandler<NodePathRequestDto, FileExplorerFolderResponse> getFolderNodeQueryHandler,
+    IQueryHandler<PagedNodePathRequestDto, PagedFileExplorerFolderResponse> getFolderNodeQueryHandler,
     IQueryHandler<FolderScanStatusDto> getFolderScanStatusQueryHandler,
-    ICommandHandler<RefreshFolderCommand, FileExplorerFolderResponse> refreshFolderCommandHandler,
+    ICommandHandler<RefreshFolderCommand, PagedFileExplorerFolderResponse> refreshFolderCommandHandler,
     ICommandHandler<SetFolderSortCommand> setFolderSortCommandHandler)
     : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType(typeof(FileExplorerFolderResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedFileExplorerFolderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetNode([FromQuery] NodePathRequestDto query, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetNode([FromQuery] PagedNodePathRequestDto query, CancellationToken cancellationToken)
     {
         return Ok(await getFolderNodeQueryHandler.HandleAsync(query, cancellationToken));
     }
     
     [HttpPost("refresh")]
-    [ProducesResponseType(typeof(FileExplorerFolderResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedFileExplorerFolderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RefreshFolder([FromBody] RefreshFolderCommand command, CancellationToken cancellationToken)
     {

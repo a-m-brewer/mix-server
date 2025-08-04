@@ -15,6 +15,7 @@ import {AudioPlayerStateModel} from "../../services/audio-player/models/audio-pl
 import {SessionService} from "../../services/sessions/session.service";
 import {RoleRepositoryService} from "../../services/repositories/role-repository.service";
 import {Role} from "../../generated-clients/mix-server-clients";
+import {PagedFileExplorerFolder} from "./models/paged-file-explorer-folder";
 
 @Component({
   selector: 'app-file-explorer',
@@ -25,7 +26,7 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
-  public currentFolder: FileExplorerFolder = FileExplorerFolder.Default;
+  public currentFolder: PagedFileExplorerFolder = PagedFileExplorerFolder.Default;
   public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
   public isAdmin: boolean = false;
 
@@ -73,7 +74,7 @@ export class FileExplorerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const childNode = this.currentFolder.children.find(s => s.path.key === event.key);
+    const childNode = this.currentFolder.flatChildren.find(s => s.path.key === event.key);
 
     if (childNode instanceof FileExplorerFolderNode) {
       this.onFolderClick(childNode);

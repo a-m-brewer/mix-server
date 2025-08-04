@@ -6,6 +6,7 @@ import {FileExplorerFileNode} from "../models/file-explorer-file-node";
 import {NgIf} from "@angular/common";
 import {FileExplorerNodeRepositoryService} from "../../../services/repositories/file-explorer-node-repository.service";
 import {FileExplorerFolder} from "../models/file-explorer-folder";
+import {PagedFileExplorerFolder} from "../models/paged-file-explorer-folder";
 
 @Component({
   selector: 'app-folder-paste-form',
@@ -21,7 +22,7 @@ export class FolderPasteFormComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject<void>();
 
   public sourceNode: FileExplorerFileNode | null = null;
-  public currentFolder: FileExplorerFolder | null = null;
+  public currentFolder: PagedFileExplorerFolder | null = null;
   public loading = false;
 
   constructor(private _copyService: CopyNodeService,
@@ -66,7 +67,7 @@ export class FolderPasteFormComponent implements OnInit, OnDestroy {
 
     this.loading = true;
 
-    const duplicates = this.currentFolder.children
+    const duplicates = this.currentFolder.flatChildren
       .map(child => {
         const childNameSections = child instanceof FileExplorerFileNode
           ? child.nameSections

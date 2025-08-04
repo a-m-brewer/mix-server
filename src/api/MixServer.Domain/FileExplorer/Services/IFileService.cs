@@ -4,8 +4,20 @@ namespace MixServer.Domain.FileExplorer.Services;
 
 public interface IFileService
 {
-    Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath, CancellationToken cancellationToken);
-    Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath, CancellationToken cancellationToken);
+    Task<IFileExplorerFolderPage> GetFolderPageAsync(NodePath nodePath,
+        Page page,
+        CancellationToken cancellationToken = default);
+    
+    Task<IFileExplorerFolderPage> GetFolderOrRootPageAsync(NodePath? nodePath,
+        Page page,
+        CancellationToken cancellationToken = default);
+    
+    Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath,
+        Page page,
+        CancellationToken cancellationToken = default);
+    Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath,
+        Page page,
+        CancellationToken cancellationToken = default);
     Task<List<IFileExplorerFileNode>> GetFilesAsync(IReadOnlyList<NodePath> nodePaths);
     Task<IFileExplorerFileNode> GetFileAsync(NodePath nodePath);
     Task<(IFileExplorerFolder Parent, IFileExplorerFileNode File)> GetFileAndFolderAsync(NodePath nodePath, CancellationToken cancellationToken);
@@ -15,6 +27,6 @@ public interface IFileService
         bool move,
         bool overwrite);
     void DeleteNode(NodePath nodePath);
-    Task<IFileExplorerFolder> SetFolderSortAsync(IFolderSortRequest request,
+    Task<IFileExplorerFolderPage> SetFolderSortAsync(IFolderSortRequest request,
         CancellationToken cancellationToken);
 }

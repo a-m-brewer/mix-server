@@ -19,8 +19,8 @@ public interface ICallbackService
     Task CurrentQueueUpdated(string userId, Guid deviceId, QueueSnapshot queueSnapshot);
     Task DeviceUpdated(Device device);
     Task DeviceStateUpdated(IDeviceState deviceState);
-    Task FolderSorted(string userId, IFileExplorerFolder folder);
-    Task FolderRefreshed(string userId, Guid deviceId, IFileExplorerFolder folder);
+    Task FolderSorted(string userId, IFileExplorerFolderPage folder);
+    Task FolderRefreshed(string userId, Guid deviceId, IFileExplorerFolderPage folder);
     Task FolderScanStatusChanged(bool scanInProgress);
     Task DeviceDeleted(string userId, Guid deviceId);
     Task PlaybackStateUpdated(IPlaybackState playbackState, AudioPlayerStateUpdateType audioPlayerStateUpdateType);

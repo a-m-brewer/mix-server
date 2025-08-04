@@ -7,7 +7,10 @@ namespace MixServer.Domain.FileExplorer.Converters;
 
 public interface IFileExplorerEntityConverter
     : IConverter<IFileExplorerFolderEntity, IFileExplorerFolder>,
-        IConverter<FileExplorerFileNodeEntity, IFileExplorerFileNode>;
+        IConverter<FileExplorerFileNodeEntity, IFileExplorerFileNode>
+{
+    IFileExplorerFolderPage ConvertPage(IFileExplorerFolderEntity value, Page page, IFolderSort sort);
+}
 
 public class FileExplorerEntityConverter(IRootFileExplorerFolder rootFolder) : IFileExplorerEntityConverter
 {
@@ -36,6 +39,36 @@ public class FileExplorerEntityConverter(IRootFileExplorerFolder rootFolder) : I
             : ConvertFolderEntityToNode(value.Parent, false);
         
         return ConvertFileEntityToNode(value, parent);
+    }
+
+    public IFileExplorerFolderPage ConvertPage(IFileExplorerFolderEntity value, Page page, IFolderSort sort)
+    {
+        var node = ConvertEntityToNode(value);
+
+        var convertedChildren = new List<IFileExplorerNode>();
+        foreach (var child in value.Children)
+        {
+            switch (child)
+            {
+                case FileExplorerFolderNodeEntity childFolder:
+                    convertedChildren.Add(ConvertFolderEntityToNode(childFolder, node));
+                    break;
+                case FileExplorerFileNodeEntity childFile:
+                    convertedChildren.Add(ConvertFileEntityToNode(childFile, node));
+                    break;
+            }
+        }
+
+        return new FileExplorerFolderPage
+        {
+            Node = node,
+            Page = new FileExplorerFolderChildPage
+            {
+                PageIndex = page.PageIndex,
+                Children = convertedChildren
+            },
+            Sort = sort
+        };
     }
 
     private IFileExplorerFolderNode ConvertEntityToNode(IFileExplorerFolderEntity entity)

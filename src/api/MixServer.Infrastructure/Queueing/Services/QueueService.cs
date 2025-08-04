@@ -245,7 +245,8 @@ public class QueueService(
             return [];
         }
 
-        var folder = await fileService.GetFolderAsync(nodePath, cancellationToken);
+        // TODO: paging
+        var folder = await fileService.GetFolderAsync(nodePath, null, cancellationToken);
 
         return folder.GenerateSortedChildren<IFileExplorerFileNode>()
             .Where(w => w.PlaybackSupported)

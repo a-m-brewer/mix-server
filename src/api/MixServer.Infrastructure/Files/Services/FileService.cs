@@ -17,26 +17,66 @@ public class FileService(
     IRootFileExplorerFolder rootFolder)
     : IFileService
 {
-    public async Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath, CancellationToken cancellationToken)
+    public async Task<IFileExplorerFolderPage> GetFolderPageAsync(NodePath nodePath, Page page, CancellationToken cancellationToken = default)
     {
-        var folderEntity = await folderPersistenceService.GetOrAddFolderAsync(nodePath, cancellationToken);
-        var folder = fileExplorerEntityConverter.Convert(folderEntity);
+        var sort = await GetCurrentUsersFolderSortAsync(nodePath, cancellationToken);
 
-        if (!folder.Node.Exists)
-        {
-            return folder;
-        }
+        var folderEntity = await folderPersistenceService.GetOrAddFolderAsync(nodePath, page, sort, cancellationToken: cancellationToken);
+        
+        var folder = fileExplorerEntityConverter.ConvertPage(folderEntity, page, sort);
 
-        if (currentUserRepository.HasUserId)
-        {
-            await currentUserRepository.LoadFileSortByAbsolutePathAsync(nodePath, cancellationToken);
-            folder.Sort = (await currentUserRepository.GetCurrentUserAsync()).GetSortOrDefault(nodePath);
-        }
-    
         return folder;
     }
 
-    public async Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath, CancellationToken cancellationToken)
+    public async Task<IFileExplorerFolderPage> GetFolderOrRootPageAsync(NodePath? nodePath, Page page, CancellationToken cancellationToken = default)
+    {
+        // If no folder is specified return the root folder
+        if (nodePath is null || nodePath.IsRoot)
+        {
+            // TODO: maybe page the root folder? but I doubt it will be needed
+            return new FileExplorerFolderPage
+            {
+                Node = rootFolder.Node,
+                Page = new FileExplorerFolderChildPage
+                {
+                    PageIndex = 0,
+                    Children = rootFolder.Children
+                },
+                Sort = FolderSortModel.Default
+            };
+        }
+
+        // The folder is out of bounds return the root folder instead
+        if (!rootFolder.DescendantOfRoot(nodePath))
+        {
+            throw new ForbiddenRequestException("You do not have permission to access this folder");
+        }
+        
+        var folder = await GetFolderPageAsync(nodePath, page, cancellationToken);
+
+        return folder.Node.Exists
+            ? folder
+            : throw new NotFoundException("Folder", nodePath.AbsolutePath);
+    }
+
+    public async Task<IFileExplorerFolder> GetFolderAsync(NodePath nodePath,
+        Page page,
+        CancellationToken cancellationToken = default)
+    {
+        var sort = await GetCurrentUsersFolderSortAsync(nodePath, cancellationToken);
+
+        var folderEntity = await folderPersistenceService.GetOrAddFolderAsync(nodePath, page, sort, cancellationToken: cancellationToken);
+        var folder = fileExplorerEntityConverter.Convert(folderEntity);
+        
+        // TODO: remove this as the folder no longer needs to do the sorting itself
+        folder.Sort = sort;
+
+        return folder;
+    }
+
+    public async Task<IFileExplorerFolder> GetFolderOrRootAsync(NodePath? nodePath,
+        Page page,
+        CancellationToken cancellationToken = default)
     {
         // If no folder is specified return the root folder
         if (nodePath is null || nodePath.IsRoot)
@@ -50,7 +90,7 @@ public class FileService(
             throw new ForbiddenRequestException("You do not have permission to access this folder");
         }
         
-        var folder = await GetFolderAsync(nodePath, cancellationToken);
+        var folder = await GetFolderAsync(nodePath, page, cancellationToken);
 
         return folder.Node.Exists
             ? folder
@@ -74,7 +114,12 @@ public class FileService(
 
     public async Task<(IFileExplorerFolder Parent, IFileExplorerFileNode File)> GetFileAndFolderAsync(NodePath nodePath, CancellationToken cancellationToken)
     {
-        var folder = await GetFolderOrRootAsync(nodePath.Parent, cancellationToken);
+        // TODO: paging
+        var folder = await GetFolderOrRootAsync(nodePath.Parent, new Page
+        {
+            PageIndex = 0,
+            PageSize = 25
+        }, cancellationToken);
         
         var file = folder
                        .Children
@@ -160,7 +205,7 @@ public class FileService(
         return null;
     }
 
-    public async Task<IFileExplorerFolder> SetFolderSortAsync(IFolderSortRequest request, CancellationToken cancellationToken)
+    public async Task<IFileExplorerFolderPage> SetFolderSortAsync(IFolderSortRequest request, CancellationToken cancellationToken)
     {
         await currentUserRepository.LoadFileSortByAbsolutePathAsync(request.Path, cancellationToken);
         var user = await currentUserRepository.GetCurrentUserAsync();
@@ -169,7 +214,16 @@ public class FileService(
             s.NodeEntity.RootChild.RelativePath == request.Path.RootPath &&
             s.NodeEntity.RelativePath == request.Path.RelativePath);
         
-        var folderEntity = await folderPersistenceService.GetOrAddFolderAsync(request.Path, cancellationToken);
+        
+        // Reset paging to 0, as the sort will change the order of the items
+        var page = new Page
+        {
+            PageIndex = 0,
+            PageSize = request.PageSize
+        };
+        
+        // Use the request sort so that its already pre-sorted the new way
+        var folderEntity = await folderPersistenceService.GetOrAddFolderAsync(request.Path, page, request, cancellationToken: cancellationToken);
 
         if (sort is null)
         {
@@ -195,10 +249,20 @@ public class FileService(
         {
             sort.Update(request);
         }
-        
-        var folderNode = fileExplorerEntityConverter.Convert(folderEntity);
-        folderNode.Sort = sort;
 
-        return folderNode;
+        var folderPage = fileExplorerEntityConverter.ConvertPage(folderEntity, page, sort);
+        
+        return folderPage;
+    }
+
+    private async Task<IFolderSort> GetCurrentUsersFolderSortAsync(NodePath nodePath, CancellationToken cancellationToken)
+    {
+        if (!currentUserRepository.HasUserId)
+        {
+            return FolderSortModel.Default;
+        }
+
+        await currentUserRepository.LoadFileSortByAbsolutePathAsync(nodePath, cancellationToken);
+        return (await currentUserRepository.GetCurrentUserAsync()).GetSortOrDefault(nodePath);
     }
 }

@@ -21,12 +21,16 @@ import {NodePath, NodePathHeader} from "../../main-content/file-explorer/models/
 import {NodePathConverterService} from "../converters/node-path-converter.service";
 import {AuthenticationService} from "../auth/authentication.service";
 import {ServerConnectionState} from "../auth/enums/ServerConnectionState";
+import {PagedFileExplorerFolder} from "../../main-content/file-explorer/models/paged-file-explorer-folder";
 
 @Injectable({
   providedIn: 'root'
 })
 export class NodeCacheService {
-  private _folders$ = new BehaviorSubject<{ [nodeKey: string]: FileExplorerFolder }>({});
+  private readonly _pageSize = 25;
+
+
+  private _folders$ = new BehaviorSubject<{ [nodeKey: string]: PagedFileExplorerFolder }>({});
   private _consumerFolders = new Map<string, Set<string>>();
   private _folderConsumers = new Map<string, Set<string>>();
 
@@ -54,51 +58,23 @@ export class NodeCacheService {
 
     this._playbackDeviceService.requestPlaybackDevice$
       .subscribe(device => {
-        const folders: { [key: string]: FileExplorerFolder } = {};
+        const folders: { [key: string]: PagedFileExplorerFolder } = {};
         Object.entries(this._folders$.value)
           .forEach(([key, value]) => {
             folders[key] = value.copy();
           });
-        this.updateFolders(folders, device);
+        this.updateFolders(folders, false, device);
       });
 
     this._folderSignalRClient.folderRefreshed$()
       .subscribe(updatedFolder => {
-        this.updateFolder(updatedFolder);
+        this.updateFolder(updatedFolder, true);
       });
 
     this._folderSignalRClient.folderSorted$()
       .subscribe(updatedFolder => {
-        this.updateFolder(updatedFolder);
+        this.updateFolder(updatedFolder, true);
         this._loadingRepository.stopLoading(updatedFolder.node.path.key);
-      });
-
-    this._folderSignalRClient.nodeUpdated$()
-      .subscribe(event => {
-        const node = event.node;
-
-        const nextFolder = this.copyOrCreateParentFromNode(node);
-
-        const oldPathIndex = !!event.oldPath
-          ? nextFolder.children.findIndex(n => n.path.isEqual(event.oldPath))
-          : -1;
-
-        const index = oldPathIndex === -1
-          ? nextFolder.children.findIndex(n => n.path.isEqual(node.path))
-          : oldPathIndex;
-
-        this.insertNodeIntoFolder(nextFolder, node, index, event.index);
-
-        this.updateFolder(nextFolder);
-      });
-
-    this._folderSignalRClient.nodeDeleted$()
-      .subscribe(event => {
-        const nextFolder = this.copyOrCreateParent(event.parent);
-
-        nextFolder.children = nextFolder.children.filter(f => !f.path.isEqual(event.nodePath));
-
-        this.updateFolder(nextFolder);
       });
 
     this._folderSignalRClient.mediaInfoUpdated$()
@@ -114,7 +90,7 @@ export class NodeCacheService {
             return acc;
           }, {} as { [absolutePath: string]: MediaInfoUpdatedEventItem[] });
 
-        const updatedFolders: { [absolutePath: string]: FileExplorerFolder } = {};
+        const updatedFolders: { [absolutePath: string]: PagedFileExplorerFolder } = {};
 
         Object.entries(groupedUpdates).forEach(([absolutePath, mediaInfos]) => {
           const parent = this._folders$.value[absolutePath];
@@ -124,7 +100,7 @@ export class NodeCacheService {
 
           const nextFolder = parent.copy();
           mediaInfos.forEach(f => {
-            const node = nextFolder.children.find(n => n.path.fileName === f.nodePath.fileName);
+            const node = nextFolder.flatChildren.find(n => n.path.fileName === f.nodePath.fileName);
             if (node instanceof FileExplorerFileNode) {
               node.metadata.mediaInfo = f.info;
             }
@@ -133,7 +109,7 @@ export class NodeCacheService {
           updatedFolders[absolutePath] = nextFolder;
         });
 
-        this.updateFolders(updatedFolders);
+        this.updateFolders(updatedFolders, false);
       });
 
     this._folderSignalRClient.mediaInfoRemoved$()
@@ -149,7 +125,7 @@ export class NodeCacheService {
             return acc;
           }, {} as { [absolutePath: string]: NodePath[] });
 
-        const updatedFolders: { [absolutePath: string]: FileExplorerFolder } = {};
+        const updatedFolders: { [absolutePath: string]: PagedFileExplorerFolder } = {};
 
         Object.entries(groupedUpdates).forEach(([absolutePath, mediaInfos]) => {
           const parent = this._folders$.value[absolutePath];
@@ -159,7 +135,7 @@ export class NodeCacheService {
 
           const nextFolder = parent.copy();
           mediaInfos.forEach(f => {
-            const node = nextFolder.children.find(n => n.path.fileName === f.fileName);
+            const node = nextFolder.flatChildren.find(n => n.path.fileName === f.fileName);
             if (node instanceof FileExplorerFileNode) {
               node.metadata.mediaInfo = null;
             }
@@ -168,7 +144,7 @@ export class NodeCacheService {
           updatedFolders[absolutePath] = nextFolder;
         });
 
-        this.updateFolders(updatedFolders);
+        this.updateFolders(updatedFolders, false);
       });
 
     this._folderSignalRClient.folderScanStatusChanged$()
@@ -177,28 +153,28 @@ export class NodeCacheService {
       });
   }
 
-  public getFolder$(query$: Observable<NodePathHeader>): Observable<FileExplorerFolder> {
+  public getFolder$(query$: Observable<NodePathHeader>): Observable<PagedFileExplorerFolder> {
     return this._folders$
       .pipe(combineLatestWith(query$))
       .pipe(map(([folders, header]) => folders[header.key] ?? FileExplorerFolder.Default));
   }
 
   getFileByNode$(initialNode: FileExplorerFileNode): Observable<FileExplorerFileNode> {
-    const existingFolder = this._folders$.value[initialNode.parent.path.key];
+    // const existingFolder = this._folders$.value[initialNode.parent.path.key];
 
-    const nodeIndex = !!existingFolder
-      ? existingFolder.children.findIndex(n => n.path.isEqual(initialNode.path))
-      : -1;
-
-    if (existingFolder && nodeIndex !== -1) {
-      const nextFolder = existingFolder.copy();
-      nextFolder.children.splice(nodeIndex, 1, initialNode);
-    }
+    // const nodeIndex = !!existingFolder
+    //   ? existingFolder.children.findIndex(n => n.path.isEqual(initialNode.path))
+    //   : -1;
+    //
+    // if (existingFolder && nodeIndex !== -1) {
+    //   const nextFolder = existingFolder.copy();
+    //   nextFolder.children.splice(nodeIndex, 1, initialNode);
+    // }
 
     return this._folders$
       .pipe(map(folders => {
         const folder = folders[initialNode.parent.path.key];
-        const node = folder?.children.find(n => n.path.isEqual(initialNode.path));
+        const node = folder?.flatChildren.find(n => n.path.isEqual(initialNode.path));
 
         if (!node || !(node instanceof FileExplorerFileNode)) {
           return initialNode;
@@ -259,14 +235,14 @@ export class NodeCacheService {
     }
 
     const result = await this._nodeClient.request(loadingKey,
-      client => client.getNode(path.rootPath, path.relativePath), 'Error loading directory');
+      client => client.getNode(0, this._pageSize, path.rootPath, path.relativePath), 'Error loading directory');
 
     if (!result.result) {
       return new NodePathHeader("", "");
     }
 
-    const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(result.result);
-    this.updateFolder(folder);
+    const folder = this._fileExplorerNodeConverter.fromPagedFileExplorerFolder(result.result);
+    this.updateFolder(folder, true);
 
     return folder.node.path;
   }
@@ -275,11 +251,12 @@ export class NodeCacheService {
     this._nodeClient.request(nodePath.key,
       client => client.refreshFolder(new RefreshFolderCommand({
         nodePath: this._nodePathConverter.toRequestDto(nodePath),
-        recursive: recursive ?? false
+        recursive: recursive ?? false,
+        pageSize: this._pageSize
       })), 'Failed to refresh folder')
       .then(result => result.success(dto => {
-        const folder = this._fileExplorerNodeConverter.fromFileExplorerFolder(dto);
-        this.updateFolder(folder);
+        const folder = this._fileExplorerNodeConverter.fromPagedFileExplorerFolder(dto);
+        this.updateFolder(folder, true);
       }))
   }
 
@@ -288,7 +265,8 @@ export class NodeCacheService {
       client => client.setFolderSortMode(new SetFolderSortCommand({
         nodePath: this._nodePathConverter.toRequestDto(nodePath),
         sortMode: this.toFolderSortMode(sortMode),
-        descending: descending
+        descending: descending,
+        pageSize: this._pageSize
       })), 'Failed to update folder sort');
   }
 
@@ -296,28 +274,46 @@ export class NodeCacheService {
     return this.copyOrCreateParent(node.parent);
   }
 
-  private copyOrCreateParent(parent: FileExplorerFolderNode | null | undefined): FileExplorerFolder {
+  private copyOrCreateParent(parent: FileExplorerFolderNode | null | undefined): PagedFileExplorerFolder {
     const existingFolder = this._folders$.value[parent?.path.key ?? ""]
     return existingFolder
       ? existingFolder.copy()
-      : FileExplorerFolder.Default;
+      : PagedFileExplorerFolder.Default;
   }
 
-  private updateFolder(folder: FileExplorerFolder): void {
-    this.updateFolders({[folder.node.path.key]: folder});
+  private updateFolder(folder: PagedFileExplorerFolder, reset: boolean): void {
+    this.updateFolders({[folder.node.path.key]: folder}, reset);
   }
 
-  private updateFolders(updates: { [absolutePath: string]: FileExplorerFolder }, device?: Device | null): void {
+  private updateFolders(updates: { [absolutePath: string]: PagedFileExplorerFolder }, reset: boolean, device?: Device | null): void {
     const requestedPlaybackDevice = device ?? this._playbackDeviceService.requestPlaybackDevice;
-    Object.values(updates).forEach(folder => {
-      folder.children.forEach(node => {
+
+    const existingFolders = this._folders$.value;
+
+    Object.values(updates).forEach(updatedFolder => {
+      // If we're not resetting loaded folders e.g. when sorting, we need to ensure that we keep existing pages.
+      if (!reset) {
+        const existingFolder = existingFolders[updatedFolder.node.path.key];
+        const existingPages = (existingFolder?.pages ?? []);
+
+        existingPages.forEach(page => {
+          // The update contains the page, which means its more recent than the existing one.
+          if (updatedFolder.pages.some(p => p.pageIndex === page.pageIndex)) {
+            return;
+          }
+
+          // If the page is not in the update, we need to add it.
+          updatedFolder.pages.push(page);
+        })
+      }
+
+      updatedFolder.flatChildren.forEach(node => {
         if (node instanceof FileExplorerFileNode) {
           node.updateCanPlay(requestedPlaybackDevice);
         }
       })
     });
 
-    const existingFolders = this._folders$.value;
     const nextFolders = {...existingFolders, ...updates};
     this._folders$.next(nextFolders);
   }

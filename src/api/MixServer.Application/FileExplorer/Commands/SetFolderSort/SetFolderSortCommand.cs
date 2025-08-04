@@ -1,4 +1,5 @@
 using MixServer.Application.FileExplorer.Dtos;
+using MixServer.Domain.FileExplorer.Constants;
 using MixServer.Domain.FileExplorer.Enums;
 
 namespace MixServer.Application.FileExplorer.Commands.SetFolderSort;
@@ -10,4 +11,6 @@ public class SetFolderSortCommand
     public bool Descending { get; set; }
 
     public FolderSortMode SortMode { get; set; }
+
+    public int PageSize { get; set; } = FileExplorerPageConstants.DefaultPageSize;
 }

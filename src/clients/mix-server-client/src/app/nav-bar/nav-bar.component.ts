@@ -25,6 +25,7 @@ import {FolderPasteFormComponent} from "../main-content/file-explorer/folder-pas
 import {
   RefreshFolderButtonComponent
 } from "../components/nodes/buttons/refresh-folder-button/refresh-folder-button.component";
+import {PagedFileExplorerFolder} from "../main-content/file-explorer/models/paged-file-explorer-folder";
 
 @Component({
   selector: 'app-nav-bar',
@@ -103,7 +104,7 @@ export class NavBarComponent implements OnInit, OnDestroy {
   public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
 
   public currentPage?: MenuLabel;
-  public currentFolder?: FileExplorerFolder | null;
+  public currentFolder?: PagedFileExplorerFolder | null;
   public windowType: WindowType = WindowType.Unknown;
 
   constructor(private _authenticationService: AuthenticationService,

@@ -2,7 +2,6 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Dtos;
-using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
@@ -10,18 +9,18 @@ using MixServer.Domain.Persistence;
 namespace MixServer.Application.FileExplorer.Queries.GetNode;
 
 public class GetFolderNodeQueryHandler(
-    IConverter<IFileExplorerFolder, FileExplorerFolderResponse> folderNodeConverter,
+    IPagedFileExplorerResponseConverter folderNodeConverter,
     ILogger<GetFolderNodeQueryHandler> logger,
     INodePathDtoConverter nodePathConverter,
     IFileService fileService,
     IUnitOfWork unitOfWork)
-    : IQueryHandler<NodePathRequestDto, FileExplorerFolderResponse>
+    : IQueryHandler<PagedNodePathRequestDto, PagedFileExplorerFolderResponse>
 {
-    public async Task<FileExplorerFolderResponse> HandleAsync(NodePathRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<PagedFileExplorerFolderResponse> HandleAsync(PagedNodePathRequestDto request, CancellationToken cancellationToken = default)
     {
         var sw = Stopwatch.StartNew();
 
-        var folder = await fileService.GetFolderOrRootAsync(nodePathConverter.Convert(request), cancellationToken);
+        var folder = await fileService.GetFolderOrRootPageAsync(nodePathConverter.Convert(request), nodePathConverter.ConvertToPage(request), cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         

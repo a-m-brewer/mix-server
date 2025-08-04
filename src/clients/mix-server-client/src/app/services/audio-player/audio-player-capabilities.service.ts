@@ -71,7 +71,7 @@ export class AudioPlayerCapabilitiesService {
     this._fileExplorer.currentFolder$
       .subscribe(folder => {
         if (folder) {
-          const files = folder.children.filter(f => f instanceof FileExplorerFileNode) as FileExplorerFileNode[];
+          const files = folder.flatChildren.filter(f => f instanceof FileExplorerFileNode) as FileExplorerFileNode[];
           const mimeTypes = [...new Set(files.map(m => m.metadata.mimeType))]
           this.updateAudioCapabilities(mimeTypes);
         }

@@ -16,15 +16,15 @@ public class RefreshFolderCommandHandler(
     ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
     ICallbackService callbackService,
-    IFileExplorerResponseConverter fileExplorerResponseConverter,
+    IPagedFileExplorerResponseConverter fileExplorerResponseConverter,
     IFolderScanTrackingStore folderScanTrackingStore,
     IFileService fileService,
     INodePathDtoConverter nodePathDtoConverter,
     IRootFileExplorerFolder rootFolder,
     IScanFolderRequestChannel scanFolderRequestChannel,
-    IUnitOfWork unitOfWork) : ICommandHandler<RefreshFolderCommand, FileExplorerFolderResponse>
+    IUnitOfWork unitOfWork) : ICommandHandler<RefreshFolderCommand, PagedFileExplorerFolderResponse>
 {
-    public async Task<FileExplorerFolderResponse> HandleAsync(RefreshFolderCommand request, CancellationToken cancellationToken = default)
+    public async Task<PagedFileExplorerFolderResponse> HandleAsync(RefreshFolderCommand request, CancellationToken cancellationToken = default)
     {
         var nodePath = request.NodePath is null ? null : nodePathDtoConverter.Convert(request.NodePath);
 
@@ -39,7 +39,11 @@ public class RefreshFolderCommandHandler(
         }
         
         // Return the current state of the folder
-        var folder = await fileService.GetFolderOrRootAsync(nodePath, cancellationToken);
+        var folder = await fileService.GetFolderOrRootPageAsync(nodePath, new Page
+        {
+            PageIndex = 0,
+            PageSize = request.PageSize
+        }, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
         if (nodePath is null || nodePath.IsRoot)

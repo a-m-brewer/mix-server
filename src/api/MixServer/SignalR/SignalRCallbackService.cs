@@ -106,7 +106,7 @@ public class SignalRCallbackService(
             .DeviceStateUpdated(dto);
     }
 
-    public async Task FolderSorted(string userId, IFileExplorerFolder folder)
+    public async Task FolderSorted(string userId, IFileExplorerFolderPage folder)
     {
         var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
 
@@ -117,7 +117,7 @@ public class SignalRCallbackService(
             .FolderSorted(dto);
     }
 
-    public async Task FolderRefreshed(string userId, Guid deviceId, IFileExplorerFolder folder)
+    public async Task FolderRefreshed(string userId, Guid deviceId, IFileExplorerFolderPage folder)
     {
         // Current Device is notified via RefreshFolderCommandHandler
         var (_, otherDevicesConnections) = GetDevicesConnectionWithOtherDevices(userId, deviceId);

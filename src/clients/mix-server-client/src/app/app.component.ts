@@ -20,6 +20,7 @@ import {LoadingNodeStatus, LoadingNodeStatusImpl} from "./services/repositories/
 import {LoadingRepositoryService} from "./services/repositories/loading-repository.service";
 import {WindowSizeRepositoryService} from "./services/repositories/window-size-repository.service";
 import {AudioPlayerCapabilitiesService} from "./services/audio-player/audio-player-capabilities.service";
+import {PagedFileExplorerFolder} from "./main-content/file-explorer/models/paged-file-explorer-folder";
 
 @Component({
   selector: 'app-root',
@@ -38,7 +39,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   public disconnected: boolean = true;
   public disconnectedReason: string | null = 'Loading';
 
-  public currentFolder: FileExplorerFolder | null = null;
+  public currentFolder: PagedFileExplorerFolder | null = null;
   public showFileExplorerToolbar: boolean = false;
   public showQueueToolbar: boolean = false;
   public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
