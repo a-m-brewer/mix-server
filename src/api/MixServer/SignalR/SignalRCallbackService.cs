@@ -218,40 +218,6 @@ public class SignalRCallbackService(
             .Clients(connections)
             .UserUpdated(userDtoConverter.Convert(user));
     }
-    
-    public Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, NodePath? oldNodePath)
-    {
-        var tasks = new List<Task>();
-        var nodeDto = fileExplorerResponseConverter.Convert(node);
-        foreach (var user in  userManager.ConnectedUsers)
-        {
-            var index = expectedNodeIndexes.TryGetValue(user.SignalRUserId.Id, out var i) ? i : -1;
-            var dto = new FileExplorerNodeUpdatedDto
-            {
-                Index = index,
-                Node = nodeDto,
-                OldPath = oldNodePath is null
-                    ? null
-                    : nodePathDtoConverter.ConvertToResponse(oldNodePath)
-            };
-            var connections = user.GetConnections();
-            var task = context.Clients.Clients(connections).FileExplorerNodeUpdated(dto);
-            tasks.Add(task);
-        }
-        
-        return Task.WhenAll(tasks);
-    }
-
-    public Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, NodePath nodePath)
-    {
-        return context.Clients
-            .All
-            .FileExplorerNodeDeleted(new FileExplorerNodeDeletedDto
-            {
-                Parent = fileExplorerResponseConverter.Convert(parentNode),
-                NodePath = nodePathDtoConverter.ConvertToResponse(nodePath)
-            });
-    }
 
     public Task MediaInfoUpdated(IReadOnlyCollection<MediaInfo> mediaInfo)
     {

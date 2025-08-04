@@ -28,12 +28,7 @@ public class FileNotificationService(
     private async Task TranscodeCacheOnTranscodeStatusUpdated(object? sender, IServiceProvider sp, TranscodeStatusUpdatedEventArgs e)
     {
         var fileService = sp.GetRequiredService<IFileService>();
-
-        var (parent, file) = await fileService.GetFileAndFolderAsync(e.Path, CancellationToken.None);
-        
-        var expectedIndexes = await GetExpectedIndexesAsync(sp, parent, file);
-        
-        await callbackService.FileExplorerNodeUpdated(expectedIndexes, file, null);
+        // TODO: Handle transcode status updates for file nodes
     }
 
     private async Task<Dictionary<string, int>> GetExpectedIndexesAsync(

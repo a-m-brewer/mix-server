@@ -1,5 +1,25 @@
 <cdk-virtual-scroll-viewport [itemSize]="nodes.pageSize" class="file-explorer-viewport">
   <app-node-list-item
+    *ngIf="currentFolder.node.parent"
+    [key]="currentFolder.node.parent.path.key"
+    [nodeType]="currentFolder.node.parent.type"
+    [defaultIcon]="currentFolder.node.parent.mdIcon"
+    [loadingStatus]="loadingStatus"
+    [audioPlayerState]="audioPlayerState"
+    [disabled]="currentFolder.node.parent.disabled"
+    [last]="currentFolder.flatChildren.length === 0"
+    (contentClick)="onNodeClick($event)"
+  >
+    <div appNodeListItemTitle>
+      ..
+    </div>
+
+    <app-index-folder-button
+      [node]="currentFolder.node"
+    />
+  </app-node-list-item>
+
+  <app-node-list-item
     *cdkVirtualFor="let node of nodes"
     [key]="node.path.key"
     [nodeType]="node.type"

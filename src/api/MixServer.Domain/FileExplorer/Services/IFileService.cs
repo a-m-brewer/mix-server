@@ -20,7 +20,6 @@ public interface IFileService
         CancellationToken cancellationToken = default);
     Task<List<IFileExplorerFileNode>> GetFilesAsync(IReadOnlyList<NodePath> nodePaths);
     Task<IFileExplorerFileNode> GetFileAsync(NodePath nodePath);
-    Task<(IFileExplorerFolder Parent, IFileExplorerFileNode File)> GetFileAndFolderAsync(NodePath nodePath, CancellationToken cancellationToken);
     void CopyNode(
         NodePath sourcePath,
         NodePath destinationPath,

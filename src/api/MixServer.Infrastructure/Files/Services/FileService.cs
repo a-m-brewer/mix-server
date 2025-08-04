@@ -112,24 +112,6 @@ public class FileService(
         return fileExplorerEntityConverter.Convert(entity);
     }
 
-    public async Task<(IFileExplorerFolder Parent, IFileExplorerFileNode File)> GetFileAndFolderAsync(NodePath nodePath, CancellationToken cancellationToken)
-    {
-        // TODO: paging
-        var folder = await GetFolderOrRootAsync(nodePath.Parent, new Page
-        {
-            PageIndex = 0,
-            PageSize = 25
-        }, cancellationToken);
-        
-        var file = folder
-                       .Children
-                       .OfType<IFileExplorerFileNode>()
-                       .SingleOrDefault(f => f.Path.RootPath == nodePath.RootPath && f.Path.RelativePath == nodePath.RelativePath) ??
-                   throw new NotFoundException(nodePath.Parent.AbsolutePath, nodePath.FileName);
-
-        return (folder, file);
-    }
-
     public void CopyNode(
         NodePath sourcePath,
         NodePath destinationPath,

@@ -188,23 +188,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this._scrollContainerRepository.onScrollTop(this.scrollContainer?.nativeElement.scrollTop);
   }
 
-  public onFolderBackButtonClicked(): void {
-    const parent = this.currentFolder?.node.parent;
-    if (!parent) {
-      return;
-    }
-
-    this._nodeRepository.changeDirectory(parent);
-  }
-
-  public onFolderRefreshButtonClicked(): void {
-    if (!this.currentFolder) {
-      return;
-    }
-
-    this._nodeRepository.refreshFolder();
-  }
-
   private calculateMainContentHeight(): void {
     const elements = this.getElements();
 

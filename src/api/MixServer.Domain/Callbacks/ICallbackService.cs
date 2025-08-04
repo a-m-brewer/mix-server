@@ -30,8 +30,6 @@ public interface ICallbackService
     Task UserDeleted(string userId);
     Task UserAdded(IUser user);
     Task UserUpdated(IUser user);
-    Task FileExplorerNodeUpdated(Dictionary<string, int> expectedNodeIndexes, IFileExplorerNode node, NodePath? oldPath);
-    Task FileExplorerNodeDeleted(IFileExplorerFolderNode parentNode, NodePath path);
     Task MediaInfoUpdated(IReadOnlyCollection<MediaInfo> mediaInfo);
     Task MediaInfoRemoved(IReadOnlyCollection<NodePath> removedItems);
     Task TracklistUpdated(FileExplorerFileNodeEntity file);
