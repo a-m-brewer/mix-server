@@ -10,14 +10,13 @@ import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums
 import {FileExplorerNode} from "../../main-content/file-explorer/models/file-explorer-node";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/file-explorer-folder-node";
-import {FileExplorerFolder} from "../../main-content/file-explorer/models/file-explorer-folder";
 import {FileMetadataConverterService} from "./file-metadata-converter.service";
 import {AudioElementRepositoryService} from "../audio-player/audio-element-repository.service";
 import {NodePathConverterService} from "./node-path-converter.service";
 import {
-  FileExplorerFolderPage,
   PagedFileExplorerFolder
 } from "../../main-content/file-explorer/models/paged-file-explorer-folder";
+import {PagedDataPage} from "../data-sources/paged-data";
 
 @Injectable({
   providedIn: 'root'
@@ -36,8 +35,8 @@ export class FileExplorerNodeConverterService {
       this.fromFolderSortDto(dto.sort));
   }
 
-  public fromFileExplorerFolderPage(dto: FileExplorerFolderChildPageResponse): FileExplorerFolderPage {
-    return new FileExplorerFolderPage(
+  public fromFileExplorerFolderPage(dto: FileExplorerFolderChildPageResponse): PagedDataPage<FileExplorerNode> {
+    return new PagedDataPage<FileExplorerNode>(
       dto.pageIndex,
       dto.children.map(child => this.fromFileExplorerNode(child))
     );

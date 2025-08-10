@@ -22,7 +22,7 @@ public interface ICurrentUserRepository
     Task<DbUser> GetCurrentUserAsync();
     Task LoadCurrentPlaybackSessionAsync(CancellationToken cancellationToken);
     Task LoadPlaybackSessionByNodePathAsync(NodePath nodePath, CancellationToken cancellationToken);
-    Task LoadPagedPlaybackSessionsAsync(int sessionStartIndex, int sessionPageSize, CancellationToken cancellationToken);
+    Task LoadPagedPlaybackSessionsAsync(int sessionPageIndex, int sessionPageSize, CancellationToken cancellationToken);
     Task LoadFileSortByAbsolutePathAsync(NodePath nodePath, CancellationToken cancellationToken);
     Task LoadAllDevicesAsync(CancellationToken cancellationToken);
     Task LoadDeviceByIdAsync(Guid deviceId, CancellationToken cancellationToken);
@@ -119,14 +119,14 @@ public class CurrentUserRepository : ICurrentUserRepository
             .LoadAsync(cancellationToken);
     }
 
-    public async Task LoadPagedPlaybackSessionsAsync(int sessionStartIndex, int sessionPageSize, CancellationToken cancellationToken)
+    public async Task LoadPagedPlaybackSessionsAsync(int sessionPageIndex, int sessionPageSize, CancellationToken cancellationToken)
     {
         await (await CurrentUserEntry())
             .Collection(u =>u.PlaybackSessions)
             .Query()
             .IncludeNode(GetFileQueryOptions.Full)
             .OrderByDescending(o => o.LastPlayed)
-            .Skip(sessionStartIndex)
+            .Skip(sessionPageIndex * sessionPageSize)
             .Take(sessionPageSize)
             .LoadAsync(cancellationToken);
     }

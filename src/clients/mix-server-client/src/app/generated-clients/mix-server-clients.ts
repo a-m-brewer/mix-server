@@ -1023,7 +1023,7 @@ export interface ISessionClient {
     back(): Observable<CurrentSessionUpdatedDto>;
     skip(): Observable<CurrentSessionUpdatedDto>;
     end(): Observable<CurrentSessionUpdatedDto>;
-    history(startIndex?: number | undefined, pageSize?: number | undefined): Observable<GetUsersSessionsResponse>;
+    history(pageIndex?: number | undefined, pageSize?: number | undefined): Observable<GetUsersSessionsResponse>;
     requestPlayback(command: RequestPlaybackCommand): Observable<PlaybackGrantedDto>;
     requestPause(): Observable<void>;
     setPlaying(command: SetPlayingCommand): Observable<void>;
@@ -1402,12 +1402,12 @@ export class SessionClient implements ISessionClient {
         return _observableOf(null as any);
     }
 
-    history(startIndex?: number | undefined, pageSize?: number | undefined): Observable<GetUsersSessionsResponse> {
+    history(pageIndex?: number | undefined, pageSize?: number | undefined): Observable<GetUsersSessionsResponse> {
         let url_ = this.baseUrl + "/api/session/history?";
-        if (startIndex === null)
-            throw new Error("The parameter 'startIndex' cannot be null.");
-        else if (startIndex !== undefined)
-            url_ += "StartIndex=" + encodeURIComponent("" + startIndex) + "&";
+        if (pageIndex === null)
+            throw new Error("The parameter 'pageIndex' cannot be null.");
+        else if (pageIndex !== undefined)
+            url_ += "PageIndex=" + encodeURIComponent("" + pageIndex) + "&";
         if (pageSize === null)
             throw new Error("The parameter 'pageSize' cannot be null.");
         else if (pageSize !== undefined)
@@ -5629,97 +5629,6 @@ export class UserDeletedDto implements IUserDeletedDto {
 
 export interface IUserDeletedDto {
     userId: string;
-}
-
-export class FileExplorerNodeUpdatedDto implements IFileExplorerNodeUpdatedDto {
-    node!: FileExplorerNodeResponse;
-    index!: number;
-    oldPath?: NodePathDto | undefined;
-
-    constructor(data?: IFileExplorerNodeUpdatedDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.node = new FileExplorerNodeResponse();
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.node = _data["node"] ? FileExplorerNodeResponse.fromJS(_data["node"]) : new FileExplorerNodeResponse();
-            this.index = _data["index"];
-            this.oldPath = _data["oldPath"] ? NodePathDto.fromJS(_data["oldPath"]) : <any>undefined;
-        }
-    }
-
-    static fromJS(data: any): FileExplorerNodeUpdatedDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new FileExplorerNodeUpdatedDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["node"] = this.node ? this.node.toJSON() : <any>undefined;
-        data["index"] = this.index;
-        data["oldPath"] = this.oldPath ? this.oldPath.toJSON() : <any>undefined;
-        return data;
-    }
-}
-
-export interface IFileExplorerNodeUpdatedDto {
-    node: FileExplorerNodeResponse;
-    index: number;
-    oldPath?: NodePathDto | undefined;
-}
-
-export class FileExplorerNodeDeletedDto implements IFileExplorerNodeDeletedDto {
-    parent!: FileExplorerFolderNodeResponse;
-    nodePath!: NodePathDto;
-
-    constructor(data?: IFileExplorerNodeDeletedDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-        if (!data) {
-            this.parent = new FileExplorerFolderNodeResponse();
-            this.nodePath = new NodePathDto();
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.parent = _data["parent"] ? FileExplorerFolderNodeResponse.fromJS(_data["parent"]) : new FileExplorerFolderNodeResponse();
-            this.nodePath = _data["nodePath"] ? NodePathDto.fromJS(_data["nodePath"]) : new NodePathDto();
-        }
-    }
-
-    static fromJS(data: any): FileExplorerNodeDeletedDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new FileExplorerNodeDeletedDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["parent"] = this.parent ? this.parent.toJSON() : <any>undefined;
-        data["nodePath"] = this.nodePath ? this.nodePath.toJSON() : <any>undefined;
-        return data;
-    }
-}
-
-export interface IFileExplorerNodeDeletedDto {
-    parent: FileExplorerFolderNodeResponse;
-    nodePath: NodePathDto;
 }
 
 export class MediaInfoUpdatedDto implements IMediaInfoUpdatedDto {

@@ -3,8 +3,6 @@ import {ISignalrClient} from "./signalr-client.interface";
 import {HubConnection} from "@microsoft/signalr";
 import {Observable, Subject} from "rxjs";
 import {
-  FileExplorerNodeDeletedDto,
-  FileExplorerNodeUpdatedDto,
   FolderScanStatusDto,
   MediaInfoRemovedDto,
   MediaInfoUpdatedDto,

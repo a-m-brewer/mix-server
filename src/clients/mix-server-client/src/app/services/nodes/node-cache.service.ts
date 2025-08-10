@@ -266,7 +266,7 @@ export class NodeCacheService {
 
   public async loadPage(nodePath: NodePathHeader, pageIndex: number): Promise<void> {
     const currentFolder = this._folders$.value[nodePath.key];
-    if (currentFolder && currentFolder.pages.some(p => p.pageIndex === pageIndex)) {
+    if (currentFolder && pageIndex in currentFolder.pages) {
       return;
     }
 
@@ -307,16 +307,16 @@ export class NodeCacheService {
       // If we're not resetting loaded folders e.g. when sorting, we need to ensure that we keep existing pages.
       if (!reset) {
         const existingFolder = existingFolders[updatedFolder.node.path.key];
-        const existingPages = (existingFolder?.pages ?? []);
+        const existingPages = (existingFolder?.pages ?? {});
 
-        existingPages.forEach(page => {
+        Object.values(existingPages).forEach(page => {
           // The update contains the page, which means its more recent than the existing one.
-          if (updatedFolder.pages.some(p => p.pageIndex === page.pageIndex)) {
+          if (page.pageIndex in updatedFolder.pages) {
             return;
           }
 
           // If the page is not in the update, we need to add it.
-          updatedFolder.pages.push(page);
+          updatedFolder.addPage(page.pageIndex, page.children);
         });
 
         updatedFolder.refreshFlatChildren();

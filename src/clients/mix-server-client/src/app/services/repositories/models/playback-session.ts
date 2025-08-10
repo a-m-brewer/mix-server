@@ -4,6 +4,7 @@ import {ImportTracklistDto, StreamKeyDto} from "../../../generated-clients/mix-s
 import {TracklistCueForm, TracklistForm} from "../../tracklist/models/tracklist-form.interface";
 import {FormArray, FormGroup} from "@angular/forms";
 import {Observable, Subject, takeUntil} from "rxjs";
+import {PagedDataItem} from "../../data-sources/paged-data";
 
 export interface IPlaybackSession {
   id: string;
@@ -14,7 +15,7 @@ export interface IPlaybackSession {
   tracklist: FormGroup<TracklistForm>
 }
 
-export class PlaybackSession implements IPlaybackSession {
+export class PlaybackSession implements IPlaybackSession, PagedDataItem<PlaybackSession> {
   private _unsubscribe$ = new Subject<void>();
 
   constructor(public id: string,
@@ -48,6 +49,10 @@ export class PlaybackSession implements IPlaybackSession {
         expires: session.streamKey.expires
       }),
       session.tracklist);
+  }
+
+  public copy(): PlaybackSession {
+    return PlaybackSession.copy(this, this.state.copy());
   }
 
   public get deviceId(): string | null | undefined {

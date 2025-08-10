@@ -25,7 +25,6 @@ export class AudioPlayerCapabilitiesService {
               private _fileExplorer: FileExplorerNodeRepositoryService,
               private _historyRepository: HistoryRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
-              private _toastService: ToastService,
               private _queueRepository: QueueRepositoryService) {
   }
 
@@ -50,8 +49,8 @@ export class AudioPlayerCapabilitiesService {
       });
 
     this._historyRepository.sessions$
-      .subscribe(sessions => {
-        const mimeTypes = [...new Set(sessions.map(m => m.currentNode.metadata.mimeType))]
+      .subscribe(pagedSession => {
+        const mimeTypes = [...new Set(pagedSession.flatChildren.map(m => m.currentNode.metadata.mimeType))]
         this.updateAudioCapabilities(mimeTypes);
       });
 

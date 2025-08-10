@@ -6,7 +6,7 @@ public class GetUsersSessionsQueryValidator : AbstractValidator<GetUsersSessions
 {
     public GetUsersSessionsQueryValidator()
     {
-        RuleFor(r => r.StartIndex)
+        RuleFor(r => r.PageIndex)
             .GreaterThanOrEqualTo(0);
 
         RuleFor(r => r.PageSize)

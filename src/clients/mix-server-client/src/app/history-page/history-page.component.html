@@ -1,22 +1,13 @@
-<div
-  infinite-scroll
-  [infiniteScrollDistance]="scrollDistance"
-  [infiniteScrollUpDistance]="scrollUpDistance"
-  [infiniteScrollThrottle]="throttle"
-  [infiniteScrollContainer]="selector"
-  [fromRoot]="true"
-  (scrolled)="onScrollDown()"
->
+<cdk-virtual-scroll-viewport [itemSize]="sessions.pageSize" class="history-viewport">
   <app-node-list-item
-    *ngFor="let session of sessions; last as last"
+    *cdkVirtualFor="let session of sessions"
     [key]="session.currentNode.path.key"
     [nodeType]="session.currentNode.type"
     [defaultIcon]="session.currentNode.mdIcon"
     [loadingStatus]="loadingStatus"
     [audioPlayerState]="audioPlayerState"
     [disabled]="session.currentNode.disabled"
-    [last]="last"
-    (contentClick)="onNodeClick($event)"
+    (contentClick)="onNodeClick(session)"
   >
     <div appNodeListItemTitle>
       {{ session.currentNode.path.fileName }}
@@ -34,11 +25,4 @@
       [folder]="session.currentNode.parent"
     />
   </app-node-list-item>
-
-  <div class="end-of-history-message-container" *ngIf="!moreItemsAvailable">
-    <mat-divider [inset]="true"></mat-divider>
-    <h3 class="end-of-history-message">
-      End of History
-    </h3>
-  </div>
-</div>
+</cdk-virtual-scroll-viewport>

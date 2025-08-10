@@ -129,10 +129,10 @@ public class SessionService(
         return session;
     }
 
-    public async Task<List<PlaybackSession>> GetUsersPlaybackSessionHistoryAsync(int startIndex, int pageSize,
+    public async Task<List<PlaybackSession>> GetUsersPlaybackSessionHistoryAsync(int pageIndex, int pageSize,
         CancellationToken cancellationToken)
     {
-        await currentUserRepository.LoadPagedPlaybackSessionsAsync(startIndex, pageSize, cancellationToken);
+        await currentUserRepository.LoadPagedPlaybackSessionsAsync(pageIndex, pageSize, cancellationToken);
         var user = await currentUserRepository.GetCurrentUserAsync();
 
         var sessions = user.PlaybackSessions;

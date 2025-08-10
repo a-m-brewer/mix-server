@@ -12,6 +12,6 @@ public interface ISessionService
     Task<PlaybackSession> GetCurrentPlaybackSessionWithFileAsync(CancellationToken cancellationToken);
     Task<PlaybackSession> GetCurrentPlaybackSessionAsync(CancellationToken cancellationToken);
     Task<PlaybackSession?> GetCurrentPlaybackSessionOrDefaultAsync(CancellationToken cancellationToken);
-    Task<List<PlaybackSession>> GetUsersPlaybackSessionHistoryAsync(int startIndex, int pageSize,
+    Task<List<PlaybackSession>> GetUsersPlaybackSessionHistoryAsync(int pageIndex, int pageSize,
         CancellationToken cancellationToken);
 }
