@@ -56,6 +56,7 @@ public class PlaybackSessionDtoConverter(
         var sessionDto = session == null ? null : Convert(session, autoPlay);
         var queueDto = queueSnapshotDtoConverter.Convert(queue);
 
-        return new CurrentSessionUpdatedDto(sessionDto, queueDto);
+        throw new NotImplementedException();
+        // return new CurrentSessionUpdatedDto(sessionDto, queueDto);
     }
 }

@@ -4,16 +4,16 @@ using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
-using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Infrastructure.Queueing.Services;
 
 namespace MixServer.Application.Sessions.Commands.SetCurrentSession;
 
 public class SetCurrentSessionCommandHandler(
     IPlaybackSessionDtoConverter converter,
     INodePathDtoConverter nodePathDtoConverter,
-    IQueueService queueService,
+    IQueueService2 queueService,
     ISessionService sessionService,
     IUnitOfWork unitOfWork,
     IValidator<SetCurrentSessionCommand> validator)
@@ -32,6 +32,8 @@ public class SetCurrentSessionCommandHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return converter.Convert(nextSession, queueSnapshot, true);
+        throw new NotImplementedException();
+
+        // return converter.Convert(nextSession, queueSnapshot, true);
     }
 }

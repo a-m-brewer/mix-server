@@ -22,6 +22,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MixServer.Domain", "src\api
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MixServer.Infrastructure", "src\api\MixServer.Infrastructure\MixServer.Infrastructure.csproj", "{18D37D48-4018-4C96-A1E5-3B5BA1B94CF9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{20615CCD-EB1E-481E-BE8F-5F87FF2F3AA2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MixServer.Infrastructure.Tests", "src\api\Tests\MixServer.Infrastructure.Tests\MixServer.Infrastructure.Tests.csproj", "{37DE6802-1D5B-4A29-BC3D-54B20127B067}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,11 +48,16 @@ Global
 		{18D37D48-4018-4C96-A1E5-3B5BA1B94CF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18D37D48-4018-4C96-A1E5-3B5BA1B94CF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18D37D48-4018-4C96-A1E5-3B5BA1B94CF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37DE6802-1D5B-4A29-BC3D-54B20127B067}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37DE6802-1D5B-4A29-BC3D-54B20127B067}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37DE6802-1D5B-4A29-BC3D-54B20127B067}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37DE6802-1D5B-4A29-BC3D-54B20127B067}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{15647E48-128E-4004-BEF4-90A57E34CE15} = {13DBA0E2-71F3-4DF8-9512-F7F3F3B551E0}
 		{BD901F1D-A6E9-46D7-A48D-9BD455CD76CF} = {13DBA0E2-71F3-4DF8-9512-F7F3F3B551E0}
 		{EEC015D7-16A9-4F9D-BD98-A8D0B280F2E4} = {13DBA0E2-71F3-4DF8-9512-F7F3F3B551E0}
 		{18D37D48-4018-4C96-A1E5-3B5BA1B94CF9} = {13DBA0E2-71F3-4DF8-9512-F7F3F3B551E0}
+		{37DE6802-1D5B-4A29-BC3D-54B20127B067} = {20615CCD-EB1E-481E-BE8F-5F87FF2F3AA2}
 	EndGlobalSection
 EndGlobal

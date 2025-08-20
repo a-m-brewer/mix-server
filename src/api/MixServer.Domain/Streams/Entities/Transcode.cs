@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using MixServer.Domain.FileExplorer.Entities;
+using MixServer.Domain.Streams.Enums;
 
 namespace MixServer.Domain.Streams.Entities;
 
@@ -10,6 +11,8 @@ public class Transcode
     // TODO: Make this non-nullable after migration to new root, relative paths is complete.
     public FileExplorerFileNodeEntity? Node { get; set; }
     public Guid? NodeId { get; set; }
+
+    public TranscodeState State { get; set; } = TranscodeState.None;
     
     [Obsolete("Use Node instead.")]
     public string AbsolutePath { get; set; } = string.Empty;

@@ -2,6 +2,7 @@
 using MixServer.Application.Queueing.Commands.AddToQueue;
 using MixServer.Application.Queueing.Commands.RemoveFromQueue;
 using MixServer.Application.Queueing.Commands.SetQueuePosition;
+using MixServer.Application.Queueing.Queries.GetCurrentQueue;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Interfaces;
@@ -13,7 +14,7 @@ namespace MixServer.Controllers;
 [Route("api/[controller]")]
 public class QueueController(
     ICommandHandler<AddToQueueCommand, QueueSnapshotDto> addToQueueCommandHandler,
-    IQueryHandler<QueueSnapshotDto> getCurrentQueueQueryHandler,
+    IQueryHandler<GetCurrentQueueRequest, QueueSnapshotDto> getCurrentQueueQueryHandler,
     ICommandHandler<RemoveFromQueueCommand, QueueSnapshotDto> removeFromQueueCommandHandler,
     ICommandHandler<SetQueuePositionCommand, CurrentSessionUpdatedDto> setQueuePositionCommandHandler)
     : ControllerBase
@@ -22,9 +23,9 @@ public class QueueController(
     [ProducesResponseType(typeof(QueueSnapshotDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Queue(CancellationToken cancellationToken)
+    public async Task<IActionResult> Queue([FromQuery] GetCurrentQueueRequest request, CancellationToken cancellationToken)
     {
-        return Ok(await getCurrentQueueQueryHandler.HandleAsync(cancellationToken));
+        return Ok(await getCurrentQueueQueryHandler.HandleAsync(request, cancellationToken));
     }
     
     [HttpPost]

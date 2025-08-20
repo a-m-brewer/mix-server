@@ -1,54 +1,12 @@
-﻿using System.Collections.Concurrent;
-using Microsoft.Extensions.DependencyInjection;
-using MixServer.Domain.Exceptions;
-using MixServer.Domain.Utilities;
-using MixServer.Infrastructure.Queueing.Models;
+﻿using MixServer.Domain.Persistence;
+using MixServer.Domain.Sessions.Entities;
 
 namespace MixServer.Infrastructure.Queueing.Repositories;
 
-public interface IQueueRepository
+public interface IQueueRepository : IScopedRepository
 {
-    UserQueue GetOrAddQueue(string userId);
-    UserQueue GetOrThrow(string userId);
+    QueueEntity CreateAsync(string userId);
     bool HasQueue(string userId);
     void Remove(string userId);
-}
-
-public class QueueRepository(IServiceProvider serviceProvider)
-    : IQueueRepository
-{
-    private readonly ConcurrentDictionary<string, UserQueue> _queues = new();
-
-    public UserQueue GetOrAddQueue(string userId)
-    {
-        if (_queues.TryGetValue(userId, out var queue))
-        {
-            return queue;
-        }
-        
-        var newQueue = new UserQueue(userId, serviceProvider.GetRequiredService<IReadWriteLock>());
-        _queues[userId] = newQueue;
-
-        return newQueue;
-    }
-
-    public UserQueue GetOrThrow(string userId)
-    {
-        if (_queues.TryGetValue(userId, out var queue))
-        {
-            return queue;
-        }
-        
-        throw new NotFoundException(nameof(UserQueue), userId);
-    }
-
-    public bool HasQueue(string userId)
-    {
-        return _queues.ContainsKey(userId);
-    }
-
-    public void Remove(string userId)
-    {
-        _queues.TryRemove(userId, out _);
-    }
+    Task MarkUserQueueItemsAsDeletedAsync(QueueEntity queue, CancellationToken cancellationToken);
 }

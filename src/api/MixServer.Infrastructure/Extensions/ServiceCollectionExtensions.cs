@@ -55,9 +55,6 @@ public static class ServiceCollectionExtensions
             .WithSingletonLifetime()
         );
 
-        services.AddTransient<IQueueService, QueueService>();
-        services.AddSingleton<IQueueRepository, QueueRepository>();
-
         services.AddTransient<IFileService, FileService>();
 
         services.AddTransient<IDeviceService, DeviceService>();

@@ -6,6 +6,7 @@ using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Streams.Entities;
+using MixServer.Domain.Users.Models;
 
 namespace MixServer.Infrastructure.EF.Extensions;
 
@@ -100,16 +101,16 @@ public static class EfIncludeExtensions
             FolderSortMode.Created => i => i.CreationTimeUtc,
             _ => i => i.RelativePath
         };
-        
-        var (directoryIndex, fileIndex) = sort.SortMode == FolderSortMode.Name
-            ? (0, 1)
-            : (1, 0);
+
+        var (directoryIndex, fileIndex) = sort.GetDirectoryFileSort();
 
         var orderedQuery = query.OrderBy(o => o is FileExplorerFolderNodeEntity ? directoryIndex : fileIndex);
         
         orderedQuery = sort.Descending
             ? orderedQuery.ThenByDescending(func)
             : orderedQuery.ThenBy(func);
+
+        orderedQuery = orderedQuery.ThenBy(t => t.Id);
 
         if (page is null)
         {
@@ -121,5 +122,12 @@ public static class EfIncludeExtensions
             .Take(page.PageSize);
         
         return queryable;
+    }
+    
+    private static (int DirectoryIndex, int FileIndex) GetDirectoryFileSort(this IFolderSort sort)
+    {
+        return sort.SortMode == FolderSortMode.Name
+            ? (0, 1)
+            : (1, 0);
     }
 }

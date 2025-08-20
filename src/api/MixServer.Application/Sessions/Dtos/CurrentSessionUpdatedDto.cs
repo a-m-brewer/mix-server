@@ -3,9 +3,9 @@ using MixServer.Application.Sessions.Responses;
 
 namespace MixServer.Application.Sessions.Dtos;
 
-public class CurrentSessionUpdatedDto(PlaybackSessionDto? session, QueueSnapshotDto queue)
+public class CurrentSessionUpdatedDto
 {
-    public PlaybackSessionDto? Session { get; } = session;
+    public required PlaybackSessionDto? Session { get; init; }
 
-    public QueueSnapshotDto Queue { get; } = queue;
+    public required QueuePositionDto QueuePosition { get; init; }
 }

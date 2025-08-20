@@ -36,5 +36,11 @@ public class DbUserTypeConfiguration : IEntityTypeConfiguration<DbUser>
             .WithOne()
             .HasForeignKey(f => f.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder
+            .HasOne(o => o.Queue)
+            .WithOne()
+            .HasForeignKey<QueueEntity>(q => q.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
