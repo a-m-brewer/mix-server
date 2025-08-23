@@ -26,7 +26,6 @@ public interface ICurrentUserRepository
     Task LoadFileSortByAbsolutePathAsync(NodePath nodePath, CancellationToken cancellationToken);
     Task LoadAllDevicesAsync(CancellationToken cancellationToken);
     Task LoadDeviceByIdAsync(Guid deviceId, CancellationToken cancellationToken);
-    Task LoadQueueAsync(CancellationToken cancellationToken);
 }
 
 public class CurrentUserRepository : ICurrentUserRepository
@@ -161,14 +160,6 @@ public class CurrentUserRepository : ICurrentUserRepository
             .Collection(c => c.Devices)
             .Query()
             .Where(w => w.Id == deviceId)
-            .LoadAsync(cancellationToken);
-    }
-
-    public async Task LoadQueueAsync(CancellationToken cancellationToken)
-    {
-        await (await CurrentUserEntry())
-            .Reference(u => u.Queue)
-            .Query()
             .LoadAsync(cancellationToken);
     }
 

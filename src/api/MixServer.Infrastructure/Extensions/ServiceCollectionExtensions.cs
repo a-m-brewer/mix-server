@@ -11,8 +11,6 @@ using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.Files;
 using MixServer.Infrastructure.Files.Services;
-using MixServer.Infrastructure.Queueing.Repositories;
-using MixServer.Infrastructure.Queueing.Services;
 using MixServer.Infrastructure.Sessions.Accessors;
 using MixServer.Infrastructure.Sessions.Services;
 using MixServer.Infrastructure.Tracklist.Factories;

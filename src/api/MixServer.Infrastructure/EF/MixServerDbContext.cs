@@ -35,10 +35,6 @@ public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : 
     
     public DbSet<TracklistPlayersEntity> TracklistPlayers { get; set; }
     
-    public DbSet<QueueEntity> Queues { get; set; }
-    
-    public DbSet<UserQueueItem> UserQueueItems { get; set; }
-    
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

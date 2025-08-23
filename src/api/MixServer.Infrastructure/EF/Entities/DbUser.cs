@@ -23,8 +23,6 @@ public class DbUser : IdentityUser, IUser
 
     public List<UserCredential> Credentials { get; set; } = [];
     
-    public QueueEntity? Queue { get; set; }
-    
     [NotMapped]
     public IList<Role> Roles { get; set; } = new List<Role>();
 

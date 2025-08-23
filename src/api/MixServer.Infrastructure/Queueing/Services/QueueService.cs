@@ -12,7 +12,6 @@ using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Queueing.Models;
-using MixServer.Infrastructure.Queueing.Repositories;
 using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Infrastructure.Queueing.Services;

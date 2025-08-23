@@ -24,4 +24,8 @@
       <PackageReference Include="UUIDNext" Version="4.1.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Queueing\Repositories\" />
+    </ItemGroup>
+
 </Project>
