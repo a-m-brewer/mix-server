@@ -9,6 +9,7 @@
       <PackageReference Include="DeviceDetector.NET" Version="6.2.0" />
       <PackageReference Include="FluentValidation" Version="11.9.0" />
       <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
+      <PackageReference Include="LexoRank" Version="1.0.10" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.1" />
       <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.1" />
       <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />

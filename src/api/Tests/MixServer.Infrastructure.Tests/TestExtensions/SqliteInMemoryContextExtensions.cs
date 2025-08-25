@@ -12,13 +12,21 @@ public static class SqliteInMemoryContextExtensions
         var connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
         
+        return CreateContextFromConnection(connection, ensureCreated: true);
+    }
+    
+    public static TestSqliteDbConnection CreateContextFromConnection(SqliteConnection connection, bool ensureCreated = false)
+    {
         var options = new DbContextOptionsBuilder<MixServerDbContext>()
             .UseSqlite(connection)
             .Options;
         
         var context = new MixServerDbContext(options);
         
-        context.Database.EnsureCreated();
+        if (ensureCreated)
+        {
+            context.Database.EnsureCreated();
+        }
         
         return new TestSqliteDbConnection
         {

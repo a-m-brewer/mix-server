@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Users.Entities;
 using MixServer.Domain.Users.Enums;
@@ -22,6 +23,8 @@ public class DbUser : IdentityUser, IUser
     public List<Device> Devices { get; set; } = [];
 
     public List<UserCredential> Credentials { get; set; } = [];
+    
+    public QueueEntity? Queue { get; set; }
     
     [NotMapped]
     public IList<Role> Roles { get; set; } = new List<Role>();

@@ -104,7 +104,7 @@ public static class EfIncludeExtensions
 
         var (directoryIndex, fileIndex) = sort.GetDirectoryFileSort();
 
-        var orderedQuery = query.OrderBy(o => o is FileExplorerFolderNodeEntity ? directoryIndex : fileIndex);
+        var orderedQuery = query.OrderBy(o => o.NodeType == FileExplorerEntityNodeType.File ? fileIndex : directoryIndex);
         
         orderedQuery = sort.Descending
             ? orderedQuery.ThenByDescending(func)

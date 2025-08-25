@@ -3,6 +3,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.FileExplorer.Entities;
+using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Streams.Entities;
 using MixServer.Domain.Tracklists.Entities;
@@ -34,6 +35,10 @@ public class MixServerDbContext(DbContextOptions<MixServerDbContext> options) : 
     public DbSet<TrackEntity> Tracks { get; set; }
     
     public DbSet<TracklistPlayersEntity> TracklistPlayers { get; set; }
+    
+    public DbSet<QueueEntity> Queues { get; set; }
+    
+    public DbSet<QueueItemEntity> QueueItems { get; set; }
     
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -5,30 +5,29 @@ using NUnit.Framework;
 
 namespace MixServer.Infrastructure.Tests.TestClasses;
 
-public abstract class SqliteTestBase
+public abstract class SqliteTestBase<T> : AutoMockerBase<T>
+    where T : class
 {
-    private TestSqliteDbConnection _testConnection = null!;
-    
-    [SetUp]
-    public void BaseSetup()
-    {
-        _testConnection = SqliteInMemoryContextExtensions.CreateContext();
-        
-        Setup();
-    }
-    
-    [TearDown]
-    public void BaseTearDown()
-    {
-        Teardown();
-        
-        _testConnection.Dispose();
-        _testConnection = null!;
-    }
-    
-    protected MixServerDbContext Context => _testConnection.Context;
+    private TestDbConnectionFactory _connectionFactory = null!;
 
-    protected virtual void Setup() {}
+    protected MixServerDbContext Context => Mocker.Get<MixServerDbContext>();
     
-    protected virtual void Teardown() {}
+    protected override void Setup()
+    {
+        _connectionFactory = new TestDbConnectionFactory();
+        
+        using var setupContext = _connectionFactory.CreateContext();
+        Setup(setupContext);
+
+        Mocker.Use(_connectionFactory.CreateContext());
+    }
+
+    protected virtual void Setup(MixServerDbContext setupContext) {}
+    
+    protected override void Teardown()
+    {
+        Context.Dispose();
+        _connectionFactory.Dispose();
+        _connectionFactory = null!;
+    }
 }

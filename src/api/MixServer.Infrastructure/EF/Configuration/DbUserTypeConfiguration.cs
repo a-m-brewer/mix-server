@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Infrastructure.EF.Entities;
 
@@ -13,6 +14,12 @@ public class DbUserTypeConfiguration : IEntityTypeConfiguration<DbUser>
             .HasOne(o => o.CurrentPlaybackSession)
             .WithOne()
             .HasForeignKey<PlaybackSession>(f => f.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder
+            .HasOne(o => o.Queue)
+            .WithOne()
+            .HasForeignKey<QueueEntity>(f => f.UserId)
             .OnDelete(DeleteBehavior.Cascade);
         
         builder
