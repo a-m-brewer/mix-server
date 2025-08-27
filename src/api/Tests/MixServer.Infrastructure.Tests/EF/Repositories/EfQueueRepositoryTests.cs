@@ -265,6 +265,81 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
             .Be(initialQueueItem.Id);
     }
     
+    [Test]
+    public async Task SetFolderAsync_SetSameDifferentFolder_OldFolderQueueItemsRemoved()
+    {
+        // Arrange
+        var parentNodeA = await CreateParentNodeAsync(relativePath: "A");
+        var childA = CreateChildNode(parentNodeA);
+        await AddNodesAsync(childA);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNodeA.Id, CancellationToken.None);
+        
+        var parentNodeB = await CreateParentNodeAsync(relativePath: "B");
+        var childB = CreateChildNode(parentNodeB);
+        await AddNodesAsync(childB);
+        
+        // Act
+        await Subject.SetFolderAsync(_user.Id, parentNodeB.Id, CancellationToken.None);
+        
+        // Assert
+        var items = await Context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == _user.Id)
+            .OrderBy(o => o.Rank)
+            .ToListAsync();
+
+        items.Should()
+            .HaveCount(1);
+        
+        items[0].FileId
+            .Should()
+            .Be(childB.Id);
+    }
+    
+    [Test]
+    public async Task SetFolderAsync_FolderSortChanged_SortedWithLatest()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A", new DateTime(2025, 8, 15));
+        var childB = CreateChildNode(parentNode, "B", new DateTime(2025, 8, 14));
+        var childC = CreateChildNode(parentNode, "C", new DateTime(2025, 8, 13));
+        await AddNodesAsync(childC, childA, childB);
+        
+        var sort = await SetUserSortAsync(parentNode, FolderSortMode.Name, false);
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        // Act
+        sort.SortMode = FolderSortMode.Created;
+        await Context.SaveChangesAsync();
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        // Assert
+        var items = await Context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == _user.Id)
+            .OrderBy(o => o.Rank)
+            .ToListAsync();
+        
+        items
+            .Should()
+            .HaveCount(3);
+        
+        items[0].FileId
+            .Should()
+            .Be(childC.Id);
+        
+        items[1].FileId
+            .Should()
+            .Be(childB.Id);
+        
+        items[2].FileId
+            .Should()
+            .Be(childA.Id);
+    }
+    
     private async Task<FileExplorerFolderNodeEntity> CreateParentNodeAsync(string? relativePath = null)
     {
         var parentNode = new FileExplorerFolderNodeEntity
@@ -321,7 +396,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await Context.SaveChangesAsync();
     }
     
-    private async Task SetUserSortAsync(FileExplorerFolderNodeEntity node, FolderSortMode sortMode, bool descending)
+    private async Task<FolderSort> SetUserSortAsync(FileExplorerFolderNodeEntity node, FolderSortMode sortMode, bool descending)
     {
         var sort = new FolderSort
         {
@@ -332,7 +407,9 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
             NodeEntity = node,
             NodeIdEntity = node.Id
         };
-        Context.FolderSorts.Add(sort);
+        await Context.FolderSorts.AddAsync(sort);
         await Context.SaveChangesAsync();
+        
+        return sort;
     }
 }

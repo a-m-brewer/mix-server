@@ -25,7 +25,7 @@ public class EfQueueRepository(
             var userSort = user.FolderSorts.SingleOrDefault();
             var folderSort = userSort ?? (IFolderSort)FolderSortModel.Default;
             
-            await ClearQueueAsync(queue, cancellationToken);
+            await ClearQueueAsync(queue, nodeId, cancellationToken);
 
             // Get total count for logging and progress tracking
             var totalFileCount = await GetFileCountAsync(nodeId, cancellationToken);
@@ -176,11 +176,15 @@ public class EfQueueRepository(
         return (user, queue);
     }
     
-    private async Task ClearQueueAsync(QueueEntity queue, CancellationToken cancellationToken)
+    private async Task ClearQueueAsync(QueueEntity queue, Guid newNodeId, CancellationToken cancellationToken)
     {
-        var deletedCount = await context.QueueItems
-            .Where(w => w.QueueId == queue.Id)
-            .ExecuteDeleteAsync(cancellationToken);
+        var deletedCount =
+            await (from qi in context.QueueItems
+                    join f in context.Nodes.OfType<FileExplorerFileNodeEntity>() on qi.FileId equals f.Id
+                    where qi.QueueId == queue.Id && f.ParentId != newNodeId
+                    select qi)
+                .ExecuteDeleteAsync(cancellationToken);
+
             
         logger.LogDebug("Cleared {DeletedCount} existing queue items for queue {QueueId}", 
             deletedCount, queue.Id);

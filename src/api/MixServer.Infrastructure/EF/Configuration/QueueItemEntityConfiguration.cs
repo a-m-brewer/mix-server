@@ -16,7 +16,7 @@ public class QueueItemEntityConfiguration : IEntityTypeConfiguration<QueueItemEn
             .WithMany()
             .HasForeignKey(f => f.FileId)
             .OnDelete(DeleteBehavior.SetNull);
-        
-        builder.HasIndex(i => new { i.QueueId, i.Rank }).IsUnique();
+
+        builder.HasIndex(i => new { i.QueueId, i.Rank });
     }
 }
