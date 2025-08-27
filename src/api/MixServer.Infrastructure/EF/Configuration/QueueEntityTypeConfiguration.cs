@@ -16,5 +16,11 @@ public class QueueEntityTypeConfiguration : IEntityTypeConfiguration<QueueEntity
             .WithOne(o => o.Queue)
             .HasForeignKey(f => f.QueueId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder
+            .HasOne(o => o.CurrentPosition)
+            .WithOne()
+            .HasForeignKey<QueueEntity>(f => f.CurrentPositionId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

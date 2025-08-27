@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Infrastructure.EF;
@@ -338,6 +339,208 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         items[2].FileId
             .Should()
             .Be(childA.Id);
+    }
+
+    [Test]
+    public async Task SetQueuePositionAsync_ValidItem_SetsPosition()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        var queueItem = await Context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == _user.Id)
+            .FirstAsync(f => f.FileId == childB.Id);
+        
+        // Act
+        await Subject.SetQueuePositionAsync(_user.Id, childB.Id, CancellationToken.None);
+        
+        // Assert
+        var queue = await Context.Queues
+            .Include(i => i.CurrentPosition)
+            .SingleAsync(s => s.UserId == _user.Id);
+        
+        queue.CurrentPositionId
+            .Should()
+            .Be(queueItem.Id);
+        
+        queue.CurrentPosition!.FileId
+            .Should()
+            .Be(childB.Id);
+    }
+    
+    [Test]
+    public async Task SetQueuePositionAsync_InvalidItem_Throws()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        // Act
+        var act = async () => await Subject.SetQueuePositionAsync(_user.Id, Guid.NewGuid(), CancellationToken.None);
+        
+        // Assert
+        await act
+            .Should()
+            .ThrowAsync<NotFoundException>();
+    }
+    
+    [Test]
+    public async Task GetNextPositionAsync_ValidNextItem_ReturnsNextItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        
+        // Act
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        
+        // Assert
+        nextItem
+            .Should()
+            .NotBeNull();
+        
+        nextItem.FileId
+            .Should()
+            .Be(childB.Id);
+    }
+    
+    [Test]
+    public async Task GetNextPositionAsync_NoCurrentPosition_GetsFirstItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        // Act
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        
+        // Assert
+        nextItem
+            .Should()
+            .NotBeNull();
+        
+        nextItem.FileId
+            .Should()
+            .Be(childA.Id);
+    }
+    
+    [Test]
+    public async Task GetNextPositionAsync_NoQueue_Throws()
+    {
+        // Act
+        var act = async () => await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        
+        // Assert
+        await act
+            .Should()
+            .ThrowAsync<NotFoundException>();
+    }
+    
+    [Test]
+    public async Task GetNextPositionAsync_NoNextItem_ReturnsNull()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        
+        // Act
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        
+        // Assert
+        nextItem
+            .Should()
+            .BeNull();
+    }
+    
+    [Test]
+    public async Task GetNextPositionAsync_ImmediateNextItemDoesNotExist_ReturnsNextExistingItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        
+        childB.Exists = false;
+        await Context.SaveChangesAsync();
+        
+        // Act
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        
+        // Assert
+        nextItem
+            .Should()
+            .NotBeNull();
+        
+        nextItem.FileId
+            .Should()
+            .Be(childC.Id);
+    }
+    
+    [Test]
+    public async Task GetNextPositionAsync_ImmediateNextIsNotMedia_ReturnsNextMediaItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        
+        childB.Metadata!.IsMedia = false;
+        await Context.SaveChangesAsync();
+        
+        // Act
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        
+        // Assert
+        nextItem
+            .Should()
+            .NotBeNull();
+        
+        nextItem.FileId
+            .Should()
+            .Be(childC.Id);
     }
     
     private async Task<FileExplorerFolderNodeEntity> CreateParentNodeAsync(string? relativePath = null)

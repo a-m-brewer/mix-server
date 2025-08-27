@@ -7,7 +7,7 @@ public class FileMetadataEntity : IFileMetadata
 {
     public required Guid Id { get; init; }
     public required string MimeType { get; set; }
-    public required bool IsMedia { get; init; }
+    public required bool IsMedia { get; set; }
     
     public Guid NodeId { get; set; }
     public required FileExplorerFileNodeEntity Node { get; set; }

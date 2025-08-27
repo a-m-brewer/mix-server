@@ -1,6 +1,7 @@
 ﻿using LexoAlgorithm;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Queueing.Entities;
@@ -57,6 +58,56 @@ public class EfQueueRepository(
         }
     }
 
+    public async Task SetQueuePositionAsync(string userId, Guid fileId, CancellationToken cancellationToken)
+    {
+        var queueItem = await context.QueueItems
+            .Include(i => i.Queue)
+            .FirstOrDefaultAsync(f => f.Queue.UserId == userId && f.FileId == fileId, cancellationToken: cancellationToken);
+
+        if (queueItem == null)
+        {
+            throw new NotFoundException(nameof(QueueItemEntity), fileId);
+        }
+        
+        queueItem.Queue.CurrentPosition = queueItem;
+        queueItem.Queue.CurrentPositionId = queueItem.Id;
+        
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<QueueItemEntity?> GetNextPositionAsync(string userId, CancellationToken cancellationToken)
+    {
+        var queue = await context.Queues
+            .Include(i => i.CurrentPosition)
+            .ThenInclude(t => t!.Queue)
+            .FirstOrDefaultAsync(f => f.UserId == userId, cancellationToken: cancellationToken);
+
+        if (queue is null)
+        {
+            throw new NotFoundException(nameof(QueueEntity), userId);
+        }
+
+        var query = context.QueueItems
+            .Include(i => i.File)
+            .ThenInclude(t => t!.Metadata)
+            .AsQueryable();
+
+        if (queue.CurrentPosition is not null)
+        {
+            query = query.Where(w => w.QueueId == queue.Id &&
+                                     w.File != null &&
+                                     w.File.Exists &&
+                                     w.File.Metadata != null &&
+                                     w.File.Metadata.IsMedia &&
+                                     string.Compare(w.Rank, queue.CurrentPosition.Rank) > 0);
+        }
+        
+        var nextItem = await query.OrderBy(o => o.Rank)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return nextItem;
+    }
+    
     private async Task<int> GetFileCountAsync(Guid nodeId, CancellationToken cancellationToken)
     {
         return await context.Nodes
