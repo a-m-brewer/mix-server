@@ -6,6 +6,6 @@ namespace MixServer.Application.Queueing.Responses;
 public class QueueSnapshotItemDto
 {
     public required Guid Id { get; init; }
-    public required QueueSnapshotItemType Type { get; init; }
+    public required QueueItemType Type { get; init; }
     public required FileExplorerFileNodeResponse File { get; init; }
 }

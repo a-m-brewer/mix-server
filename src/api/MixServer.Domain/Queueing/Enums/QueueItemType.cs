@@ -1,6 +1,6 @@
 ﻿namespace MixServer.Domain.Queueing.Enums;
 
-public enum QueueSnapshotItemType
+public enum QueueItemType
 {
     Folder,
     User
