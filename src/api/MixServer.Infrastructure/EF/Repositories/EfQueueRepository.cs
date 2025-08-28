@@ -5,6 +5,7 @@ using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Queueing.Entities;
+using MixServer.Domain.Queueing.Enums;
 using MixServer.Domain.Queueing.Repositories;
 using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Users.Models;
@@ -268,7 +269,8 @@ public class EfQueueRepository(
                         Id = Guid.NewGuid(),
                         Rank = lastRank.ToString(),
                         Queue = queue,
-                        FileId = fileId
+                        FileId = fileId,
+                        Type = QueueItemType.Folder
                     };
                     queueItems.Add(existingItem);
                 }
