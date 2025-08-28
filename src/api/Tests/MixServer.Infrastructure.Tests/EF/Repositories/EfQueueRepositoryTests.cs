@@ -739,7 +739,6 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childC, childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        
         await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
         
         // Act
@@ -931,6 +930,297 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         previousItem.FileId
             .Should()
             .Be(childA.Id);
+    }
+
+    [Test]
+    public async Task SkipAsync_ValidNextItem_SkipsToNextItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        
+        // Act
+        await Subject.SkipAsync(_user.Id, cancellationToken: CancellationToken.None);
+        
+        // Assert
+        var queue = await Context.Queues
+            .Include(i => i.CurrentPosition)
+            .SingleAsync(s => s.UserId == _user.Id);
+        
+        queue.CurrentPosition!.FileId
+            .Should()
+            .Be(childB.Id);
+    }
+    
+    [Test]
+    public async Task SkipAsync_NoCurrentPosition_SkipsToFirstItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        // Act
+        await Subject.SkipAsync(_user.Id, cancellationToken: CancellationToken.None);
+        
+        // Assert
+        var queue = await Context.Queues
+            .Include(i => i.CurrentPosition)
+            .SingleAsync(s => s.UserId == _user.Id);
+        
+        queue.CurrentPosition!.FileId
+            .Should()
+            .Be(childA.Id);
+    }
+    
+    [Test]
+    public async Task SkipAsync_NoNextItem_ThrowsNotFoundException()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        
+        // Act
+        var act = async () => await Subject.SkipAsync(_user.Id, cancellationToken: CancellationToken.None);
+        
+        // Assert
+        await act
+            .Should()
+            .ThrowAsync<NotFoundException>()
+            .WithMessage("*No next item found in queue for user*");
+    }
+    
+    [Test]
+    public async Task SkipAsync_NoQueue_ThrowsNotFoundException()
+    {
+        // Act
+        var act = async () => await Subject.SkipAsync(_user.Id, cancellationToken: CancellationToken.None);
+        
+        // Assert
+        await act
+            .Should()
+            .ThrowAsync<NotFoundException>();
+    }
+    
+    [Test]
+    public async Task SkipAsync_WithDeviceState_SkipsInvalidMimeTypes()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B", mimeType: "audio/wav");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+
+        var deviceState = new DeviceState(Guid.NewGuid());
+        deviceState.UpdateCapabilities(new Dictionary<string, bool>
+        {
+            { "audio/mp3", true }
+        });
+        
+        // Act
+        await Subject.SkipAsync(_user.Id, deviceState, CancellationToken.None);
+        
+        // Assert
+        var queue = await Context.Queues
+            .Include(i => i.CurrentPosition)
+            .SingleAsync(s => s.UserId == _user.Id);
+        
+        queue.CurrentPosition!.FileId
+            .Should()
+            .Be(childC.Id);
+    }
+    
+    [Test]
+    public async Task PreviousAsync_ValidPreviousItem_SkipsToPreviousItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childB.Id, CancellationToken.None);
+        
+        // Act
+        await Subject.PreviousAsync(_user.Id, cancellationToken: CancellationToken.None);
+        
+        // Assert
+        var queue = await Context.Queues
+            .Include(i => i.CurrentPosition)
+            .SingleAsync(s => s.UserId == _user.Id);
+        
+        queue.CurrentPosition!.FileId
+            .Should()
+            .Be(childA.Id);
+    }
+    
+    [Test]
+    public async Task PreviousAsync_NoCurrentPosition_ThrowsNotFoundException()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        // Act
+        var act = async () => await Subject.PreviousAsync(_user.Id, cancellationToken: CancellationToken.None);
+        
+        // Assert
+        await act
+            .Should()
+            .ThrowAsync<NotFoundException>()
+            .WithMessage("*No previous item found in queue for user*");
+    }
+    
+    [Test]
+    public async Task PreviousAsync_NoPreviousItem_ThrowsNotFoundException()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        
+        // Act
+        var act = async () => await Subject.PreviousAsync(_user.Id, cancellationToken: CancellationToken.None);
+        
+        // Assert
+        await act
+            .Should()
+            .ThrowAsync<NotFoundException>()
+            .WithMessage("*No previous item found in queue for user*");
+    }
+    
+    [Test]
+    public async Task PreviousAsync_NoQueue_ThrowsNotFoundException()
+    {
+        // Act
+        var act = async () => await Subject.PreviousAsync(_user.Id, cancellationToken: CancellationToken.None);
+        
+        // Assert
+        await act
+            .Should()
+            .ThrowAsync<NotFoundException>();
+    }
+    
+    [Test]
+    public async Task PreviousAsync_WithDeviceState_SkipsInvalidMimeTypes()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B", mimeType: "audio/wav");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+
+        var deviceState = new DeviceState(Guid.NewGuid());
+        deviceState.UpdateCapabilities(new Dictionary<string, bool>
+        {
+            { "audio/mp3", true }
+        });
+        
+        // Act
+        await Subject.PreviousAsync(_user.Id, deviceState, CancellationToken.None);
+        
+        // Assert
+        var queue = await Context.Queues
+            .Include(i => i.CurrentPosition)
+            .SingleAsync(s => s.UserId == _user.Id);
+        
+        queue.CurrentPosition!.FileId
+            .Should()
+            .Be(childA.Id);
+    }
+    
+    [Test]
+    public async Task PreviousAsync_SkipsNonExistentItems_SkipsToPreviousExistingItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        
+        childB.Exists = false;
+        await Context.SaveChangesAsync();
+        
+        // Act
+        await Subject.PreviousAsync(_user.Id, cancellationToken: CancellationToken.None);
+        
+        // Assert
+        var queue = await Context.Queues
+            .Include(i => i.CurrentPosition)
+            .SingleAsync(s => s.UserId == _user.Id);
+        
+        queue.CurrentPosition!.FileId
+            .Should()
+            .Be(childA.Id);
+    }
+    
+    [Test]
+    public async Task SkipAsync_SkipsNonExistentItems_SkipsToNextExistingItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        
+        childB.Exists = false;
+        await Context.SaveChangesAsync();
+        
+        // Act
+        await Subject.SkipAsync(_user.Id, cancellationToken: CancellationToken.None);
+        
+        // Assert
+        var queue = await Context.Queues
+            .Include(i => i.CurrentPosition)
+            .SingleAsync(s => s.UserId == _user.Id);
+        
+        queue.CurrentPosition!.FileId
+            .Should()
+            .Be(childC.Id);
     }
 
     private async Task<FileExplorerFolderNodeEntity> CreateParentNodeAsync(string? relativePath = null)

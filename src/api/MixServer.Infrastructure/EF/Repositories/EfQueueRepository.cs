@@ -60,6 +60,30 @@ public class EfQueueRepository(
         }
     }
 
+    public async Task SkipAsync(string userId, IDeviceState? deviceState = null, CancellationToken cancellationToken = default)
+    {
+        var nextItem = await GetNextPositionAsync(userId, deviceState, cancellationToken);
+        
+        if (nextItem == null)
+        {
+            throw new NotFoundException(nameof(QueueItemEntity), $"No next item found in queue for user {userId}");
+        }
+        
+        await SetQueuePositionAsync(nextItem, cancellationToken);
+    }
+    
+    public async Task PreviousAsync(string userId, IDeviceState? deviceState = null, CancellationToken cancellationToken = default)
+    {
+        var previousItem = await GetPreviousPositionAsync(userId, deviceState, cancellationToken);
+        
+        if (previousItem == null)
+        {
+            throw new NotFoundException(nameof(QueueItemEntity), $"No previous item found in queue for user {userId}");
+        }
+        
+        await SetQueuePositionAsync(previousItem, cancellationToken);
+    }
+
     public async Task SetQueuePositionAsync(string userId, Guid fileId, CancellationToken cancellationToken)
     {
         var queueItem = await context.QueueItems
@@ -71,6 +95,11 @@ public class EfQueueRepository(
             throw new NotFoundException(nameof(QueueItemEntity), fileId);
         }
         
+        await SetQueuePositionAsync(queueItem, cancellationToken);
+    }
+
+    private async Task SetQueuePositionAsync(QueueItemEntity queueItem, CancellationToken cancellationToken)
+    {
         queueItem.Queue.CurrentPosition = queueItem;
         queueItem.Queue.CurrentPositionId = queueItem.Id;
         
