@@ -82,54 +82,20 @@ public class EfQueueRepository(
         IDeviceState? deviceState = null,
         CancellationToken cancellationToken = default)
     {
-        var queue = await context.Queues
-            .Include(i => i.CurrentPosition)
-            .ThenInclude(t => t!.Queue)
-            .FirstOrDefaultAsync(f => f.UserId == userId, cancellationToken: cancellationToken);
-
-        if (queue is null)
-        {
-            throw new NotFoundException(nameof(QueueEntity), userId);
-        }
-
-        var query = context.QueueItems
-            .Include(i => i.File)
-            .ThenInclude(t => t!.Metadata)
-            .Where(w => w.QueueId == queue.Id &&
-                        w.File != null &&
-                        w.File.Exists &&
-                        w.File.Metadata != null &&
-                        w.File.Metadata.IsMedia)
-            .AsQueryable();
-
-        if (deviceState is not null)
-        {
-            var supportedMimeTypes = deviceState.Capabilities
-                .Where(w => w.Value)
-                .Select(s => s.Key)
-                .ToHashSet();
-            query = query
-                .Include(i => i.File)
-                .ThenInclude(t => t!.Transcode)
-                .Where(w => w.File != null &&
-                            w.File.Metadata != null &&
-                            (supportedMimeTypes.Contains(w.File.Metadata.MimeType) ||
-                             (w.File.Transcode != null && w.File.Transcode.State == TranscodeState.Completed)));
-        }
-        
-        if (queue.CurrentPosition is not null)
-        {
-            query = query.Where(w => string.Compare(w.Rank, queue.CurrentPosition.Rank) > 0);
-        }
-        
-        var nextItem = await query.OrderBy(o => o.Rank)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return nextItem;
+        return await GetPositionAsync(userId, isNext: true, deviceState, cancellationToken);
     }
     
     public async Task<QueueItemEntity?> GetPreviousPositionAsync(
         string userId,
+        IDeviceState? deviceState = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await GetPositionAsync(userId, isNext: false, deviceState, cancellationToken);
+    }
+    
+    private async Task<QueueItemEntity?> GetPositionAsync(
+        string userId,
+        bool isNext,
         IDeviceState? deviceState = null,
         CancellationToken cancellationToken = default)
     {
@@ -143,16 +109,37 @@ public class EfQueueRepository(
             throw new NotFoundException(nameof(QueueEntity), userId);
         }
 
-        // If there is no current position, return null (unlike GetNextPositionAsync which returns first item)
+        // Handle the case when there's no current position
         if (queue.CurrentPosition is null)
         {
-            return null;
+            // For GetNextPositionAsync, return first item when no current position
+            // For GetPreviousPositionAsync, return null when no current position
+            return isNext
+                ? await GetFirstQueueItemAsync(queue.Id, deviceState, cancellationToken)
+                : null;
         }
 
+        var query = BuildQueueItemQuery(queue.Id, deviceState);
+        
+        // Apply position filtering based on direction
+        query = isNext
+            ? query.Where(w => string.Compare(w.Rank, queue.CurrentPosition.Rank) > 0)
+            : query.Where(w => string.Compare(w.Rank, queue.CurrentPosition.Rank) < 0);
+        
+        // Apply ordering based on direction
+        var orderedQuery = isNext 
+            ? query.OrderBy(o => o.Rank)
+            : query.OrderByDescending(o => o.Rank);
+        
+        return await orderedQuery.FirstOrDefaultAsync(cancellationToken);
+    }
+    
+    private IQueryable<QueueItemEntity> BuildQueueItemQuery(Guid queueId, IDeviceState? deviceState)
+    {
         var query = context.QueueItems
             .Include(i => i.File)
             .ThenInclude(t => t!.Metadata)
-            .Where(w => w.QueueId == queue.Id &&
+            .Where(w => w.QueueId == queueId &&
                         w.File != null &&
                         w.File.Exists &&
                         w.File.Metadata != null &&
@@ -174,14 +161,16 @@ public class EfQueueRepository(
                              (w.File.Transcode != null && w.File.Transcode.State == TranscodeState.Completed)));
         }
         
-        // Get items with rank less than current position (previous items)
-        query = query.Where(w => string.Compare(w.Rank, queue.CurrentPosition.Rank) < 0);
-        
-        // Order by rank descending to get the closest previous item
-        var previousItem = await query.OrderByDescending(o => o.Rank)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return previousItem;
+        return query;
+    }
+    
+    private async Task<QueueItemEntity?> GetFirstQueueItemAsync(
+        Guid queueId,
+        IDeviceState? deviceState,
+        CancellationToken cancellationToken)
+    {
+        var query = BuildQueueItemQuery(queueId, deviceState);
+        return await query.OrderBy(o => o.Rank).FirstOrDefaultAsync(cancellationToken);
     }
     
     private async Task<int> GetFileCountAsync(Guid nodeId, CancellationToken cancellationToken)
