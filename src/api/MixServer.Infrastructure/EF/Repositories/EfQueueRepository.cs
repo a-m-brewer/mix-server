@@ -128,6 +128,62 @@ public class EfQueueRepository(
         return nextItem;
     }
     
+    public async Task<QueueItemEntity?> GetPreviousPositionAsync(
+        string userId,
+        IDeviceState? deviceState = null,
+        CancellationToken cancellationToken = default)
+    {
+        var queue = await context.Queues
+            .Include(i => i.CurrentPosition)
+            .ThenInclude(t => t!.Queue)
+            .FirstOrDefaultAsync(f => f.UserId == userId, cancellationToken: cancellationToken);
+
+        if (queue is null)
+        {
+            throw new NotFoundException(nameof(QueueEntity), userId);
+        }
+
+        // If there is no current position, return null (unlike GetNextPositionAsync which returns first item)
+        if (queue.CurrentPosition is null)
+        {
+            return null;
+        }
+
+        var query = context.QueueItems
+            .Include(i => i.File)
+            .ThenInclude(t => t!.Metadata)
+            .Where(w => w.QueueId == queue.Id &&
+                        w.File != null &&
+                        w.File.Exists &&
+                        w.File.Metadata != null &&
+                        w.File.Metadata.IsMedia)
+            .AsQueryable();
+
+        if (deviceState is not null)
+        {
+            var supportedMimeTypes = deviceState.Capabilities
+                .Where(w => w.Value)
+                .Select(s => s.Key)
+                .ToHashSet();
+            query = query
+                .Include(i => i.File)
+                .ThenInclude(t => t!.Transcode)
+                .Where(w => w.File != null &&
+                            w.File.Metadata != null &&
+                            (supportedMimeTypes.Contains(w.File.Metadata.MimeType) ||
+                             (w.File.Transcode != null && w.File.Transcode.State == TranscodeState.Completed)));
+        }
+        
+        // Get items with rank less than current position (previous items)
+        query = query.Where(w => string.Compare(w.Rank, queue.CurrentPosition.Rank) < 0);
+        
+        // Order by rank descending to get the closest previous item
+        var previousItem = await query.OrderByDescending(o => o.Rank)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return previousItem;
+    }
+    
     private async Task<int> GetFileCountAsync(Guid nodeId, CancellationToken cancellationToken)
     {
         return await context.Nodes
