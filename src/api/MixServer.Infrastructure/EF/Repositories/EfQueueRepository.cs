@@ -5,6 +5,7 @@ using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Queueing.Entities;
+using MixServer.Domain.Queueing.Repositories;
 using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Users.Models;
 using MixServer.Infrastructure.EF.Entities;
@@ -14,7 +15,7 @@ namespace MixServer.Infrastructure.EF.Repositories;
 
 public class EfQueueRepository(
     MixServerDbContext context,
-    ILogger<EfQueueRepository> logger)
+    ILogger<EfQueueRepository> logger) : IQueueRepository
 {
     private const int BatchSize = 1000;
 
