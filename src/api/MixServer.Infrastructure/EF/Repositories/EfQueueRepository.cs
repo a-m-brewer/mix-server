@@ -5,6 +5,8 @@ using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Queueing.Entities;
+using MixServer.Domain.Streams.Enums;
+using MixServer.Domain.Users.Models;
 using MixServer.Infrastructure.EF.Entities;
 using MixServer.Infrastructure.EF.Extensions;
 
@@ -75,7 +77,10 @@ public class EfQueueRepository(
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<QueueItemEntity?> GetNextPositionAsync(string userId, CancellationToken cancellationToken)
+    public async Task<QueueItemEntity?> GetNextPositionAsync(
+        string userId,
+        IDeviceState? deviceState = null,
+        CancellationToken cancellationToken = default)
     {
         var queue = await context.Queues
             .Include(i => i.CurrentPosition)
@@ -90,16 +95,31 @@ public class EfQueueRepository(
         var query = context.QueueItems
             .Include(i => i.File)
             .ThenInclude(t => t!.Metadata)
+            .Where(w => w.QueueId == queue.Id &&
+                        w.File != null &&
+                        w.File.Exists &&
+                        w.File.Metadata != null &&
+                        w.File.Metadata.IsMedia)
             .AsQueryable();
 
+        if (deviceState is not null)
+        {
+            var supportedMimeTypes = deviceState.Capabilities
+                .Where(w => w.Value)
+                .Select(s => s.Key)
+                .ToHashSet();
+            query = query
+                .Include(i => i.File)
+                .ThenInclude(t => t!.Transcode)
+                .Where(w => w.File != null &&
+                            w.File.Metadata != null &&
+                            (supportedMimeTypes.Contains(w.File.Metadata.MimeType) ||
+                             (w.File.Transcode != null && w.File.Transcode.State == TranscodeState.Completed)));
+        }
+        
         if (queue.CurrentPosition is not null)
         {
-            query = query.Where(w => w.QueueId == queue.Id &&
-                                     w.File != null &&
-                                     w.File.Exists &&
-                                     w.File.Metadata != null &&
-                                     w.File.Metadata.IsMedia &&
-                                     string.Compare(w.Rank, queue.CurrentPosition.Rank) > 0);
+            query = query.Where(w => string.Compare(w.Rank, queue.CurrentPosition.Rank) > 0);
         }
         
         var nextItem = await query.OrderBy(o => o.Rank)

@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Enums;
+using MixServer.Domain.Streams.Entities;
+using MixServer.Domain.Streams.Enums;
+using MixServer.Domain.Users.Models;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.EF.Entities;
 using MixServer.Infrastructure.EF.Repositories;
@@ -411,7 +414,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
         
         // Act
-        var nextItem = await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
         
         // Assert
         nextItem
@@ -436,7 +439,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
         // Act
-        var nextItem = await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
         
         // Assert
         nextItem
@@ -452,7 +455,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
     public async Task GetNextPositionAsync_NoQueue_Throws()
     {
         // Act
-        var act = async () => await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        var act = async () => await Subject.GetNextPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
         
         // Assert
         await act
@@ -475,7 +478,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
         
         // Act
-        var nextItem = await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
         
         // Assert
         nextItem
@@ -501,7 +504,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await Context.SaveChangesAsync();
         
         // Act
-        var nextItem = await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
         
         // Assert
         nextItem
@@ -531,7 +534,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await Context.SaveChangesAsync();
         
         // Act
-        var nextItem = await Subject.GetNextPositionAsync(_user.Id, CancellationToken.None);
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
         
         // Assert
         nextItem
@@ -543,6 +546,128 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
             .Be(childC.Id);
     }
     
+    [Test]
+    public async Task GetNextPositionAsync_DeviceStatePassed_NextItemInvalidMimeType_ReturnsNextValidMimeType()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+
+        var deviceState = new DeviceState(Guid.NewGuid());
+        deviceState.UpdateCapabilities(new Dictionary<string, bool>
+        {
+            { "audio/mp3", true }
+        });
+        
+        childB.Metadata!.MimeType = "audio/wav";
+        await Context.SaveChangesAsync();
+        
+        // Act
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, deviceState, CancellationToken.None);
+        
+        // Assert
+        nextItem
+            .Should()
+            .NotBeNull();
+        
+        nextItem.FileId
+            .Should()
+            .Be(childC.Id);
+    }
+
+    [Test]
+    public async Task GetNextPositionAsync_MimeTypeNotSupported_HasCompletedTranscode_ReturnsItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B", mimeType: "audio/wav");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+
+        var deviceState = new DeviceState(Guid.NewGuid());
+        deviceState.UpdateCapabilities(new Dictionary<string, bool>
+        {
+            { "audio/mp3", true }
+        });
+
+        var transcode = new Transcode
+        {
+            Id = Guid.NewGuid(),
+            NodeEntity = childB,
+            NodeIdEntity = childB.Id,
+            State = TranscodeState.Completed
+        };
+        await Context.Transcodes.AddAsync(transcode);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, deviceState, CancellationToken.None);
+        
+        // Assert
+        nextItem
+            .Should()
+            .NotBeNull();
+        
+        nextItem.FileId
+            .Should()
+            .Be(childB.Id);
+    }
+    
+    [Test]
+    public async Task GetNextPositionAsync_MimeTypeNotSupported_TranscodeNotCompleted_SkipsItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B", mimeType: "audio/wav");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+
+        var deviceState = new DeviceState(Guid.NewGuid());
+        deviceState.UpdateCapabilities(new Dictionary<string, bool>
+        {
+            { "audio/mp3", true }
+        });
+
+        var transcode = new Transcode
+        {
+            Id = Guid.NewGuid(),
+            NodeEntity = childB,
+            NodeIdEntity = childB.Id,
+            State = TranscodeState.InProgress,
+        };
+        await Context.Transcodes.AddAsync(transcode);
+        await Context.SaveChangesAsync();
+        
+        // Act
+        var nextItem = await Subject.GetNextPositionAsync(_user.Id, deviceState, CancellationToken.None);
+        
+        // Assert
+        nextItem
+            .Should()
+            .NotBeNull();
+        
+        nextItem.FileId
+            .Should()
+            .Be(childC.Id);
+    }
+
     private async Task<FileExplorerFolderNodeEntity> CreateParentNodeAsync(string? relativePath = null)
     {
         var parentNode = new FileExplorerFolderNodeEntity
@@ -561,7 +686,8 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
     private FileExplorerFileNodeEntity CreateChildNode(
         FileExplorerFolderNodeEntity parent,
         string? relativePath = null,
-        DateTime? creationTime = null)
+        DateTime? creationTime = null,
+        string mimeType = "audio/mp3")
     {
         var id = Guid.NewGuid();
         var childNode = new FileExplorerFileNodeEntity
@@ -580,7 +706,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
             Bitrate = 128,
             Duration = TimeSpan.FromMinutes(3),
             Id = Guid.NewGuid(),
-            MimeType = "audio/mp3",
+            MimeType = mimeType,
             IsMedia = true,
             Node = childNode
         };

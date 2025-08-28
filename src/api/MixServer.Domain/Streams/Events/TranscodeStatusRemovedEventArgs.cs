@@ -3,9 +3,7 @@ using MixServer.Domain.Streams.Enums;
 
 namespace MixServer.Domain.Streams.Events;
 
-public class TranscodeStatusUpdatedEventArgs : EventArgs
+public class TranscodeStatusRemovedEventArgs : EventArgs
 {
     public required NodePath Path { get; init; }
-    
-    public required TranscodeState State { get; init; }
 }

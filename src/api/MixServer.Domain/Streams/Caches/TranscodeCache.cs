@@ -21,6 +21,7 @@ namespace MixServer.Domain.Streams.Caches;
 public interface ITranscodeCache : IDisposable
 {
     event EventHandler<TranscodeStatusUpdatedEventArgs>? TranscodeStatusUpdated;
+    event EventHandler<TranscodeStatusRemovedEventArgs>? TranscodeStatusRemoved;
 
     Task InitializeAsync();
     TranscodeState GetTranscodeStatus(Guid transcodeId);
@@ -42,6 +43,7 @@ public class TranscodeCache(
     private readonly ConcurrentDictionary<Guid, TranscodeCacheItem> _transcodeFolders = new();
 
     public event EventHandler<TranscodeStatusUpdatedEventArgs>? TranscodeStatusUpdated;
+    public event EventHandler<TranscodeStatusRemovedEventArgs>? TranscodeStatusRemoved;
 
     [MemberNotNullWhen(true, nameof(_cacheFolder))]
     public Task InitializeAsync()
@@ -176,9 +178,6 @@ public class TranscodeCache(
 
             await transcode.InitializeAsync();
 
-            // ReSharper disable once MethodHasAsyncOverload
-            SendTranscodeStatusUpdated(transcode.Path);
-
             transcode.HasCompletePlaylistChanged += TranscodeOnHasCompletePlaylistChanged;
             
             _transcodeFolders[transcodeId] = transcode;
@@ -212,7 +211,7 @@ public class TranscodeCache(
             unitOfWork.GetRepository<ITranscodeRepository>()
                 .Remove(transcodeId);
             
-            unitOfWork.OnSaved(() => SendTranscodeStatusUpdatedAsync(transcode.Path));
+            unitOfWork.OnSaved(() => SendTranscodeStatusRemovedAsync(transcode.Path));
             
             await unitOfWork.SaveChangesAsync();
         }
@@ -267,7 +266,7 @@ public class TranscodeCache(
             return;
         }
 
-        SendTranscodeStatusUpdated(transcode.Path);
+        SendTranscodeStatusUpdated(transcode.Path, transcode.HasCompletePlaylist ? TranscodeState.Completed : TranscodeState.InProgress);
     }
 
     public void Dispose()
@@ -308,26 +307,52 @@ public class TranscodeCache(
         CalculateHasCompletePlaylist(transcodeId);
     }
 
-    private void SendTranscodeStatusUpdated(NodePath nodePath)
+    private void SendTranscodeStatusUpdated(NodePath nodePath, TranscodeState state)
     {
         _ = Task.Run(async () =>
         {
-            await SendTranscodeStatusUpdatedAsync(nodePath).ConfigureAwait(false);
+            await SendTranscodeStatusUpdatedAsync(nodePath, state).ConfigureAwait(false);
         });
     }
     
-    private Task SendTranscodeStatusUpdatedAsync(NodePath nodePath)
+    private Task SendTranscodeStatusUpdatedAsync(NodePath nodePath, TranscodeState state)
     {
         try
         {
             TranscodeStatusUpdated?.Invoke(this, new TranscodeStatusUpdatedEventArgs
+            {
+                Path = nodePath,
+                State = state
+            });
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to send transcode status updated event");
+        }
+        
+        return Task.CompletedTask;
+    }
+    
+    private void SendTranscodeStatusRemoved(NodePath nodePath)
+    {
+        _ = Task.Run(async () =>
+        {
+            await SendTranscodeStatusRemovedAsync(nodePath).ConfigureAwait(false);
+        });
+    }
+    
+    private Task SendTranscodeStatusRemovedAsync(NodePath nodePath)
+    {
+        try
+        {
+            TranscodeStatusRemoved?.Invoke(this, new TranscodeStatusRemovedEventArgs
             {
                 Path = nodePath
             });
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Failed to send transcode status updated event");
+            logger.LogError(e, "Failed to send transcode status removed event");
         }
         
         return Task.CompletedTask;

@@ -3,8 +3,10 @@ using Microsoft.Extensions.Logging;
 using MixServer.Domain.Callbacks;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
+using MixServer.Domain.Persistence;
 using MixServer.Domain.Streams.Caches;
 using MixServer.Domain.Streams.Events;
+using MixServer.Domain.Streams.Repositories;
 using MixServer.Domain.Utilities;
 
 namespace MixServer.Domain.FileExplorer.Services;
@@ -27,8 +29,21 @@ public class FileNotificationService(
     
     private async Task TranscodeCacheOnTranscodeStatusUpdated(object? sender, IServiceProvider sp, TranscodeStatusUpdatedEventArgs e)
     {
-        var fileService = sp.GetRequiredService<IFileService>();
-        // TODO: Handle transcode status updates for file nodes
+        var transcodeEntity = await sp.GetRequiredService<ITranscodeRepository>()
+            .GetOrDefaultAsync(e.Path, CancellationToken.None);
+
+        if (transcodeEntity is null)
+        {
+            Logger.LogError("Transcode with Path: {TranscodePath} not found during transcode status update",
+                e.Path.AbsolutePath);
+            return;
+        }
+
+        transcodeEntity.State = e.State;
+
+        var unitOfWork = sp.GetRequiredService<IUnitOfWork>();
+
+        await unitOfWork.SaveChangesAsync();
     }
 
     private async Task<Dictionary<string, int>> GetExpectedIndexesAsync(
