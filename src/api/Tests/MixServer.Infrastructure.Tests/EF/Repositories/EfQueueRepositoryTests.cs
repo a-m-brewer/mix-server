@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Enums;
+using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.Queueing.Enums;
 using MixServer.Domain.Streams.Entities;
 using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Users.Models;
@@ -1221,6 +1223,300 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         queue.CurrentPosition!.FileId
             .Should()
             .Be(childC.Id);
+    }
+    
+    [Test]
+    public async Task AddFileAsync_NoItemsInQueue_AddsItemAsFirst()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        await AddNodesAsync(childA);
+        
+        // Act
+        await Subject.AddFileAsync(_user.Id, childA.Path, CancellationToken.None);
+        
+        // Assert
+        var items = await Context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == _user.Id)
+            .OrderBy(o => o.Rank)
+            .ToListAsync();
+        
+        items
+            .Should()
+            .HaveCount(1);
+        
+        items[0].FileId
+            .Should()
+            .Be(childA.Id);
+
+        items[0].Type
+            .Should()
+            .Be(QueueItemType.User);
+    }
+    
+    [Test]
+    public async Task AddFileAsync_OneUserItemInQueue_AddsAfterUserItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        await AddNodesAsync(childA, childB);
+        
+        await Subject.AddFileAsync(_user.Id, childA.Path, CancellationToken.None);
+        
+        // Act
+        await Subject.AddFileAsync(_user.Id, childB.Path, CancellationToken.None);
+        
+        // Assert
+        var items = await Context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == _user.Id)
+            .OrderBy(o => o.Rank)
+            .ToListAsync();
+        
+        items
+            .Should()
+            .HaveCount(2);
+        
+        items[0].FileId
+            .Should()
+            .Be(childA.Id);
+        
+        items[1].FileId
+            .Should()
+            .Be(childB.Id);
+
+        items[0].Type
+            .Should()
+            .Be(QueueItemType.User);
+        
+        items[1].Type
+            .Should()
+            .Be(QueueItemType.User);
+    }
+
+    [Test]
+    public async Task AddFileAsync_NoCurrentPosition_AddsToStartOfQueue()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        var parentNode2 = await CreateParentNodeAsync("test2");
+        var childD = CreateChildNode(parentNode2, "D");
+        await AddNodesAsync(childD);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        // Act
+        await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
+        
+        // Assert
+        var items = await Context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == _user.Id)
+            .OrderBy(o => o.Rank)
+            .ToListAsync();
+
+        items
+            .Should()
+            .HaveCount(4);
+        
+        items[0].FileId
+            .Should()
+            .Be(childD.Id);
+
+        items[1].FileId
+            .Should()
+            .Be(childA.Id);
+    }
+
+    [Test]
+    public async Task AddFileAsync_CurrentPositionExists_AddsAfterCurrentPosition()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        var parentNode2 = await CreateParentNodeAsync("test2");
+        var childD = CreateChildNode(parentNode2, "D");
+        await AddNodesAsync(childD);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        
+        // Act
+        await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
+        
+        // Assert
+        var items = await Context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == _user.Id)
+            .OrderBy(o => o.Rank)
+            .ToListAsync();
+
+        items
+            .Should()
+            .HaveCount(4);
+        
+        items[0].FileId
+            .Should()
+            .Be(childA.Id);
+        
+        items[1].FileId
+            .Should()
+            .Be(childD.Id);
+    }
+    
+    [Test]
+    public async Task AddFileAsync_CurrentPositionExists_HasUserQueueItemAfter_AddsAfterLastUserQueueItem()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        var childB = CreateChildNode(parentNode, "B");
+        var childC = CreateChildNode(parentNode, "C");
+        await AddNodesAsync(childC, childA, childB);
+        
+        var parentNode2 = await CreateParentNodeAsync("test2");
+        var childD = CreateChildNode(parentNode2, "D");
+        var childE = CreateChildNode(parentNode2, "E");
+        await AddNodesAsync(childD, childE);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
+        
+        // Act
+        await Subject.AddFileAsync(_user.Id, childE.Path, CancellationToken.None);
+        
+        // Assert
+        var items = await Context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == _user.Id)
+            .OrderBy(o => o.Rank)
+            .ToListAsync();
+
+        items
+            .Should()
+            .HaveCount(5);
+        
+        items[0].FileId
+            .Should()
+            .Be(childA.Id);
+        
+        items[1].FileId
+            .Should()
+            .Be(childD.Id);
+        
+        items[2].FileId
+            .Should()
+            .Be(childE.Id);
+        
+        items[3].FileId
+            .Should()
+            .Be(childB.Id);
+    }
+
+    [Test]
+    public async Task AddFileAsync_OneFolderQueueItem_NoQueuePosition_AddsToStartOfQueue()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        await AddNodesAsync(childA);
+        
+        var parentNode2 = await CreateParentNodeAsync("test2");
+        var childD = CreateChildNode(parentNode2, "D");
+        await AddNodesAsync(childD);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        
+        // Act
+        await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
+        
+        // Assert
+        var items = await Context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == _user.Id)
+            .OrderBy(o => o.Rank)
+            .ToListAsync();
+
+        items
+            .Should()
+            .HaveCount(2);
+        
+        items[0].FileId
+            .Should()
+            .Be(childD.Id);
+        
+        items[1].FileId
+            .Should()
+            .Be(childA.Id);
+    }
+    
+    [Test]
+    public async Task AddFileAsync_OneFolderQueueItem_CurrentPositionExists_AddsAfterCurrentPosition()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        await AddNodesAsync(childA);
+        
+        var parentNode2 = await CreateParentNodeAsync("test2");
+        var childD = CreateChildNode(parentNode2, "D");
+        await AddNodesAsync(childD);
+        
+        await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
+        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        
+        // Act
+        await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
+        
+        // Assert
+        var items = await Context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == _user.Id)
+            .OrderBy(o => o.Rank)
+            .ToListAsync();
+        
+        items
+            .Should()
+            .HaveCount(2);
+        
+        items[0].FileId
+            .Should()
+            .Be(childA.Id);
+        
+        items[1].FileId
+            .Should()
+            .Be(childD.Id);
+    }
+
+    [Test]
+    public async Task AddFileAsync_FileDoesNotExist_ThrowsNotFoundException()
+    {
+        // Arrange
+        var parentNode = await CreateParentNodeAsync();
+        var childA = CreateChildNode(parentNode, "A");
+        await AddNodesAsync(childA);
+        
+        // Act
+        var act = async () => await Subject.AddFileAsync(_user.Id, new NodePath("/media", "does/not/exist"), CancellationToken.None);
+        
+        // Assert
+        await act
+            .Should()
+            .ThrowAsync<NotFoundException>();
     }
 
     private async Task<FileExplorerFolderNodeEntity> CreateParentNodeAsync(string? relativePath = null)

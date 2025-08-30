@@ -10,6 +10,11 @@ public interface IQueueRepository
     Task PreviousAsync(string userId, IDeviceState? deviceState = null, CancellationToken cancellationToken = default);
     Task SetQueuePositionAsync(string userId, Guid fileId, CancellationToken cancellationToken);
 
+    Task<QueueItemEntity?> GetCurrentPositionAsync(
+        string userId,
+        IDeviceState? deviceState = null,
+        CancellationToken cancellationToken = default);
+    
     Task<QueueItemEntity?> GetNextPositionAsync(
         string userId,
         IDeviceState? deviceState = null,

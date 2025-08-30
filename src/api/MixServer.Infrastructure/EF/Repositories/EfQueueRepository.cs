@@ -62,6 +62,52 @@ public class EfQueueRepository(
         }
     }
 
+    public async Task AddFileAsync(string userId, NodePath nodePath, CancellationToken cancellationToken)
+    {
+        var fileEntity = await context.Nodes
+            .OfType<FileExplorerFileNodeEntity>()
+            .IncludeParents()
+            .Include(i => i.Metadata)
+            .FirstOrDefaultAsync(f => f.RootChild.RelativePath == nodePath.RootPath && f.RelativePath == nodePath.RelativePath,
+                cancellationToken: cancellationToken);
+
+        if (fileEntity is null)
+        {
+            throw new NotFoundException(nameof(context.Nodes), nodePath.AbsolutePath);
+        }
+
+        var (_, queue) = await GetOrCreateQueueAsync(userId, fileEntity.Id, cancellationToken);
+        
+        var nextItem = await GetNextItemOfTypeAsync(queue.Id, QueueItemType.Folder, queue.CurrentPosition, cancellationToken: cancellationToken);
+        var previousItem = await GetPreviousItemAsync(queue.Id, nextItem, cancellationToken: cancellationToken);
+
+        var rank = LexoRank.Middle();
+        if (previousItem != null && nextItem != null)
+        {
+            rank = LexoRank.Parse(previousItem.Rank).Between(LexoRank.Parse(nextItem.Rank));
+        }
+        else if (previousItem != null)
+        {
+            rank = LexoRank.Parse(previousItem.Rank).GenNext();
+        }
+        else if (nextItem != null)
+        {
+            rank = LexoRank.Parse(nextItem.Rank).GenPrev();
+        }
+        
+        var queueItem = new QueueItemEntity
+        {
+            Id = Guid.NewGuid(),
+            Rank = rank.ToString(),
+            Queue = queue,
+            FileId = fileEntity.Id,
+            Type = QueueItemType.User
+        };
+
+        await context.QueueItems.AddAsync(queueItem, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task SkipAsync(string userId, IDeviceState? deviceState = null, CancellationToken cancellationToken = default)
     {
         var nextItem = await GetNextPositionAsync(userId, deviceState, cancellationToken);
@@ -100,20 +146,20 @@ public class EfQueueRepository(
         await SetQueuePositionAsync(queueItem, cancellationToken);
     }
 
-    private async Task SetQueuePositionAsync(QueueItemEntity queueItem, CancellationToken cancellationToken)
+    public async Task<QueueItemEntity?> GetCurrentPositionAsync(
+        string userId,
+        IDeviceState? deviceState = null,
+        CancellationToken cancellationToken = default)
     {
-        queueItem.Queue.CurrentPosition = queueItem;
-        queueItem.Queue.CurrentPositionId = queueItem.Id;
-        
-        await context.SaveChangesAsync(cancellationToken);
+        return await GetPositionAsync(userId, position: QueuePositionDirection.Current, deviceState, cancellationToken);
     }
-
+    
     public async Task<QueueItemEntity?> GetNextPositionAsync(
         string userId,
         IDeviceState? deviceState = null,
         CancellationToken cancellationToken = default)
     {
-        return await GetPositionAsync(userId, isNext: true, deviceState, cancellationToken);
+        return await GetPositionAsync(userId, position: QueuePositionDirection.Next, deviceState, cancellationToken);
     }
     
     public async Task<QueueItemEntity?> GetPreviousPositionAsync(
@@ -121,12 +167,12 @@ public class EfQueueRepository(
         IDeviceState? deviceState = null,
         CancellationToken cancellationToken = default)
     {
-        return await GetPositionAsync(userId, isNext: false, deviceState, cancellationToken);
+        return await GetPositionAsync(userId, position: QueuePositionDirection.Previous, deviceState, cancellationToken);
     }
     
     private async Task<QueueItemEntity?> GetPositionAsync(
         string userId,
-        bool isNext,
+        QueuePositionDirection position,
         IDeviceState? deviceState = null,
         CancellationToken cancellationToken = default)
     {
@@ -145,10 +191,17 @@ public class EfQueueRepository(
         {
             // For GetNextPositionAsync, return first item when no current position
             // For GetPreviousPositionAsync, return null when no current position
-            return isNext
+            return position == QueuePositionDirection.Next
                 ? await GetFirstQueueItemAsync(queue.Id, deviceState, cancellationToken)
                 : null;
         }
+        
+        if (position == QueuePositionDirection.Current)
+        {
+            return queue.CurrentPosition;
+        }
+        
+        var isNext = position == QueuePositionDirection.Next;
 
         var query = BuildQueueItemQuery(queue.Id, deviceState);
         
@@ -304,6 +357,7 @@ public class EfQueueRepository(
     {
         var user = await context.Users
             .Include(u => u.Queue)
+            .ThenInclude(t => t!.CurrentPosition)
             .Include(i => i.FolderSorts.Where(w => w.NodeId == nodeId))
             .SingleAsync(u => u.Id == userId, cancellationToken);
         
@@ -336,5 +390,56 @@ public class EfQueueRepository(
             
         logger.LogDebug("Cleared {DeletedCount} existing queue items for queue {QueueId}", 
             deletedCount, queue.Id);
+    }
+    
+    private async Task SetQueuePositionAsync(QueueItemEntity queueItem, CancellationToken cancellationToken)
+    {
+        queueItem.Queue.CurrentPosition = queueItem;
+        queueItem.Queue.CurrentPositionId = queueItem.Id;
+        
+        await context.SaveChangesAsync(cancellationToken);
+    }
+    
+    private async Task<QueueItemEntity?> GetNextItemOfTypeAsync(
+        Guid queueId, 
+        QueueItemType itemType, 
+        QueueItemEntity? afterItem = null, 
+        IDeviceState? deviceState = null, 
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildQueueItemQuery(queueId, deviceState)
+            .Where(w => w.Type == itemType);
+        
+        if (afterItem != null)
+        {
+            // Get items after the specified item
+            query = query.Where(w => string.Compare(w.Rank, afterItem.Rank) > 0);
+        }
+        
+        return await query.OrderBy(o => o.Rank).FirstOrDefaultAsync(cancellationToken);
+    }
+    
+    private async Task<QueueItemEntity?> GetPreviousItemAsync(
+        Guid queueId,
+        QueueItemEntity? beforeItem,
+        IDeviceState? deviceState = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (beforeItem == null)
+        {
+            return null;
+        }
+        
+        var query = BuildQueueItemQuery(queueId, deviceState)
+            .Where(w => string.Compare(w.Rank, beforeItem.Rank) < 0);
+        
+        return await query.OrderByDescending(o => o.Rank).FirstOrDefaultAsync(cancellationToken);
+    }
+    
+    private enum QueuePositionDirection
+    {
+        Current,
+        Next,
+        Previous
     }
 }
