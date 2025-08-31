@@ -42,11 +42,23 @@ public class EfQueueRepository(
                 await transaction.CommitAsync(cancellationToken);
                 return;
             }
+            
+            logger.LogDebug("Re-sorting orphaned user queue items for user {UserId} in node {NodeId}", userId, nodeId);
+            LexoRank? lastRank = null;
+            var orphanedItems = await context.QueueItems
+                .Where(w => w.QueueId == queue.Id && w.Type == QueueItemType.User && w.ParentId == null)
+                .OrderBy(o => o.Rank)
+                .ToListAsync(cancellationToken);
+            foreach (var item in orphanedItems)
+            {
+                lastRank = lastRank is null ? LexoRank.Middle() : lastRank.GenNext();
+                item.Rank = lastRank.ToString();
+            }
 
             logger.LogDebug("Processing {FileCount} files for user {UserId} in node {NodeId}", 
                 totalFileCount, userId, nodeId);
 
-            await ProcessFilesInBatchesAsync(queue, nodeId, folderSort, totalFileCount, cancellationToken);
+            await ProcessFilesInBatchesAsync(queue, nodeId, folderSort, totalFileCount, cancellationToken: cancellationToken);
             
             await context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -299,10 +311,10 @@ public class EfQueueRepository(
         Guid nodeId, 
         IFolderSort folderSort, 
         int totalCount,
-        CancellationToken cancellationToken)
+        LexoRank? lastRank = null,
+        CancellationToken cancellationToken = default)
     {
         var processedCount = 0;
-        LexoRank? lastRank = null;
 
         // Process all files in batches - works efficiently for both small and large datasets
         for (var skip = 0; skip < totalCount; skip += BatchSize)
