@@ -80,7 +80,7 @@ public class EfQueueRepository(
         
         var nextItem = await GetNextItemOfTypeAsync(queue.Id, QueueItemType.Folder, queue.CurrentPosition, cancellationToken: cancellationToken);
         var previousItem = await GetPreviousItemAsync(queue.Id, nextItem, cancellationToken: cancellationToken);
-        var previousFolderItem = await GetPreviousItemOfTypeAsync(queue.Id, QueueItemType.Folder, nextItem, cancellationToken: cancellationToken);
+        var previousFolderItem = queue.CurrentPosition ?? await GetPreviousItemOfTypeAsync(queue.Id, QueueItemType.Folder, nextItem, cancellationToken: cancellationToken);
 
         var rank = LexoRank.Middle();
         if (previousItem != null && nextItem != null)
