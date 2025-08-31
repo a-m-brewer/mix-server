@@ -146,6 +146,12 @@ public class EfQueueRepository(
         await SetQueuePositionAsync(queueItem, cancellationToken);
     }
 
+    public void RemoveQueueItems(string userId, List<Guid> ids)
+    { 
+        context.QueueItems.RemoveRange(context.QueueItems.Include(i => i.Queue)
+            .Where(i => i.Queue.UserId == userId && ids.Contains(i.Id)));
+    }
+
     public async Task<QueueItemEntity?> GetCurrentPositionAsync(
         string userId,
         IDeviceState? deviceState = null,
@@ -169,7 +175,23 @@ public class EfQueueRepository(
     {
         return await GetPositionAsync(userId, position: QueuePositionDirection.Previous, deviceState, cancellationToken);
     }
-    
+
+    public async Task<List<QueueItemEntity>> GetQueuePageAsync(string userId, Page page, CancellationToken cancellationToken = default)
+    {
+        return await context
+            .QueueItems
+            .Include(i => i.File)
+            .ThenInclude(t => t!.Metadata)
+            .Include(i => i.File)
+            .ThenInclude(t => t!.Transcode)
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == userId)
+            .OrderBy(o => o.Rank)
+            .Skip(page.PageIndex * page.PageSize)
+            .Take(page.PageSize)
+            .ToListAsync(cancellationToken: cancellationToken);
+    }
+
     private async Task<QueueItemEntity?> GetPositionAsync(
         string userId,
         QueuePositionDirection position,
