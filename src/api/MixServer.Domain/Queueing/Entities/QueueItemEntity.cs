@@ -16,4 +16,11 @@ public class QueueItemEntity
     
     public Guid QueueId { get; init; }
     public required QueueEntity Queue { get; init; }
+    
+    public List<QueueItemEntity> Children { get; init; } = [];
+    
+    public QueueItemEntity? Parent { get; init; }
+    public Guid? ParentId { get; init; }
+    
+    public required DateTime AddedAt { get; init; }
 }

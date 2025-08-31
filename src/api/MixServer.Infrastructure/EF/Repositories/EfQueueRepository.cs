@@ -80,6 +80,7 @@ public class EfQueueRepository(
         
         var nextItem = await GetNextItemOfTypeAsync(queue.Id, QueueItemType.Folder, queue.CurrentPosition, cancellationToken: cancellationToken);
         var previousItem = await GetPreviousItemAsync(queue.Id, nextItem, cancellationToken: cancellationToken);
+        var previousFolderItem = await GetPreviousItemOfTypeAsync(queue.Id, QueueItemType.Folder, nextItem, cancellationToken: cancellationToken);
 
         var rank = LexoRank.Middle();
         if (previousItem != null && nextItem != null)
@@ -101,7 +102,10 @@ public class EfQueueRepository(
             Rank = rank.ToString(),
             Queue = queue,
             FileId = fileEntity.Id,
-            Type = QueueItemType.User
+            Type = QueueItemType.User,
+            Parent = previousFolderItem,
+            ParentId = previousFolderItem?.Id,
+            AddedAt = DateTime.UtcNow
         };
 
         await context.QueueItems.AddAsync(queueItem, cancellationToken);
@@ -325,6 +329,7 @@ public class EfQueueRepository(
             
             var existingQueueItems = await context.QueueItems
                 .Where(w => w.QueueId == queue.Id && w.FileId.HasValue && batchFileIds.Contains(w.FileId.Value))
+                .Include(i => i.Children.OrderBy(o => o.AddedAt))
                 .ToListAsync(cancellationToken);
 
             var queueItems = new List<QueueItemEntity>(batchFileIds.Count);
@@ -336,6 +341,11 @@ public class EfQueueRepository(
                 if (existingItem != null)
                 {
                     existingItem.Rank = lastRank.ToString();
+                    foreach (var child in existingItem.Children)
+                    {
+                        lastRank = lastRank.GenNext();
+                        child.Rank = lastRank.ToString();
+                    }
                 }
                 else
                 {
@@ -345,7 +355,8 @@ public class EfQueueRepository(
                         Rank = lastRank.ToString(),
                         Queue = queue,
                         FileId = fileId,
-                        Type = QueueItemType.Folder
+                        Type = QueueItemType.Folder,
+                        AddedAt = DateTime.UtcNow
                     };
                     queueItems.Add(existingItem);
                 }
@@ -405,7 +416,7 @@ public class EfQueueRepository(
         var deletedCount =
             await (from qi in context.QueueItems
                     join f in context.Nodes.OfType<FileExplorerFileNodeEntity>() on qi.FileId equals f.Id
-                    where qi.QueueId == queue.Id && f.ParentId != newNodeId
+                    where qi.QueueId == queue.Id && f.ParentId != newNodeId && qi.Type == QueueItemType.Folder
                     select qi)
                 .ExecuteDeleteAsync(cancellationToken);
 
@@ -439,6 +450,25 @@ public class EfQueueRepository(
         }
         
         return await query.OrderBy(o => o.Rank).FirstOrDefaultAsync(cancellationToken);
+    }
+    
+    private async Task<QueueItemEntity?> GetPreviousItemOfTypeAsync(
+        Guid queueId, 
+        QueueItemType itemType, 
+        QueueItemEntity? beforeItem = null, 
+        IDeviceState? deviceState = null, 
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildQueueItemQuery(queueId, deviceState)
+            .Where(w => w.Type == itemType);
+        
+        if (beforeItem != null)
+        {
+            // Get items before the specified item
+            query = query.Where(w => string.Compare(w.Rank, beforeItem.Rank) < 0);
+        }
+        
+        return await query.OrderByDescending(o => o.Rank).FirstOrDefaultAsync(cancellationToken);
     }
     
     private async Task<QueueItemEntity?> GetPreviousItemAsync(
