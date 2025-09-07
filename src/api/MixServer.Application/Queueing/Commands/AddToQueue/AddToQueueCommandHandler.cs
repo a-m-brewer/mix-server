@@ -1,33 +1,37 @@
 ﻿using FluentValidation;
 using MixServer.Application.FileExplorer.Converters;
+using MixServer.Application.Queueing.Converters;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Entities;
-using MixServer.Domain.Queueing.Services;
+using MixServer.Domain.Queueing.Repositories;
+using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Application.Queueing.Commands.AddToQueue;
 
 public class AddToQueueCommandHandler(
-    IConverter<QueueSnapshot, QueueSnapshotDto> converter,
-    IFileService fileService,
-    IQueueService queueService,
+    ICurrentUserRepository currentUserRepository,
+    IQueueRepository queueRepository,
     INodePathDtoConverter nodePathDtoConverter,
+    IQueueDtoConverter queueDtoConverter,
     IValidator<AddToQueueCommand> validator,
     IUnitOfWork unitOfWork)
-    : ICommandHandler<AddToQueueCommand, QueueSnapshotDto>
+    : ICommandHandler<AddToQueueCommand, QueuePositionDto>
 {
-    public async Task<QueueSnapshotDto> HandleAsync(AddToQueueCommand request, CancellationToken cancellationToken = default)
+    public async Task<QueuePositionDto> HandleAsync(AddToQueueCommand request, CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var file = await fileService.GetFileAsync(nodePathDtoConverter.Convert(request.NodePath));
+        var nodePath = nodePathDtoConverter.Convert(request.NodePath);
 
-        var queueSnapshot = await queueService.AddToQueueAsync(file, cancellationToken);
+        await queueRepository.AddFileAsync(currentUserRepository.CurrentUserId, nodePath, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        
+        var currentPosition = await queueRepository.GetQueuePositionAsync(currentUserRepository.CurrentUserId, cancellationToken: cancellationToken);
 
-        return converter.Convert(queueSnapshot);
+        return queueDtoConverter.Convert(currentPosition);
     }
 }

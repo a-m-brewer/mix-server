@@ -1,9 +1,11 @@
 ﻿using MixServer.Application.FileExplorer.Queries.GetNode;
+using MixServer.Application.Queueing.Converters;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Application.Sessions.Responses;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Queueing.Entities;
+using MixServer.Domain.Queueing.Models;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Tracklists.Converters;
 
@@ -11,7 +13,7 @@ namespace MixServer.Application.Sessions.Converters;
 
 
 public interface IPlaybackSessionDtoConverter
-    : IConverter<IPlaybackSession?, QueueSnapshot, bool, CurrentSessionUpdatedDto>,
+    : IConverter<IPlaybackSession?, QueuePosition, bool, CurrentSessionUpdatedDto>,
         IConverter<IPlaybackSession, bool, PlaybackSessionDto>,
         IConverter<IPlaybackSession, PlaybackSessionDto>
 {
@@ -19,7 +21,7 @@ public interface IPlaybackSessionDtoConverter
 
 public class PlaybackSessionDtoConverter(
     IFileExplorerEntityToResponseConverter fileNodeConverter,
-    IConverter<QueueSnapshot, QueueSnapshotDto> queueSnapshotDtoConverter,
+    IQueueDtoConverter queueDtoConverter,
     ITracklistDtoConverter tracklistDtoConverter)
     : IPlaybackSessionDtoConverter
         
@@ -51,12 +53,15 @@ public class PlaybackSessionDtoConverter(
         return Convert(value, false);
     }
 
-    public CurrentSessionUpdatedDto Convert(IPlaybackSession? session, QueueSnapshot queue, bool autoPlay)
+    public CurrentSessionUpdatedDto Convert(IPlaybackSession? session, QueuePosition queue, bool autoPlay)
     {
         var sessionDto = session == null ? null : Convert(session, autoPlay);
-        var queueDto = queueSnapshotDtoConverter.Convert(queue);
+        var positionDto = queueDtoConverter.Convert(queue);
 
-        throw new NotImplementedException();
-        // return new CurrentSessionUpdatedDto(sessionDto, queueDto);
+        return new CurrentSessionUpdatedDto
+        {
+            Session = sessionDto,
+            QueuePosition = positionDto
+        };
     }
 }

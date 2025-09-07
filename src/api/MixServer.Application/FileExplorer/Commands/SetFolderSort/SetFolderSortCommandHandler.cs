@@ -4,7 +4,7 @@ using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
-using MixServer.Domain.Queueing.Services;
+using MixServer.Domain.Queueing.Repositories;
 using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Application.FileExplorer.Commands.SetFolderSort;
@@ -13,7 +13,7 @@ public class SetFolderSortCommandHandler(
     ICurrentUserRepository currentUserRepository,
     IFileService fileService,
     INodePathDtoConverter nodePathDtoConverter,
-    IQueueService queueService,
+    IQueueRepository queueRepository,
     IUnitOfWork unitOfWork,
     IValidator<SetFolderSortCommand> validator)
     : ICommandHandler<SetFolderSortCommand>
@@ -35,11 +35,11 @@ public class SetFolderSortCommandHandler(
         unitOfWork.InvokeCallbackOnSaved(cb => cb.FolderSorted(currentUserRepository.CurrentUserId, folder));
         
         // The folder being sorted is the queues current folder
-        var queueFolder = await queueService.GetCurrentQueueFolderPathAsync(cancellationToken);
+        var queueFolder = await queueRepository.GetQueueCurrentFolderAsync(currentUserRepository.CurrentUserId, cancellationToken);
         
-        if (folder.Node.Path.IsEqualTo(queueFolder))
+        if (queueFolder is not null && folder.Node.Path.IsEqualTo(queueFolder.Path))
         {
-            await queueService.ResortQueueAsync(cancellationToken);
+            // await queueRepository.SetFolderAsync()
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

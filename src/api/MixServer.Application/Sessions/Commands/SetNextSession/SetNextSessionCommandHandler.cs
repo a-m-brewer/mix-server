@@ -2,10 +2,11 @@ using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
-using MixServer.Domain.Queueing.Entities;
-using MixServer.Domain.Queueing.Services;
+using MixServer.Domain.Queueing.Models;
+using MixServer.Domain.Queueing.Repositories;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Application.Sessions.Commands.SetNextSession;
 
@@ -17,8 +18,9 @@ public interface ISetNextSessionCommandHandler : ICommandHandler
 }
 
 public class SetNextSessionCommandHandler(
+    ICurrentUserRepository currentUserRepository,
     IPlaybackSessionDtoConverter converter,
-    IQueueService queueService,
+    IQueueRepository queueRepository,
     IPlaybackTrackingService playbackTrackingService,
     ISessionService sessionService,
     IUnitOfWork unitOfWork)
@@ -41,21 +43,23 @@ public class SetNextSessionCommandHandler(
             playbackTrackingService.ClearSession(currentSession.UserId);
         }
 
-        var queue = await queueService.GenerateQueueSnapshotAsync(cancellationToken);
+        var position = await queueRepository.GetQueuePositionAsync(currentUserRepository.CurrentUserId, cancellationToken: cancellationToken);
         
         var nextQueuePosition = skip
-            ? queue.NextQueuePosition
-            : queue.PreviousQueuePosition;
-        if (!nextQueuePosition.HasValue)
+            ? position.Next
+            : position.Previous;
+        if (nextQueuePosition is null)
         {
             await sessionService.ClearUsersCurrentSessionAsync();
             await unitOfWork.SaveChangesAsync(cancellationToken);
-            return converter.Convert(null, QueueSnapshot.Empty, true);
+            return converter.Convert(null, QueuePosition.Empty, true);
         }
         
-        queue = await queueService.SetQueuePositionAsync(nextQueuePosition.Value, cancellationToken);
+        await queueRepository.SetQueuePositionAsync(currentUserRepository.CurrentUserId, nextQueuePosition.Id, cancellationToken);
+        
+        position = await queueRepository.GetQueuePositionAsync(currentUserRepository.CurrentUserId, cancellationToken: cancellationToken);
 
-        var nextFile = queue.CurrentQueuePositionItem?.File;
+        var nextFile = position.Current?.File;
         var nextSession = nextFile is null
             ? null
             : await sessionService.AddOrUpdateSessionAsync(new AddOrUpdateSessionRequest
@@ -65,6 +69,6 @@ public class SetNextSessionCommandHandler(
         
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return converter.Convert(nextSession, queue, true);
+        return converter.Convert(nextSession, position, true);
     }
 }

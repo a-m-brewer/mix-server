@@ -22,5 +22,17 @@ public class QueueEntityTypeConfiguration : IEntityTypeConfiguration<QueueEntity
             .WithOne()
             .HasForeignKey<QueueEntity>(f => f.CurrentPositionId)
             .OnDelete(DeleteBehavior.SetNull);
+        
+        builder
+            .HasOne(o => o.CurrentFolder)
+            .WithMany()
+            .HasForeignKey(f => f.CurrentFolderId)
+            .OnDelete(DeleteBehavior.SetNull);
+        
+        builder
+            .HasOne(o => o.CurrentRootChild)
+            .WithMany()
+            .HasForeignKey(f => f.CurrentRootChildId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

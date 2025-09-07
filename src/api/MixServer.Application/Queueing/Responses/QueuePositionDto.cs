@@ -2,9 +2,9 @@
 
 public class QueuePositionDto
 {
-    public required Guid? CurrentQueuePosition { get; set; }
+    public required QueueSnapshotItemDto? CurrentQueuePosition { get; set; }
     
-    public required Guid? PreviousQueuePosition { get; init; }
+    public required QueueSnapshotItemDto? PreviousQueuePosition { get; init; }
 
-    public required Guid? NextQueuePosition { get; init; }
+    public required QueueSnapshotItemDto? NextQueuePosition { get; init; }
 }

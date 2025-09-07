@@ -363,7 +363,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         var sort = await SetUserSortAsync(parentNode, FolderSortMode.Name, false);
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childB.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childB.Id, CancellationToken.None);
         await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
         
         sort.SortMode = FolderSortMode.Created;
@@ -413,7 +413,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         var sort = await SetUserSortAsync(parentNode, FolderSortMode.Name, false);
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childB.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childB.Id, CancellationToken.None);
         await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
         await Subject.AddFileAsync(_user.Id, childE.Path, CancellationToken.None);
         
@@ -560,7 +560,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childD);
 
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
         
@@ -610,7 +610,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
             .FirstAsync(f => f.FileId == childB.Id);
         
         // Act
-        await Subject.SetQueuePositionAsync(_user.Id, childB.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childB.Id, CancellationToken.None);
         
         // Assert
         var queue = await Context.Queues
@@ -639,7 +639,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
         // Act
-        var act = async () => await Subject.SetQueuePositionAsync(_user.Id, Guid.NewGuid(), CancellationToken.None);
+        var act = async () => await Subject.SetQueuePositionByFileIdAsync(_user.Id, Guid.NewGuid(), CancellationToken.None);
         
         // Assert
         await act
@@ -659,7 +659,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         // Act
         var nextItem = await Subject.GetNextPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
@@ -723,7 +723,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childC.Id, CancellationToken.None);
         
         // Act
         var nextItem = await Subject.GetNextPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
@@ -746,7 +746,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         childB.Exists = false;
         await Context.SaveChangesAsync();
@@ -776,7 +776,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         childB.Metadata!.IsMedia = false;
         await Context.SaveChangesAsync();
@@ -806,7 +806,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
 
         var deviceState = new DeviceState(Guid.NewGuid());
         deviceState.UpdateCapabilities(new Dictionary<string, bool>
@@ -842,7 +842,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
 
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
 
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
 
         var deviceState = new DeviceState(Guid.NewGuid());
         deviceState.UpdateCapabilities(new Dictionary<string, bool>
@@ -885,7 +885,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
 
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
 
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
 
         var deviceState = new DeviceState(Guid.NewGuid());
         deviceState.UpdateCapabilities(new Dictionary<string, bool>
@@ -928,7 +928,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childB.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childB.Id, CancellationToken.None);
         
         // Act
         var previousItem = await Subject.GetPreviousPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
@@ -987,7 +987,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childC, childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         // Act
         var previousItem = await Subject.GetPreviousPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
@@ -1010,7 +1010,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childC.Id, CancellationToken.None);
         
         childB.Exists = false;
         await Context.SaveChangesAsync();
@@ -1040,7 +1040,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childC.Id, CancellationToken.None);
         
         childB.Metadata!.IsMedia = false;
         await Context.SaveChangesAsync();
@@ -1070,7 +1070,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
         
-        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childC.Id, CancellationToken.None);
 
         var deviceState = new DeviceState(Guid.NewGuid());
         deviceState.UpdateCapabilities(new Dictionary<string, bool>
@@ -1106,7 +1106,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
 
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
 
-        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childC.Id, CancellationToken.None);
 
         var deviceState = new DeviceState(Guid.NewGuid());
         deviceState.UpdateCapabilities(new Dictionary<string, bool>
@@ -1149,7 +1149,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
 
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
 
-        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childC.Id, CancellationToken.None);
 
         var deviceState = new DeviceState(Guid.NewGuid());
         deviceState.UpdateCapabilities(new Dictionary<string, bool>
@@ -1191,7 +1191,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childC, childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         // Act
         await Subject.SkipAsync(_user.Id, cancellationToken: CancellationToken.None);
@@ -1242,7 +1242,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childC, childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childC.Id, CancellationToken.None);
         
         // Act
         var act = async () => await Subject.SkipAsync(_user.Id, cancellationToken: CancellationToken.None);
@@ -1277,7 +1277,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childC, childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
 
         var deviceState = new DeviceState(Guid.NewGuid());
         deviceState.UpdateCapabilities(new Dictionary<string, bool>
@@ -1309,7 +1309,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childC, childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childB.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childB.Id, CancellationToken.None);
         
         // Act
         await Subject.PreviousAsync(_user.Id, cancellationToken: CancellationToken.None);
@@ -1357,7 +1357,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childC, childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         // Act
         var act = async () => await Subject.PreviousAsync(_user.Id, cancellationToken: CancellationToken.None);
@@ -1392,7 +1392,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childC, childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childC.Id, CancellationToken.None);
 
         var deviceState = new DeviceState(Guid.NewGuid());
         deviceState.UpdateCapabilities(new Dictionary<string, bool>
@@ -1424,7 +1424,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childC, childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childC.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childC.Id, CancellationToken.None);
         
         childB.Exists = false;
         await Context.SaveChangesAsync();
@@ -1453,7 +1453,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childC, childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         childB.Exists = false;
         await Context.SaveChangesAsync();
@@ -1598,7 +1598,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childD);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         // Act
         await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
@@ -1639,7 +1639,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childD, childE);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
         
         // Act
@@ -1723,7 +1723,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childD);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         // Act
         await Subject.AddFileAsync(_user.Id, childD.Path, CancellationToken.None);
@@ -1775,7 +1775,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
         await AddNodesAsync(childA, childB);
         
         await Subject.SetFolderAsync(_user.Id, parentNode.Id, CancellationToken.None);
-        await Subject.SetQueuePositionAsync(_user.Id, childA.Id, CancellationToken.None);
+        await Subject.SetQueuePositionByFileIdAsync(_user.Id, childA.Id, CancellationToken.None);
         
         var otherParentNode = await CreateParentNodeAsync("other");
         var childC = CreateChildNode(otherParentNode, "C");

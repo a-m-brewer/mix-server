@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Persistence;
-using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Tracklists.Factories;

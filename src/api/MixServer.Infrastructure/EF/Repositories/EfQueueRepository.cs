@@ -6,6 +6,7 @@ using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Enums;
+using MixServer.Domain.Queueing.Models;
 using MixServer.Domain.Queueing.Repositories;
 using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Users.Models;
@@ -19,6 +20,18 @@ public class EfQueueRepository(
     ILogger<EfQueueRepository> logger) : IQueueRepository
 {
     private const int BatchSize = 1000;
+
+    public async Task SetFolderAsync(string userId, CancellationToken cancellationToken)
+    {
+        var currentFolder = await GetQueueCurrentFolderAsync(userId, cancellationToken);
+
+        if (currentFolder == null)
+        {
+            throw new NotFoundException(nameof(QueueEntity), $"No current folder set in queue for user {userId}");
+        }
+        
+        await SetFolderAsync(userId, currentFolder.Id, cancellationToken);
+    }
 
     public async Task SetFolderAsync(string userId, Guid nodeId, CancellationToken cancellationToken)
     {
@@ -148,7 +161,23 @@ public class EfQueueRepository(
         await SetQueuePositionAsync(previousItem, cancellationToken);
     }
 
-    public async Task SetQueuePositionAsync(string userId, Guid fileId, CancellationToken cancellationToken)
+    public async Task<QueueItemEntity> SetQueuePositionAsync(string userId, Guid queueItemId, CancellationToken cancellationToken)
+    {
+        var queueItem = await context.QueueItems
+            .Include(i => i.Queue)
+            .FirstOrDefaultAsync(f => f.Queue.UserId == userId && f.Id == queueItemId, cancellationToken: cancellationToken);
+
+        if (queueItem == null)
+        {
+            throw new NotFoundException(nameof(QueueItemEntity), queueItemId);
+        }
+        
+        await SetQueuePositionAsync(queueItem, cancellationToken);
+        
+        return queueItem;
+    }
+
+    public async Task SetQueuePositionByFileIdAsync(string userId, Guid fileId, CancellationToken cancellationToken)
     {
         var queueItem = await context.QueueItems
             .Include(i => i.Queue)
@@ -166,6 +195,26 @@ public class EfQueueRepository(
     { 
         context.QueueItems.RemoveRange(context.QueueItems.Include(i => i.Queue)
             .Where(i => i.Queue.UserId == userId && ids.Contains(i.Id)));
+    }
+
+    public Task ClearQueueAsync(string userId, CancellationToken cancellationToken)
+    {
+        return context.QueueItems
+            .Include(i => i.Queue)
+            .Where(w => w.Queue.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<QueuePosition> GetQueuePositionAsync(string userId, IDeviceState? deviceState = null,
+        CancellationToken cancellationToken = default)
+    {
+        var currentTask = GetCurrentPositionAsync(userId, deviceState, cancellationToken);
+        var nextTask = GetNextPositionAsync(userId, deviceState, cancellationToken);
+        var previousTask = GetPreviousPositionAsync(userId, deviceState, cancellationToken);
+        
+        await Task.WhenAll(currentTask, nextTask, previousTask);
+        
+        return new QueuePosition(currentTask.Result, nextTask.Result, previousTask.Result);
     }
 
     public async Task<QueueItemEntity?> GetCurrentPositionAsync(
@@ -206,6 +255,19 @@ public class EfQueueRepository(
             .Skip(page.PageIndex * page.PageSize)
             .Take(page.PageSize)
             .ToListAsync(cancellationToken: cancellationToken);
+    }
+
+    public async Task<IFileExplorerFolderEntity?> GetQueueCurrentFolderAsync(string currentUserId,
+        CancellationToken cancellationToken)
+    {
+        var queue = await context.Queues
+            .Where(w => w.UserId == currentUserId)
+            .Include(i => i.CurrentFolder)
+            .ThenInclude(t => t!.RootChild)
+            .Include(i => i.CurrentRootChild)
+            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+
+        return queue?.CurrentFolderEntity;
     }
 
     private async Task<QueueItemEntity?> GetPositionAsync(
@@ -414,7 +476,8 @@ public class EfQueueRepository(
         var queue = new QueueEntity
         {
             Id = Guid.NewGuid(),
-            UserId = user.Id
+            UserId = user.Id,
+            CurrentFolderId = nodeId
         };
         await context.Queues.AddAsync(queue, cancellationToken);
         
