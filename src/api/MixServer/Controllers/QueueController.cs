@@ -16,6 +16,7 @@ public class QueueController(
     ICommandHandler<AddToQueueCommand, QueuePositionDto> addToQueueCommandHandler,
     IQueryHandler<GetCurrentQueueRequest, QueueSnapshotDto> getCurrentQueueQueryHandler,
     ICommandHandler<RemoveFromQueueCommand, QueuePositionDto> removeFromQueueCommandHandler,
+    IQueryHandler<QueuePositionDto> getQueuePositionQueryHandler,
     ICommandHandler<SetQueuePositionCommand, CurrentSessionUpdatedDto> setQueuePositionCommandHandler)
     : ControllerBase
 {
@@ -53,6 +54,15 @@ public class QueueController(
     public async Task<IActionResult> RemoveFromQueue([FromBody] RemoveFromQueueCommand command, CancellationToken cancellationToken)
     {
         return Ok(await removeFromQueueCommandHandler.HandleAsync(command, cancellationToken));
+    }
+
+    [HttpGet("position")]
+    [ProducesResponseType(typeof(QueuePositionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetQueuePosition(CancellationToken cancellationToken)
+    {
+        return Ok(await getQueuePositionQueryHandler.HandleAsync(cancellationToken));
     }
 
     [HttpPost("position")]
