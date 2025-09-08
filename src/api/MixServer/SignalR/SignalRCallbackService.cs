@@ -3,6 +3,7 @@ using MixServer.Application.Devices.Responses;
 using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Application.FileExplorer.Queries.GetNode;
+using MixServer.Application.Queueing.Converters;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Responses;
@@ -13,6 +14,7 @@ using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Queueing.Entities;
+using MixServer.Domain.Queueing.Models;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
 using MixServer.Domain.Sessions.Models;
@@ -35,7 +37,8 @@ public class SignalRCallbackService(
     ITracklistDtoConverter tracklistDtoConverter,
     IHubContext<SignalRCallbackHub, ISignalRCallbackClient> context,
     IConverter<IUser, UserDto> userDtoConverter,
-    ISignalRUserManager userManager)
+    ISignalRUserManager userManager,
+    IQueueDtoConverter queueDtoConverter)
     : ICallbackService
 {
     public IReadOnlyCollection<string> ConnectedUserIds => userManager.ConnectedUsers.Select(user => user.SignalRUserId.Id).ToList();
@@ -231,6 +234,38 @@ public class SignalRCallbackService(
         await context.Clients
             .All
             .TracklistUpdated(dto);
+    }
+
+    public Task QueuePositionChanged(string userId, Guid deviceId, QueuePosition position, bool notifyCallingDevice = false)
+    {
+        var (deviceConnections, otherDevicesConnections) =
+            GetDevicesConnectionWithOtherDevices(userId, deviceId);
+
+        var dto = queueDtoConverter.Convert(position);
+        
+        var toNotify = notifyCallingDevice
+            ? deviceConnections.Concat(otherDevicesConnections).ToList()
+            : otherDevicesConnections;
+        
+        return context.Clients
+            .Clients(toNotify)
+            .QueuePositionChanged(dto);
+    }
+
+    public Task QueueFolderChanged(string userId, Guid deviceId, QueuePosition position, bool notifyCallingDevice = false)
+    {
+        var (deviceConnections, otherDevicesConnections) =
+            GetDevicesConnectionWithOtherDevices(userId, deviceId);
+
+        var dto = queueDtoConverter.Convert(position);
+        
+        var toNotify = notifyCallingDevice
+            ? deviceConnections.Concat(otherDevicesConnections).ToList()
+            : otherDevicesConnections;
+        
+        return context.Clients
+            .Clients(toNotify)
+            .QueueFolderChanged(dto);
     }
 
     public async Task UserDeleted(string userId)

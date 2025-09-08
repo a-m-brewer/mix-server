@@ -2,6 +2,7 @@
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Queueing.Entities;
+using MixServer.Domain.Queueing.Models;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Sessions.Enums;
 using MixServer.Domain.Sessions.Models;
@@ -31,4 +32,6 @@ public interface ICallbackService
     Task MediaInfoUpdated(IReadOnlyCollection<MediaInfo> mediaInfo);
     Task MediaInfoRemoved(IReadOnlyCollection<NodePath> removedItems);
     Task TracklistUpdated(FileExplorerFileNodeEntity file);
+    Task QueuePositionChanged(string userId, Guid deviceId, QueuePosition position, bool notifyCallingDevice = false);
+    Task QueueFolderChanged(string userId, Guid deviceId, QueuePosition position, bool notifyCallingDevice = false);
 }

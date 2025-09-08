@@ -1,5 +1,7 @@
-﻿using MixServer.Domain.FileExplorer.Entities;
+﻿using MixServer.Domain.Callbacks;
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
+using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Models;
 using MixServer.Domain.Queueing.Repositories;
@@ -12,10 +14,9 @@ namespace MixServer.Domain.Queueing.Services;
 
 public interface IUserQueueService
 {
-    Task SetFolderAsync(CancellationToken cancellationToken);
-    Task SetFolderAsync(Guid nodeId, CancellationToken cancellationToken);
+    Task RefreshQueueAsync(CancellationToken cancellationToken);
+    Task SetQueuePositionAndFolderAsync(FileExplorerFileNodeEntity nodeId, CancellationToken cancellationToken);
     Task<QueueItemEntity> SetQueuePositionAsync(Guid queueItemId, CancellationToken cancellationToken);
-    Task SetQueuePositionByFileIdAsync(Guid fileId, CancellationToken cancellationToken);
     Task AddFileAsync(NodePath nodePath, CancellationToken cancellationToken);
     void RemoveQueueItems(List<Guid> ids);
     Task ClearQueueAsync(CancellationToken cancellationToken);
@@ -26,44 +27,50 @@ public interface IUserQueueService
 }
 
 public class UserQueueService(
+    ICurrentDeviceRepository currentDeviceRepository,
     ICurrentUserRepository currentUserRepository,
     IDeviceTrackingService deviceTrackingService,
     IPlaybackTrackingAccessor playbackTrackingAccessor,
-    IQueueRepository queueRepository) : IUserQueueService
+    IQueueRepository queueRepository,
+    IUnitOfWork unitOfWork) : IUserQueueService
 {
-    public Task SetFolderAsync(CancellationToken cancellationToken)
+    public async Task RefreshQueueAsync(CancellationToken cancellationToken)
     {
-        return queueRepository.SetFolderAsync(currentUserRepository.CurrentUserId, cancellationToken);
+        await queueRepository.SetFolderAsync(currentUserRepository.CurrentUserId, cancellationToken);
+        NotifyQueueFolderChanged();
     }
 
-    public Task SetFolderAsync(Guid nodeId, CancellationToken cancellationToken)
-    {
-        return queueRepository.SetFolderAsync(currentUserRepository.CurrentUserId, nodeId, cancellationToken);
+    public async Task SetQueuePositionAndFolderAsync(FileExplorerFileNodeEntity file, CancellationToken cancellationToken)
+    { 
+        var parentId = file.ParentId ?? file.RootChildId;
+        await queueRepository.SetFolderAsync(currentUserRepository.CurrentUserId, parentId, cancellationToken);
+        await queueRepository.SetQueuePositionByFileIdAsync(currentUserRepository.CurrentUserId, file.Id, cancellationToken);
+        NotifyQueueFolderChanged();
     }
 
-    public Task<QueueItemEntity> SetQueuePositionAsync(Guid queueItemId, CancellationToken cancellationToken)
+    public async Task<QueueItemEntity> SetQueuePositionAsync(Guid queueItemId, CancellationToken cancellationToken)
     {
-        return queueRepository.SetQueuePositionAsync(currentUserRepository.CurrentUserId, queueItemId, cancellationToken);
+        var position = await queueRepository.SetQueuePositionAsync(currentUserRepository.CurrentUserId, queueItemId, cancellationToken);
+        NotifyQueuePositionChanged();
+        return position;
     }
 
-    public Task SetQueuePositionByFileIdAsync(Guid fileId, CancellationToken cancellationToken)
+    public async Task AddFileAsync(NodePath nodePath, CancellationToken cancellationToken)
     {
-        return queueRepository.SetQueuePositionByFileIdAsync(currentUserRepository.CurrentUserId, fileId, cancellationToken);
-    }
-
-    public Task AddFileAsync(NodePath nodePath, CancellationToken cancellationToken)
-    {
-        return queueRepository.AddFileAsync(currentUserRepository.CurrentUserId, nodePath, cancellationToken);
+        await queueRepository.AddFileAsync(currentUserRepository.CurrentUserId, nodePath, cancellationToken);
+        NotifyQueuePositionChanged();
     }
 
     public void RemoveQueueItems(List<Guid> ids)
     {
         queueRepository.RemoveQueueItems(currentUserRepository.CurrentUserId, ids);
+        NotifyQueuePositionChanged();
     }
     
-    public Task ClearQueueAsync(CancellationToken cancellationToken)
+    public async Task ClearQueueAsync(CancellationToken cancellationToken)
     {
-        return queueRepository.ClearQueueAsync(currentUserRepository.CurrentUserId, cancellationToken);
+        await queueRepository.ClearQueueAsync(currentUserRepository.CurrentUserId, cancellationToken);
+        NotifyQueuePositionChanged();
     }
 
     public async Task<QueueItemEntity?> GetCurrentPositionAsync(CancellationToken cancellationToken)
@@ -102,5 +109,31 @@ public class UserQueueService(
             : null;
         
         return deviceState;
+    }
+
+    private void NotifyQueuePositionChanged(bool notifyCallingDevice = false)
+    {
+        unitOfWork.InvokeCallbackOnSaved(NotifyAsync);
+        
+        return;
+
+        async Task NotifyAsync(ICallbackService callbackService)
+        {
+            var position = await GetQueuePositionAsync();
+            await callbackService.QueuePositionChanged(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, position, notifyCallingDevice);
+        }
+    }
+    
+    private void NotifyQueueFolderChanged(bool notifyCallingDevice = false)
+    {
+        unitOfWork.InvokeCallbackOnSaved(NotifyAsync);
+        
+        return;
+
+        async Task NotifyAsync(ICallbackService callbackService)
+        {
+            var position = await GetQueuePositionAsync();
+            await callbackService.QueueFolderChanged(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, position, notifyCallingDevice);
+        }
     }
 }

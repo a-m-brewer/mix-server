@@ -41,7 +41,7 @@ public class SetFolderSortCommandHandler(
         
         if (queueFolder is not null && folder.Node.Path.IsEqualTo(queueFolder.Path))
         {
-            await userQueueService.SetFolderAsync(cancellationToken);
+            await userQueueService.RefreshQueueAsync(cancellationToken);
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

@@ -10,7 +10,6 @@ import {AuthenticationService} from "../auth/authentication.service";
 import {QueueItem} from "./models/queue-item";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {QueueEditFormRepositoryService} from "./queue-edit-form-repository.service";
-import {NodeCacheService} from "../nodes/node-cache.service";
 import {QueueApiService} from "../api.service";
 import {NodePathConverterService} from "../converters/node-path-converter.service";
 import {PagedQueue} from "./models/paged-queue";
@@ -153,10 +152,27 @@ export class QueueRepositoryService {
   }
 
   public setNextQueuePosition(position: QueuePosition) {
+    const nextQueue = this._queueBehaviourSubject$.value.copy();
+    nextQueue.flatChildren.forEach(child => {
+      child.isCurrentPosition = !!position.current && child.id === position.current.id;
+    });
+    this._queueBehaviourSubject$.next(nextQueue);
+
     this._queuePositionSubject$.next(position);
   }
 
+  private onQueueFolderChanged(position: QueuePosition): void {
+    this._queueBehaviourSubject$.next(PagedQueue.Default);
+    this.loadPage(0)
+      .then(() => this.setNextQueuePosition(position));
+  }
+
   private initializeSignalR(): void {
+    this._queueSignalRClient.queuePositionChanged$
+      .subscribe(position => this.setNextQueuePosition(position));
+
+    this._queueSignalRClient.queueFolderChanged$
+      .subscribe(position => this.onQueueFolderChanged(position));
   }
 
   private nextQueue(dto: QueuePageDto): void {
