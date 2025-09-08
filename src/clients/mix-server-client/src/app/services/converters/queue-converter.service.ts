@@ -23,8 +23,8 @@ export class QueueConverterService {
   public toQueuePosition(dto: QueuePositionDto): QueuePosition {
     return new QueuePosition(
       dto.currentQueuePosition ? this.toQueueItem(dto.currentQueuePosition) : null,
-      dto.nextQueuePosition ? this.toQueueItem(dto.nextQueuePosition) : null,
-      dto.previousQueuePosition ? this.toQueueItem(dto.previousQueuePosition) : null
+      dto.previousQueuePosition ? this.toQueueItem(dto.previousQueuePosition) : null,
+      dto.nextQueuePosition ? this.toQueueItem(dto.nextQueuePosition) : null
     )
   }
 
