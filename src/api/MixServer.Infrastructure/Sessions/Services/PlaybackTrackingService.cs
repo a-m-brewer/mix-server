@@ -213,7 +213,7 @@ public class PlaybackTrackingService(
             try
             {
                 using var scope = serviceProvider.CreateScope();
-                var currentUserRepository = scope.ServiceProvider.GetRequiredService<ICurrentUserRepository>();
+                var currentUserRepository = scope.ServiceProvider.GetRequiredService<ICurrentDbUserRepository>();
                 var playbackSessionRepository = scope.ServiceProvider.GetRequiredService<IPlaybackSessionRepository>();
                 var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 

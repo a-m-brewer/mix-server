@@ -3,15 +3,13 @@ using MixServer.Application.Queueing.Converters;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
-using MixServer.Domain.Queueing.Repositories;
-using MixServer.Infrastructure.Users.Repository;
+using MixServer.Domain.Queueing.Services;
 
 namespace MixServer.Application.Queueing.Queries.GetCurrentQueue;
 
 public class GetCurrentQueueQueryHandler(
-    ICurrentUserRepository currentUserRepository,
     IQueueDtoConverter queueConverter,
-    IQueueRepository queueRepository,
+    IUserQueueService userQueueService,
     IPageConverter pageConverter,
     IUnitOfWork unitOfWork)
     : IQueryHandler<GetCurrentQueueRequest, QueueSnapshotDto>
@@ -20,7 +18,7 @@ public class GetCurrentQueueQueryHandler(
     {
         var page = pageConverter.Convert(request.Page);
 
-        var queue = await queueRepository.GetQueuePageAsync(currentUserRepository.CurrentUserId, page, cancellationToken);
+        var queue = await userQueueService.GetQueuePageAsync(page, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         

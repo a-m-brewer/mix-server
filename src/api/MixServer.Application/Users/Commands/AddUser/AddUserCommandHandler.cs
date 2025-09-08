@@ -3,13 +3,14 @@ using MixServer.Domain.Exceptions;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Users.Enums;
+using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Application.Users.Commands.AddUser;
 
 public class AddUserCommandHandler(
-    ICurrentUserRepository currentUserRepository,
+    ICurrentDbUserRepository currentUserRepository,
     IUserAuthenticationService userAuthenticationService,
     IValidator<AddUserCommand> validator,
     IUnitOfWork unitOfWork)

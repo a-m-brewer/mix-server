@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
+using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.EF.Entities;
 using MixServer.Infrastructure.EF.Extensions;
@@ -14,21 +15,12 @@ using MixServer.Infrastructure.Users.Services;
 
 namespace MixServer.Infrastructure.Users.Repository;
 
-public interface ICurrentUserRepository
+public interface ICurrentDbUserRepository : ICurrentUserRepository
 {
-    string CurrentUserId { get; }
-    bool HasUserId { get; }
-    void SetUserId(string userId);
     Task<DbUser> GetCurrentUserAsync();
-    Task LoadCurrentPlaybackSessionAsync(CancellationToken cancellationToken);
-    Task LoadPlaybackSessionByNodePathAsync(NodePath nodePath, CancellationToken cancellationToken);
-    Task LoadPagedPlaybackSessionsAsync(int sessionPageIndex, int sessionPageSize, CancellationToken cancellationToken);
-    Task LoadFileSortByAbsolutePathAsync(NodePath nodePath, CancellationToken cancellationToken);
-    Task LoadAllDevicesAsync(CancellationToken cancellationToken);
-    Task LoadDeviceByIdAsync(Guid deviceId, CancellationToken cancellationToken);
 }
 
-public class CurrentUserRepository : ICurrentUserRepository
+public class CurrentUserRepository : ICurrentDbUserRepository
 {
     private readonly Lazy<Task<DbUser?>> _currentUserLazy;
     private readonly IHttpContextAccessor _contextAccessor;

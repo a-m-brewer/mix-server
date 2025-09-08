@@ -6,15 +6,17 @@ using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Models;
 using MixServer.Domain.Queueing.Repositories;
+using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Application.Sessions.Commands.ClearCurrentSession;
 
 public class ClearCurrentSessionCommandHandler(
     IPlaybackSessionDtoConverter converter,
-    ICurrentUserRepository currentUserRepository,
-    IQueueRepository queueRepository,
+    ICurrentDbUserRepository currentUserRepository,
+    IUserQueueService userQueueService,
     ISessionService sessionService,
     IUnitOfWork unitOfWork)
     : ICommandHandler<ClearCurrentSessionCommand, CurrentSessionUpdatedDto>
@@ -30,7 +32,7 @@ public class ClearCurrentSessionCommandHandler(
         }
         
         await sessionService.ClearUsersCurrentSessionAsync();
-        await queueRepository.ClearQueueAsync(user.Id, cancellationToken);
+        await userQueueService.ClearQueueAsync(cancellationToken);
         
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

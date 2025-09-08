@@ -8,7 +8,7 @@ using MixServer.Infrastructure.Users.Services;
 namespace MixServer.Application.Users.Commands.DeleteUser;
 
 public class DeleteDeviceCommandHandler(
-    ICurrentUserRepository currentUserRepository,
+    ICurrentDbUserRepository currentUserRepository,
     IIdentityUserAuthenticationService userAuthenticationService,
     IValidator<DeleteUserCommand> validator,
     IUserValidator userValidator,

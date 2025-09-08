@@ -3,6 +3,7 @@ using MixServer.Domain.Exceptions;
 using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Models;
 using MixServer.Domain.Sessions.Services;
+using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Sessions.Services;
 using MixServer.Infrastructure.Users.Repository;
 

@@ -8,7 +8,7 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Infrastructure.Sessions.Accessors;
 
 public class RequestedPlaybackDeviceAccessor(
-    ICurrentUserRepository currentUserRepository,
+    ICurrentDbUserRepository currentUserRepository,
     IPlaybackTrackingService playbackTrackingService,
     ICurrentDeviceRepository currentDeviceRepository,
     IDeviceTrackingService deviceTrackingService) : IRequestedPlaybackDeviceAccessor

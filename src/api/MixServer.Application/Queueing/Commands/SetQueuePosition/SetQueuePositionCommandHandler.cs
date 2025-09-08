@@ -4,7 +4,7 @@ using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
-using MixServer.Domain.Queueing.Repositories;
+using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Infrastructure.Users.Repository;
@@ -12,11 +12,10 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Application.Queueing.Commands.SetQueuePosition;
 
 public class SetQueuePositionCommandHandler(
-    ICurrentUserRepository currentUserRepository,
     IPlaybackSessionDtoConverter converter,
     ISessionService sessionService,
-    IQueueRepository queueRepository,
     IValidator<SetQueuePositionCommand> validator,
+    IUserQueueService userQueueService,
     IUnitOfWork unitOfWork)
     : ICommandHandler<SetQueuePositionCommand, CurrentSessionUpdatedDto>
 {
@@ -24,7 +23,7 @@ public class SetQueuePositionCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var item = await queueRepository.SetQueuePositionAsync(currentUserRepository.CurrentUserId, request.QueueItemId, cancellationToken);
+        var item = await userQueueService.SetQueuePositionAsync(request.QueueItemId, cancellationToken);
 
         if (item.File is null)
         {
@@ -38,7 +37,7 @@ public class SetQueuePositionCommandHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
-        var queuePosition = await queueRepository.GetQueuePositionAsync(currentUserRepository.CurrentUserId, cancellationToken: cancellationToken);
+        var queuePosition = await userQueueService.GetQueuePositionAsync(cancellationToken: cancellationToken);
 
         return converter.Convert(session, queuePosition, true);
     }

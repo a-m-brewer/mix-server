@@ -8,7 +8,7 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Application.Tracklists.Commands.SaveTracklist;
 
 public class SaveTracklistCommandHandler(
-    ICurrentUserRepository currentUserRepository,
+    ICurrentDbUserRepository currentUserRepository,
     ILogger<SaveTracklistCommandHandler> logger,
     ITracklistPersistenceService tracklistPersistenceService,
     ITracklistFileTaggingService tracklistFileTaggingService,

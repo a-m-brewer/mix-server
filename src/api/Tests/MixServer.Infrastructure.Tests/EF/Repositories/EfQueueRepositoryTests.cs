@@ -39,10 +39,24 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
     }
 
     [Test]
+    public async Task SetFolderAsync_FolderDoesNotExist_ThrowsNotFoundException()
+    {
+        // Act
+        var act = () => Subject.SetFolderAsync(_user.Id, Guid.NewGuid(), CancellationToken.None);
+        
+        // Assert
+        await act
+            .Should()
+            .ThrowAsync<NotFoundException>();
+    }
+
+    [Test]
     public async Task SetFolderAsync_UserHasNoQueue_CreatesQueue()
     {
         // Act
-        await Subject.SetFolderAsync(_user.Id, Guid.NewGuid(), CancellationToken.None);
+        var folder = await CreateParentNodeAsync();
+        
+        await Subject.SetFolderAsync(_user.Id, folder.Id, CancellationToken.None);
         
         // Assert
         var queue = await Context.Queues.
@@ -55,7 +69,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
             .Should()
             .Be(_user.Id);
     }
-
+    
     [Test]
     public async Task SetFolderAsync_DefaultSortAppliedIfUserHasNotSort_Sorted()
     {
@@ -1822,6 +1836,7 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
             RootChild = await Context.Nodes.OfType<FileExplorerRootChildNodeEntity>().SingleAsync(s => s.Id == _root.Id),
             Parent = null
         };
+        await Context.Nodes.AddAsync(parentNode);
         await Context.SaveChangesAsync();
         return parentNode;
     }

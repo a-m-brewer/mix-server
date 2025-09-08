@@ -3,16 +3,14 @@ using MixServer.Application.Queueing.Converters;
 using MixServer.Application.Queueing.Responses;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
-using MixServer.Domain.Queueing.Repositories;
-using MixServer.Infrastructure.Users.Repository;
+using MixServer.Domain.Queueing.Services;
 
 namespace MixServer.Application.Queueing.Commands.RemoveFromQueue;
 
 public class RemoveFromQueueCommandHandler(
-    ICurrentUserRepository currentUserRepository,
-    IQueueRepository queueRepository,
     IQueueDtoConverter queueDtoConverter,
     IValidator<RemoveFromQueueCommand> validator,
+    IUserQueueService userQueueService,
     IUnitOfWork unitOfWork)
     : ICommandHandler<RemoveFromQueueCommand, QueuePositionDto>
 {
@@ -20,11 +18,11 @@ public class RemoveFromQueueCommandHandler(
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        queueRepository.RemoveQueueItems(currentUserRepository.CurrentUserId, request.QueueItems);
+        userQueueService.RemoveQueueItems(request.QueueItems);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
-        var queuePosition = await queueRepository.GetQueuePositionAsync(currentUserRepository.CurrentUserId, cancellationToken: cancellationToken);
+        var queuePosition = await userQueueService.GetQueuePositionAsync(cancellationToken: cancellationToken);
 
         return queueDtoConverter.Convert(queuePosition);
     }

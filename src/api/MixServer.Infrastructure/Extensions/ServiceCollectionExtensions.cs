@@ -6,6 +6,7 @@ using MixServer.Domain.Persistence;
 using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Tracklists.Factories;
+using MixServer.Domain.Users.Repositories;
 using MixServer.Domain.Users.Services;
 using MixServer.Infrastructure.EF;
 using MixServer.Infrastructure.Files;
@@ -31,7 +32,8 @@ public static class ServiceCollectionExtensions
         });
         services.AddScoped<IUnitOfWork, EfUnitOfWork<MixServerDbContext>>();
 
-        services.AddScoped<ICurrentUserRepository, CurrentUserRepository>();
+        services.AddScoped<ICurrentDbUserRepository, CurrentUserRepository>();
+        services.AddScoped<ICurrentUserRepository>(sp => sp.GetRequiredService<ICurrentDbUserRepository>());
         services.AddTransient<IUserAuthenticationService, IdentityUserAuthenticationService>();
         services.AddTransient<IIdentityUserAuthenticationService, IdentityUserAuthenticationService>();
         services.AddTransient<IFirstUserInitializationService, FirstUserInitializationService>();

@@ -5,6 +5,7 @@ using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Services;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
+using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Domain.Sessions.Validators;
 using MixServer.Domain.Streams.Caches;
@@ -33,6 +34,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IFolderPersistenceService, FolderPersistenceService>();
         services.AddTransient<ITracklistPersistenceService, TracklistPersistenceService>();
         services.AddSingleton<IFileWriteLockService, FileWriteLockService>();
+        services.AddTransient<IUserQueueService, IUserQueueService>();
 
         services.AddTransient<IRootChildFolderService, RootChildFolderService>();
 

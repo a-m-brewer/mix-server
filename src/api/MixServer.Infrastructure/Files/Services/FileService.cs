@@ -5,6 +5,7 @@ using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Services;
+using MixServer.Domain.Users.Repositories;
 using MixServer.Infrastructure.Users.Repository;
 
 namespace MixServer.Infrastructure.Files.Services;
@@ -12,7 +13,7 @@ namespace MixServer.Infrastructure.Files.Services;
 public class FileService(
     IFileExplorerEntityConverter fileExplorerEntityConverter,
     IFolderPersistenceService folderPersistenceService,
-    ICurrentUserRepository currentUserRepository,
+    ICurrentDbUserRepository currentUserRepository,
     IFolderSortRepository folderSortRepository,
     IRootFileExplorerFolder rootFolder)
     : IFileService

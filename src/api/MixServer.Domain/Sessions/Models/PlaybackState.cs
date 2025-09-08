@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using MixServer.Domain.Exceptions;
 using MixServer.Domain.FileExplorer.Models;
@@ -47,7 +48,7 @@ public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger
     {
         get { lock (_lock) return _lastPlaybackDeviceId; }
     }
-
+    
     public Guid? DeviceId
     {
         get
@@ -67,10 +68,11 @@ public class PlaybackState(IPlaybackState session, ILogger<PlaybackState> logger
         }
     }
 
+    [MemberNotNullWhen(true, nameof(DeviceId))]
     public bool HasDevice => DeviceId.HasValue && DeviceId.Value != Guid.Empty;
 
     public Guid DeviceIdOrThrow => HasDevice
-        ? DeviceId!.Value
+        ? DeviceId.Value
         : throw new InvalidRequestException(nameof(DeviceId), $"Playback State for {UserId} currently does not have a device");
 
     public bool Playing

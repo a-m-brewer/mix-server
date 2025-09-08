@@ -18,7 +18,7 @@ namespace MixServer.Infrastructure.Sessions.Services;
 public class SessionService(
     ICanPlayOnDeviceValidator canPlayOnDeviceValidator,
     ICurrentDeviceRepository currentDeviceRepository,
-    ICurrentUserRepository currentUserRepository,
+    ICurrentDbUserRepository currentUserRepository,
     IDateTimeProvider dateTimeProvider,
     IFileExplorerNodeRepository fileExplorerNodeRepository,
     IPlaybackSessionRepository playbackSessionRepository,

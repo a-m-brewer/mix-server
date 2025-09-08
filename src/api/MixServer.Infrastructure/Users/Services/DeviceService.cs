@@ -11,7 +11,7 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Infrastructure.Users.Services;
 
 public class DeviceService(
-    ICurrentUserRepository currentUserRepository,
+    ICurrentDbUserRepository currentUserRepository,
     IDateTimeProvider dateTimeProvider,
     IDeviceRepository deviceRepository,
     IDeviceTrackingService deviceTrackingService,

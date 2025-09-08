@@ -163,8 +163,7 @@ public class EfQueueRepository(
 
     public async Task<QueueItemEntity> SetQueuePositionAsync(string userId, Guid queueItemId, CancellationToken cancellationToken)
     {
-        var queueItem = await context.QueueItems
-            .Include(i => i.Queue)
+        var queueItem = await QueueItemEntityQuery
             .FirstOrDefaultAsync(f => f.Queue.UserId == userId && f.Id == queueItemId, cancellationToken: cancellationToken);
 
         if (queueItem == null)
@@ -243,13 +242,7 @@ public class EfQueueRepository(
 
     public async Task<List<QueueItemEntity>> GetQueuePageAsync(string userId, Page page, CancellationToken cancellationToken = default)
     {
-        return await context
-            .QueueItems
-            .Include(i => i.File)
-            .ThenInclude(t => t!.Metadata)
-            .Include(i => i.File)
-            .ThenInclude(t => t!.Transcode)
-            .Include(i => i.Queue)
+        return await QueueItemEntityQuery
             .Where(w => w.Queue.UserId == userId)
             .OrderBy(o => o.Rank)
             .Skip(page.PageIndex * page.PageSize)
@@ -298,6 +291,7 @@ public class EfQueueRepository(
         
         if (position == QueuePositionDirection.Current)
         {
+            await LoadCurrentPositionAsync(queue, cancellationToken);
             return queue.CurrentPosition;
         }
         
@@ -320,9 +314,7 @@ public class EfQueueRepository(
     
     private IQueryable<QueueItemEntity> BuildQueueItemQuery(Guid queueId, IDeviceState? deviceState)
     {
-        var query = context.QueueItems
-            .Include(i => i.File)
-            .ThenInclude(t => t!.Metadata)
+        var query = QueueItemEntityQuery
             .Where(w => w.QueueId == queueId &&
                         w.File != null &&
                         w.File.Exists &&
@@ -337,8 +329,6 @@ public class EfQueueRepository(
                 .Select(s => s.Key)
                 .ToHashSet();
             query = query
-                .Include(i => i.File)
-                .ThenInclude(t => t!.Transcode)
                 .Where(w => w.File != null &&
                             w.File.Metadata != null &&
                             (supportedMimeTypes.Contains(w.File.Metadata.MimeType) ||
@@ -472,6 +462,11 @@ public class EfQueueRepository(
         {
             return (user, user.Queue);
         }
+
+        if (!await context.Nodes.AnyAsync(a => a.Id == nodeId, cancellationToken))
+        {
+            throw new NotFoundException(nameof(context.Nodes), nodeId);
+        }
         
         var queue = new QueueEntity
         {
@@ -561,6 +556,36 @@ public class EfQueueRepository(
             .Where(w => string.Compare(w.Rank, beforeItem.Rank) < 0);
         
         return await query.OrderByDescending(o => o.Rank).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task LoadCurrentPositionAsync(QueueEntity queueEntity, CancellationToken cancellationToken)
+    {
+        if (queueEntity.CurrentPosition is null)
+        {
+            return;
+        }
+
+        await QueueItemIncludes(context.Entry(queueEntity)
+                .Reference(r => r.CurrentPosition)
+                .Query())
+            .LoadAsync(cancellationToken: cancellationToken);
+
+    }
+
+    private IQueryable<QueueItemEntity> QueueItemEntityQuery => QueueItemIncludes(context.QueueItems);
+
+
+    private static IQueryable<QueueItemEntity> QueueItemIncludes(IQueryable<QueueItemEntity> queryable)
+    {
+        return queryable.Include(i => i.File)
+            .ThenInclude(t => t!.Metadata)
+            .Include(i => i.File)
+            .ThenInclude(t => t!.Parent)
+            .Include(i => i.File)
+            .ThenInclude(t => t!.RootChild)
+            .Include(i => i.File)
+            .ThenInclude(t => t!.Transcode)
+            .Include(i => i.Queue);
     }
     
     private enum QueuePositionDirection

@@ -8,7 +8,7 @@ using MixServer.Infrastructure.Users.Repository;
 namespace MixServer.Application.Users.Commands.ResetPassword;
 
 public class ResetPasswordCommandHandler(
-    ICurrentUserRepository currentUserRepository,
+    ICurrentDbUserRepository currentUserRepository,
     IUnitOfWork unitOfWork,
     IUserAuthenticationService userAuthenticationService,
     IValidator<ResetPasswordCommand> validator)

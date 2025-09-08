@@ -8,7 +8,7 @@ using MixServer.Infrastructure.Users.Services;
 namespace MixServer.Application.Users.Commands.UpdateUser;
 
 public class UpdateUserCommandHandler(
-    ICurrentUserRepository currentUserRepository,
+    ICurrentDbUserRepository currentUserRepository,
     IIdentityUserAuthenticationService userAuthenticationService,
     IValidator<UpdateUserCommand> validator,
     IUserValidator userValidator,

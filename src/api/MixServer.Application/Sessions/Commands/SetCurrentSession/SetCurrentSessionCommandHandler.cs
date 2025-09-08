@@ -4,6 +4,7 @@ using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Dtos;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
+using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
 
@@ -13,6 +14,7 @@ public class SetCurrentSessionCommandHandler(
     IPlaybackSessionDtoConverter converter,
     INodePathDtoConverter nodePathDtoConverter,
     ISessionService sessionService,
+    IUserQueueService queueService,
     IUnitOfWork unitOfWork,
     IValidator<SetCurrentSessionCommand> validator)
     : ICommandHandler<SetCurrentSessionCommand, CurrentSessionUpdatedDto>
@@ -26,12 +28,13 @@ public class SetCurrentSessionCommandHandler(
             NodePath = nodePathDtoConverter.Convert(request.NodePath)
         }, cancellationToken);
 
-        // var queueSnapshot = await queueService.SetQueueFolderAsync(nextSession, cancellationToken);
+        var parentId = nextSession.NodeEntity.ParentId ?? nextSession.NodeEntity.RootChildId;
+        await queueService.SetFolderAsync(parentId, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        throw new NotImplementedException();
+        var queuePosition = await queueService.GetQueuePositionAsync(cancellationToken: cancellationToken);
 
-        // return converter.Convert(nextSession, queueSnapshot, true);
+        return converter.Convert(nextSession, queuePosition, true);
     }
 }

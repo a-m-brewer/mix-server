@@ -10,7 +10,7 @@ namespace MixServer.Application.Users.Queries.GetAllUsers;
 
 public class GetAllUsersQueryHandler(
     IConverter<IEnumerable<DbUser>, GetAllUsersResponse> converter,
-    ICurrentUserRepository currentUserRepository,
+    ICurrentDbUserRepository currentUserRepository,
     IIdentityUserRoleService identityUserRoleService,
     UserManager<DbUser> userManager)
     : IQueryHandler<GetAllUsersResponse>

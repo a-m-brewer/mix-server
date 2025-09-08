@@ -4,6 +4,7 @@ using MixServer.Domain.Interfaces;
 using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Models;
 using MixServer.Domain.Queueing.Repositories;
+using MixServer.Domain.Queueing.Services;
 using MixServer.Domain.Sessions.Requests;
 using MixServer.Domain.Sessions.Services;
 using MixServer.Infrastructure.Users.Repository;
@@ -18,9 +19,8 @@ public interface ISetNextSessionCommandHandler : ICommandHandler
 }
 
 public class SetNextSessionCommandHandler(
-    ICurrentUserRepository currentUserRepository,
     IPlaybackSessionDtoConverter converter,
-    IQueueRepository queueRepository,
+    IUserQueueService userQueueService,
     IPlaybackTrackingService playbackTrackingService,
     ISessionService sessionService,
     IUnitOfWork unitOfWork)
@@ -43,7 +43,7 @@ public class SetNextSessionCommandHandler(
             playbackTrackingService.ClearSession(currentSession.UserId);
         }
 
-        var position = await queueRepository.GetQueuePositionAsync(currentUserRepository.CurrentUserId, cancellationToken: cancellationToken);
+        var position = await userQueueService.GetQueuePositionAsync(cancellationToken: cancellationToken);
         
         var nextQueuePosition = skip
             ? position.Next
@@ -55,9 +55,9 @@ public class SetNextSessionCommandHandler(
             return converter.Convert(null, QueuePosition.Empty, true);
         }
         
-        await queueRepository.SetQueuePositionAsync(currentUserRepository.CurrentUserId, nextQueuePosition.Id, cancellationToken);
+        await userQueueService.SetQueuePositionAsync(nextQueuePosition.Id, cancellationToken);
         
-        position = await queueRepository.GetQueuePositionAsync(currentUserRepository.CurrentUserId, cancellationToken: cancellationToken);
+        position = await userQueueService.GetQueuePositionAsync(cancellationToken: cancellationToken);
 
         var nextFile = position.Current?.File;
         var nextSession = nextFile is null
