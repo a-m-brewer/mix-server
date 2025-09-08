@@ -30,6 +30,7 @@ public class SetCurrentSessionCommandHandler(
 
         var parentId = nextSession.NodeEntity.ParentId ?? nextSession.NodeEntity.RootChildId;
         await queueService.SetFolderAsync(parentId, cancellationToken);
+        await queueService.SetQueuePositionByFileIdAsync(nextSession.NodeIdEntity, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

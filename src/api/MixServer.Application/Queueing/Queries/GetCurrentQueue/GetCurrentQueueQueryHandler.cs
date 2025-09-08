@@ -21,7 +21,9 @@ public class GetCurrentQueueQueryHandler(
         var queue = await userQueueService.GetQueuePageAsync(page, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var currentPosition = await userQueueService.GetCurrentPositionAsync(cancellationToken);
         
-        return queueConverter.Convert(page, queue);
+        return queueConverter.Convert(page, queue, currentPosition);
     }
 }

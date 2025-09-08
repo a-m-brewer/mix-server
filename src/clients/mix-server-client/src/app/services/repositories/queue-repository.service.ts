@@ -38,6 +38,13 @@ export class QueueRepositoryService {
         }
       });
 
+    this._authenticationService.connected$
+      .subscribe(connected => {
+        if (connected) {
+          this.reloadCurrentPosition().then();
+        }
+      })
+
     this.initializeSignalR();
   }
 
@@ -74,9 +81,12 @@ export class QueueRepositoryService {
     return this._queuePositionSubject$.getValue().next;
   }
 
-  public isCurrentPosition(item: QueueItem): boolean {
-    const current = this._queuePositionSubject$.getValue().current;
-    return !!current && current.id === item.id;
+  public requestInitialLoad(): void {
+    if (this._initialLoadRequested$.value) {
+      return;
+    }
+
+    this._initialLoadRequested$.next(true);
   }
 
   public async loadPage(pageIndex: number): Promise<void> {
@@ -96,6 +106,20 @@ export class QueueRepositoryService {
     }
 
     this.nextQueue(result.result);
+  }
+
+  public async reloadCurrentPosition(): Promise<void> {
+    const result = await this._queueClient.request(
+      'QueuePosition',
+      c => c.getQueuePosition(),
+      'Failed to fetch queue position'
+    );
+
+    if (!result.result) {
+      return;
+    }
+
+    this.nextQueuePosition(result.result);
   }
 
   public addToQueue(file: FileExplorerFileNode): void {

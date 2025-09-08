@@ -14,9 +14,15 @@ public interface IQueueRepository : ITransientRepository
     Task SkipAsync(string userId, IDeviceState? deviceState = null, CancellationToken cancellationToken = default);
     Task PreviousAsync(string userId, IDeviceState? deviceState = null, CancellationToken cancellationToken = default);
     Task<QueueItemEntity> SetQueuePositionAsync(string userId, Guid queueItemId, CancellationToken cancellationToken);
+    Task SetQueuePositionByFileIdAsync(string userId, Guid fileId, CancellationToken cancellationToken);
     Task AddFileAsync(string userId, NodePath nodePath, CancellationToken cancellationToken);
     void RemoveQueueItems(string userId, List<Guid> ids);
     Task ClearQueueAsync(string userId, CancellationToken cancellationToken);
+
+    Task<QueueItemEntity?> GetCurrentPositionAsync(
+        string userId,
+        IDeviceState? deviceState = null,
+        CancellationToken cancellationToken = default);
     
     Task<QueuePosition> GetQueuePositionAsync(
         string userId,

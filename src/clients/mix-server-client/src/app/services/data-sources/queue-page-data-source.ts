@@ -10,6 +10,7 @@ export class QueuePageDataSource extends DataSource<QueueItem> {
 
   constructor(private _queueRepository: QueueRepositoryService) {
     super();
+    this._queueRepository.requestInitialLoad();
   }
 
   connect(collectionViewer: CollectionViewer): Observable<QueueItem[]> {

@@ -8,15 +8,20 @@ using MixServer.Domain.Queueing.Models;
 namespace MixServer.Application.Queueing.Converters;
 
 public interface IQueueDtoConverter :
-    IConverter<QueueItemEntity, QueueSnapshotItemDto>,
-    IConverter<Page, List<QueueItemEntity>, QueuePageDto>,
+    IConverter<QueueItemEntity, QueueItemEntity?, QueueSnapshotItemDto>,
+    IConverter<Page, List<QueueItemEntity>, QueueItemEntity?, QueuePageDto>,
     IConverter<QueuePosition, QueuePositionDto>;
 
 public class QueueDtoConverter(
     IFileExplorerEntityToResponseConverter fileNodeResponseConverter)
     : IQueueDtoConverter
 {
-    public QueueSnapshotItemDto Convert(QueueItemEntity value)
+    public QueueSnapshotItemDto Convert(QueueItemEntity value, QueueItemEntity? currentPosition)
+    {
+        return Convert(value, currentPosition != null && value.Id == currentPosition.Id);
+    }
+    
+    private QueueSnapshotItemDto Convert(QueueItemEntity value, bool isCurrentPosition)
     {
         return new QueueSnapshotItemDto
         {
@@ -24,16 +29,16 @@ public class QueueDtoConverter(
             Type = value.Type,
             File = fileNodeResponseConverter.Convert(value.File ??
                                                      throw new InvalidOperationException(
-                                                         "Queue item must have a file."))
+                                                         "Queue item must have a file.")),
+            IsCurrentPosition = isCurrentPosition
         };
     }
 
-    public QueuePageDto Convert(Page page, List<QueueItemEntity> value)
+    public QueuePageDto Convert(Page page, List<QueueItemEntity> value, QueueItemEntity? currentPosition)
     {
         return new QueuePageDto
         {
-            Items = value.Select(Convert)
-                .ToList(),
+            Items = value.Select(s => Convert(s, currentPosition)).ToList(),
             PageIndex = page.PageIndex
         };
     }
@@ -42,9 +47,9 @@ public class QueueDtoConverter(
     {
         return new QueuePositionDto
         {
-            CurrentQueuePosition = value.Current is null ? null : Convert(value.Current),
-            PreviousQueuePosition = value.Previous is null ? null : Convert(value.Previous),
-            NextQueuePosition = value.Next is null ? null : Convert(value.Next)
+            CurrentQueuePosition = value.Current is null ? null : Convert(value.Current, true),
+            PreviousQueuePosition = value.Previous is null ? null : Convert(value.Previous, false),
+            NextQueuePosition = value.Next is null ? null : Convert(value.Next, false)
         };
     }
 }

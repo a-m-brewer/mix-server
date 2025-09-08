@@ -3922,6 +3922,7 @@ export interface IQueuePageDto {
 export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
     id!: string;
     type!: QueueItemType;
+    isCurrentPosition!: boolean;
     file!: FileExplorerFileNodeResponse;
 
     constructor(data?: IQueueSnapshotItemDto) {
@@ -3940,6 +3941,7 @@ export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
         if (_data) {
             this.id = _data["id"];
             this.type = _data["type"];
+            this.isCurrentPosition = _data["isCurrentPosition"];
             this.file = _data["file"] ? FileExplorerFileNodeResponse.fromJS(_data["file"]) : new FileExplorerFileNodeResponse();
         }
     }
@@ -3955,6 +3957,7 @@ export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
         data["type"] = this.type;
+        data["isCurrentPosition"] = this.isCurrentPosition;
         data["file"] = this.file ? this.file.toJSON() : <any>undefined;
         return data;
     }
@@ -3963,6 +3966,7 @@ export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
 export interface IQueueSnapshotItemDto {
     id: string;
     type: QueueItemType;
+    isCurrentPosition: boolean;
     file: FileExplorerFileNodeResponse;
 }
 

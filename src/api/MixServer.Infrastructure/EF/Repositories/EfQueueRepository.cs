@@ -180,7 +180,7 @@ public class EfQueueRepository(
     {
         var queueItem = await context.QueueItems
             .Include(i => i.Queue)
-            .FirstOrDefaultAsync(f => f.Queue.UserId == userId && f.FileId == fileId, cancellationToken: cancellationToken);
+            .FirstOrDefaultAsync(f => f.Queue.UserId == userId && f.FileId == fileId && f.Type == QueueItemType.Folder, cancellationToken: cancellationToken);
 
         if (queueItem == null)
         {

@@ -22,7 +22,7 @@ export class RemoveFromQueueButtonComponent extends ContextMenuButton {
   public get disabled(): boolean {
     return !this.item ||
       this.item.itemType !== QueueItemType.User ||
-      this._queueRepository.isCurrentPosition(this.item);
+      this.item.isCurrentPosition;
   }
 
   public removeFromQueue(): void {
