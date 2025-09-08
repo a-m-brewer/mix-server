@@ -34,7 +34,6 @@ public class SignalRCallbackService(
     IPlaybackStateConverter playbackStateConverter,
     ITracklistDtoConverter tracklistDtoConverter,
     IHubContext<SignalRCallbackHub, ISignalRCallbackClient> context,
-    IConverter<QueueSnapshot, QueueSnapshotDto> queueSnapshotDtoConverter,
     IConverter<IUser, UserDto> userDtoConverter,
     ISignalRUserManager userManager)
     : ICallbackService
@@ -53,25 +52,6 @@ public class SignalRCallbackService(
             {
                 CurrentPlaybackSession = currentSessionDto
             });
-    }
-
-    public async Task CurrentQueueUpdated(string userId, QueueSnapshot queueSnapshot)
-    {
-        await CurrentQueueUpdated(userManager.GetConnectionsInGroups(new SignalRGroup(userId)), queueSnapshot);
-    }
-
-    public Task CurrentQueueUpdated(string userId, Guid deviceId, QueueSnapshot queueSnapshot)
-    {
-        return CurrentQueueUpdated(GetDeviceConnectionsExcept(userId, deviceId), queueSnapshot);
-    }
-    
-    private async Task CurrentQueueUpdated(IReadOnlyList<SignalRConnectionId> clients, QueueSnapshot queueSnapshot)
-    {
-        var dto = queueSnapshotDtoConverter.Convert(queueSnapshot);
-
-        await context.Clients
-            .Clients(clients)
-            .CurrentQueueUpdated(dto);
     }
 
     public async Task DeviceUpdated(Device device)

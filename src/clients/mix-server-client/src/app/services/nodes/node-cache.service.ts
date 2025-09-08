@@ -160,17 +160,6 @@ export class NodeCacheService {
   }
 
   getFileByNode$(initialNode: FileExplorerFileNode): Observable<FileExplorerFileNode> {
-    // const existingFolder = this._folders$.value[initialNode.parent.path.key];
-
-    // const nodeIndex = !!existingFolder
-    //   ? existingFolder.children.findIndex(n => n.path.isEqual(initialNode.path))
-    //   : -1;
-    //
-    // if (existingFolder && nodeIndex !== -1) {
-    //   const nextFolder = existingFolder.copy();
-    //   nextFolder.children.splice(nodeIndex, 1, initialNode);
-    // }
-
     return this._folders$
       .pipe(map(folders => {
         const folder = folders[initialNode.parent.path.key];
@@ -331,20 +320,6 @@ export class NodeCacheService {
 
     const nextFolders = {...existingFolders, ...updates};
     this._folders$.next(nextFolders);
-  }
-
-  private insertNodeIntoFolder(folder: FileExplorerFolder, node: FileExplorerNode, index: number, eventIndex: number): void {
-    if (index === -1) {
-      if (eventIndex !== -1 && eventIndex < folder.children.length) {
-        folder.children.splice(eventIndex, 0, node);
-      }
-      else {
-        folder.children.push(node);
-      }
-    }
-    else {
-      folder.children[index] = node;
-    }
   }
 
   private toFolderSortMode(sortMode: FileExplorerFolderSortMode): FolderSortMode {

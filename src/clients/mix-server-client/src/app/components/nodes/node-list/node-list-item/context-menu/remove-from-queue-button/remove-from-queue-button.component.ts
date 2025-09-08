@@ -1,8 +1,8 @@
 import {Component, forwardRef, Input, OnInit} from '@angular/core';
 import {ContextMenuButton} from "../context-menu-button";
 import {QueueItem} from "../../../../../../services/repositories/models/queue-item";
-import {QueueSnapshotItemType} from "../../../../../../generated-clients/mix-server-clients";
 import {QueueRepositoryService} from "../../../../../../services/repositories/queue-repository.service";
+import {QueueItemType} from "../../../../../../generated-clients/mix-server-clients";
 
 @Component({
   selector: 'app-remove-from-queue-button',
@@ -21,8 +21,8 @@ export class RemoveFromQueueButtonComponent extends ContextMenuButton {
 
   public get disabled(): boolean {
     return !this.item ||
-      this.item.itemType !== QueueSnapshotItemType.User ||
-      this.item.isCurrentQueuePosition;
+      this.item.itemType !== QueueItemType.User ||
+      this._queueRepository.isCurrentPosition(this.item);
   }
 
   public removeFromQueue(): void {

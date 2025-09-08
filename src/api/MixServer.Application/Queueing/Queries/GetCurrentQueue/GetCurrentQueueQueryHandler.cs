@@ -12,9 +12,9 @@ public class GetCurrentQueueQueryHandler(
     IUserQueueService userQueueService,
     IPageConverter pageConverter,
     IUnitOfWork unitOfWork)
-    : IQueryHandler<GetCurrentQueueRequest, QueueSnapshotDto>
+    : IQueryHandler<GetCurrentQueueRequest, QueuePageDto>
 {
-    public async Task<QueueSnapshotDto> HandleAsync(GetCurrentQueueRequest request, CancellationToken cancellationToken = default)
+    public async Task<QueuePageDto> HandleAsync(GetCurrentQueueRequest request, CancellationToken cancellationToken = default)
     {
         var page = pageConverter.Convert(request.Page);
 
@@ -22,6 +22,6 @@ public class GetCurrentQueueQueryHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
-        return queueConverter.Convert(queue);
+        return queueConverter.Convert(page, queue);
     }
 }

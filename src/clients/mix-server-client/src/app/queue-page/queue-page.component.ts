@@ -2,7 +2,6 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {QueueRepositoryService} from "../services/repositories/queue-repository.service";
 import {Subject, takeUntil} from "rxjs";
 import {Queue} from "../services/repositories/models/queue";
-import {QueueSnapshotItemType} from "../generated-clients/mix-server-clients";
 import {EditQueueFormModel} from "../services/repositories/models/edit-queue-form-model";
 import {QueueEditFormRepositoryService} from "../services/repositories/queue-edit-form-repository.service";
 import {
@@ -16,6 +15,9 @@ import {
   NodeListItemSelectedEvent
 } from "../components/nodes/node-list/node-list-item/interfaces/node-list-item-selected-event";
 import {SessionService} from "../services/sessions/session.service";
+import {QueueItemType} from "../generated-clients/mix-server-clients";
+import {QueueItem} from "../services/repositories/models/queue-item";
+import {QueuePageDataSource} from "../services/data-sources/queue-page-data-source";
 
 @Component({
   selector: 'app-queue-page',
@@ -25,18 +27,20 @@ import {SessionService} from "../services/sessions/session.service";
 export class QueuePageComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();
 
-  protected readonly UserItemType = QueueSnapshotItemType.User;
+  protected readonly UserItemType = QueueItemType.User;
 
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
-  public queue: Queue = new Queue(null, null, null, []);
   public editQueueForm: EditQueueFormModel = new EditQueueFormModel();
   public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
+
+  public queue: QueuePageDataSource;
 
   constructor(private _audioPlayerStateService: AudioPlayerStateService,
               private _loadingRepository: LoadingRepositoryService,
               private _sessionService: SessionService,
               private _queueRepository: QueueRepositoryService,
               private _queueEditFormRepository: QueueEditFormRepositoryService) {
+    this.queue = new QueuePageDataSource(_queueRepository);
   }
 
   public ngOnInit(): void {
@@ -44,12 +48,6 @@ export class QueuePageComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(state => {
         this.audioPlayerState = state;
-      });
-
-    this._queueRepository.queue$()
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(queue => {
-        this.queue = queue;
       });
 
     this._queueEditFormRepository.editForm$
@@ -80,5 +78,5 @@ export class QueuePageComponent implements OnInit, OnDestroy {
     })
   }
 
-  protected readonly QueueSnapshotItemType = QueueSnapshotItemType;
+  protected readonly QueueItemType = QueueItemType;
 }

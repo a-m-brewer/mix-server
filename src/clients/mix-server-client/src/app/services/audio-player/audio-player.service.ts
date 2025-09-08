@@ -166,21 +166,19 @@ export class AudioPlayerService {
 
   public get previousItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._queueRepository.queue$()))
-      .pipe(map(([disabled, queue]) => {
+      .pipe(combineLatestWith(this._queueRepository.previousQueueItem$()))
+      .pipe(map(([disabled, previous]) => {
         return disabled ||
-          !queue ||
-          !queue.previousQueuePosition;
+          !previous
       }));
   }
 
   public get nextItemDisabled$(): Observable<boolean> {
     return this.audioControlsDisabled$
-      .pipe(combineLatestWith(this._queueRepository.queue$()))
-      .pipe(map(([disabled, queue]) => {
+      .pipe(combineLatestWith(this._queueRepository.nextQueueItem$()))
+      .pipe(map(([disabled, next]) => {
         return disabled ||
-          !queue ||
-          !queue.nextQueuePosition;
+          !next
       }));
   }
 

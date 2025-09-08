@@ -1,5 +1,6 @@
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Application.Queueing.Responses;
+using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Interfaces;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Models;
@@ -8,7 +9,7 @@ namespace MixServer.Application.Queueing.Converters;
 
 public interface IQueueDtoConverter :
     IConverter<QueueItemEntity, QueueSnapshotItemDto>,
-    IConverter<List<QueueItemEntity>, QueueSnapshotDto>,
+    IConverter<Page, List<QueueItemEntity>, QueuePageDto>,
     IConverter<QueuePosition, QueuePositionDto>;
 
 public class QueueDtoConverter(
@@ -27,11 +28,13 @@ public class QueueDtoConverter(
         };
     }
 
-    public QueueSnapshotDto Convert(List<QueueItemEntity> value)
+    public QueuePageDto Convert(Page page, List<QueueItemEntity> value)
     {
-        return new QueueSnapshotDto
+        return new QueuePageDto
         {
-            Items = value.Select(Convert).ToList()
+            Items = value.Select(Convert)
+                .ToList(),
+            PageIndex = page.PageIndex
         };
     }
 

@@ -1,6 +1,6 @@
-<div>
+<cdk-virtual-scroll-viewport [itemSize]="queue.pageSize" class="queue-viewport">
   <app-node-list-item
-    *ngFor="let queueItem of queue.items; last as last"
+    *cdkVirtualFor="let queueItem of queue"
     [key]="queueItem.id"
     [nodeType]="queueItem.type"
     [defaultIcon]="queueItem.mdIcon"
@@ -8,8 +8,7 @@
     [audioPlayerState]="audioPlayerState"
     [disabled]="queueItem.disabled"
     [editing]="editQueueForm.editing"
-    [selectable]="queueItem.itemType === QueueSnapshotItemType.User && !queueItem.isCurrentQueuePosition"
-    [last]="last"
+    [selectable]="queueItem.itemType === QueueItemType.User"
     (contentClick)="onNodeClick($event)"
     (selectedChange)="onNodeSelectedChanged($event)"
   >
@@ -42,4 +41,4 @@
       [folder]="queueItem.file.parent"
     />
   </app-node-list-item>
-</div>
+</cdk-virtual-scroll-viewport>

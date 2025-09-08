@@ -25,7 +25,7 @@ export class HistoryRepositoryService {
         if (connected && initialLoadRequested) {
           this.loadPage(0).then();
         }
-      })
+      });
   }
 
   public pageSize = 25;

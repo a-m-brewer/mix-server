@@ -670,10 +670,11 @@ export class NodeManagementClient implements INodeManagementClient {
 }
 
 export interface IQueueClient {
-    queue(): Observable<QueueSnapshotDto>;
-    addToQueue(command: AddToQueueCommand): Observable<QueueSnapshotDto>;
-    removeFromQueue(queueItemId: string): Observable<QueueSnapshotDto>;
-    removeFromQueue2(command: RemoveFromQueueCommand): Observable<QueueSnapshotDto>;
+    queue(page_PageIndex?: number | undefined, page_PageSize?: number | undefined): Observable<QueuePageDto>;
+    addToQueue(command: AddToQueueCommand): Observable<QueuePositionDto>;
+    removeFromQueue(queueItemId: string): Observable<QueuePositionDto>;
+    removeFromQueue2(command: RemoveFromQueueCommand): Observable<QueuePositionDto>;
+    getQueuePosition(): Observable<QueuePositionDto>;
     setQueuePosition(command: SetQueuePositionCommand): Observable<CurrentSessionUpdatedDto>;
 }
 
@@ -690,8 +691,16 @@ export class QueueClient implements IQueueClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    queue(): Observable<QueueSnapshotDto> {
-        let url_ = this.baseUrl + "/api/queue";
+    queue(page_PageIndex?: number | undefined, page_PageSize?: number | undefined): Observable<QueuePageDto> {
+        let url_ = this.baseUrl + "/api/queue?";
+        if (page_PageIndex === null)
+            throw new Error("The parameter 'page_PageIndex' cannot be null.");
+        else if (page_PageIndex !== undefined)
+            url_ += "Page.PageIndex=" + encodeURIComponent("" + page_PageIndex) + "&";
+        if (page_PageSize === null)
+            throw new Error("The parameter 'page_PageSize' cannot be null.");
+        else if (page_PageSize !== undefined)
+            url_ += "Page.PageSize=" + encodeURIComponent("" + page_PageSize) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -709,14 +718,14 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processQueue(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<QueueSnapshotDto>;
+                    return _observableThrow(e) as any as Observable<QueuePageDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<QueueSnapshotDto>;
+                return _observableThrow(response_) as any as Observable<QueuePageDto>;
         }));
     }
 
-    protected processQueue(response: HttpResponseBase): Observable<QueueSnapshotDto> {
+    protected processQueue(response: HttpResponseBase): Observable<QueuePageDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -727,7 +736,7 @@ export class QueueClient implements IQueueClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = QueueSnapshotDto.fromJS(resultData200);
+            result200 = QueuePageDto.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status === 404) {
@@ -752,7 +761,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    addToQueue(command: AddToQueueCommand): Observable<QueueSnapshotDto> {
+    addToQueue(command: AddToQueueCommand): Observable<QueuePositionDto> {
         let url_ = this.baseUrl + "/api/queue";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -775,14 +784,14 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processAddToQueue(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<QueueSnapshotDto>;
+                    return _observableThrow(e) as any as Observable<QueuePositionDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<QueueSnapshotDto>;
+                return _observableThrow(response_) as any as Observable<QueuePositionDto>;
         }));
     }
 
-    protected processAddToQueue(response: HttpResponseBase): Observable<QueueSnapshotDto> {
+    protected processAddToQueue(response: HttpResponseBase): Observable<QueuePositionDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -793,7 +802,7 @@ export class QueueClient implements IQueueClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = QueueSnapshotDto.fromJS(resultData200);
+            result200 = QueuePositionDto.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status === 404) {
@@ -818,7 +827,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    removeFromQueue(queueItemId: string): Observable<QueueSnapshotDto> {
+    removeFromQueue(queueItemId: string): Observable<QueuePositionDto> {
         let url_ = this.baseUrl + "/api/queue/item/{queueItemId}";
         if (queueItemId === undefined || queueItemId === null)
             throw new Error("The parameter 'queueItemId' must be defined.");
@@ -840,14 +849,14 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processRemoveFromQueue(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<QueueSnapshotDto>;
+                    return _observableThrow(e) as any as Observable<QueuePositionDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<QueueSnapshotDto>;
+                return _observableThrow(response_) as any as Observable<QueuePositionDto>;
         }));
     }
 
-    protected processRemoveFromQueue(response: HttpResponseBase): Observable<QueueSnapshotDto> {
+    protected processRemoveFromQueue(response: HttpResponseBase): Observable<QueuePositionDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -858,7 +867,7 @@ export class QueueClient implements IQueueClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = QueueSnapshotDto.fromJS(resultData200);
+            result200 = QueuePositionDto.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status === 404) {
@@ -883,7 +892,7 @@ export class QueueClient implements IQueueClient {
         return _observableOf(null as any);
     }
 
-    removeFromQueue2(command: RemoveFromQueueCommand): Observable<QueueSnapshotDto> {
+    removeFromQueue2(command: RemoveFromQueueCommand): Observable<QueuePositionDto> {
         let url_ = this.baseUrl + "/api/queue/item";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -906,14 +915,14 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processRemoveFromQueue2(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<QueueSnapshotDto>;
+                    return _observableThrow(e) as any as Observable<QueuePositionDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<QueueSnapshotDto>;
+                return _observableThrow(response_) as any as Observable<QueuePositionDto>;
         }));
     }
 
-    protected processRemoveFromQueue2(response: HttpResponseBase): Observable<QueueSnapshotDto> {
+    protected processRemoveFromQueue2(response: HttpResponseBase): Observable<QueuePositionDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -924,7 +933,69 @@ export class QueueClient implements IQueueClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = QueueSnapshotDto.fromJS(resultData200);
+            result200 = QueuePositionDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ValidationProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getQueuePosition(): Observable<QueuePositionDto> {
+        let url_ = this.baseUrl + "/api/queue/position";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetQueuePosition(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetQueuePosition(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<QueuePositionDto>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<QueuePositionDto>;
+        }));
+    }
+
+    protected processGetQueuePosition(response: HttpResponseBase): Observable<QueuePositionDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = QueuePositionDto.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status === 404) {
@@ -3797,13 +3868,11 @@ export interface IDeleteNodeCommand {
     nodePath: NodePathRequestDto;
 }
 
-export class QueueSnapshotDto implements IQueueSnapshotDto {
-    currentQueuePosition?: string | undefined;
-    previousQueuePosition?: string | undefined;
-    nextQueuePosition?: string | undefined;
+export class QueuePageDto implements IQueuePageDto {
+    pageIndex!: number;
     items!: QueueSnapshotItemDto[];
 
-    constructor(data?: IQueueSnapshotDto) {
+    constructor(data?: IQueuePageDto) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3817,9 +3886,7 @@ export class QueueSnapshotDto implements IQueueSnapshotDto {
 
     init(_data?: any) {
         if (_data) {
-            this.currentQueuePosition = _data["currentQueuePosition"];
-            this.previousQueuePosition = _data["previousQueuePosition"];
-            this.nextQueuePosition = _data["nextQueuePosition"];
+            this.pageIndex = _data["pageIndex"];
             if (Array.isArray(_data["items"])) {
                 this.items = [] as any;
                 for (let item of _data["items"])
@@ -3828,18 +3895,16 @@ export class QueueSnapshotDto implements IQueueSnapshotDto {
         }
     }
 
-    static fromJS(data: any): QueueSnapshotDto {
+    static fromJS(data: any): QueuePageDto {
         data = typeof data === 'object' ? data : {};
-        let result = new QueueSnapshotDto();
+        let result = new QueuePageDto();
         result.init(data);
         return result;
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["currentQueuePosition"] = this.currentQueuePosition;
-        data["previousQueuePosition"] = this.previousQueuePosition;
-        data["nextQueuePosition"] = this.nextQueuePosition;
+        data["pageIndex"] = this.pageIndex;
         if (Array.isArray(this.items)) {
             data["items"] = [];
             for (let item of this.items)
@@ -3849,16 +3914,14 @@ export class QueueSnapshotDto implements IQueueSnapshotDto {
     }
 }
 
-export interface IQueueSnapshotDto {
-    currentQueuePosition?: string | undefined;
-    previousQueuePosition?: string | undefined;
-    nextQueuePosition?: string | undefined;
+export interface IQueuePageDto {
+    pageIndex: number;
     items: QueueSnapshotItemDto[];
 }
 
 export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
     id!: string;
-    type!: QueueSnapshotItemType;
+    type!: QueueItemType;
     file!: FileExplorerFileNodeResponse;
 
     constructor(data?: IQueueSnapshotItemDto) {
@@ -3899,13 +3962,57 @@ export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
 
 export interface IQueueSnapshotItemDto {
     id: string;
-    type: QueueSnapshotItemType;
+    type: QueueItemType;
     file: FileExplorerFileNodeResponse;
 }
 
-export enum QueueSnapshotItemType {
+export enum QueueItemType {
     Folder = "Folder",
     User = "User",
+}
+
+export class QueuePositionDto implements IQueuePositionDto {
+    currentQueuePosition?: QueueSnapshotItemDto | undefined;
+    previousQueuePosition?: QueueSnapshotItemDto | undefined;
+    nextQueuePosition?: QueueSnapshotItemDto | undefined;
+
+    constructor(data?: IQueuePositionDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.currentQueuePosition = _data["currentQueuePosition"] ? QueueSnapshotItemDto.fromJS(_data["currentQueuePosition"]) : <any>undefined;
+            this.previousQueuePosition = _data["previousQueuePosition"] ? QueueSnapshotItemDto.fromJS(_data["previousQueuePosition"]) : <any>undefined;
+            this.nextQueuePosition = _data["nextQueuePosition"] ? QueueSnapshotItemDto.fromJS(_data["nextQueuePosition"]) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): QueuePositionDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new QueuePositionDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["currentQueuePosition"] = this.currentQueuePosition ? this.currentQueuePosition.toJSON() : <any>undefined;
+        data["previousQueuePosition"] = this.previousQueuePosition ? this.previousQueuePosition.toJSON() : <any>undefined;
+        data["nextQueuePosition"] = this.nextQueuePosition ? this.nextQueuePosition.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface IQueuePositionDto {
+    currentQueuePosition?: QueueSnapshotItemDto | undefined;
+    previousQueuePosition?: QueueSnapshotItemDto | undefined;
+    nextQueuePosition?: QueueSnapshotItemDto | undefined;
 }
 
 export class AddToQueueCommand implements IAddToQueueCommand {
@@ -3996,7 +4103,7 @@ export interface IRemoveFromQueueCommand {
 
 export class CurrentSessionUpdatedDto implements ICurrentSessionUpdatedDto {
     session?: PlaybackSessionDto | undefined;
-    queue!: QueueSnapshotDto;
+    queuePosition!: QueuePositionDto;
 
     constructor(data?: ICurrentSessionUpdatedDto) {
         if (data) {
@@ -4006,14 +4113,14 @@ export class CurrentSessionUpdatedDto implements ICurrentSessionUpdatedDto {
             }
         }
         if (!data) {
-            this.queue = new QueueSnapshotDto();
+            this.queuePosition = new QueuePositionDto();
         }
     }
 
     init(_data?: any) {
         if (_data) {
             this.session = _data["session"] ? PlaybackSessionDto.fromJS(_data["session"]) : <any>undefined;
-            this.queue = _data["queue"] ? QueueSnapshotDto.fromJS(_data["queue"]) : new QueueSnapshotDto();
+            this.queuePosition = _data["queuePosition"] ? QueuePositionDto.fromJS(_data["queuePosition"]) : new QueuePositionDto();
         }
     }
 
@@ -4027,14 +4134,14 @@ export class CurrentSessionUpdatedDto implements ICurrentSessionUpdatedDto {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["session"] = this.session ? this.session.toJSON() : <any>undefined;
-        data["queue"] = this.queue ? this.queue.toJSON() : <any>undefined;
+        data["queuePosition"] = this.queuePosition ? this.queuePosition.toJSON() : <any>undefined;
         return data;
     }
 }
 
 export interface ICurrentSessionUpdatedDto {
     session?: PlaybackSessionDto | undefined;
-    queue: QueueSnapshotDto;
+    queuePosition: QueuePositionDto;
 }
 
 export class PlaybackSessionDto implements IPlaybackSessionDto {

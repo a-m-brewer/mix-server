@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MixServer.Infrastructure.EF;
 
@@ -10,9 +11,11 @@ using MixServer.Infrastructure.EF;
 namespace MixServer.Infrastructure.Migrations
 {
     [DbContext(typeof(MixServerDbContext))]
-    partial class MixServerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250908110728_Queueing")]
+    partial class Queueing
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.1");

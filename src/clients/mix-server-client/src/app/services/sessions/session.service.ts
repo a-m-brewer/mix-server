@@ -70,9 +70,9 @@ export class SessionService {
 
     private next(dto: CurrentSessionUpdatedDto): void {
         const session = dto.session ? this._playbackSessionConverter.fromDto(dto.session) : null;
-        const queue = this._queueConverter.fromDto(dto.queue);
+        const queue = this._queueConverter.toQueuePosition(dto.queuePosition);
 
         this._playbackSessionRepository.currentSession = session;
-        this._queueRepository.setNextQueue(queue);
+        this._queueRepository.setNextQueuePosition(queue);
     }
 }

@@ -34,7 +34,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IFolderPersistenceService, FolderPersistenceService>();
         services.AddTransient<ITracklistPersistenceService, TracklistPersistenceService>();
         services.AddSingleton<IFileWriteLockService, FileWriteLockService>();
-        services.AddTransient<IUserQueueService, IUserQueueService>();
+        services.AddTransient<IUserQueueService, UserQueueService>();
 
         services.AddTransient<IRootChildFolderService, RootChildFolderService>();
 
