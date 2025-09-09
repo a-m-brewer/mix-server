@@ -68,6 +68,10 @@ export class QueuePageComponent implements OnInit, OnDestroy {
     this._unsubscribe$.complete();
   }
 
+  trackById(_index: number, item: QueueItem): string {
+    return item.id;
+  }
+
   public onNodeClick(event: NodeListItemChangedEvent): void {
     this._sessionService.setQueuePosition(event.key);
   }

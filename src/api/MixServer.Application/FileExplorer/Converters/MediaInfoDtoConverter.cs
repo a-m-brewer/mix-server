@@ -3,7 +3,6 @@ using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models.Metadata;
 using MixServer.Domain.Interfaces;
-using MixServer.Domain.Tracklists.Converters;
 
 namespace MixServer.Application.FileExplorer.Converters;
 
@@ -11,8 +10,7 @@ public interface IMediaInfoDtoConverter :
     IConverter<MediaInfo, MediaInfoDto>,
     IConverter<IFileMetadata, MediaInfoDto?>;
 
-public class MediaInfoDtoConverter(INodePathDtoConverter nodePathDtoConverter,
-    ITracklistDtoConverter tracklistDtoConverter) : IMediaInfoDtoConverter
+public class MediaInfoDtoConverter(INodePathDtoConverter nodePathDtoConverter) : IMediaInfoDtoConverter
 {
     public MediaInfoDto Convert(MediaInfo value)
     {

@@ -1,6 +1,6 @@
-<cdk-virtual-scroll-viewport [itemSize]="queue.pageSize" class="queue-viewport">
+<cdk-virtual-scroll-viewport [itemSize]="56" class="queue-viewport">
   <app-node-list-item
-    *cdkVirtualFor="let queueItem of queue"
+    *cdkVirtualFor="let queueItem of queue; trackBy: trackById"
     [key]="queueItem.id"
     [nodeType]="queueItem.type"
     [defaultIcon]="queueItem.mdIcon"

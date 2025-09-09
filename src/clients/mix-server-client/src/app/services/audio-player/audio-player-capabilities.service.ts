@@ -63,7 +63,7 @@ export class AudioPlayerCapabilitiesService {
 
     this._queueRepository.queue$()
       .subscribe(queue => {
-        const mimeTypes = [...new Set(queue.flatChildren.map(m => m.file.metadata.mimeType))]
+        const mimeTypes = [...new Set(queue.items.map(m => m.file.metadata.mimeType))]
         this.updateAudioCapabilities(mimeTypes);
       });
 

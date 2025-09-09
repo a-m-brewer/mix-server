@@ -9,7 +9,7 @@ namespace MixServer.Application.Queueing.Converters;
 
 public interface IQueueDtoConverter :
     IConverter<QueueItemEntity, QueueItemEntity?, QueueSnapshotItemDto>,
-    IConverter<Page, List<QueueItemEntity>, QueueItemEntity?, QueuePageDto>,
+    IConverter<List<QueueItemEntity>, QueueItemEntity?, QueueRangeDto>,
     IConverter<QueuePosition, QueuePositionDto>;
 
 public class QueueDtoConverter(
@@ -30,16 +30,16 @@ public class QueueDtoConverter(
             File = fileNodeResponseConverter.Convert(value.File ??
                                                      throw new InvalidOperationException(
                                                          "Queue item must have a file.")),
-            IsCurrentPosition = isCurrentPosition
+            IsCurrentPosition = isCurrentPosition,
+            Rank = value.Rank
         };
     }
 
-    public QueuePageDto Convert(Page page, List<QueueItemEntity> value, QueueItemEntity? currentPosition)
+    public QueueRangeDto Convert(List<QueueItemEntity> value, QueueItemEntity? currentPosition)
     {
-        return new QueuePageDto
+        return new QueueRangeDto
         {
-            Items = value.Select(s => Convert(s, currentPosition)).ToList(),
-            PageIndex = page.PageIndex
+            Items = value.Select(s => Convert(s, currentPosition)).ToList()
         };
     }
 

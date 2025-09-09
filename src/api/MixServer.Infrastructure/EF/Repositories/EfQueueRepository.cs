@@ -12,6 +12,7 @@ using MixServer.Domain.Streams.Enums;
 using MixServer.Domain.Users.Models;
 using MixServer.Infrastructure.EF.Entities;
 using MixServer.Infrastructure.EF.Extensions;
+using Range = MixServer.Domain.FileExplorer.Models.Range;
 
 namespace MixServer.Infrastructure.EF.Repositories;
 
@@ -247,6 +248,16 @@ public class EfQueueRepository(
             .OrderBy(o => o.Rank)
             .Skip(page.PageIndex * page.PageSize)
             .Take(page.PageSize)
+            .ToListAsync(cancellationToken: cancellationToken);
+    }
+
+    public Task<List<QueueItemEntity>> GetQueueRangeAsync(string userId, Range range, CancellationToken cancellationToken)
+    {
+        return QueueItemEntityQuery
+            .Where(w => w.Queue.UserId == userId)
+            .OrderBy(o => o.Rank)
+            .Skip(range.Start)
+            .Take(range.End)
             .ToListAsync(cancellationToken: cancellationToken);
     }
 

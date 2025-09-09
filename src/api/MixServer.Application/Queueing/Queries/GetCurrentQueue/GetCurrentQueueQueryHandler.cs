@@ -10,20 +10,20 @@ namespace MixServer.Application.Queueing.Queries.GetCurrentQueue;
 public class GetCurrentQueueQueryHandler(
     IQueueDtoConverter queueConverter,
     IUserQueueService userQueueService,
-    IPageConverter pageConverter,
+    IRangeConverter rangeConverter,
     IUnitOfWork unitOfWork)
-    : IQueryHandler<GetCurrentQueueRequest, QueuePageDto>
+    : IQueryHandler<GetCurrentQueueRequest, QueueRangeDto>
 {
-    public async Task<QueuePageDto> HandleAsync(GetCurrentQueueRequest request, CancellationToken cancellationToken = default)
+    public async Task<QueueRangeDto> HandleAsync(GetCurrentQueueRequest request, CancellationToken cancellationToken = default)
     {
-        var page = pageConverter.Convert(request.Page);
-
-        var queue = await userQueueService.GetQueuePageAsync(page, cancellationToken);
+        var range = rangeConverter.Convert(request.Range);
+        
+        var queue = await userQueueService.GetQueueRangeAsync(range, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var currentPosition = await userQueueService.GetCurrentPositionAsync(cancellationToken);
         
-        return queueConverter.Convert(page, queue, currentPosition);
+        return queueConverter.Convert(queue, currentPosition);
     }
 }

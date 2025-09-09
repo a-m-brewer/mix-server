@@ -6,6 +6,7 @@ import {PagedDataItem} from "../../data-sources/paged-data";
 export class QueueItem implements PagedDataItem<QueueItem> {
   constructor(public id: string,
               public itemType: QueueItemType,
+              public rank: string,
               public isCurrentPosition: boolean,
               initialFile: FileExplorerFileNode) {
     this.file = initialFile;
@@ -30,6 +31,6 @@ export class QueueItem implements PagedDataItem<QueueItem> {
   }
 
   public copy(): QueueItem {
-    return new QueueItem(this.id, this.itemType, this.isCurrentPosition, this.file)
+    return new QueueItem(this.id, this.itemType, this.rank, this.isCurrentPosition, this.file)
   }
 }

@@ -670,7 +670,7 @@ export class NodeManagementClient implements INodeManagementClient {
 }
 
 export interface IQueueClient {
-    queue(page_PageIndex?: number | undefined, page_PageSize?: number | undefined): Observable<QueuePageDto>;
+    queue(range_Start?: number | undefined, range_End?: number | undefined): Observable<QueueRangeDto>;
     addToQueue(command: AddToQueueCommand): Observable<QueuePositionDto>;
     removeFromQueue(queueItemId: string): Observable<QueuePositionDto>;
     removeFromQueue2(command: RemoveFromQueueCommand): Observable<QueuePositionDto>;
@@ -691,16 +691,16 @@ export class QueueClient implements IQueueClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    queue(page_PageIndex?: number | undefined, page_PageSize?: number | undefined): Observable<QueuePageDto> {
+    queue(range_Start?: number | undefined, range_End?: number | undefined): Observable<QueueRangeDto> {
         let url_ = this.baseUrl + "/api/queue?";
-        if (page_PageIndex === null)
-            throw new Error("The parameter 'page_PageIndex' cannot be null.");
-        else if (page_PageIndex !== undefined)
-            url_ += "Page.PageIndex=" + encodeURIComponent("" + page_PageIndex) + "&";
-        if (page_PageSize === null)
-            throw new Error("The parameter 'page_PageSize' cannot be null.");
-        else if (page_PageSize !== undefined)
-            url_ += "Page.PageSize=" + encodeURIComponent("" + page_PageSize) + "&";
+        if (range_Start === null)
+            throw new Error("The parameter 'range_Start' cannot be null.");
+        else if (range_Start !== undefined)
+            url_ += "Range.Start=" + encodeURIComponent("" + range_Start) + "&";
+        if (range_End === null)
+            throw new Error("The parameter 'range_End' cannot be null.");
+        else if (range_End !== undefined)
+            url_ += "Range.End=" + encodeURIComponent("" + range_End) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -718,14 +718,14 @@ export class QueueClient implements IQueueClient {
                 try {
                     return this.processQueue(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<QueuePageDto>;
+                    return _observableThrow(e) as any as Observable<QueueRangeDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<QueuePageDto>;
+                return _observableThrow(response_) as any as Observable<QueueRangeDto>;
         }));
     }
 
-    protected processQueue(response: HttpResponseBase): Observable<QueuePageDto> {
+    protected processQueue(response: HttpResponseBase): Observable<QueueRangeDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -736,7 +736,7 @@ export class QueueClient implements IQueueClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = QueuePageDto.fromJS(resultData200);
+            result200 = QueueRangeDto.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status === 404) {
@@ -3868,11 +3868,10 @@ export interface IDeleteNodeCommand {
     nodePath: NodePathRequestDto;
 }
 
-export class QueuePageDto implements IQueuePageDto {
-    pageIndex!: number;
+export class QueueRangeDto implements IQueueRangeDto {
     items!: QueueSnapshotItemDto[];
 
-    constructor(data?: IQueuePageDto) {
+    constructor(data?: IQueueRangeDto) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3886,7 +3885,6 @@ export class QueuePageDto implements IQueuePageDto {
 
     init(_data?: any) {
         if (_data) {
-            this.pageIndex = _data["pageIndex"];
             if (Array.isArray(_data["items"])) {
                 this.items = [] as any;
                 for (let item of _data["items"])
@@ -3895,16 +3893,15 @@ export class QueuePageDto implements IQueuePageDto {
         }
     }
 
-    static fromJS(data: any): QueuePageDto {
+    static fromJS(data: any): QueueRangeDto {
         data = typeof data === 'object' ? data : {};
-        let result = new QueuePageDto();
+        let result = new QueueRangeDto();
         result.init(data);
         return result;
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["pageIndex"] = this.pageIndex;
         if (Array.isArray(this.items)) {
             data["items"] = [];
             for (let item of this.items)
@@ -3914,14 +3911,14 @@ export class QueuePageDto implements IQueuePageDto {
     }
 }
 
-export interface IQueuePageDto {
-    pageIndex: number;
+export interface IQueueRangeDto {
     items: QueueSnapshotItemDto[];
 }
 
 export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
     id!: string;
     type!: QueueItemType;
+    rank!: string;
     isCurrentPosition!: boolean;
     file!: FileExplorerFileNodeResponse;
 
@@ -3941,6 +3938,7 @@ export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
         if (_data) {
             this.id = _data["id"];
             this.type = _data["type"];
+            this.rank = _data["rank"];
             this.isCurrentPosition = _data["isCurrentPosition"];
             this.file = _data["file"] ? FileExplorerFileNodeResponse.fromJS(_data["file"]) : new FileExplorerFileNodeResponse();
         }
@@ -3957,6 +3955,7 @@ export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
         data["type"] = this.type;
+        data["rank"] = this.rank;
         data["isCurrentPosition"] = this.isCurrentPosition;
         data["file"] = this.file ? this.file.toJSON() : <any>undefined;
         return data;
@@ -3966,6 +3965,7 @@ export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {
 export interface IQueueSnapshotItemDto {
     id: string;
     type: QueueItemType;
+    rank: string;
     isCurrentPosition: boolean;
     file: FileExplorerFileNodeResponse;
 }
@@ -6023,4 +6023,7 @@ function blobToText(blob: any): Observable<string> {
             reader.readAsText(blob);
         }
     });
+}
+
+export class QueuePageDto {
 }

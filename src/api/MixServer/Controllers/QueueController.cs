@@ -14,14 +14,14 @@ namespace MixServer.Controllers;
 [Route("api/[controller]")]
 public class QueueController(
     ICommandHandler<AddToQueueCommand, QueuePositionDto> addToQueueCommandHandler,
-    IQueryHandler<GetCurrentQueueRequest, QueuePageDto> getCurrentQueueQueryHandler,
+    IQueryHandler<GetCurrentQueueRequest, QueueRangeDto> getCurrentQueueQueryHandler,
     ICommandHandler<RemoveFromQueueCommand, QueuePositionDto> removeFromQueueCommandHandler,
     IQueryHandler<QueuePositionDto> getQueuePositionQueryHandler,
     ICommandHandler<SetQueuePositionCommand, CurrentSessionUpdatedDto> setQueuePositionCommandHandler)
     : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType(typeof(QueuePageDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(QueueRangeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Queue([FromQuery] GetCurrentQueueRequest request, CancellationToken cancellationToken)

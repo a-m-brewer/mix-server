@@ -6,7 +6,6 @@ using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
-using MixServer.Domain.Persistence;
 
 namespace MixServer.Domain.FileExplorer.Services;
 
@@ -52,8 +51,7 @@ public class FolderPersistenceService(
     ILogger<FolderPersistenceService> logger,
     IRemoveMediaMetadataChannel removeMediaMetadataChannel,
     IRootFileExplorerFolder rootFolder,
-    IUpdateMediaMetadataChannel updateMediaMetadataChannel,
-    IUnitOfWork unitOfWork) : IFolderPersistenceService
+    IUpdateMediaMetadataChannel updateMediaMetadataChannel) : IFolderPersistenceService
 {
 
     public async Task<IFileExplorerFolderEntity> GetOrAddFolderAsync(NodePath nodePath,

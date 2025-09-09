@@ -9,6 +9,8 @@ public class QueueSnapshotItemDto
     
     public required QueueItemType Type { get; init; }
     
+    public required string Rank { get; init; }
+    
     public required bool IsCurrentPosition { get; init; }
     
     public required FileExplorerFileNodeResponse File { get; init; }

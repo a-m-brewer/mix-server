@@ -4,5 +4,5 @@ namespace MixServer.Application.Queueing.Queries.GetCurrentQueue;
 
 public class GetCurrentQueueRequest
 {
-    public required PageDto Page { get; init; }
+    public required RangeDto Range { get; init; }
 }

@@ -4,6 +4,7 @@ using MixServer.Domain.Persistence;
 using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Queueing.Models;
 using MixServer.Domain.Users.Models;
+using Range = MixServer.Domain.FileExplorer.Models.Range;
 
 namespace MixServer.Domain.Queueing.Repositories;
 
@@ -33,6 +34,11 @@ public interface IQueueRepository : ITransientRepository
         string userId,
         Page page,
         CancellationToken cancellationToken = default);
+    
+    Task<List<QueueItemEntity>> GetQueueRangeAsync(
+        string userId,
+        Range range,
+        CancellationToken cancellationToken);
 
     Task<IFileExplorerFolderEntity?> GetQueueCurrentFolderAsync(string currentUserId,
         CancellationToken cancellationToken);

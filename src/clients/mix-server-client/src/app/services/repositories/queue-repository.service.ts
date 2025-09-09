@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {
-  AddToQueueCommand, QueuePageDto, QueuePositionDto,
+  AddToQueueCommand, QueuePositionDto, QueueRangeDto,
   RemoveFromQueueCommand
 } from "../../generated-clients/mix-server-clients";
 import {BehaviorSubject, combineLatestWith, map, Observable} from "rxjs";
@@ -12,7 +12,7 @@ import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file
 import {QueueEditFormRepositoryService} from "./queue-edit-form-repository.service";
 import {QueueApiService} from "../api.service";
 import {NodePathConverterService} from "../converters/node-path-converter.service";
-import {PagedQueue} from "./models/paged-queue";
+import {RangedQueue} from "./models/ranged-queue";
 import {QueuePosition} from "./models/QueuePosition";
 
 @Injectable({
@@ -20,7 +20,7 @@ import {QueuePosition} from "./models/QueuePosition";
 })
 export class QueueRepositoryService {
   private _initialLoadRequested$ = new BehaviorSubject<boolean>(false);
-  private _queueBehaviourSubject$ = new BehaviorSubject<PagedQueue>(PagedQueue.Default);
+  private _queueBehaviourSubject$ = new BehaviorSubject<RangedQueue>(RangedQueue.Default);
   private _queuePositionSubject$ = new BehaviorSubject(QueuePosition.Default);
 
   constructor(private _authenticationService: AuthenticationService,
@@ -33,7 +33,7 @@ export class QueueRepositoryService {
       .pipe(combineLatestWith(this._initialLoadRequested$))
       .subscribe(([connected, initialLoadRequested]) => {
         if (connected && initialLoadRequested) {
-          this.loadPage(0).then();
+          this.loadRange(0, this.pageSize).then();
         }
       });
 
@@ -49,11 +49,11 @@ export class QueueRepositoryService {
 
   public pageSize: number = 25;
 
-  public get queue(): PagedQueue {
+  public get queue(): RangedQueue {
     return this._queueBehaviourSubject$.getValue();
   }
 
-  public queue$(): Observable<PagedQueue> {
+  public queue$(): Observable<RangedQueue> {
     return this._queueBehaviourSubject$.asObservable();
   }
 
@@ -88,12 +88,12 @@ export class QueueRepositoryService {
     this._initialLoadRequested$.next(true);
   }
 
-  public async loadPage(pageIndex: number): Promise<void> {
-    const loadingId = `LoadQueuePage-${pageIndex}`;
+  public async loadRange(start: number, end: number): Promise<void> {
+    const loadingId = `LoadQueuePage-${start}-${end}`;
 
     const result = await this._queueClient.request(
       loadingId,
-      c => c.queue(pageIndex, this.pageSize),
+      c => c.queue(start, end),
       'Failed to fetch queue',
       {
         validStatusCodes: [404]
@@ -153,7 +153,7 @@ export class QueueRepositoryService {
 
   public setNextQueuePosition(position: QueuePosition) {
     const nextQueue = this._queueBehaviourSubject$.value.copy();
-    nextQueue.flatChildren.forEach(child => {
+    nextQueue.items.forEach(child => {
       child.isCurrentPosition = !!position.current && child.id === position.current.id;
     });
     this._queueBehaviourSubject$.next(nextQueue);
@@ -162,8 +162,8 @@ export class QueueRepositoryService {
   }
 
   private onQueueFolderChanged(position: QueuePosition): void {
-    this._queueBehaviourSubject$.next(PagedQueue.Default);
-    this.loadPage(0)
+    this._queueBehaviourSubject$.next(RangedQueue.Default);
+    this.loadRange(0, this.pageSize)
       .then(() => this.setNextQueuePosition(position));
   }
 
@@ -175,10 +175,10 @@ export class QueueRepositoryService {
       .subscribe(position => this.onQueueFolderChanged(position));
   }
 
-  private nextQueue(dto: QueuePageDto): void {
-    const page = this._queueConverter.toPagedQueuePage(dto);
+  private nextQueue(dto: QueueRangeDto): void {
+    const range = this._queueConverter.toQueueItemList(dto);
     const nextQueue = this._queueBehaviourSubject$.value.copy()
-    nextQueue.addPage(page.pageIndex, page.children);
+    nextQueue.addRange(range);
 
     this._queueBehaviourSubject$.next(nextQueue);
   }
