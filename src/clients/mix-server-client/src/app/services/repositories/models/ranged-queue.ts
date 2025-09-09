@@ -36,4 +36,12 @@ export class RangedQueue {
         return 0;
       });
   }
+
+  removeRange(removed: string[]) {
+    removed.forEach(id => {
+      delete this._items[id];
+    });
+
+    this.refreshItems();
+  }
 }

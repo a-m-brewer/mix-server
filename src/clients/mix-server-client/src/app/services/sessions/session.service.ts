@@ -32,7 +32,7 @@ export class SessionService {
             client => client.setCurrentSession(new SetCurrentSessionCommand({
               nodePath: this._nodePathConverter.toRequestDto(file.path)
             })), 'Failed to set current session')
-            .then(result => result.success(dto => this.next(dto)));
+            .then(result => result.success(dto => this.next(dto, true)));
     }
 
     public setQueuePosition(queueItemId: string): void {
@@ -68,11 +68,16 @@ export class SessionService {
             .then(result => result.success(dto => this.next(dto)));
     }
 
-    private next(dto: CurrentSessionUpdatedDto): void {
+    private next(dto: CurrentSessionUpdatedDto, folderChanged: boolean = false): void {
         const session = dto.session ? this._playbackSessionConverter.fromDto(dto.session) : null;
-        const queue = this._queueConverter.toQueuePosition(dto.queuePosition);
+        const position = this._queueConverter.toQueuePosition(dto.queuePosition);
 
         this._playbackSessionRepository.currentSession = session;
-        this._queueRepository.setNextQueuePosition(queue);
+        if (folderChanged) {
+          this._queueRepository.onQueueFolderChanged(position);
+        }
+        else {
+          this._queueRepository.setNextQueuePosition(position);
+        }
     }
 }

@@ -5880,6 +5880,110 @@ export interface ITracklistUpdatedDto {
     tracklist: ImportTracklistDto;
 }
 
+export class QueueItemsAddedDto implements IQueueItemsAddedDto {
+    addedItems!: QueueSnapshotItemDto[];
+    currentPosition!: QueuePositionDto;
+
+    constructor(data?: IQueueItemsAddedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.addedItems = [];
+            this.currentPosition = new QueuePositionDto();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["addedItems"])) {
+                this.addedItems = [] as any;
+                for (let item of _data["addedItems"])
+                    this.addedItems!.push(QueueSnapshotItemDto.fromJS(item));
+            }
+            this.currentPosition = _data["currentPosition"] ? QueuePositionDto.fromJS(_data["currentPosition"]) : new QueuePositionDto();
+        }
+    }
+
+    static fromJS(data: any): QueueItemsAddedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new QueueItemsAddedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.addedItems)) {
+            data["addedItems"] = [];
+            for (let item of this.addedItems)
+                data["addedItems"].push(item.toJSON());
+        }
+        data["currentPosition"] = this.currentPosition ? this.currentPosition.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface IQueueItemsAddedDto {
+    addedItems: QueueSnapshotItemDto[];
+    currentPosition: QueuePositionDto;
+}
+
+export class QueueItemsRemovedDto implements IQueueItemsRemovedDto {
+    removedItemIds!: string[];
+    currentPosition!: QueuePositionDto;
+
+    constructor(data?: IQueueItemsRemovedDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.removedItemIds = [];
+            this.currentPosition = new QueuePositionDto();
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["removedItemIds"])) {
+                this.removedItemIds = [] as any;
+                for (let item of _data["removedItemIds"])
+                    this.removedItemIds!.push(item);
+            }
+            this.currentPosition = _data["currentPosition"] ? QueuePositionDto.fromJS(_data["currentPosition"]) : new QueuePositionDto();
+        }
+    }
+
+    static fromJS(data: any): QueueItemsRemovedDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new QueueItemsRemovedDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.removedItemIds)) {
+            data["removedItemIds"] = [];
+            for (let item of this.removedItemIds)
+                data["removedItemIds"].push(item);
+        }
+        data["currentPosition"] = this.currentPosition ? this.currentPosition.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface IQueueItemsRemovedDto {
+    removedItemIds: string[];
+    currentPosition: QueuePositionDto;
+}
+
 export class SignalRUpdatePlaybackStateCommand implements ISignalRUpdatePlaybackStateCommand {
     currentTime!: number;
 
@@ -6023,7 +6127,4 @@ function blobToText(blob: any): Observable<string> {
             reader.readAsText(blob);
         }
     });
-}
-
-export class QueuePageDto {
 }

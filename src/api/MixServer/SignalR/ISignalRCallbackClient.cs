@@ -28,4 +28,6 @@ public interface ISignalRCallbackClient
     Task TracklistUpdated(TracklistUpdatedDto dto);
     Task QueuePositionChanged(QueuePositionDto dto);
     Task QueueFolderChanged(QueuePositionDto dto);
+    Task QueueItemsAdded(QueueItemsAddedDto dto);
+    Task QueueItemsRemoved(QueueItemsRemovedDto dto);
 }

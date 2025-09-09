@@ -5,8 +5,7 @@ import {QueueRepositoryService} from "../repositories/queue-repository.service";
 
 export class QueuePageDataSource extends DataSource<QueueItem> {
   private readonly _subscription = new Subscription();
-  public pageSize = 25;
-  private _currentLength = 0;
+  public pageSize = 15;
   private _isLoading = false;
 
   constructor(private _queueRepository: QueueRepositoryService) {
@@ -33,7 +32,6 @@ export class QueuePageDataSource extends DataSource<QueueItem> {
           distinctUntilChanged()
         )
       ]).subscribe(([end, length]) => {
-        this._currentLength = length;
 
         // near-end prefetch threshold
         const threshold = Math.floor(this.pageSize / 2);

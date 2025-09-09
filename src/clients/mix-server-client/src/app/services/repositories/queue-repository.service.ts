@@ -14,6 +14,8 @@ import {QueueApiService} from "../api.service";
 import {NodePathConverterService} from "../converters/node-path-converter.service";
 import {RangedQueue} from "./models/ranged-queue";
 import {QueuePosition} from "./models/QueuePosition";
+import {QueueItemsAddedEvent} from "../signalr/models/queue-items-added-event";
+import {QueueItemsRemovedEvent} from "../signalr/models/queue-items-removed-event";
 
 @Injectable({
   providedIn: 'root'
@@ -161,7 +163,7 @@ export class QueueRepositoryService {
     this._queuePositionSubject$.next(position);
   }
 
-  private onQueueFolderChanged(position: QueuePosition): void {
+  public onQueueFolderChanged(position: QueuePosition): void {
     this._queueBehaviourSubject$.next(RangedQueue.Default);
     this.loadRange(0, this.pageSize)
       .then(() => this.setNextQueuePosition(position));
@@ -173,6 +175,12 @@ export class QueueRepositoryService {
 
     this._queueSignalRClient.queueFolderChanged$
       .subscribe(position => this.onQueueFolderChanged(position));
+
+    this._queueSignalRClient.queueItemsAdded$
+      .subscribe(event => this.handleQueueItemsAdded(event));
+
+    this._queueSignalRClient.queueItemsRemoved$
+      .subscribe(event => this.handleQueueItemsRemoved(event));
   }
 
   private nextQueue(dto: QueueRangeDto): void {
@@ -185,6 +193,22 @@ export class QueueRepositoryService {
 
   private nextQueuePosition(dto: QueuePositionDto): void {
     const position = this._queueConverter.toQueuePosition(dto);
+    this.setNextQueuePosition(position);
+  }
+
+  private handleQueueItemsAdded({added, position}: QueueItemsAddedEvent): void {
+    const nextQueue = this._queueBehaviourSubject$.value.copy();
+    nextQueue.addRange(added);
+    this._queueBehaviourSubject$.next(nextQueue);
+
+    this.setNextQueuePosition(position);
+  }
+
+  private handleQueueItemsRemoved({removed, position}: QueueItemsRemovedEvent): void {
+    const nextQueue = this._queueBehaviourSubject$.value.copy();
+    nextQueue.removeRange(removed);
+    this._queueBehaviourSubject$.next(nextQueue);
+
     this.setNextQueuePosition(position);
   }
 }

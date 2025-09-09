@@ -34,4 +34,6 @@ public interface ICallbackService
     Task TracklistUpdated(FileExplorerFileNodeEntity file);
     Task QueuePositionChanged(string userId, Guid deviceId, QueuePosition position, bool notifyCallingDevice = false);
     Task QueueFolderChanged(string userId, Guid deviceId, QueuePosition position, bool notifyCallingDevice = false);
+    Task QueueItemsAdded(string userId, QueuePosition position, IEnumerable<QueueItemEntity> addedItems);
+    Task QueueItemsRemoved(string userId, QueuePosition position, List<Guid> removedIds);
 }

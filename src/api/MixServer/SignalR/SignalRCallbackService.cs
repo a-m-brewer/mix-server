@@ -4,7 +4,6 @@ using MixServer.Application.FileExplorer.Converters;
 using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Application.Queueing.Converters;
-using MixServer.Application.Queueing.Responses;
 using MixServer.Application.Sessions.Converters;
 using MixServer.Application.Sessions.Responses;
 using MixServer.Application.Users.Dtos;
@@ -266,6 +265,20 @@ public class SignalRCallbackService(
         return context.Clients
             .Clients(toNotify)
             .QueueFolderChanged(dto);
+    }
+
+    public Task QueueItemsAdded(string userId, QueuePosition position, IEnumerable<QueueItemEntity> addedItems)
+    {
+        return context.Clients
+            .Clients(userManager.GetConnectionsInGroups(new SignalRGroup(userId)))
+            .QueueItemsAdded(queueDtoConverter.Convert(addedItems, position));
+    }
+
+    public Task QueueItemsRemoved(string userId, QueuePosition position, List<Guid> removedIds)
+    {
+        return context.Clients
+            .Clients(userManager.GetConnectionsInGroups(new SignalRGroup(userId)))
+            .QueueItemsRemoved(queueDtoConverter.Convert(removedIds, position));
     }
 
     public async Task UserDeleted(string userId)

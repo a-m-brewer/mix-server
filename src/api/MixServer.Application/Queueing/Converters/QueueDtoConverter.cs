@@ -10,7 +10,9 @@ namespace MixServer.Application.Queueing.Converters;
 public interface IQueueDtoConverter :
     IConverter<QueueItemEntity, QueueItemEntity?, QueueSnapshotItemDto>,
     IConverter<List<QueueItemEntity>, QueueItemEntity?, QueueRangeDto>,
-    IConverter<QueuePosition, QueuePositionDto>;
+    IConverter<QueuePosition, QueuePositionDto>,
+    IConverter<IEnumerable<QueueItemEntity>, QueuePosition, QueueItemsAddedDto>,
+    IConverter<IEnumerable<Guid>, QueuePosition, QueueItemsRemovedDto>;
 
 public class QueueDtoConverter(
     IFileExplorerEntityToResponseConverter fileNodeResponseConverter)
@@ -50,6 +52,24 @@ public class QueueDtoConverter(
             CurrentQueuePosition = value.Current is null ? null : Convert(value.Current, true),
             PreviousQueuePosition = value.Previous is null ? null : Convert(value.Previous, false),
             NextQueuePosition = value.Next is null ? null : Convert(value.Next, false)
+        };
+    }
+
+    public QueueItemsAddedDto Convert(IEnumerable<QueueItemEntity> value, QueuePosition value2)
+    {
+        return new QueueItemsAddedDto
+        {
+            AddedItems = value.Select(v => Convert(v, value2.Current != null && v.Id == value2.Current.Id)).ToList(),
+            CurrentPosition = Convert(value2)
+        };
+    }
+
+    public QueueItemsRemovedDto Convert(IEnumerable<Guid> value, QueuePosition value2)
+    {
+        return new QueueItemsRemovedDto
+        {
+            RemovedItemIds = value.ToList(),
+            CurrentPosition = Convert(value2)
         };
     }
 }

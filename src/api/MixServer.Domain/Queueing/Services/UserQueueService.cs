@@ -63,20 +63,20 @@ public class UserQueueService(
 
     public async Task AddFileAsync(NodePath nodePath, CancellationToken cancellationToken)
     {
-        await queueRepository.AddFileAsync(currentUserRepository.CurrentUserId, nodePath, cancellationToken);
-        NotifyQueuePositionChanged();
+        var queueItem = await queueRepository.AddFileAsync(currentUserRepository.CurrentUserId, nodePath, cancellationToken);
+        NotifyQueueItemsAdded([queueItem]);
     }
 
     public void RemoveQueueItems(List<Guid> ids)
     {
         queueRepository.RemoveQueueItems(currentUserRepository.CurrentUserId, ids);
-        NotifyQueuePositionChanged();
+        NotifyQueueItemsRemoved(ids);
     }
 
     public async Task ClearQueueAsync(CancellationToken cancellationToken)
     {
         await queueRepository.ClearQueueAsync(currentUserRepository.CurrentUserId, cancellationToken);
-        NotifyQueuePositionChanged();
+        NotifyQueueFolderChanged();
     }
 
     public async Task<QueueItemEntity?> GetCurrentPositionAsync(CancellationToken cancellationToken)
@@ -123,23 +123,33 @@ public class UserQueueService(
 
         return deviceState;
     }
+    
+    private void NotifyQueueItemsAdded(IEnumerable<QueueItemEntity> queueItem)
+    {
+        NotifyWithPosition((position, cb) =>
+            cb.QueueItemsAdded(currentUserRepository.CurrentUserId, position, queueItem));
+    }
+    
+    private void NotifyQueueItemsRemoved(List<Guid> ids)
+    {
+        NotifyWithPosition((position, cb) =>
+            cb.QueueItemsRemoved(currentUserRepository.CurrentUserId, position, ids));
+    }
 
     private void NotifyQueuePositionChanged(bool notifyCallingDevice = false)
     {
-        unitOfWork.InvokeCallbackOnSaved(NotifyAsync);
-
-        return;
-
-        async Task NotifyAsync(ICallbackService callbackService)
-        {
-            var position = await GetQueuePositionAsync();
-            await callbackService.QueuePositionChanged(currentUserRepository.CurrentUserId,
-                currentDeviceRepository.DeviceId, position, notifyCallingDevice);
-        }
+        NotifyWithPosition((position, cb) =>
+            cb.QueuePositionChanged(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, position, notifyCallingDevice));
     }
 
     private void NotifyQueueFolderChanged(bool notifyCallingDevice = false)
     {
+        NotifyWithPosition((position, cb) =>
+            cb.QueueFolderChanged(currentUserRepository.CurrentUserId, currentDeviceRepository.DeviceId, position, notifyCallingDevice));
+    }
+
+    private void NotifyWithPosition(Func<QueuePosition, ICallbackService, Task> notificationAction)
+    {
         unitOfWork.InvokeCallbackOnSaved(NotifyAsync);
 
         return;
@@ -147,8 +157,7 @@ public class UserQueueService(
         async Task NotifyAsync(ICallbackService callbackService)
         {
             var position = await GetQueuePositionAsync();
-            await callbackService.QueueFolderChanged(currentUserRepository.CurrentUserId,
-                currentDeviceRepository.DeviceId, position, notifyCallingDevice);
+            await notificationAction(position, callbackService);
         }
     }
 }

@@ -88,7 +88,7 @@ public class EfQueueRepository(
         }
     }
 
-    public async Task AddFileAsync(string userId, NodePath nodePath, CancellationToken cancellationToken)
+    public async Task<QueueItemEntity> AddFileAsync(string userId, NodePath nodePath, CancellationToken cancellationToken)
     {
         var fileEntity = await context.Nodes
             .OfType<FileExplorerFileNodeEntity>()
@@ -136,6 +136,8 @@ public class EfQueueRepository(
 
         await context.QueueItems.AddAsync(queueItem, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
+        
+        return queueItem;
     }
 
     public async Task SkipAsync(string userId, IDeviceState? deviceState = null, CancellationToken cancellationToken = default)
