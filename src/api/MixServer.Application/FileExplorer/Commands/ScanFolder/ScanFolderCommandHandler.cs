@@ -142,6 +142,7 @@ public class ScanFolderCommandHandler(
             await service.UpdateHashAsync(nodePath, hash, token);
         }, cancellationToken);
 
+        logger.LogInformation("Scanned folder {NodePath}", nodePath);
         return directories;
     }
 
