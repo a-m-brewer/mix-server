@@ -70,6 +70,15 @@ public static class EfIncludeExtensions
             query = query
                 .Include(i => i.Transcode);
         }
+        
+        if (options.IncludeTracklist)
+        {
+            query = query
+                .Include(i => i.Tracklist)
+                .ThenInclude(t => t!.Cues.OrderBy(o => o.Cue.ToString()))
+                .ThenInclude(t => t.Tracks.OrderBy(o => o.Name).ThenBy(tb => tb.Artist))
+                .ThenInclude(t => t.Players.OrderBy(b => b.Type));
+        }
 
         return query;
     }
@@ -92,6 +101,15 @@ public static class EfIncludeExtensions
     {
         return query.Include(i => i.RootChild)
             .Include(i => i.Parent);
+    }
+    
+    public static IQueryable<FileExplorerFileNodeEntity> IncludeTracklist(this IQueryable<FileExplorerFileNodeEntity> query) 
+    {
+        return query
+            .Include(t => t!.Tracklist)
+            .ThenInclude(t => t!.Cues.OrderBy(o => o.Cue.ToString()))
+            .ThenInclude(t => t.Tracks.OrderBy(o => o.Name).ThenBy(tb => tb.Artist))
+            .ThenInclude(t => t.Players.OrderBy(b => b.Type));
     }
 
     public static IQueryable<FileExplorerNodeEntity> ApplySort(this IQueryable<FileExplorerNodeEntity> query, IFolderSort sort, Page? page)

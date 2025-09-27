@@ -154,7 +154,6 @@ builder.Services.AddHostedService<FolderScanTrackingService>();
 builder.Services.AddHostedService<RootChildChangeBackgroundService>();
 builder.Services.AddHostedService<RootChildDirectoryWatcherService>();
 builder.Services.AddHostedService<UpdateMediaMetadataBackgroundService>();
-builder.Services.AddHostedService<RemoveMediaMetadataBackgroundService>();
 builder.Services.AddHostedService<TranscodeBackgroundService>();
 builder.Services.AddHostedService<DeviceDetectionBackgroundService>();
 builder.Services.AddHostedService<ScanFolderBackgroundService>();

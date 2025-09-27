@@ -16,7 +16,8 @@ public class ScanFolderCommandHandler(
     IFolderScanTrackingStore folderScanTrackingStore,
     ILogger<ScanFolderCommandHandler> logger,
     IRootFileExplorerFolder rootFolder,
-    IServiceProvider serviceProvider) : ICommandHandler<ScanFolderRequest>
+    IServiceProvider serviceProvider,
+    IUpdateMediaMetadataChannel updateMediaMetadataChannel) : ICommandHandler<ScanFolderRequest>
 {
     public async Task HandleAsync(ScanFolderRequest request, CancellationToken cancellationToken = default)
     {
@@ -142,6 +143,8 @@ public class ScanFolderCommandHandler(
             await service.UpdateHashAsync(nodePath, hash, token);
         }, cancellationToken);
 
+        await updateMediaMetadataChannel.WriteAsync(new UpdateMediaMetadataRequest(nodePath), cancellationToken);
+        
         logger.LogInformation("Scanned folder {NodePath}", nodePath);
         return directories;
     }

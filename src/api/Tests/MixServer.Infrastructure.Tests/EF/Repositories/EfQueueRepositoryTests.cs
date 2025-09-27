@@ -714,15 +714,15 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
     }
     
     [Test]
-    public async Task GetNextPositionAsync_NoQueue_Throws()
+    public async Task GetNextPositionAsync_NoQueue_ReturnsNull()
     {
         // Act
-        var act = async () => await Subject.GetNextPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
+        var actual = await Subject.GetNextPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
         
         // Assert
-        await act
+        actual
             .Should()
-            .ThrowAsync<NotFoundException>();
+            .BeNull();
     }
     
     [Test]
@@ -979,15 +979,15 @@ public class EfQueueRepositoryTests : SqliteTestBase<EfQueueRepository>
     }
     
     [Test]
-    public async Task GetPreviousPositionAsync_NoQueue_Throws()
+    public async Task GetPreviousPositionAsync_NoQueue_ReturnsNull()
     {
         // Act
-        var act = async () => await Subject.GetPreviousPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
+        var actual = await Subject.GetPreviousPositionAsync(_user.Id, cancellationToken: CancellationToken.None);
         
         // Assert
-        await act
+        actual
             .Should()
-            .ThrowAsync<NotFoundException>();
+            .BeNull();
     }
     
     [Test]

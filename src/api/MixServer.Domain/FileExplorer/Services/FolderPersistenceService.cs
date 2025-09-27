@@ -49,9 +49,7 @@ public class FolderPersistenceService(
     IFileExplorerNodeRepository fileExplorerNodeRepository,
     IFileSystemQueryService fileSystemQueryService,
     ILogger<FolderPersistenceService> logger,
-    IRemoveMediaMetadataChannel removeMediaMetadataChannel,
-    IRootFileExplorerFolder rootFolder,
-    IUpdateMediaMetadataChannel updateMediaMetadataChannel) : IFolderPersistenceService
+    IRootFileExplorerFolder rootFolder) : IFolderPersistenceService
 {
 
     public async Task<IFileExplorerFolderEntity> GetOrAddFolderAsync(NodePath nodePath,
@@ -287,56 +285,6 @@ public class FolderPersistenceService(
         parentEntity.Hash = hash;
     }
 
-    private void NotifyChanges(List<ChildEntityMap> fsChildren, List<FileExplorerNodeEntity> removedChildren)
-    {
-        NotifyUpdateMediaMetadataChannel(fsChildren);
-        NotifyRemoveMediaMetadataChannel(removedChildren);
-    }
-
-    private void NotifyUpdateMediaMetadataChannel(List<ChildEntityMap> fsChildren)
-    {
-        if (fsChildren.Count == 0)
-        {
-            return;
-        }
-
-        var updatedFiles = fsChildren
-            .Where(w => w is { DbEntity: FileExplorerFileNodeEntity { Metadata.IsMedia: true } })
-            .Select(s => s.DbEntity?.Id)
-            .Where(id => id.HasValue)
-            .Select(s => s!.Value)
-            .ToList();
-
-        if (updatedFiles.Count == 0)
-        {
-            return;
-        }
-        
-        logger.LogDebug("Notifying update media metadata channel for {UpdatedFilesCount} files", updatedFiles.Count);
-        _ = updateMediaMetadataChannel.WriteAsync(new UpdateMediaMetadataRequest(updatedFiles));
-    }
-    
-    private void NotifyRemoveMediaMetadataChannel(List<FileExplorerNodeEntity> removedChildren)
-    {
-        if (removedChildren.Count == 0)
-        {
-            return;
-        }
-        
-        var removedFiles = removedChildren
-            .Where(w => w is FileExplorerFileNodeEntity { Metadata.IsMedia: true })
-            .Select(s => new NodePath(s.RootChild.RelativePath, s.RelativePath))
-            .ToList();
-
-        if (removedFiles.Count == 0)
-        {
-            return;
-        }
-        
-        logger.LogDebug("Notifying remove media metadata channel for {RemovedFilesCount} files", removedFiles.Count);
-        _ = removeMediaMetadataChannel.WriteAsync(new RemoveMediaMetadataRequest(removedFiles));
-    }
-
     private IEnumerable<ChildEntityMap> GetChildEntitiesAsync(
         HashSet<FileExplorerNodeEntity> dbChildren,
         IEnumerable<FileSystemInfo> fsChildren)
@@ -364,7 +312,7 @@ public class FolderPersistenceService(
             }
             else
             {
-                logger.LogWarning("File system child {ChildPath} not found in database, creating new entity", fsChild.FullName);
+                logger.LogDebug("File system child {ChildPath} not found in database, creating new entity", fsChild.FullName);
             }
             
             yield return new ChildEntityMap

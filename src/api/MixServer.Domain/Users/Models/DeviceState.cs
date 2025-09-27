@@ -12,6 +12,9 @@ public interface IDeviceState
     bool Online { get;}
 
     ConcurrentDictionary<string, bool> Capabilities { get; }
+    
+    HashSet<string> SupportedMimeTypes { get; }
+    
     bool GetMimeTypeSupported(string? mimeType);
 }
 
@@ -28,6 +31,11 @@ public class DeviceState(Guid deviceId) : IDeviceState
     public bool InteractedWith { get; private set; }
     
     public ConcurrentDictionary<string, bool> Capabilities { get; } = new();
+
+    public HashSet<string> SupportedMimeTypes => Capabilities
+        .Where(w => w.Value)
+        .Select(s => s.Key)
+        .ToHashSet();
 
     public bool GetMimeTypeSupported(string? mimeType)
     {

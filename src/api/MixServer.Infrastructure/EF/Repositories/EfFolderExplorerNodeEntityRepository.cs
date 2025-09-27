@@ -40,21 +40,7 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
 
     public async Task<ICollection<FileExplorerFileNodeEntity>> GetFileNodesAsync(NodePath parentNodePath, GetFileQueryOptions options, CancellationToken cancellationToken)
     {
-        var parentPath = parentNodePath.RelativePath;
-        var hasPath = !string.IsNullOrWhiteSpace(parentPath);
-
-        var childPattern = hasPath
-            ? $"{parentPath}{Path.DirectorySeparatorChar}%"
-            : "%";
-        var descendantPattern = hasPath
-            ? $"{parentPath}{Path.DirectorySeparatorChar}%{Path.DirectorySeparatorChar}%"
-            : $"%{Path.DirectorySeparatorChar}%";
-        
-        var query = GetFileQuery(options)
-            .Where(w =>
-                w.RootChild.RelativePath == parentNodePath.RootPath &&
-                EEF.Functions.Like(w.RelativePath, childPattern) &&
-                !EEF.Functions.Like(w.RelativePath, descendantPattern));
+        var query = GetChildFilesQuery(parentNodePath, options);
         
         return await query.ToListAsync(cancellationToken: cancellationToken);
     }
@@ -405,6 +391,18 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
             .ToListAsync(cancellationToken);
     }
 
+    public IAsyncEnumerable<FileExplorerFileNodeEntity> GetAllMediaFileNodesInFolderAsync(NodePath nodePath)
+    {
+        var query = GetChildFilesQuery(nodePath, new GetFileQueryOptions
+        {
+            IncludeTracklist = true,
+            IncludeMetadata = true
+        })
+        .Where(w => w.Metadata != null && w.Metadata.IsMedia);
+
+        return query.AsAsyncEnumerable();
+    }
+
     public async Task AddAsync(FileExplorerNodeEntityBase nodeEntity, CancellationToken cancellationToken)
     {
         if (nodeEntity is FileExplorerFileNodeEntity { Metadata: not null } file)
@@ -440,6 +438,27 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
             .IncludeParents();
     }
 
+    private IQueryable<FileExplorerFileNodeEntity> GetChildFilesQuery(NodePath parentNodePath, GetFileQueryOptions options)
+    {
+        var parentPath = parentNodePath.RelativePath;
+        var hasPath = !string.IsNullOrWhiteSpace(parentPath);
+
+        var childPattern = hasPath
+            ? $"{parentPath}{Path.DirectorySeparatorChar}%"
+            : "%";
+        var descendantPattern = hasPath
+            ? $"{parentPath}{Path.DirectorySeparatorChar}%{Path.DirectorySeparatorChar}%"
+            : $"%{Path.DirectorySeparatorChar}%";
+        
+        var query = GetFileQuery(options)
+            .Where(w =>
+                w.RootChild.RelativePath == parentNodePath.RootPath &&
+                EEF.Functions.Like(w.RelativePath, childPattern) &&
+                !EEF.Functions.Like(w.RelativePath, descendantPattern));
+        
+        return query;
+    }
+    
     private async Task<TEntity?> FirstOrDefaultAsync<TEntity>(IQueryable<TEntity> query, NodePath nodePath, CancellationToken cancellationToken)
         where TEntity : FileExplorerNodeEntity
     {

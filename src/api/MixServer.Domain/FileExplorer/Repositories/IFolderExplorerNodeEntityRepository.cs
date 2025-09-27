@@ -35,6 +35,10 @@ public interface IFileExplorerNodeRepository : ITransientRepository
     Task<FileExplorerRootChildNodeEntity?> GetRootChildOrDefaultAsync(NodePath rootChild, CancellationToken cancellationToken);
     Task<ICollection<FileExplorerRootChildNodeEntity>> GetRootChildrenAsync(IEnumerable<string> rootPaths, CancellationToken cancellationToken);
     Task<ICollection<FileExplorerRootChildNodeEntity>> GetAllRootChildrenAsync(CancellationToken cancellationToken);
+    
+    // Media
+    IAsyncEnumerable<FileExplorerFileNodeEntity> GetAllMediaFileNodesInFolderAsync(NodePath nodePath);
+    
     Task AddAsync(FileExplorerNodeEntityBase nodeEntity, CancellationToken cancellationToken);
     Task AddRangeAsync(ICollection<FileExplorerNodeEntity> addedChildren, CancellationToken cancellationToken);
     void RemoveRange(IEnumerable<FileExplorerNodeEntity> nodes);

@@ -2,7 +2,7 @@ using MixServer.Domain.Interfaces;
 
 namespace MixServer.Domain.FileExplorer.Models;
 
-public record UpdateMediaMetadataRequest(List<Guid> FileIds) : IChannelMessage
+public record UpdateMediaMetadataRequest(NodePath ParentNodePath) : IChannelMessage
 {
-    public string Identifier => GetHashCode().ToString();
+    public string Identifier => $"UpdateMediaMetadata:{ParentNodePath.AbsolutePath}";
 }

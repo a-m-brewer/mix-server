@@ -210,9 +210,15 @@ public class EfQueueRepository(
     public async Task<QueuePosition> GetQueuePositionAsync(string userId, IDeviceState? deviceState = null,
         CancellationToken cancellationToken = default)
     {
-        var currentTask = GetCurrentPositionAsync(userId, deviceState, cancellationToken);
-        var nextTask = GetNextPositionAsync(userId, deviceState, cancellationToken);
-        var previousTask = GetPreviousPositionAsync(userId, deviceState, cancellationToken);
+        var queue = await GetQueueAsync(userId, cancellationToken);
+        if (queue == null)
+        {
+            return new QueuePosition(null, null, null);
+        }
+
+        var currentTask = GetPositionAsync(queue, QueuePositionDirection.Current, deviceState, cancellationToken);
+        var nextTask = GetPositionAsync(queue, QueuePositionDirection.Next, deviceState, cancellationToken);
+        var previousTask = GetPositionAsync(queue, QueuePositionDirection.Previous, deviceState, cancellationToken);
         
         await Task.WhenAll(currentTask, nextTask, previousTask);
         
@@ -276,22 +282,37 @@ public class EfQueueRepository(
         return queue?.CurrentFolderEntity;
     }
 
-    private async Task<QueueItemEntity?> GetPositionAsync(
-        string userId,
-        QueuePositionDirection position,
-        IDeviceState? deviceState = null,
-        CancellationToken cancellationToken = default)
+    private async Task<QueueEntity?> GetQueueAsync(string userId, CancellationToken cancellationToken)
     {
         var queue = await context.Queues
             .Include(i => i.CurrentPosition)
             .ThenInclude(t => t!.Queue)
             .FirstOrDefaultAsync(f => f.UserId == userId, cancellationToken: cancellationToken);
 
-        if (queue is null)
-        {
-            throw new NotFoundException(nameof(QueueEntity), userId);
-        }
+        return queue;
+    }
 
+    private async Task<QueueItemEntity?> GetPositionAsync(
+        string userId,
+        QueuePositionDirection position,
+        IDeviceState? deviceState = null,
+        CancellationToken cancellationToken = default)
+    {
+        var queue = await GetQueueAsync(userId, cancellationToken);
+        if (queue == null)
+        {
+            return null;
+        }
+        
+        return await GetPositionAsync(queue, position, deviceState, cancellationToken);
+    }
+    
+    private async Task<QueueItemEntity?> GetPositionAsync(
+        QueueEntity queue,
+        QueuePositionDirection position,
+        IDeviceState? deviceState = null,
+        CancellationToken cancellationToken = default)
+    {
         // Handle the case when there's no current position
         if (queue.CurrentPosition is null)
         {
@@ -337,10 +358,7 @@ public class EfQueueRepository(
 
         if (deviceState is not null)
         {
-            var supportedMimeTypes = deviceState.Capabilities
-                .Where(w => w.Value)
-                .Select(s => s.Key)
-                .ToHashSet();
+            var supportedMimeTypes = deviceState.SupportedMimeTypes;
             query = query
                 .Where(w => w.File != null &&
                             w.File.Metadata != null &&

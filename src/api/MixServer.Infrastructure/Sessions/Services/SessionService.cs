@@ -42,7 +42,7 @@ public class SessionService(
         if (session == null)
         {
             var file = await fileExplorerNodeRepository.GetFileNodeAsync(request.NodePath, GetFileQueryOptions.Full, cancellationToken);
-            canPlayOnDeviceValidator.ValidateCanPlayOrThrow(device, file.Path, file.Metadata?.MimeType);
+            canPlayOnDeviceValidator.ValidateCanPlayOrThrow(device, file);
             
             session = new PlaybackSession
             {
@@ -59,7 +59,7 @@ public class SessionService(
         }
         else
         {
-            canPlayOnDeviceValidator.ValidateCanPlayOrThrow(device, session.NodeEntity.Path, session.NodeEntity.Metadata?.MimeType);
+            canPlayOnDeviceValidator.ValidateCanPlayOrThrow(device, session.NodeEntity);
             session.LastPlayed = dateTimeProvider.UtcNow;
         }
 

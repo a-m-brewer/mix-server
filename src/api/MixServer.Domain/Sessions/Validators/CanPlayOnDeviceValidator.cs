@@ -1,4 +1,5 @@
 using MixServer.Domain.Exceptions;
+using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Sessions.Accessors;
 using MixServer.Domain.Streams.Caches;
@@ -9,31 +10,21 @@ namespace MixServer.Domain.Sessions.Validators;
 
 public interface ICanPlayOnDeviceValidator
 {
-    void ValidateCanPlayOrThrow(IDeviceState deviceState, NodePath nodePath, string? mimeType);
-    Task<bool> CanPlayAsync(IFileExplorerFileNode itemFile);
+    void ValidateCanPlayOrThrow(IDeviceState deviceState, FileExplorerFileNodeEntity file);
 }
 
-public class CanPlayOnDeviceValidator(ITranscodeCache transcodeCache,
-    IRequestedPlaybackDeviceAccessor requestedPlaybackDeviceAccessor) : ICanPlayOnDeviceValidator
+public class CanPlayOnDeviceValidator : ICanPlayOnDeviceValidator
 {
-    public void ValidateCanPlayOrThrow(IDeviceState deviceState, NodePath nodePath, string? mimeType)
+    public void ValidateCanPlayOrThrow(IDeviceState deviceState, FileExplorerFileNodeEntity file)
     {
-        if (!deviceState.GetMimeTypeSupported(mimeType) &&
-            transcodeCache.GetTranscodeStatus(nodePath) != TranscodeState.Completed)
+        var supportedMimeTypes = deviceState.SupportedMimeTypes;
+
+        if (supportedMimeTypes.Contains(file.MetadataEntity.MimeType) ||
+            file.Transcode is { State: TranscodeState.Completed })
         {
-            throw new InvalidRequestException(nameof(nodePath), $"{nodePath.AbsolutePath} is not supported for playback on this device");
+            return;
         }
-    }
-
-    public async Task<bool> CanPlayAsync(IFileExplorerFileNode itemFile)
-    {
-        return CanPlay(await requestedPlaybackDeviceAccessor.GetPlaybackDeviceAsync(), itemFile);
-    }
-
-    private bool CanPlay(IDeviceState deviceState, IFileExplorerFileNode file)
-    {
-        return file.PlaybackSupported && 
-               (deviceState.GetMimeTypeSupported(file.Metadata.MimeType) ||
-                transcodeCache.GetTranscodeStatus(file.Path) == TranscodeState.Completed);
+        
+        throw new InvalidRequestException(nameof(file.Path), $"{file.Path.AbsolutePath} is not supported for playback on this device");
     }
 }

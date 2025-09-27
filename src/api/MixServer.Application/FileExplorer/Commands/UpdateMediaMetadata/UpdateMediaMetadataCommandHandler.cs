@@ -30,6 +30,7 @@ public class UpdateMediaMetadataCommandHandler(
     IUnitOfWork unitOfWork) : ICommandHandler<UpdateMediaMetadataRequest>
 {
     private record MetadataUpdateResult(
+        FileExplorerFileNodeEntity File,
         AddMediaMetadataRequest? AddedMetadata,
         TracklistEntity? AddedTracklist);
     
@@ -48,33 +49,31 @@ public class UpdateMediaMetadataCommandHandler(
     
     public async Task HandleAsync(UpdateMediaMetadataRequest request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Updating metadata for {FileCount} files", request.FileIds.Count);
-        var files = (await fileExplorerNodeRepository.GetFileNodesAsync(request.FileIds, cancellationToken))
-            .ToList();
-
         var results = new MetadataResultsBag();
-        await Parallel.ForEachAsync(files, cancellationToken, (entity, _) =>
+        await foreach (var file in fileExplorerNodeRepository.GetAllMediaFileNodesInFolderAsync(request.ParentNodePath)
+                           .WithCancellation(cancellationToken))
         {
             try
             {
-                var result = UpdateFileMetadata(entity);
+                var result = UpdateFileMetadata(file);
                 results.Add(result);
             }
             catch (Exception e)
             {
-                logger.LogWarning(e, "Failed to update metadata for file {FilePath}", entity.Path.AbsolutePath);
+                logger.LogError(e, "Error updating metadata for file {FilePath}", file.Path.AbsolutePath);
             }
-            return ValueTask.CompletedTask;
-        });
+        }
         
         logger.LogDebug("Metadata update block completed for {FileCount} files", results.Count);
         
         await fileMetadataRepository.AddRangeAsync(results.AddedMetadata, cancellationToken);
         await tracklistRepository.AddRangeAsync(results.AddedTracklists, cancellationToken);
 
+        var files = results.Select(x => x.File).ToList();
+        
         unitOfWork.InvokeCallbackOnSaved(cb => cb.MediaInfoUpdated(ToMediaInfo(files)));
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Metadata update completed for {FileCount} files", request.FileIds.Count);
+        logger.LogInformation("Metadata update completed for folder: {FolderPath} - {FileCount} files", request.ParentNodePath.AbsolutePath, results.Count);
     }
 
     private List<MediaInfo> ToMediaInfo(IReadOnlyCollection<FileExplorerFileNodeEntity> files)
@@ -100,7 +99,7 @@ public class UpdateMediaMetadataCommandHandler(
         var addedTracklist =  ImportTracklistIfNotFound(fileEntity, tb);
         logger.LogDebug("Updated metadata for file {FilePath}", fileEntity.Path.AbsolutePath);
         
-        return new MetadataUpdateResult(addedMetadata, addedTracklist);
+        return new MetadataUpdateResult(fileEntity, addedMetadata, addedTracklist);
     }
 
     private AddMediaMetadataRequest? UpdateFileMetadata(

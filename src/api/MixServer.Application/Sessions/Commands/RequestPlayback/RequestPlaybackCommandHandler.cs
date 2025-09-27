@@ -44,7 +44,7 @@ public class RequestPlaybackCommandHandler(
             IncludeMetadata = true
         }, cancellationToken);
 
-        canPlayOnDeviceValidator.ValidateCanPlayOrThrow(deviceState, playbackState.NodePath, file.Metadata?.MimeType);
+        canPlayOnDeviceValidator.ValidateCanPlayOrThrow(deviceState, file);
 
         if (!playbackState.HasDevice)
         {

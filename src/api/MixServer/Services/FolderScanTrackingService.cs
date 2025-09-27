@@ -8,7 +8,6 @@ public class FolderScanTrackingService(
     ILogger<FolderScanTrackingService> logger,
     IScanFolderRequestChannel scanChannel,
     IFolderScanTrackingStore folderScanTrackingStore,
-    IRemoveMediaMetadataChannel removeMediaMetadataChannel,
     IServiceProvider serviceProvider,
     IUpdateMediaMetadataChannel updateMediaMetadataChannel) : IHostedService
 {
@@ -19,7 +18,6 @@ public class FolderScanTrackingService(
         folderScanTrackingStore.ScanInProgressChanged += FolderScanTrackingStoreOnScanInProgressChanged;
         
         scanChannel.RequestsChanged += RequestsChanged;
-        removeMediaMetadataChannel.RequestsChanged += RequestsChanged;
         updateMediaMetadataChannel.RequestsChanged += RequestsChanged;
         
         return Task.CompletedTask;
@@ -28,7 +26,6 @@ public class FolderScanTrackingService(
     public Task StopAsync(CancellationToken cancellationToken)
     {
         scanChannel.RequestsChanged -= RequestsChanged;
-        removeMediaMetadataChannel.RequestsChanged -= RequestsChanged;
         updateMediaMetadataChannel.RequestsChanged -= RequestsChanged;
         
         folderScanTrackingStore.ScanInProgressChanged -= FolderScanTrackingStoreOnScanInProgressChanged;
@@ -62,15 +59,13 @@ public class FolderScanTrackingService(
     private int GetCurrentRequestCount()
     {
         var scans = scanChannel.Requests;
-        var removeMetadataRequests = removeMediaMetadataChannel.Requests;
         var updateMetadataRequests = updateMediaMetadataChannel.Requests;
         
-        logger.LogDebug("In flight folder scan Scans: {ScanCount}, Remove Metadata: {RemoveMetadataCount}, Update Metadata: {UpdateMetadataCount}",
+        logger.LogDebug("In flight folder scan Scans: {ScanCount}, Update Metadata: {UpdateMetadataCount}",
             scans.Count, 
-            removeMetadataRequests.Count,
             updateMetadataRequests.Count);
         
-        return scans.Count + removeMetadataRequests.Count + updateMetadataRequests.Count;
+        return scans.Count + updateMetadataRequests.Count;
     }
     
     private async void FolderScanTrackingStoreOnScanInProgressChanged(object? sender, EventArgs e)

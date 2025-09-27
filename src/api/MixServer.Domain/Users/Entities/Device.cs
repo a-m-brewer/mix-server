@@ -33,6 +33,12 @@ public class Device : IDevice
     [NotMapped]
     public ConcurrentDictionary<string, bool> Capabilities { get; private set; } = new();
 
+    [NotMapped]
+    public HashSet<string> SupportedMimeTypes => Capabilities
+        .Where(w => w.Value)
+        .Select(s => s.Key)
+        .ToHashSet();
+
     public bool GetMimeTypeSupported(string? mimeType)
     {
         if (string.IsNullOrWhiteSpace(mimeType))
