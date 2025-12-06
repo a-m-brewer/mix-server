@@ -1,4 +1,4 @@
-$dotnetVersion = "net8.0"
+$dotnetVersion = "net10.0"
 $rootProj = Join-Path -Path "$PSScriptRoot" -ChildPath ".."
 
 $mixServerDist = Join-Path -Path $rootProj  -ChildPath "src" -AdditionalChildPath "clients", "mix-server-client", "dist", "mix-server-client", "browser"
