@@ -1,19 +1,20 @@
 <button mat-icon-button [color]="currentPlaybackDeviceId === currentDevice?.id ? 'primary' : 'accent'"
-        [disabled]="devices.length === 0 || !currentDevice"
-        [matMenuTriggerFor]="switchDeviceContextMenu">
+  [disabled]="devices.length === 0 || !currentDevice"
+  [matMenuTriggerFor]="switchDeviceContextMenu">
   <mat-icon>computer</mat-icon>
 </button>
 
 <mat-menu #switchDeviceContextMenu="matMenu">
-  <button mat-menu-item
-          *ngFor="let device of devices"
-          (click)="requestPlayback(device)"
-  >
-    <mat-icon [color]="device.id === currentPlaybackDeviceId ? 'accent' : 'primary'" >{{ device.icon }}</mat-icon>
-    @if (device.id === currentDevice?.id) {
-      <span>Current Device</span>
-    } @else {
-      <span>{{ device.displayName }}</span>
-    }
-  </button>
+  @for (device of devices; track device) {
+    <button mat-menu-item
+      (click)="requestPlayback(device)"
+      >
+      <mat-icon [color]="device.id === currentPlaybackDeviceId ? 'accent' : 'primary'" >{{ device.icon }}</mat-icon>
+      @if (device.id === currentDevice?.id) {
+        <span>Current Device</span>
+      } @else {
+        <span>{{ device.displayName }}</span>
+      }
+    </button>
+  }
 </mat-menu>

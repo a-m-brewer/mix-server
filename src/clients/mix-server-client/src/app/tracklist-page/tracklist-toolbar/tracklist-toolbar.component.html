@@ -1,4 +1,6 @@
 <div class="flex">
   <app-import-tracklist-form [tracklistForm]="form" />
-  <app-save-tracklist-form *ngIf="form && form.dirty" />
+  @if (form && form.dirty) {
+    <app-save-tracklist-form />
+  }
 </div>

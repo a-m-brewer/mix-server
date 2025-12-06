@@ -18,9 +18,10 @@ import {
 import {SessionService} from "../services/sessions/session.service";
 
 @Component({
-  selector: 'app-queue-page',
-  templateUrl: './queue-page.component.html',
-  styleUrls: ['./queue-page.component.scss']
+    selector: 'app-queue-page',
+    templateUrl: './queue-page.component.html',
+    styleUrls: ['./queue-page.component.scss'],
+    standalone: false
 })
 export class QueuePageComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

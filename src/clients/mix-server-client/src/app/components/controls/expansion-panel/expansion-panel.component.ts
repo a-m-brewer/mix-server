@@ -1,18 +1,16 @@
 import {Component, ElementRef, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {MatRippleModule} from "@angular/material/core";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
-import {NgIf} from "@angular/common";
+
 
 @Component({
-  selector: 'app-expansion-panel',
-  standalone: true,
-  imports: [
+    selector: 'app-expansion-panel',
+    imports: [
     MatRippleModule,
-    MatProgressBarModule,
-    NgIf
-  ],
-  templateUrl: './expansion-panel.component.html',
-  styleUrl: './expansion-panel.component.scss'
+    MatProgressBarModule
+],
+    templateUrl: './expansion-panel.component.html',
+    styleUrl: './expansion-panel.component.scss'
 })
 export class ExpansionPanelComponent {
   @Output()

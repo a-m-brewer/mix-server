@@ -15,7 +15,7 @@
 
   &-mark {
     width: 0.15vw;
-    height: var(--mdc-slider-active-track-height);
+    height: var(--mat-slider-active-track-height);
     background-color: var(--mat-toolbar-container-background-color);
     z-index: 1;
   }
@@ -26,16 +26,16 @@
   }
 
   &-part.hover {
-    height: calc(var(--mdc-slider-active-track-height) * 1.5);
+    height: calc(var(--mat-slider-active-track-height) * 1.5);
   }
 
   &-part.non-thumb-hover.inactive {
-    background-color: var(--mdc-slider-inactive-track-color);
+    background-color: var(--mat-slider-inactive-track-color);
     opacity: .24;
   }
 
   &-part.non-thumb-hover.active {
-    background-color: var(--mdc-slider-active-track-color);
+    background-color: var(--mat-slider-active-track-color);
   }
 }
 

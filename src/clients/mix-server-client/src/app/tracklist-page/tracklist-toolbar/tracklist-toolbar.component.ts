@@ -1,7 +1,7 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ImportTracklistFormComponent} from "./import-tracklist-form/import-tracklist-form.component";
 import {SaveTracklistFormComponent} from "./save-tracklist-form/save-tracklist-form.component";
-import {NgIf} from "@angular/common";
+
 import {
   CurrentPlaybackSessionRepositoryService
 } from "../../services/repositories/current-playback-session-repository.service";
@@ -10,15 +10,13 @@ import { FormGroup } from '@angular/forms';
 import {TracklistForm} from "../../services/tracklist/models/tracklist-form.interface";
 
 @Component({
-  selector: 'app-tracklist-toolbar',
-  standalone: true,
-  imports: [
+    selector: 'app-tracklist-toolbar',
+    imports: [
     ImportTracklistFormComponent,
-    SaveTracklistFormComponent,
-    NgIf
-  ],
-  templateUrl: './tracklist-toolbar.component.html',
-  styleUrl: './tracklist-toolbar.component.scss'
+    SaveTracklistFormComponent
+],
+    templateUrl: './tracklist-toolbar.component.html',
+    styleUrl: './tracklist-toolbar.component.scss'
 })
 export class TracklistToolbarComponent implements OnInit, OnDestroy {
   private _unsubscribe: Subject<void> = new Subject<void>();

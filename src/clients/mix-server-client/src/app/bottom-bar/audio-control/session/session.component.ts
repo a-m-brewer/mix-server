@@ -8,13 +8,12 @@ import {Router} from "@angular/router";
 import {PageRoutes} from "../../../page-routes.enum";
 
 @Component({
-  selector: 'app-session',
-  standalone: true,
-  imports: [
-    MatButtonModule
-  ],
-  templateUrl: './session.component.html',
-  styleUrls: ['./session.component.scss']
+    selector: 'app-session',
+    imports: [
+        MatButtonModule
+    ],
+    templateUrl: './session.component.html',
+    styleUrls: ['./session.component.scss']
 })
 export class SessionComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

@@ -1,7 +1,7 @@
 import {Component, forwardRef, Input, OnDestroy, OnInit} from '@angular/core';
 import {MatIcon} from "@angular/material/icon";
 import {MatMenuItem} from "@angular/material/menu";
-import {NgIf} from "@angular/common";
+
 import {ContextMenuButton} from "../context-menu-button";
 import {FileExplorerFileNode} from "../../../../../../main-content/file-explorer/models/file-explorer-file-node";
 import {CopyNodeService} from "../../../../../../services/nodes/copy-node.service";
@@ -10,16 +10,14 @@ import {Subject, takeUntil} from "rxjs";
 import {RoleRepositoryService} from "../../../../../../services/repositories/role-repository.service";
 
 @Component({
-  selector: 'app-cut-node',
-  standalone: true,
+    selector: 'app-cut-node',
     imports: [
-        MatIcon,
-        MatMenuItem,
-        NgIf
-    ],
-  templateUrl: './cut-node.component.html',
-  styleUrl: './cut-node.component.scss',
-  providers: [{provide: ContextMenuButton, useExisting: forwardRef(() => CutNodeComponent)}]
+    MatIcon,
+    MatMenuItem
+],
+    templateUrl: './cut-node.component.html',
+    styleUrl: './cut-node.component.scss',
+    providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => CutNodeComponent) }]
 })
 export class CutNodeComponent extends ContextMenuButton implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject<void>();

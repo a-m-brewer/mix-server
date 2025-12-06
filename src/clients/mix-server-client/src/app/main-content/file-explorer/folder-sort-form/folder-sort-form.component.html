@@ -1,19 +1,27 @@
-<form [formGroup]="form" *ngIf="showForm" >
-  <mat-button-toggle-group
-    class="sort-form-mat-button-toggle-group"
-    [formControlName]="sortModeKey"
-    aria-label="Sort Mode">
-    <mat-button-toggle *ngFor="let type of sortModes | keyvalue"
-                       [value]="type.value"
-                       [disabled]="disabled"
-                       (change)="onToggleButtonClicked($event)">
-      {{ type.value }}
-      <mat-icon *ngIf="type.value === sortMode && descending">
-        arrow_downwards
-      </mat-icon>
-      <mat-icon *ngIf="type.value === sortMode && !descending">
-        arrow_upwards
-      </mat-icon>
-    </mat-button-toggle>
-  </mat-button-toggle-group>
-</form>
+@if (showForm) {
+  <form [formGroup]="form" >
+    <mat-button-toggle-group
+      class="sort-form-mat-button-toggle-group"
+      [formControlName]="sortModeKey"
+      aria-label="Sort Mode">
+      @for (type of sortModes | keyvalue; track type) {
+        <mat-button-toggle
+          [value]="type.value"
+          [disabled]="disabled"
+          (change)="onToggleButtonClicked($event)">
+          {{ type.value }}
+          @if (type.value === sortMode && descending) {
+            <mat-icon>
+              arrow_downwards
+            </mat-icon>
+          }
+          @if (type.value === sortMode && !descending) {
+            <mat-icon>
+              arrow_upwards
+            </mat-icon>
+          }
+        </mat-button-toggle>
+      }
+    </mat-button-toggle-group>
+  </form>
+}

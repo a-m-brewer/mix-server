@@ -17,9 +17,10 @@ import {RoleRepositoryService} from "../../services/repositories/role-repository
 import {Role} from "../../generated-clients/mix-server-clients";
 
 @Component({
-  selector: 'app-file-explorer',
-  templateUrl: './file-explorer.component.html',
-  styleUrls: ['./file-explorer.component.scss']
+    selector: 'app-file-explorer',
+    templateUrl: './file-explorer.component.html',
+    styleUrls: ['./file-explorer.component.scss'],
+    standalone: false
 })
 export class FileExplorerComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

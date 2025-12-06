@@ -6,9 +6,10 @@ import {AuthenticationService} from "../../services/auth/authentication.service"
 import {TitleService} from "../../services/title/title.service";
 
 @Component({
-  selector: 'app-login-user',
-  templateUrl: './login-user.component.html',
-  styleUrls: ['./login-user.component.scss']
+    selector: 'app-login-user',
+    templateUrl: './login-user.component.html',
+    styleUrls: ['./login-user.component.scss'],
+    standalone: false
 })
 export class LoginUserComponent implements OnDestroy {
   private _unsubscribe$ = new Subject();

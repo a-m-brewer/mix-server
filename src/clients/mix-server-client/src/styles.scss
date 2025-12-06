@@ -3,9 +3,10 @@
 @use './app/components/nodes/node-list/node-list-item/node-list-item.component-theme' as node-list-item-theme;
 @use './app/bottom-bar/audio-control/audio-control.component-theme' as audio-control-theme;
 @use './app/tracklist-page/tracklist-form/tracklist-form.component-theme' as tracklist-form-theme;
+@use 'ngx-toastr/toastr';
 
-@include mat.core();
-@import 'ngx-toastr/toastr';
+@include mat.elevation-classes();
+@include mat.app-background();
 
 $dark-theme: mat.m2-define-dark-theme((
   color: (
@@ -26,14 +27,16 @@ $light-theme: mat.m2-define-light-theme((
   )
 ));
 
-@include mat.core-theme($dark-theme);
+@include mat.elevation-classes();
+@include mat.app-background();
 @include mat.all-component-themes($dark-theme);
 @include node-list-item-theme.theme($dark-theme);
 @include audio-control-theme.theme($dark-theme);
 @include tracklist-form-theme.theme($dark-theme);
 
 @media (prefers-color-scheme: light) {
-  @include mat.core-color($light-theme);
+  @include mat.elevation-classes();
+  @include mat.app-background();
   @include mat.all-component-colors($light-theme);
   @include node-list-item-theme.theme($light-theme);
   @include audio-control-theme.theme($light-theme);
@@ -65,5 +68,18 @@ body {
 .node-list-item-content-text-subtitle {
   font-size: 14px;
   font-weight: lighter;
+}
+
+// Apply Material Design surface elevation to toolbars
+mat-toolbar {
+  background-color: #212121 !important;
+  color: rgba(255, 255, 255, 0.87) !important;
+}
+
+@media (prefers-color-scheme: light) {
+  mat-toolbar {
+    background-color: #f5f5f5 !important;
+    color: rgba(0, 0, 0, 0.87) !important;
+  }
 }
 

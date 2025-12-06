@@ -3,7 +3,7 @@ import {MatListModule} from "@angular/material/list";
 import {UserRepositoryService} from "../../services/repositories/user-repository.service";
 import {Subject, take, takeUntil} from "rxjs";
 import {User} from "../../services/repositories/models/user";
-import {NgForOf} from "@angular/common";
+
 import {RoleRepositoryService} from "../../services/repositories/role-repository.service";
 import {DeleteDialogComponent} from "../../components/dialogs/delete-dialog/delete-dialog.component";
 import {MatDialog} from "@angular/material/dialog";
@@ -15,9 +15,10 @@ import {TemporaryPasswordDialogComponent} from "./temporary-password-dialog/temp
 import {AuthenticationService} from "../../services/auth/authentication.service";
 
 @Component({
-  selector: 'app-user-admin',
-  templateUrl: './user-admin.component.html',
-  styleUrl: './user-admin.component.scss'
+    selector: 'app-user-admin',
+    templateUrl: './user-admin.component.html',
+    styleUrl: './user-admin.component.scss',
+    standalone: false
 })
 export class UserAdminComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

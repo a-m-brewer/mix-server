@@ -1,11 +1,13 @@
 <app-loading-bar></app-loading-bar>
 
-<app-audio-control
-  *ngIf="windowType === WindowType.Desktop"
-  id="audio-control-component">
-</app-audio-control>
+@if (windowType === WindowType.Desktop) {
+  <app-audio-control
+    id="audio-control-component">
+  </app-audio-control>
+}
 
-<app-audio-control-mobile
-  *ngIf="windowType === WindowType.Mobile"
-  id="audio-control-mobile-component">
-</app-audio-control-mobile>
+@if (windowType === WindowType.Mobile) {
+  <app-audio-control-mobile
+    id="audio-control-mobile-component">
+  </app-audio-control-mobile>
+}

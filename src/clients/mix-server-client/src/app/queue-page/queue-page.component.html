@@ -1,45 +1,43 @@
 <div>
-  <app-node-list-item
-    *ngFor="let queueItem of queue.items; last as last"
-    [key]="queueItem.id"
-    [nodeType]="queueItem.type"
-    [defaultIcon]="queueItem.mdIcon"
-    [loadingStatus]="loadingStatus"
-    [audioPlayerState]="audioPlayerState"
-    [disabled]="queueItem.disabled"
-    [editing]="editQueueForm.editing"
-    [selectable]="queueItem.itemType === QueueSnapshotItemType.User && !queueItem.isCurrentQueuePosition"
-    [last]="last"
-    (contentClick)="onNodeClick($event)"
-    (selectedChange)="onNodeSelectedChanged($event)"
-  >
-    <div appNodeListItemTitle>
-      {{ queueItem.name }}
-    </div>
-
-    <app-file-metadata-subtitle appNodeListItemSubtitle
-      [metadata]="queueItem.file.metadata"
-    />
-
-    <mat-icon
-      *ngIf="queueItem.itemType === UserItemType"
-      matTooltip="Added by user"
-      extra-action-list-content
-      class="user-queue-item-icon node-list-item-action-list-context-menu">
-      person_add
-    </mat-icon>
-
-    <app-add-to-queue-button
-      [file]="queueItem.file"
-    />
-
-    <app-remove-from-queue-button
-      *ngIf="queueItem.itemType === UserItemType && !queueItem.isCurrentQueuePosition"
-      [item]="queueItem"
-      />
-
-    <app-open-location-button
-      [folder]="queueItem.file.parent"
-    />
-  </app-node-list-item>
-</div>
+  @for (queueItem of queue.items; track queueItem; let last = $last) {
+    <app-node-list-item
+      [key]="queueItem.id"
+      [nodeType]="queueItem.type"
+      [defaultIcon]="queueItem.mdIcon"
+      [loadingStatus]="loadingStatus"
+      [audioPlayerState]="audioPlayerState"
+      [disabled]="queueItem.disabled"
+      [editing]="editQueueForm.editing"
+      [selectable]="queueItem.itemType === QueueSnapshotItemType.User && !queueItem.isCurrentQueuePosition"
+      [last]="last"
+      (contentClick)="onNodeClick($event)"
+      (selectedChange)="onNodeSelectedChanged($event)"
+      >
+      <div appNodeListItemTitle>
+        {{ queueItem.name }}
+      </div>
+      <app-file-metadata-subtitle appNodeListItemSubtitle
+        [metadata]="queueItem.file.metadata"
+        />
+        @if (queueItem.itemType === UserItemType) {
+          <mat-icon
+            matTooltip="Added by user"
+            extra-action-list-content
+            class="user-queue-item-icon node-list-item-action-list-context-menu">
+            person_add
+          </mat-icon>
+        }
+        <app-add-to-queue-button
+          [file]="queueItem.file"
+          />
+          @if (queueItem.itemType === UserItemType && !queueItem.isCurrentQueuePosition) {
+            <app-remove-from-queue-button
+              [item]="queueItem"
+              />
+          }
+          <app-open-location-button
+            [folder]="queueItem.file.parent"
+            />
+          </app-node-list-item>
+        }
+      </div>

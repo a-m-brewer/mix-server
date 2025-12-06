@@ -2,8 +2,8 @@
   <mat-toolbar-row>
     <span class="nav-bar-spacer"></span>
     <button mat-raised-button
-            color="primary"
-            (click)="openCreateUserDialog()">
+      color="primary"
+      (click)="openCreateUserDialog()">
       <mat-icon>person_add</mat-icon>
       Add User
     </button>
@@ -11,44 +11,48 @@
 </mat-toolbar>
 
 <mat-list>
-  <mat-list-item *ngFor="let user of users; last as last">
-    <app-node-list-item-icon
-      matListItemIcon
-      [ngClass]="{ 'mat-list-item-icon': true, 'file-explorer-node-current-session': false }"
-      defaultIcon="person"
-    />
-
-    <div matListItemTitle class="user-admin-title">
-      <span class="user-admin-title-item"><strong>{{ user.name }}</strong></span>
-      <div class="user-admin-title-item mix-server-chip-container">
-        <span class="mix-server-chip" *ngFor="let role of user.roles">{{ role }}</span>
-      </div>
-    </div>
-
-    <span matListItemMeta class="nav-list-item-meta-span"
-      *ngIf="
-        ((currentUser?.isOwner ?? false) && !user.isOwner) ||
-        ((currentUser?.isAdmin ?? false) && !user.isOwner && !user.isAdmin)
-      ">
-      <button mat-icon-button [matMenuTriggerFor]="contextMenu">
-        <mat-icon>more_vert</mat-icon>
-      </button>
-      <mat-menu #contextMenu="matMenu">
-        <button mat-menu-item
+  @for (user of users; track user; let last = $last) {
+    <mat-list-item>
+      <app-node-list-item-icon
+        matListItemIcon
+        [ngClass]="{ 'mat-list-item-icon': true, 'file-explorer-node-current-session': false }"
+        defaultIcon="person"
+        />
+        <div matListItemTitle class="user-admin-title">
+          <span class="user-admin-title-item"><strong>{{ user.name }}</strong></span>
+          <div class="user-admin-title-item mix-server-chip-container">
+            @for (role of user.roles; track role) {
+              <span class="mix-server-chip">{{ role }}</span>
+            }
+          </div>
+        </div>
+        @if (
+          ((currentUser?.isOwner ?? false) && !user.isOwner) ||
+          ((currentUser?.isAdmin ?? false) && !user.isOwner && !user.isAdmin)
+          ) {
+          <span matListItemMeta class="nav-list-item-meta-span"
+            >
+            <button mat-icon-button [matMenuTriggerFor]="contextMenu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #contextMenu="matMenu">
+              <button mat-menu-item
                 (click)="onEditUser(user)">
-          <mat-icon>edit</mat-icon>
-          <span>Edit User</span>
-        </button>
-        <button mat-menu-item
+                <mat-icon>edit</mat-icon>
+                <span>Edit User</span>
+              </button>
+              <button mat-menu-item
                 (click)="onUserDeleted(user)">
-          <mat-icon>delete</mat-icon>
-          <span>Delete User</span>
-        </button>
-      </mat-menu>
-    </span>
-
-
-    <mat-divider [inset]="true" *ngIf="!last"></mat-divider>
-  </mat-list-item>
-</mat-list>
+                <mat-icon>delete</mat-icon>
+                <span>Delete User</span>
+              </button>
+            </mat-menu>
+          </span>
+        }
+        @if (!last) {
+          <mat-divider [inset]="true"></mat-divider>
+        }
+      </mat-list-item>
+    }
+  </mat-list>
 

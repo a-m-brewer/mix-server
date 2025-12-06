@@ -1,22 +1,23 @@
 <mat-list>
-  <mat-list-item *ngFor="let device of devices; last as last">
-    <app-node-list-item-icon
-      matListItemIcon
-      [ngClass]="{ 'mat-list-item-icon': true, 'file-explorer-node-current-session': false }"
-      [defaultIcon]="device.icon"
-    />
-
-    <span matListItemTitle>{{ device.displayName }}</span>
-    <span matListItemLine>{{ device.deviceType }} {{ device.clientType }}  Last Seen: {{ device.lastSeen }} Interacted with: {{ device.interactedWith }}</span>
-
-    <span matListItemMeta class="nav-list-item-meta-span">
-      <button mat-icon-button
-              matTooltip="Revoke this device's access to Mix Server"
-              (click)="onDeviceDeleted(device)">
-        <mat-icon>delete</mat-icon>
-      </button>
-    </span>
-
-    <mat-divider [inset]="true" *ngIf="!last"></mat-divider>
-  </mat-list-item>
-</mat-list>
+  @for (device of devices; track device; let last = $last) {
+    <mat-list-item>
+      <app-node-list-item-icon
+        matListItemIcon
+        [ngClass]="{ 'mat-list-item-icon': true, 'file-explorer-node-current-session': false }"
+        [defaultIcon]="device.icon"
+        />
+        <span matListItemTitle>{{ device.displayName }}</span>
+        <span matListItemLine>{{ device.deviceType }} {{ device.clientType }}  Last Seen: {{ device.lastSeen }} Interacted with: {{ device.interactedWith }}</span>
+        <span matListItemMeta class="nav-list-item-meta-span">
+          <button mat-icon-button
+            matTooltip="Revoke this device's access to Mix Server"
+            (click)="onDeviceDeleted(device)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </span>
+        @if (!last) {
+          <mat-divider [inset]="true"></mat-divider>
+        }
+      </mat-list-item>
+    }
+  </mat-list>

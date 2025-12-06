@@ -1,1 +1,3 @@
-<mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+@if (loading) {
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+}

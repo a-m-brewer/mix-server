@@ -4,9 +4,10 @@ import {Subject, takeUntil} from "rxjs";
 import {Role} from "../generated-clients/mix-server-clients";
 
 @Component({
-  selector: 'app-admin-page',
-  templateUrl: './admin-page.component.html',
-  styleUrls: ['./admin-page.component.scss']
+    selector: 'app-admin-page',
+    templateUrl: './admin-page.component.html',
+    styleUrls: ['./admin-page.component.scss'],
+    standalone: false
 })
 export class AdminPageComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

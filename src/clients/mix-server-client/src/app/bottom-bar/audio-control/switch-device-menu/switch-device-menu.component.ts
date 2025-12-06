@@ -1,7 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {MatIconModule} from "@angular/material/icon";
 import {MatMenuModule} from "@angular/material/menu";
-import {AsyncPipe, NgForOf} from "@angular/common";
 import {MatButtonModule} from "@angular/material/button";
 import {AudioPlayerService} from "../../../services/audio-player/audio-player.service";
 import {Subject, takeUntil} from "rxjs";
@@ -14,17 +13,14 @@ import {DeviceRepositoryService} from "../../../services/repositories/device-rep
 import {PlaybackDeviceService} from "../../../services/audio-player/playback-device.service";
 
 @Component({
-  selector: 'app-switch-device-menu',
-  standalone: true,
-  imports: [
+    selector: 'app-switch-device-menu',
+    imports: [
     MatIconModule,
     MatMenuModule,
-    NgForOf,
-    AsyncPipe,
     MatButtonModule
-  ],
-  templateUrl: './switch-device-menu.component.html',
-  styleUrl: './switch-device-menu.component.scss'
+],
+    templateUrl: './switch-device-menu.component.html',
+    styleUrl: './switch-device-menu.component.scss'
 })
 export class SwitchDeviceMenuComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

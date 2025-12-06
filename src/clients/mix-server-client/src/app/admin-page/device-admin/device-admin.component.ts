@@ -6,9 +6,10 @@ import {MatDialog} from "@angular/material/dialog";
 import {DeleteDialogComponent} from "../../components/dialogs/delete-dialog/delete-dialog.component";
 
 @Component({
-  selector: 'app-device-admin',
-  templateUrl: './device-admin.component.html',
-  styleUrls: ['./device-admin.component.scss']
+    selector: 'app-device-admin',
+    templateUrl: './device-admin.component.html',
+    styleUrls: ['./device-admin.component.scss'],
+    standalone: false
 })
 export class DeviceAdminComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

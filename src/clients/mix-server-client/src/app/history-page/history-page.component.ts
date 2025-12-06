@@ -13,9 +13,10 @@ import {SessionService} from "../services/sessions/session.service";
 import {AuthenticationService} from "../services/auth/authentication.service";
 
 @Component({
-  selector: 'app-history-page',
-  templateUrl: './history-page.component.html',
-  styleUrls: ['./history-page.component.scss']
+    selector: 'app-history-page',
+    templateUrl: './history-page.component.html',
+    styleUrls: ['./history-page.component.scss'],
+    standalone: false
 })
 export class HistoryPageComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

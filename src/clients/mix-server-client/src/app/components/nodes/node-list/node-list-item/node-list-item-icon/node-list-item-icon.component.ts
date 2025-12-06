@@ -2,9 +2,10 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FileExplorerPlayingState} from "../../../../../main-content/file-explorer/enums/file-explorer-playing-state";
 
 @Component({
-  selector: 'app-node-list-item-icon',
-  templateUrl: './node-list-item-icon.component.html',
-  styleUrls: ['./node-list-item-icon.component.scss']
+    selector: 'app-node-list-item-icon',
+    templateUrl: './node-list-item-icon.component.html',
+    styleUrls: ['./node-list-item-icon.component.scss'],
+    standalone: false
 })
 export class NodeListItemIcon {
   protected readonly FileExplorerPlayingState = FileExplorerPlayingState;

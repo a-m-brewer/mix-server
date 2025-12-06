@@ -5,10 +5,11 @@ import {FileExplorerNode} from "../../../../../../main-content/file-explorer/mod
 import {QueueRepositoryService} from "../../../../../../services/repositories/queue-repository.service";
 
 @Component({
-  selector: 'app-add-to-queue-button',
-  templateUrl: './add-to-queue-button.component.html',
-  styleUrls: ['./add-to-queue-button.component.scss'],
-  providers: [{provide: ContextMenuButton, useExisting: forwardRef(() => AddToQueueButtonComponent)}]
+    selector: 'app-add-to-queue-button',
+    templateUrl: './add-to-queue-button.component.html',
+    styleUrls: ['./add-to-queue-button.component.scss'],
+    providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => AddToQueueButtonComponent) }],
+    standalone: false
 })
 export class AddToQueueButtonComponent extends ContextMenuButton {
 

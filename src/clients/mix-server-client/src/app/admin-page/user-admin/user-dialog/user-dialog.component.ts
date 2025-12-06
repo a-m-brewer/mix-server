@@ -11,7 +11,7 @@ import {
 import {FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {MatFormFieldModule} from "@angular/material/form-field";
 import {MatInputModule} from "@angular/material/input";
-import {NgIf} from "@angular/common";
+
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import {UserDialogData} from "./user-dialog-data";
 
@@ -27,9 +27,8 @@ export class AddUserDialogResponse {
 }
 
 @Component({
-  selector: 'app-user-dialog',
-  standalone: true,
-  imports: [
+    selector: 'app-user-dialog',
+    imports: [
     MatButtonModule,
     MatDialogActions,
     MatDialogContent,
@@ -38,11 +37,10 @@ export class AddUserDialogResponse {
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
-    NgIf,
     MatCheckboxModule
-  ],
-  templateUrl: './user-dialog.component.html',
-  styleUrl: './user-dialog.component.scss'
+],
+    templateUrl: './user-dialog.component.html',
+    styleUrl: './user-dialog.component.scss'
 })
 export class UserDialogComponent {
   public usernameKey = 'username';

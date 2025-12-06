@@ -8,16 +8,20 @@
         <mat-form-field class="form-field-block">
           <mat-label>Username</mat-label>
           <input type="text" spellcheck="false" autocorrect="off" autocomplete="off" matInput [formControlName]="usernameKey">
-          <mat-error *ngIf="form.get(usernameKey)?.hasError('required')">
-            A username is required
-          </mat-error>
+          @if (form.get(usernameKey)?.hasError('required')) {
+            <mat-error>
+              A username is required
+            </mat-error>
+          }
         </mat-form-field>
         <mat-form-field class="form-field-block">
           <mat-label>Password</mat-label>
           <input type="password" matInput [formControlName]="passwordKey">
-          <mat-error *ngIf="form.get(passwordKey)?.hasError('required')">
-            A password is required
-          </mat-error>
+          @if (form.get(passwordKey)?.hasError('required')) {
+            <mat-error>
+              A password is required
+            </mat-error>
+          }
         </mat-form-field>
       </form>
     </mat-card-content>
@@ -28,8 +32,10 @@
         </button>
       </div>
     </mat-card-actions>
-    <mat-card-footer *ngIf="loading">
-      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-    </mat-card-footer>
+    @if (loading) {
+      <mat-card-footer>
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      </mat-card-footer>
+    }
   </mat-card>
 </div>

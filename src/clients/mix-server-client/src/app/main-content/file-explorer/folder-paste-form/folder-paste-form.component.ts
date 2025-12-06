@@ -3,19 +3,17 @@ import {MatButton} from "@angular/material/button";
 import {CopyNodeService} from "../../../services/nodes/copy-node.service";
 import {Subject, takeUntil} from "rxjs";
 import {FileExplorerFileNode} from "../models/file-explorer-file-node";
-import {NgIf} from "@angular/common";
+
 import {FileExplorerNodeRepositoryService} from "../../../services/repositories/file-explorer-node-repository.service";
 import {FileExplorerFolder} from "../models/file-explorer-folder";
 
 @Component({
-  selector: 'app-folder-paste-form',
-  standalone: true,
-  imports: [
-    MatButton,
-    NgIf
-  ],
-  templateUrl: './folder-paste-form.component.html',
-  styleUrl: './folder-paste-form.component.scss'
+    selector: 'app-folder-paste-form',
+    imports: [
+    MatButton
+],
+    templateUrl: './folder-paste-form.component.html',
+    styleUrl: './folder-paste-form.component.scss'
 })
 export class FolderPasteFormComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject<void>();

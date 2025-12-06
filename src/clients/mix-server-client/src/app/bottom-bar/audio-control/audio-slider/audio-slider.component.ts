@@ -8,7 +8,7 @@ import {
   QueryList, ViewChild,
   ViewChildren
 } from '@angular/core';
-import {AsyncPipe, NgClass, NgIf, NgStyle} from "@angular/common";
+import { AsyncPipe, NgClass, NgStyle } from "@angular/common";
 import {FormsModule} from "@angular/forms";
 import {MatSlider, MatSliderDragEvent, MatSliderThumb} from "@angular/material/slider";
 import {AudioPlayerService} from "../../../services/audio-player/audio-player.service";
@@ -30,20 +30,18 @@ interface SliderMarkerDetails extends SliderMarker {
 }
 
 @Component({
-  selector: 'app-audio-slider',
-  standalone: true,
-  imports: [
+    selector: 'app-audio-slider',
+    imports: [
     AsyncPipe,
     FormsModule,
     MatSlider,
     MatSliderThumb,
     NgClass,
     NgStyle,
-    MatTooltip,
-    NgIf
-  ],
-  templateUrl: './audio-slider.component.html',
-  styleUrl: './audio-slider.component.scss'
+    MatTooltip
+],
+    templateUrl: './audio-slider.component.html',
+    styleUrl: './audio-slider.component.scss'
 })
 export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {
   private _unsubscribe$ = new Subject();

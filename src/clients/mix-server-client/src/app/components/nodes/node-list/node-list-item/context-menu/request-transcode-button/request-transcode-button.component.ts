@@ -3,20 +3,18 @@ import {ContextMenuButton} from "../context-menu-button";
 import {FileExplorerFileNode} from "../../../../../../main-content/file-explorer/models/file-explorer-file-node";
 import {MatIcon} from "@angular/material/icon";
 import {MatMenuItem} from "@angular/material/menu";
-import {NgIf} from "@angular/common";
+
 import {TranscodeService} from "../../../../../../services/audio-player/transcode.service";
 
 @Component({
-  selector: 'app-request-transcode-button',
-  standalone: true,
-  imports: [
+    selector: 'app-request-transcode-button',
+    imports: [
     MatIcon,
-    MatMenuItem,
-    NgIf
-  ],
-  templateUrl: './request-transcode-button.component.html',
-  styleUrl: './request-transcode-button.component.scss',
-  providers: [{provide: ContextMenuButton, useExisting: forwardRef(() => RequestTranscodeButtonComponent)}]
+    MatMenuItem
+],
+    templateUrl: './request-transcode-button.component.html',
+    styleUrl: './request-transcode-button.component.scss',
+    providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => RequestTranscodeButtonComponent) }]
 })
 export class RequestTranscodeButtonComponent extends ContextMenuButton {
   public disabled = false;

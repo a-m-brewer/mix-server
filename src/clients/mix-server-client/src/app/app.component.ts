@@ -22,9 +22,10 @@ import {WindowSizeRepositoryService} from "./services/repositories/window-size-r
 import {AudioPlayerCapabilitiesService} from "./services/audio-player/audio-player-capabilities.service";
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.scss'],
+    standalone: false
 })
 export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private _unsubscribe$ = new Subject();

@@ -8,16 +8,15 @@ import {AudioSliderComponent} from "../audio-slider/audio-slider.component";
 import {WindowSizeRepositoryService} from "../../../services/repositories/window-size-repository.service";
 
 @Component({
-  selector: 'app-audio-progress-slider',
-  standalone: true,
-  imports: [
-    DurationDisplayComponent,
-    MatSliderModule,
-    FormsModule,
-    AudioSliderComponent,
-  ],
-  templateUrl: './audio-progress-slider.component.html',
-  styleUrl: './audio-progress-slider.component.scss'
+    selector: 'app-audio-progress-slider',
+    imports: [
+        DurationDisplayComponent,
+        MatSliderModule,
+        FormsModule,
+        AudioSliderComponent,
+    ],
+    templateUrl: './audio-progress-slider.component.html',
+    styleUrl: './audio-progress-slider.component.scss'
 })
 export class AudioProgressSliderComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

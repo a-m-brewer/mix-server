@@ -1,65 +1,63 @@
 <div>
-  <app-node-list-item
-    *ngIf="currentFolder.node.parent"
-    [key]="currentFolder.node.parent.path.key"
-    [nodeType]="currentFolder.node.parent.type"
-    [defaultIcon]="currentFolder.node.parent.mdIcon"
-    [loadingStatus]="loadingStatus"
-    [audioPlayerState]="audioPlayerState"
-    [disabled]="currentFolder.node.parent.disabled"
-    [last]="currentFolder.children.length === 0"
-    (contentClick)="onNodeClick($event)"
-  >
-    <div appNodeListItemTitle>
-      ..
-    </div>
-  </app-node-list-item>
+  @if (currentFolder.node.parent) {
+    <app-node-list-item
+      [key]="currentFolder.node.parent.path.key"
+      [nodeType]="currentFolder.node.parent.type"
+      [defaultIcon]="currentFolder.node.parent.mdIcon"
+      [loadingStatus]="loadingStatus"
+      [audioPlayerState]="audioPlayerState"
+      [disabled]="currentFolder.node.parent.disabled"
+      [last]="currentFolder.children.length === 0"
+      (contentClick)="onNodeClick($event)"
+      >
+      <div appNodeListItemTitle>
+        ..
+      </div>
+    </app-node-list-item>
+  }
 
-  <app-node-list-item
-    *ngFor="let node of currentFolder.children; last as last"
-    [key]="node.path.key"
-    [nodeType]="node.type"
-    [defaultIcon]="node.mdIcon"
-    [loadingStatus]="loadingStatus"
-    [audioPlayerState]="audioPlayerState"
-    [disabled]="node.disabled"
-    [last]="last"
-    (contentClick)="onNodeClick($event)"
-    >
-    <div appNodeListItemTitle>
-      {{ node.path.fileName }}
-    </div>
-
-    <app-file-metadata-subtitle appNodeListItemSubtitle
-                                *ngIf="node | instanceOf:FileExplorerFileNode as fileNode"
-      [metadata]="fileNode.metadata"
-    />
-
-    @if (node | instanceOf:FileExplorerFileNode; as fileNode) {
-      <app-add-to-queue-button
-        *ngIf="fileNode.playbackSupported"
-        [file]="fileNode"
-      />
-
-      @if (fileNode.exists && !fileNode.hasTranscode) {
-        <app-request-transcode-button
-          [file]="fileNode"
-        />
+  @for (node of currentFolder.children; track node; let last = $last) {
+    <app-node-list-item
+      [key]="node.path.key"
+      [nodeType]="node.type"
+      [defaultIcon]="node.mdIcon"
+      [loadingStatus]="loadingStatus"
+      [audioPlayerState]="audioPlayerState"
+      [disabled]="node.disabled"
+      [last]="last"
+      (contentClick)="onNodeClick($event)"
+      >
+      <div appNodeListItemTitle>
+        {{ node.path.fileName }}
+      </div>
+      @if (node | instanceOf:FileExplorerFileNode; as fileNode) {
+        <app-file-metadata-subtitle appNodeListItemSubtitle
+          [metadata]="fileNode.metadata"
+          />
       }
-
-      @if (fileNode.exists && isAdmin) {
-        <app-copy-node
-          [file]="fileNode"
-        />
-
-        <app-cut-node
-          [file]="fileNode"
-        />
-
-        <app-delete-node
-          [file]="fileNode"
-        />
-      }
-    }
-  </app-node-list-item>
-</div>
+      @if (node | instanceOf:FileExplorerFileNode; as fileNode) {
+        @if (fileNode.playbackSupported) {
+          <app-add-to-queue-button
+            [file]="fileNode"
+            />
+        }
+        @if (fileNode.exists && !fileNode.hasTranscode) {
+          <app-request-transcode-button
+            [file]="fileNode"
+            />
+          }
+          @if (fileNode.exists && isAdmin) {
+            <app-copy-node
+              [file]="fileNode"
+              />
+              <app-cut-node
+                [file]="fileNode"
+                />
+                <app-delete-node
+                  [file]="fileNode"
+                  />
+                }
+              }
+            </app-node-list-item>
+          }
+        </div>

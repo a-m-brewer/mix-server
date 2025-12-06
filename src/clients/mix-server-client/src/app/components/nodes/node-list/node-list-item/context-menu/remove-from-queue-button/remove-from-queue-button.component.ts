@@ -5,10 +5,11 @@ import {QueueSnapshotItemType} from "../../../../../../generated-clients/mix-ser
 import {QueueRepositoryService} from "../../../../../../services/repositories/queue-repository.service";
 
 @Component({
-  selector: 'app-remove-from-queue-button',
-  templateUrl: './remove-from-queue-button.component.html',
-  styleUrls: ['./remove-from-queue-button.component.scss'],
-  providers: [{provide: ContextMenuButton, useExisting: forwardRef(() => RemoveFromQueueButtonComponent)}]
+    selector: 'app-remove-from-queue-button',
+    templateUrl: './remove-from-queue-button.component.html',
+    styleUrls: ['./remove-from-queue-button.component.scss'],
+    providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => RemoveFromQueueButtonComponent) }],
+    standalone: false
 })
 export class RemoveFromQueueButtonComponent extends ContextMenuButton {
 

@@ -1,7 +1,7 @@
 import {Component, forwardRef, Input, OnInit, OnDestroy} from '@angular/core';
 import {MatIcon} from "@angular/material/icon";
 import {MatMenuItem} from "@angular/material/menu";
-import {NgIf} from "@angular/common";
+
 import {ContextMenuButton} from "../context-menu-button";
 import {FileExplorerFileNode} from "../../../../../../main-content/file-explorer/models/file-explorer-file-node";
 import {MatDialog} from "@angular/material/dialog";
@@ -12,16 +12,14 @@ import {RoleRepositoryService} from "../../../../../../services/repositories/rol
 import {Role} from "../../../../../../generated-clients/mix-server-clients";
 
 @Component({
-  selector: 'app-delete-node',
-  standalone: true,
-  imports: [
+    selector: 'app-delete-node',
+    imports: [
     MatIcon,
-    MatMenuItem,
-    NgIf
-  ],
-  templateUrl: './delete-node.component.html',
-  styleUrl: './delete-node.component.scss',
-  providers: [{provide: ContextMenuButton, useExisting: forwardRef(() => DeleteNodeComponent)}]
+    MatMenuItem
+],
+    templateUrl: './delete-node.component.html',
+    styleUrl: './delete-node.component.scss',
+    providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => DeleteNodeComponent) }]
 })
 export class DeleteNodeComponent extends ContextMenuButton implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject<void>();
