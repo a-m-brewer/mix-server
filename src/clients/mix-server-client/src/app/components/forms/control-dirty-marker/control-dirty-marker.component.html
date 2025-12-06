@@ -1,1 +1,3 @@
-<span *ngIf="control.dirty" matTooltip="Changed">*</span>
+@if (control.dirty) {
+  <span matTooltip="Changed">*</span>
+}

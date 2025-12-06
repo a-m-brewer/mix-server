@@ -5,7 +5,7 @@ import {FileExplorerNodeRepositoryService} from "../../../services/repositories/
 import {Subject, takeUntil} from "rxjs";
 import {MatButtonToggleChange, MatButtonToggleModule} from "@angular/material/button-toggle";
 import {LoadingRepositoryService} from "../../../services/repositories/loading-repository.service";
-import {KeyValuePipe, NgForOf, NgIf} from "@angular/common";
+import { KeyValuePipe } from "@angular/common";
 import {MatIconModule} from "@angular/material/icon";
 
 interface IFolderSortForm {
@@ -14,18 +14,15 @@ interface IFolderSortForm {
 }
 
 @Component({
-  selector: 'app-folder-sort-form',
-  standalone: true,
-  templateUrl: './folder-sort-form.component.html',
-  imports: [
+    selector: 'app-folder-sort-form',
+    templateUrl: './folder-sort-form.component.html',
+    imports: [
     ReactiveFormsModule,
     MatButtonToggleModule,
     KeyValuePipe,
-    MatIconModule,
-    NgIf,
-    NgForOf
-  ],
-  styleUrls: ['./folder-sort-form.component.scss']
+    MatIconModule
+],
+    styleUrls: ['./folder-sort-form.component.scss']
 })
 export class FolderSortFormComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

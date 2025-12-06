@@ -1,54 +1,56 @@
 <button mat-mini-fab color="accent"
-        class="audio-control-button"
-        [disabled]="disconnected"
-        [matMenuTriggerFor]="contextMenu">
+  class="audio-control-button"
+  [disabled]="disconnected"
+  [matMenuTriggerFor]="contextMenu">
   <mat-icon>more_vert</mat-icon>
 </button>
 
 <mat-menu #contextMenu="matMenu">
   <button mat-menu-item
-          matTooltip="Clear session"
-          [disabled]="!session"
-          (click)="clearSession()"
-  >
+    matTooltip="Clear session"
+    [disabled]="!session"
+    (click)="clearSession()"
+    >
     <mat-icon>clear_all</mat-icon>
     <span>Clear Session</span>
   </button>
 
   <button mat-menu-item
-          matTooltip="History"
-          [disabled]="disconnected"
-          (click)="openHistoryPage()"
-  >
+    matTooltip="History"
+    [disabled]="disconnected"
+    (click)="openHistoryPage()"
+    >
     <mat-icon>list</mat-icon>
     <span>History</span>
   </button>
 
   <button mat-menu-item
-          matTooltip="Queue"
-          [disabled]="disconnected"
-          (click)="openQueuePage()"
-  >
+    matTooltip="Queue"
+    [disabled]="disconnected"
+    (click)="openQueuePage()"
+    >
     <mat-icon>queue_music</mat-icon>
     <span>Queue</span>
   </button>
 
-  <button mat-menu-item
-          matTooltip="Go to location"
-          *ngIf="session"
-          [disabled]="disconnected"
-          (click)="goToLocation()">
-    <mat-icon>folder</mat-icon>
-    <span>Go to Location</span>
-  </button>
+  @if (session) {
+    <button mat-menu-item
+      matTooltip="Go to location"
+      [disabled]="disconnected"
+      (click)="goToLocation()">
+      <mat-icon>folder</mat-icon>
+      <span>Go to Location</span>
+    </button>
+  }
 
-  <button mat-menu-item
-          matTooltip="Go to tracklist"
-          *ngIf="session"
-          [disabled]="disconnected"
-          (click)="goToTracklist()">
-    <mat-icon>list</mat-icon>
-    <span>Go to Tracklist</span>
-  </button>
+  @if (session) {
+    <button mat-menu-item
+      matTooltip="Go to tracklist"
+      [disabled]="disconnected"
+      (click)="goToTracklist()">
+      <mat-icon>list</mat-icon>
+      <span>Go to Tracklist</span>
+    </button>
+  }
 </mat-menu>
 

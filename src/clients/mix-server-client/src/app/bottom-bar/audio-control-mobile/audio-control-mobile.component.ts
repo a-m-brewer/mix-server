@@ -1,13 +1,12 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ExpansionPanelComponent} from "../../components/controls/expansion-panel/expansion-panel.component";
 import {AppModule} from "../../app.module";
-import {SessionComponent} from "../audio-control/session/session.component";
 import {distinctUntilChanged, Subject, takeUntil} from "rxjs";
 import {
   CurrentPlaybackSessionRepositoryService
 } from "../../services/repositories/current-playback-session-repository.service";
 import {PlaybackSession} from "../../services/repositories/models/playback-session";
-import {AsyncPipe, NgIf} from "@angular/common";
+import { AsyncPipe } from "@angular/common";
 import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
 import {AudioPlayerService} from "../../services/audio-player/audio-player.service";
@@ -22,12 +21,9 @@ import {LoadingRepositoryService} from "../../services/repositories/loading-repo
 import {PlaybackDeviceService} from "../../services/audio-player/playback-device.service";
 
 @Component({
-  selector: 'app-audio-control-mobile',
-  standalone: true,
-  imports: [
+    selector: 'app-audio-control-mobile',
+    imports: [
     ExpansionPanelComponent,
-    SessionComponent,
-    NgIf,
     MatButtonModule,
     MatIconModule,
     AsyncPipe,
@@ -36,9 +32,9 @@ import {PlaybackDeviceService} from "../../services/audio-player/playback-device
     AudioControlButtonsComponent,
     SwitchDeviceMenuComponent,
     LoadingFabIconComponent
-  ],
-  templateUrl: './audio-control-mobile.component.html',
-  styleUrl: './audio-control-mobile.component.scss'
+],
+    templateUrl: './audio-control-mobile.component.html',
+    styleUrl: './audio-control-mobile.component.scss'
 })
 export class AudioControlMobileComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

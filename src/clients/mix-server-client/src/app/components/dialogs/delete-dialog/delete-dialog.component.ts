@@ -3,9 +3,10 @@ import {MAT_DIALOG_DATA} from "@angular/material/dialog";
 import {DeleteDialogData} from "./delete-dialog-data";
 
 @Component({
-  selector: 'app-delete-dialog',
-  templateUrl: './delete-dialog.component.html',
-  styleUrls: ['./delete-dialog.component.scss']
+    selector: 'app-delete-dialog',
+    templateUrl: './delete-dialog.component.html',
+    styleUrls: ['./delete-dialog.component.scss'],
+    standalone: false
 })
 export class DeleteDialogComponent {
   constructor(@Inject(MAT_DIALOG_DATA) public data: DeleteDialogData) {

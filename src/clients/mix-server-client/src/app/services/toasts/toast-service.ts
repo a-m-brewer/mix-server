@@ -18,7 +18,7 @@ export class ToastService {
   }
 
   public logServerError(err: any, message?: string) {
-    const extraMessage = `${message}: ` ?? '';
+    const extraMessage = message ? `${message}: ` : '';
     console.error(err);
 
     if (err instanceof ProblemDetails) {

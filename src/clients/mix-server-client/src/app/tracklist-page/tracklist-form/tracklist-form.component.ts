@@ -1,7 +1,7 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {MatDivider} from "@angular/material/divider";
-import {NgClass, NgIf} from "@angular/common";
+import { NgClass } from "@angular/common";
 import {MatAnchor, MatIconButton} from "@angular/material/button";
 import {ControlDirtyMarkerComponent} from "../../components/forms/control-dirty-marker/control-dirty-marker.component";
 import {AudioPlayerService} from "../../services/audio-player/audio-player.service";
@@ -15,21 +15,19 @@ import {MatIcon} from "@angular/material/icon";
 import {MatTooltip} from "@angular/material/tooltip";
 
 @Component({
-  selector: 'app-tracklist-form',
-  standalone: true,
-  imports: [
+    selector: 'app-tracklist-form',
+    imports: [
     ReactiveFormsModule,
     MatDivider,
-    NgIf,
     MatAnchor,
     ControlDirtyMarkerComponent,
     NgClass,
     MatIcon,
     MatIconButton,
     MatTooltip
-  ],
-  templateUrl: './tracklist-form.component.html',
-  styleUrl: './tracklist-form.component.scss'
+],
+    templateUrl: './tracklist-form.component.html',
+    styleUrl: './tracklist-form.component.scss'
 })
 export class TracklistFormComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject<void>();

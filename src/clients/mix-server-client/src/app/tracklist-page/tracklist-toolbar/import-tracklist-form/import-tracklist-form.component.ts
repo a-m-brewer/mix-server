@@ -9,14 +9,13 @@ interface ImportTracklistFormGroup {
 }
 
 @Component({
-  selector: 'app-import-tracklist-form',
-  standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    MatButton
-  ],
-  templateUrl: './import-tracklist-form.component.html',
-  styleUrl: './import-tracklist-form.component.scss'
+    selector: 'app-import-tracklist-form',
+    imports: [
+        ReactiveFormsModule,
+        MatButton
+    ],
+    templateUrl: './import-tracklist-form.component.html',
+    styleUrl: './import-tracklist-form.component.scss'
 })
 export class ImportTracklistFormComponent {
 

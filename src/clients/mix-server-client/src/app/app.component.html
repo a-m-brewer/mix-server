@@ -1,22 +1,29 @@
 <div>
   <div #navBar>
-    <app-nav-bar *ngIf="initialized">
-    </app-nav-bar>
+    @if (initialized) {
+      <app-nav-bar>
+      </app-nav-bar>
+    }
   </div>
 
   <div id="content-container" #mainContent>
-    <div id="content-scroll-container" *ngIf="initialized" (scroll)="onScroll()" #scrollContainer>
-      <router-outlet></router-outlet>
-    </div>
+    @if (initialized) {
+      <div id="content-scroll-container" (scroll)="onScroll()" #scrollContainer>
+        <router-outlet></router-outlet>
+      </div>
+    }
   </div>
 
   <div id="app-bottom-bar" #bottomBar>
-    <app-bottom-bar *ngIf="initialized">
-    </app-bottom-bar>
+    @if (initialized) {
+      <app-bottom-bar>
+      </app-bottom-bar>
+    }
   </div>
 </div>
 
-<app-spinner-overlay
-  *ngIf="disconnected"
-  [reason]="disconnectedReason"
-  />
+@if (disconnected) {
+  <app-spinner-overlay
+    [reason]="disconnectedReason"
+    />
+}

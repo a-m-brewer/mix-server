@@ -1,7 +1,7 @@
 <mat-toolbar>
   <mat-toolbar-row class="nav-row">
     <button mat-icon-button
-            (click)="filesClicked()">
+      (click)="filesClicked()">
       <mat-icon class="home-icon">
         @if (currentFolder && currentFolder.node.belongsToRootChild) {
           arrow_back_ios_new
@@ -11,7 +11,7 @@
       </mat-icon>
     </button>
     <div
-         class="page-title">
+      class="page-title">
       @if (currentPage === MenuLabel.Files && currentFolder && currentFolder.node.belongsToRootChild) {
         {{ currentFolder.node.path.fileName }}
       } @else if (currentPage) {
@@ -21,73 +21,85 @@
       }
     </div>
 
-    <button
-      mat-button
-      *ngFor="let item of menuItems$ | async"
-      [color]="item.color"
-      [disabled]="loadingStatus.loading"
-      (click)="navigate(item)"
+    @for (item of menuItems$ | async; track item) {
+      <button
+        mat-button
+        [color]="item.color"
+        [disabled]="loadingStatus.loading"
+        (click)="navigate(item)"
       [ngClass]="{
           'hide-mobile': !item.showOnMobile,
           'hide-tablet': !item.showOnTablet,
           'hide-desktop': !item.showOnDesktop
       }"
-    >
-      <mat-icon class="mr">{{ item.icon }}</mat-icon>
-      {{ item.label }}
-    </button>
+        >
+        <mat-icon class="mr">{{ item.icon }}</mat-icon>
+        {{ item.label }}
+      </button>
+    }
 
     <ng-container>
       <button mat-icon-button
-              [matMenuTriggerFor]="dropMenu">
+        [matMenuTriggerFor]="dropMenu">
         <mat-icon>more_vert</mat-icon>
       </button>
       <mat-menu #dropMenu="matMenu">
-        <ng-container *ngFor="let item of menuItems$ | async; last as last">
+        @for (item of menuItems$ | async; track item; let last = $last) {
           <div
             [ngClass]="{
                 'hide-mobile': item.showOnMobile,
                 'hide-tablet': item.showOnTablet,
                 'hide-desktop': item.showOnDesktop
             }"
-          >
-            <button mat-menu-item
-                    [disabled]="loadingStatus.loading"
-                    (click)="navigate(item)"
             >
+            <button mat-menu-item
+              [disabled]="loadingStatus.loading"
+              (click)="navigate(item)"
+              >
               <mat-icon class="mr">{{ item.icon }}</mat-icon>
               <span>{{ item.label }}</span>
             </button>
-            <mat-divider [inset]="true" *ngIf="!last"></mat-divider>
+            @if (!last) {
+              <mat-divider [inset]="true"></mat-divider>
+            }
           </div>
-        </ng-container>
+        }
       </mat-menu>
     </ng-container>
   </mat-toolbar-row>
 
-  <mat-toolbar-row id="file-explorer-toolbar"
-                   *ngIf="currentPage === MenuLabel.Files">
-    <div class="file-explorer-toolbar-buttons">
-      <button mat-icon-button
-              *ngIf="currentFolder"
-              [disabled]="loadingStatus.loading"
-              (click)="refreshFolder()"
+  @if (currentPage === MenuLabel.Files) {
+    <mat-toolbar-row id="file-explorer-toolbar"
       >
-        <mat-icon>refresh</mat-icon>
-      </button>
-    </div>
-    <app-folder-paste-form />
-    <app-folder-sort-form />
-    <div class="spacer" *ngIf="windowType === WindowType.Mobile"></div>
-  </mat-toolbar-row>
+      <div class="file-explorer-toolbar-buttons">
+        @if (currentFolder) {
+          <button mat-icon-button
+            [disabled]="loadingStatus.loading"
+            (click)="refreshFolder()"
+            >
+            <mat-icon>refresh</mat-icon>
+          </button>
+        }
+      </div>
+      <app-folder-paste-form />
+      <app-folder-sort-form />
+      @if (windowType === WindowType.Mobile) {
+        <div class="spacer"></div>
+      }
+    </mat-toolbar-row>
+  }
 
-  <mat-toolbar-row *ngIf="currentPage === MenuLabel.Queue"
-                   class="queue-row">
-    <app-queue-edit-form/>
-  </mat-toolbar-row>
+  @if (currentPage === MenuLabel.Queue) {
+    <mat-toolbar-row
+      class="queue-row">
+      <app-queue-edit-form/>
+    </mat-toolbar-row>
+  }
 
-  <mat-toolbar-row *ngIf="currentPage === MenuLabel.Tracklist"
-                   class="queue-row">
-    <app-tracklist-toolbar />
-  </mat-toolbar-row>
+  @if (currentPage === MenuLabel.Tracklist) {
+    <mat-toolbar-row
+      class="queue-row">
+      <app-tracklist-toolbar />
+    </mat-toolbar-row>
+  }
 </mat-toolbar>

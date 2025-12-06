@@ -1,14 +1,15 @@
 <form [formGroup]="form" >
+  @if (model.editing) {
+    <button mat-button
+      color="warn"
+      [disabled]="!model.editing || !hasSelectedItems"
+      (click)="onRemoveQueueItems()">
+      Remove
+    </button>
+  }
   <button mat-button
-          *ngIf="model.editing"
-          color="warn"
-          [disabled]="!model.editing || !hasSelectedItems"
-          (click)="onRemoveQueueItems()">
-    Remove
-  </button>
-  <button mat-button
-          color="primary"
-          (click)="onEditModeChanged()">
+    color="primary"
+    (click)="onEditModeChanged()">
     {{ model.editing ? 'Done' : 'Edit' }}
   </button>
 </form>

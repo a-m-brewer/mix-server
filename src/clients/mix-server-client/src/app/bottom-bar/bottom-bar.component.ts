@@ -4,9 +4,10 @@ import {WindowSizeRepositoryService} from "../services/repositories/window-size-
 import {WindowType} from "../services/repositories/enums/window-type";
 
 @Component({
-  selector: 'app-bottom-bar',
-  templateUrl: './bottom-bar.component.html',
-  styleUrls: ['./bottom-bar.component.scss']
+    selector: 'app-bottom-bar',
+    templateUrl: './bottom-bar.component.html',
+    styleUrls: ['./bottom-bar.component.scss'],
+    standalone: false
 })
 export class BottomBarComponent implements OnInit, OnDestroy {
   protected readonly WindowType = WindowType;

@@ -12,25 +12,22 @@ import {PageRoutes} from "../../../page-routes.enum";
 import {MatButtonModule} from "@angular/material/button";
 import {MatMenuModule} from "@angular/material/menu";
 import {MatTooltipModule} from "@angular/material/tooltip";
-import {NgForOf, NgIf} from "@angular/common";
+
 import {MatIconModule} from "@angular/material/icon";
 import {SwitchDeviceMenuComponent} from "../switch-device-menu/switch-device-menu.component";
 import {SessionService} from "../../../services/sessions/session.service";
 import {FileExplorerNodeRepositoryService} from "../../../services/repositories/file-explorer-node-repository.service";
 
 @Component({
-  selector: 'app-audio-context-menu',
-  templateUrl: './audio-context-menu.component.html',
-  standalone: true,
-  imports: [
+    selector: 'app-audio-context-menu',
+    templateUrl: './audio-context-menu.component.html',
+    imports: [
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
-    MatTooltipModule,
-    NgForOf,
-    NgIf
-  ],
-  styleUrls: ['./audio-context-menu.component.scss']
+    MatTooltipModule
+],
+    styleUrls: ['./audio-context-menu.component.scss']
 })
 export class AudioContextMenuComponent implements OnInit, OnDestroy{
   private _unsubscribe$ = new Subject();

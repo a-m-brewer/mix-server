@@ -1,57 +1,55 @@
-<app-expansion-panel
-  *ngIf="playbackSession"
-  (expanded)="onExpanded($event)"
->
-  <div headerText class="audio-control-header-text">
-    <div class="session">
-      <strong>{{ playbackSession.currentNode.path.fileName }}</strong>
+@if (playbackSession) {
+  <app-expansion-panel
+    (expanded)="onExpanded($event)"
+    >
+    <div headerText class="audio-control-header-text">
+      <div class="session">
+        <strong>{{ playbackSession.currentNode.path.fileName }}</strong>
+      </div>
+      <div>
+        @if (currentlyPlayingTrackInfo) {
+          {{ currentlyPlayingTrackInfo }}
+        } @else if (currentPlaybackDevice && currentPlaybackDevice.id !== currentDevice?.id) {
+          Playing on {{ currentPlaybackDevice.displayName }}
+        }
+      </div>
     </div>
-
-    <div>
-      @if (currentlyPlayingTrackInfo) {
-        {{ currentlyPlayingTrackInfo }}
-      } @else if (currentPlaybackDevice && currentPlaybackDevice.id !== currentDevice?.id) {
-        Playing on {{ currentPlaybackDevice.displayName }}
-      }
-    </div>
-  </div>
-
-  <div headerMeta class="audio-control-header-meta"
-    *ngIf="!expanded">
-    <app-switch-device-menu />
-
-    @if(audioPlayer.playing$ | async) {
-      <button mat-mini-fab color="primary"
-              class="audio-control-button"
-              [disabled]="audioPlayer.playbackDisabled$ | async"
-              (click)="pause()">
-        <mat-icon>pause</mat-icon>
-      </button>
-    } @else {
-      <button mat-mini-fab color="primary"
-              class="audio-control-button"
-              [disabled]="audioPlayer.playbackDisabled$ | async"
-              (click)="play()">
-        <app-loading-fab-icon class="audio-control-button-icon audio-control-button-icon-fab"
-                              [diameter]="24"
-                              [loading]="playLoading">
-          play_arrow
-        </app-loading-fab-icon>
-      </button>
+    @if (!expanded) {
+      <div headerMeta class="audio-control-header-meta"
+        >
+        <app-switch-device-menu />
+        @if(audioPlayer.playing$ | async) {
+          <button mat-mini-fab color="primary"
+            class="audio-control-button"
+            [disabled]="audioPlayer.playbackDisabled$ | async"
+            (click)="pause()">
+            <mat-icon>pause</mat-icon>
+          </button>
+        } @else {
+          <button mat-mini-fab color="primary"
+            class="audio-control-button"
+            [disabled]="audioPlayer.playbackDisabled$ | async"
+            (click)="play()">
+            <app-loading-fab-icon class="audio-control-button-icon audio-control-button-icon-fab"
+              [diameter]="24"
+              [loading]="playLoading">
+              play_arrow
+            </app-loading-fab-icon>
+          </button>
+        }
+      </div>
     }
-  </div>
-
-  @if (!expanded) {
-    <mat-progress-bar
-      headerFooter
-      mode="determinate"
-      [value]="audioPlayer.currentTimePercentage$ | async">
-    </mat-progress-bar>
-  }
-
-  <div content class="audio-control-mobile-content" fxLayout="column">
-    <app-audio-progress-slider [onMobile]="true" />
-    <div fxLayout="row" fxLayoutAlign="space-around center" app-audio-control-buttons>
+    @if (!expanded) {
+      <mat-progress-bar
+        headerFooter
+        mode="determinate"
+        [value]="audioPlayer.currentTimePercentage$ | async">
+      </mat-progress-bar>
+    }
+    <div content class="audio-control-mobile-content" fxLayout="column">
+      <app-audio-progress-slider [onMobile]="true" />
+      <div fxLayout="row" fxLayoutAlign="space-around center" app-audio-control-buttons>
+      </div>
     </div>
-  </div>
-</app-expansion-panel>
+  </app-expansion-panel>
+}

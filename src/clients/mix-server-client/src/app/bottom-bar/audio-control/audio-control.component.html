@@ -3,43 +3,51 @@
     <mat-toolbar-row>
       <app-audio-progress-slider
         class="app-audio-progress-slider"
-      />
-    </mat-toolbar-row>
+        />
+      </mat-toolbar-row>
 
-    <mat-toolbar-row class="parent">
-      <app-session
-        class="session-component">
-      </app-session>
+      <mat-toolbar-row class="parent">
+        <app-session
+          class="session-component">
+        </app-session>
 
-      <app-audio-control-buttons class="middle-buttons" />
+        <app-audio-control-buttons class="middle-buttons" />
 
-      <div class="content-right">
-        <div class="content-right-track-info"
-             matTooltip="{{ currentlyPlayingTrackInfo }}"
-             matTooltipPosition="above"
-             *ngIf="currentlyPlayingTrackInfo">
-          {{ currentlyPlayingTrackInfo }}
+        <div class="content-right">
+          @if (currentlyPlayingTrackInfo) {
+            <div class="content-right-track-info"
+              matTooltip="{{ currentlyPlayingTrackInfo }}"
+              matTooltipPosition="above"
+              >
+              {{ currentlyPlayingTrackInfo }}
+            </div>
+          }
+
+          <div id="audio-control-volume">
+            <button mat-mini-fab color="primary"
+              class="audio-control-button mute-volume-button"
+              [disabled]="!isCurrentPlaybackDevice"
+              (click)="toggleMute()">
+              @if (muted) {
+                <mat-icon>volume_off</mat-icon>
+              }
+              @if (!muted) {
+                <mat-icon>volume_up</mat-icon>
+              }
+            </button>
+            <mat-slider id="audio-control-volume-slider" step="0.01" min="0" max="1" [disabled]="!isCurrentPlaybackDevice">
+              <input matSliderThumb [(ngModel)]="volume">
+            </mat-slider>
+          </div>
         </div>
+      </mat-toolbar-row>
 
-        <div id="audio-control-volume">
-          <button mat-mini-fab color="primary"
-                  class="audio-control-button mute-volume-button"
-                  [disabled]="!isCurrentPlaybackDevice"
-                  (click)="toggleMute()">
-            <mat-icon *ngIf="muted">volume_off</mat-icon>
-            <mat-icon *ngIf="!muted">volume_up</mat-icon>
-          </button>
-          <mat-slider id="audio-control-volume-slider" step="0.01" min="0" max="1" [disabled]="!isCurrentPlaybackDevice">
-            <input matSliderThumb [(ngModel)]="volume">
-          </mat-slider>
-        </div>
-      </div>
-    </mat-toolbar-row>
-
-    <mat-toolbar-row class="parent" id="playing-on-toolbar-row" *ngIf="currentPlaybackDevice && !isCurrentPlaybackDevice">
-      <div class="content-right">
-        <h5 id="playing-on-text">Currently playing on {{ currentPlaybackDevice.displayName }}</h5>
-      </div>
-    </mat-toolbar-row>
-  </mat-toolbar>
-</div>
+      @if (currentPlaybackDevice && !isCurrentPlaybackDevice) {
+        <mat-toolbar-row class="parent" id="playing-on-toolbar-row">
+          <div class="content-right">
+            <h5 id="playing-on-text">Currently playing on {{ currentPlaybackDevice.displayName }}</h5>
+          </div>
+        </mat-toolbar-row>
+      }
+    </mat-toolbar>
+  </div>

@@ -7,7 +7,7 @@
   matRipple
   [matRippleTrigger]="rippleTrigger"
   [matRippleDisabled]="loadingStatus.loading || isPlayingOrPaused || disabled || editing"
->
+  >
   <div
     [ngClass]="{
       'node-list-item-content-container': true,
@@ -17,7 +17,7 @@
     }"
     #rippleTrigger
     (click)="onContentClicked()"
-  >
+    >
     <div class="node-list-item-content-icon-container node-list-item">
       <app-node-list-item-icon
         [loading]="loadingStatus.loading && !!loadingStatus.loadingIds[key]"
@@ -28,30 +28,33 @@
         [selectable]="selectable"
         (selectedChange)="onSelectedChange($event)"
         class="node-list-item-content-icon"
-      />
+        />
+      </div>
+
+      <div class="node-list-item-content-text node-list-item">
+        <ng-content  select="[appNodeListItemTitle]"></ng-content>
+        <ng-content class="node-list-item-content-text-subtitle" select="[appNodeListItemSubtitle]"></ng-content>
+      </div>
     </div>
 
-    <div class="node-list-item-content-text node-list-item">
-      <ng-content  select="[appNodeListItemTitle]"></ng-content>
-      <ng-content class="node-list-item-content-text-subtitle" select="[appNodeListItemSubtitle]"></ng-content>
+    <div class="node-list-item-action-list-container node-list-item">
+      <ng-content select="[extra-action-list-content]"></ng-content>
+      @if (!allContextMenuButtonsDisabled) {
+        <button mat-icon-button
+          class="node-list-item-action-list-context-menu"
+          [disabled]="loadingStatus.loading || editing || allContextMenuButtonsDisabled"
+          [matMenuTriggerFor]="contextMenu">
+          <mat-icon>
+            more_vert
+          </mat-icon>
+        </button>
+      }
     </div>
   </div>
+  @if (!last) {
+    <mat-divider [inset]="true"></mat-divider>
+  }
 
-  <div class="node-list-item-action-list-container node-list-item">
-    <ng-content select="[extra-action-list-content]"></ng-content>
-    <button mat-icon-button
-            class="node-list-item-action-list-context-menu"
-            *ngIf="!allContextMenuButtonsDisabled"
-            [disabled]="loadingStatus.loading || editing || allContextMenuButtonsDisabled"
-            [matMenuTriggerFor]="contextMenu">
-      <mat-icon>
-        more_vert
-      </mat-icon>
-    </button>
-  </div>
-</div>
-<mat-divider [inset]="true" *ngIf="!last"></mat-divider>
-
-<mat-menu #contextMenu="matMenu">
-  <ng-content></ng-content>
-</mat-menu>
+  <mat-menu #contextMenu="matMenu">
+    <ng-content></ng-content>
+  </mat-menu>

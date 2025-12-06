@@ -6,10 +6,11 @@ import {FileExplorerFolderNode} from "../../../../../../main-content/file-explor
 import {ContextMenuButton} from "../context-menu-button";
 
 @Component({
-  selector: 'app-open-location-button',
-  templateUrl: './open-location-button.component.html',
-  styleUrls: ['./open-location-button.component.scss'],
-  providers: [{provide: ContextMenuButton, useExisting: forwardRef(() => OpenLocationButtonComponent)}]
+    selector: 'app-open-location-button',
+    templateUrl: './open-location-button.component.html',
+    styleUrls: ['./open-location-button.component.scss'],
+    providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => OpenLocationButtonComponent) }],
+    standalone: false
 })
 export class OpenLocationButtonComponent extends ContextMenuButton {
   constructor(private _nodeRepository: FileExplorerNodeRepositoryService) {

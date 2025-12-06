@@ -7,9 +7,10 @@ import {AudioPlayerStateModel} from "../../../../services/audio-player/models/au
 import {FileExplorerPlayingState} from "../../../../main-content/file-explorer/enums/file-explorer-playing-state";
 import {NodeListItemSelectedEvent} from "./interfaces/node-list-item-selected-event";
 @Component({
-  selector: 'app-node-list-item',
-  templateUrl: './node-list-item.component.html',
-  styleUrls: ['./node-list-item.component.scss']
+    selector: 'app-node-list-item',
+    templateUrl: './node-list-item.component.html',
+    styleUrls: ['./node-list-item.component.scss'],
+    standalone: false
 })
 export class NodeListItemComponent {
   protected readonly FileExplorerNodeType = FileExplorerNodeType;

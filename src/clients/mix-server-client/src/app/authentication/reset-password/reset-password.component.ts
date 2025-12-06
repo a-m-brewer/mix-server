@@ -4,7 +4,7 @@ import {MatCardModule} from "@angular/material/card";
 import {MatFormFieldModule} from "@angular/material/form-field";
 import {MatInputModule} from "@angular/material/input";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
-import {NgIf} from "@angular/common";
+
 import {FormBuilder, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators} from "@angular/forms";
 import Validation from "../../utils/validation";
 import {AuthenticationService} from "../../services/auth/authentication.service";
@@ -17,19 +17,17 @@ interface ResetPasswordForm {
 }
 
 @Component({
-  selector: 'app-reset-password',
-  standalone: true,
-  imports: [
+    selector: 'app-reset-password',
+    imports: [
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatProgressBarModule,
-    NgIf,
     ReactiveFormsModule
-  ],
-  templateUrl: './reset-password.component.html',
-  styleUrl: './reset-password.component.scss'
+],
+    templateUrl: './reset-password.component.html',
+    styleUrl: './reset-password.component.scss'
 })
 export class ResetPasswordComponent {
   public form: FormGroup<ResetPasswordForm>;
@@ -43,7 +41,7 @@ export class ResetPasswordComponent {
   constructor(private _authService: AuthenticationService,
               private _formBuilder: FormBuilder,
               _router: Router) {
-    const currentNavigation = _router.getCurrentNavigation();
+    const currentNavigation = _router.currentNavigation();
     const state = currentNavigation?.extras.state as { loginPassword?: string | null };
     this.loginPassword = state?.loginPassword ?? '';
 

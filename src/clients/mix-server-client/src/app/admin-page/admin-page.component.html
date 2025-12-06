@@ -1,9 +1,11 @@
 <mat-tab-group
   mat-stretch-tabs="false"
   mat-align-tabs="start">
-  <mat-tab label="Users" *ngIf="isAdmin">
-    <app-user-admin></app-user-admin>
-  </mat-tab>
+  @if (isAdmin) {
+    <mat-tab label="Users">
+      <app-user-admin></app-user-admin>
+    </mat-tab>
+  }
 
   <mat-tab label="Devices">
     <app-device-admin>

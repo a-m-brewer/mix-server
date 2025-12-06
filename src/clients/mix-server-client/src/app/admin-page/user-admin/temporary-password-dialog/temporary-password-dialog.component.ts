@@ -11,14 +11,13 @@ import {
 } from "@angular/material/dialog";
 import {MatFormFieldModule} from "@angular/material/form-field";
 import {MatInputModule} from "@angular/material/input";
-import {NgIf} from "@angular/common";
+
 import {TemporaryPasswordData} from "./temporary-password-data";
 import {CopyTextComponent} from "../../../components/controls/copy-text/copy-text.component";
 
 @Component({
-  selector: 'app-temporary-password-dialog',
-  standalone: true,
-  imports: [
+    selector: 'app-temporary-password-dialog',
+    imports: [
     FormsModule,
     MatButtonModule,
     MatCheckboxModule,
@@ -27,12 +26,11 @@ import {CopyTextComponent} from "../../../components/controls/copy-text/copy-tex
     MatDialogTitle,
     MatFormFieldModule,
     MatInputModule,
-    NgIf,
     MatDialogClose,
     CopyTextComponent
-  ],
-  templateUrl: './temporary-password-dialog.component.html',
-  styleUrl: './temporary-password-dialog.component.scss'
+],
+    templateUrl: './temporary-password-dialog.component.html',
+    styleUrl: './temporary-password-dialog.component.scss'
 })
 export class TemporaryPasswordDialogComponent {
   constructor(@Inject(MAT_DIALOG_DATA) public data: TemporaryPasswordData) {

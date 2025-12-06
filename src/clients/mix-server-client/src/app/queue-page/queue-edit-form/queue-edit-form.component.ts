@@ -5,22 +5,20 @@ import {QueueRepositoryService} from "../../services/repositories/queue-reposito
 import {EditQueueFormModel} from "../../services/repositories/models/edit-queue-form-model";
 import {QueueEditFormRepositoryService} from "../../services/repositories/queue-edit-form-repository.service";
 import {MatButtonModule} from "@angular/material/button";
-import {NgIf} from "@angular/common";
+
 
 interface IQueueEditForm {
   editMode: FormControl<boolean>;
 }
 
 @Component({
-  selector: 'app-queue-edit-form',
-  standalone: true,
-  templateUrl: './queue-edit-form.component.html',
-  imports: [
+    selector: 'app-queue-edit-form',
+    templateUrl: './queue-edit-form.component.html',
+    imports: [
     ReactiveFormsModule,
-    MatButtonModule,
-    NgIf
-  ],
-  styleUrls: ['./queue-edit-form.component.scss']
+    MatButtonModule
+],
+    styleUrls: ['./queue-edit-form.component.scss']
 })
 export class QueueEditFormComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

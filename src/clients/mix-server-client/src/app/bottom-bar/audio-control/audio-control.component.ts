@@ -11,9 +11,10 @@ import {MatSliderDragEvent} from "@angular/material/slider";
 import {AuthenticationService} from "../../services/auth/authentication.service";
 
 @Component({
-  selector: 'app-audio-control',
-  templateUrl: './audio-control.component.html',
-  styleUrls: ['./audio-control.component.scss']
+    selector: 'app-audio-control',
+    templateUrl: './audio-control.component.html',
+    styleUrls: ['./audio-control.component.scss'],
+    standalone: false
 })
 export class AudioControlComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

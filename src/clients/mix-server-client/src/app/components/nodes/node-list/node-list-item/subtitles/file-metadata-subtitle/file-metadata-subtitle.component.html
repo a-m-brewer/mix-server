@@ -1,4 +1,8 @@
-<div *ngIf="metadata && metadata.isMedia">
-  {{ metadata.mimeType }}
-  <span *ngIf="metadata.mediaInfo"> · {{ metadata.mediaInfo.bitrate }}Kbps · {{ metadata.mediaInfo.duration }}</span>
-</div>
+@if (metadata && metadata.isMedia) {
+  <div>
+    {{ metadata.mimeType }}
+    @if (metadata.mediaInfo) {
+      <span> · {{ metadata.mediaInfo.bitrate }}Kbps · {{ metadata.mediaInfo.duration }}</span>
+    }
+  </div>
+}

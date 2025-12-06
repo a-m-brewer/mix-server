@@ -4,10 +4,10 @@ import {MatButtonModule} from "@angular/material/button";
 import {MatMenuModule} from "@angular/material/menu";
 import {MatIconModule} from "@angular/material/icon";
 import {MatListModule} from "@angular/material/list";
-import {AsyncPipe, NgClass, NgForOf, NgIf} from "@angular/common";
+import { AsyncPipe, NgClass } from "@angular/common";
 import {MenuItem, MenuLabel} from "./menu-item.interface";
 import {PageRoutes} from "../page-routes.enum";
-import {NavigationEnd, Router, RouterLink} from "@angular/router";
+import {NavigationEnd, Router} from "@angular/router";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
 import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../services/repositories/models/loading-node-status";
 import {BehaviorSubject, filter, map, Observable, Subject, takeUntil} from "rxjs";
@@ -24,27 +24,23 @@ import {TracklistToolbarComponent} from "../tracklist-page/tracklist-toolbar/tra
 import {FolderPasteFormComponent} from "../main-content/file-explorer/folder-paste-form/folder-paste-form.component";
 
 @Component({
-  selector: 'app-nav-bar',
-  standalone: true,
-  imports: [
+    selector: 'app-nav-bar',
+    imports: [
     MatToolbarModule,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
     MatListModule,
-    NgForOf,
-    RouterLink,
     MatProgressSpinnerModule,
-    NgIf,
     AsyncPipe,
     FolderSortFormComponent,
     QueueEditFormComponent,
     NgClass,
     TracklistToolbarComponent,
     FolderPasteFormComponent
-  ],
-  templateUrl: './nav-bar.component.html',
-  styleUrl: './nav-bar.component.scss'
+],
+    templateUrl: './nav-bar.component.html',
+    styleUrl: './nav-bar.component.scss'
 })
 export class NavBarComponent implements OnInit, OnDestroy {
   private _unsubscribe$ = new Subject();

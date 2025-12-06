@@ -15,18 +15,17 @@ import {LoadingRepositoryService} from "../../../services/repositories/loading-r
 import {Subject, takeUntil} from 'rxjs';
 
 @Component({
-  selector: 'app-audio-control-buttons, [app-audio-control-buttons]',
-  standalone: true,
-  imports: [
-    AsyncPipe,
-    MatButtonModule,
-    MatIconModule,
-    AudioContextMenuComponent,
-    SwitchDeviceMenuComponent,
-    LoadingFabIconComponent
-  ],
-  templateUrl: './audio-control-buttons.component.html',
-  styleUrl: './audio-control-buttons.component.scss'
+    selector: 'app-audio-control-buttons, [app-audio-control-buttons]',
+    imports: [
+        AsyncPipe,
+        MatButtonModule,
+        MatIconModule,
+        AudioContextMenuComponent,
+        SwitchDeviceMenuComponent,
+        LoadingFabIconComponent
+    ],
+    templateUrl: './audio-control-buttons.component.html',
+    styleUrl: './audio-control-buttons.component.scss'
 })
 export class AudioControlButtonsComponent implements OnInit, OnDestroy{
   private _unsubscribe$: Subject<void> = new Subject<void>();

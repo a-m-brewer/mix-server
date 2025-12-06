@@ -6,13 +6,17 @@
 
 <mat-dialog-content>
   <form [formGroup]="form">
-    <mat-form-field class="form-field-block" *ngIf="!data || !data.username || data.username === ''">
-      <mat-label>Username</mat-label>
-      <input type="text" autocorrect="off" autocomplete="off" matInput [formControlName]="usernameKey">
-      <mat-error *ngIf="form.get(usernameKey)?.hasError('required')">
-        A username is required
-      </mat-error>
-    </mat-form-field>
+    @if (!data || !data.username || data.username === '') {
+      <mat-form-field class="form-field-block">
+        <mat-label>Username</mat-label>
+        <input type="text" autocorrect="off" autocomplete="off" matInput [formControlName]="usernameKey">
+        @if (form.get(usernameKey)?.hasError('required')) {
+          <mat-error>
+            A username is required
+          </mat-error>
+        }
+      </mat-form-field>
+    }
 
     <p>
       <mat-checkbox [formControlName]="isAdminKey">Admin</mat-checkbox>
@@ -22,9 +26,9 @@
 <mat-dialog-actions align="end">
   <button mat-button [mat-dialog-close]="null">Cancel</button>
   <button mat-button
-          color="primary"
-          cdkFocusInitial
-          (click)="onSubmit()">
+    color="primary"
+    cdkFocusInitial
+    (click)="onSubmit()">
     Submit
   </button>
 </mat-dialog-actions>
