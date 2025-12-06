@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 
 RUN apt-get update && \
     apt-get install -y ffmpeg
@@ -6,7 +6,7 @@ RUN apt-get update && \
 WORKDIR /app
 EXPOSE 5225
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH
 WORKDIR /src
 COPY ["Directory.Build.props", "Directory.Build.props"]

@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 # Requires version of nswag CLI that matches the installed version in Mix Server
-npm install -g nswag@14.0.1
+npm install -g nswag@14.2.0
 
 # Frontend
 $frontendPath = Join-Path -Path $PSScriptRoot -ChildPath ".." -AdditionalChildPath "src","clients","mix-server-client"
