@@ -26,7 +26,6 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
   public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
   public dataSource!: HistoryDataSource;
-  public sessions: PlaybackSession[] = [];
 
   constructor(private _authenticationService: AuthenticationService,
               private _audioPlayerStateService: AudioPlayerStateService,
@@ -50,13 +49,6 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Subscribe to data source to get sessions for template
-    this.dataSource.connect({ viewChange: new Subject() })
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(sessions => {
-        this.sessions = sessions;
-      });
-
     this._audioPlayerStateService.state$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(state => {
@@ -74,16 +66,8 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(session => {
         if (session) {
-          // Check if this is a new session (not already in our list)
-          const existingIndex = this.sessions.findIndex(s => s.id === session.id);
-          if (existingIndex === -1) {
-            // New session - add to top
-            this.dataSource.handleNewSession(session);
-          } else if (existingIndex !== 0) {
-            // Existing session changed - if it's not already at top, reset
-            // This is a complex case where history order changed
-            this.dataSource.reset().then();
-          }
+          // When a new session is played, add it to the data source
+          this.dataSource.handleNewSession(session);
         }
       });
   }
@@ -95,7 +79,8 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
   }
 
   public onNodeClick(event: NodeListItemChangedEvent) {
-    const session = this.sessions.find(f => f.currentNode.path.key === event.key)
+    // Find the session by key in the current data
+    const session = this.dataSource.currentData.find(f => f.currentNode.path.key === event.key);
 
     if (!session) {
       return;

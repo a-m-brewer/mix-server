@@ -4,6 +4,8 @@ import {NodeCacheService} from "../nodes/node-cache.service";
 import {SessionApiService} from "../api.service";
 import {PlaybackSessionConverterService} from "../converters/playback-session-converter.service";
 
+const DEFAULT_VIRTUAL_SCROLL_LENGTH = 1000;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -46,7 +48,7 @@ export class HistoryRepositoryService {
     // If we get results, we assume there are many more
     // The actual count will be determined by scrolling
     if (result.result && result.result.sessions.length > 0) {
-      return 1000; // Large number to enable scrolling
+      return DEFAULT_VIRTUAL_SCROLL_LENGTH;
     }
 
     return 0;

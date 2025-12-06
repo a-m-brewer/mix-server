@@ -40,6 +40,10 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
     return this._length$.asObservable();
   }
 
+  get currentData(): PlaybackSession[] {
+    return this._dataStream$.value;
+  }
+
   async initialize(): Promise<void> {
     const initialLength = await this._getInitialLength();
     this._length$.next(initialLength);
@@ -85,7 +89,7 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
     // Sort ranges by start
     this._fetchedRanges.sort((a, b) => a.start - b.start);
 
-    // Merge overlapping ranges
+    // Merge overlapping and adjacent ranges
     const merged: { start: number; end: number }[] = [];
     for (const range of this._fetchedRanges) {
       if (merged.length === 0) {
@@ -94,7 +98,8 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
       }
 
       const last = merged[merged.length - 1];
-      if (range.start <= last.end) {
+      // Merge if ranges overlap or are adjacent (e.g., [0,10] and [10,20] or [11,20])
+      if (range.start <= last.end + 1) {
         // Merge with previous range
         last.end = Math.max(last.end, range.end);
       } else {

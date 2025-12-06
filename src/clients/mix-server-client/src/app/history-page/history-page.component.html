@@ -1,27 +1,26 @@
 <cdk-virtual-scroll-viewport [itemSize]="72" class="history-viewport">
-  @for (session of sessions; track session.id; let last = $last) {
-    <app-node-list-item
-      [key]="session.currentNode.path.key"
-      [nodeType]="session.currentNode.type"
-      [defaultIcon]="session.currentNode.mdIcon"
-      [loadingStatus]="loadingStatus"
-      [audioPlayerState]="audioPlayerState"
-      [disabled]="session.currentNode.disabled"
-      [last]="last"
-      (contentClick)="onNodeClick($event)"
-      >
-      <div appNodeListItemTitle>
-        {{ session.currentNode.path.fileName }}
-      </div>
-      <app-file-metadata-subtitle appNodeListItemSubtitle
-        [metadata]="session.currentNode.metadata"
+  <app-node-list-item
+    *cdkVirtualFor="let session of dataSource; let last = last"
+    [key]="session.currentNode.path.key"
+    [nodeType]="session.currentNode.type"
+    [defaultIcon]="session.currentNode.mdIcon"
+    [loadingStatus]="loadingStatus"
+    [audioPlayerState]="audioPlayerState"
+    [disabled]="session.currentNode.disabled"
+    [last]="last"
+    (contentClick)="onNodeClick($event)"
+    >
+    <div appNodeListItemTitle>
+      {{ session.currentNode.path.fileName }}
+    </div>
+    <app-file-metadata-subtitle appNodeListItemSubtitle
+      [metadata]="session.currentNode.metadata"
+      />
+      <app-add-to-queue-button
+        [file]="session.currentNode"
         />
-        <app-add-to-queue-button
-          [file]="session.currentNode"
+        <app-open-location-button
+          [folder]="session.currentNode.parent"
           />
-          <app-open-location-button
-            [folder]="session.currentNode.parent"
-            />
-          </app-node-list-item>
-        }
+        </app-node-list-item>
 </cdk-virtual-scroll-viewport>
