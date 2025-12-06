@@ -70,3 +70,8 @@ body {
   font-weight: lighter;
 }
 
+// Force mat-toolbar to use surface background in dark theme
+mat-toolbar {
+  background-color: var(--mat-toolbar-container-background-color) !important;
+}
+
