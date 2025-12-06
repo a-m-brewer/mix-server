@@ -14,6 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionF
 		README.md = README.md
 		scripts\migration-remove.ps1 = scripts\migration-remove.ps1
 		scripts\migration-add.ps1 = scripts\migration-add.ps1
+		AGENTS.md = AGENTS.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MixServer.Application", "src\api\MixServer.Application\MixServer.Application.csproj", "{BD901F1D-A6E9-46D7-A48D-9BD455CD76CF}"
