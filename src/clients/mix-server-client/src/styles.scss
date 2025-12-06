@@ -70,8 +70,16 @@ body {
   font-weight: lighter;
 }
 
-// Force mat-toolbar to use surface background in dark theme
+// Apply Material Design surface elevation to toolbars
 mat-toolbar {
-  background-color: var(--mat-toolbar-container-background-color) !important;
+  background-color: #424242 !important; // Material Design dark theme surface
+  color: rgba(255, 255, 255, 0.87) !important;
+}
+
+@media (prefers-color-scheme: light) {
+  mat-toolbar {
+    background-color: #f5f5f5 !important; // Material Design light theme surface
+    color: rgba(0, 0, 0, 0.87) !important;
+  }
 }
 
