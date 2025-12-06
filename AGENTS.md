@@ -61,7 +61,7 @@ dotnet watch --project src/api/MixServer/MixServer.csproj
 cd src/clients/mix-server-client
 
 # Install dependencies
-npm ci --legacy-peer-deps
+npm ci
 
 # Build
 npx ng build
@@ -82,7 +82,7 @@ pwsh scripts/dev-setup.ps1
 ```
 
 **Manual Setup:**
-1. Build Angular client: `cd src/clients/mix-server-client && npm ci --legacy-peer-deps && npx ng build`
+1. Build Angular client: `cd src/clients/mix-server-client && npm ci && npx ng build`
 2. Link wwwroot: `pwsh scripts/link_wwwroot.ps1`
 3. Create `data/` directory in repo root
 4. Create `src/api/MixServer/appsettings.Local.json`:

@@ -95,7 +95,7 @@ dotnet watch --project src/api/MixServer/MixServer.csproj
 cd src/clients/mix-server-client
 
 # Install dependencies
-npm ci --legacy-peer-deps
+npm ci
 
 # Build
 npx ng build
@@ -188,7 +188,7 @@ Edit `src/clients/mix-server-client/angular.json`
 ```bash
 cd src/clients/mix-server-client
 rm -rf node_modules package-lock.json
-npm install --legacy-peer-deps
+npm install
 npx ng build
 ```
 

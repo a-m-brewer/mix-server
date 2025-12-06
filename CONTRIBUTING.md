@@ -74,7 +74,7 @@ cp src/api/MixServer/appsettings.Local.json.template src/api/MixServer/appsettin
 
 ```bash
 cd src/clients/mix-server-client
-npm ci --legacy-peer-deps
+npm ci
 ```
 
 ### 5. Build Angular Client
@@ -290,7 +290,7 @@ Try cleaning and reinstalling dependencies:
 ```bash
 cd src/clients/mix-server-client
 rm -rf node_modules package-lock.json
-npm install --legacy-peer-deps
+npm install
 npx ng build
 ```
 
