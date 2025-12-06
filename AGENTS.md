@@ -13,6 +13,10 @@ Mix Server is a web-based audio player designed for listening to long audio file
 ## Project Structure
 ```
 mix-server/
+├── .github/
+│   ├── copilot-setup.sh                  # GitHub Copilot agent environment setup
+│   ├── README.md                          # GitHub configuration documentation
+│   └── workflows/                         # GitHub Actions CI/CD workflows
 ├── src/
 │   ├── api/                              # Backend .NET solution
 │   │   ├── MixServer/                    # Web API project (Controllers, SignalR hubs)
@@ -27,6 +31,7 @@ mix-server/
 │               └── components/           # UI components
 ├── scripts/                              # PowerShell development scripts
 ├── data/                                 # Local development data directory
+├── CONTRIBUTING.md                       # Development setup and contribution guide
 └── Dockerfile                            # Multi-stage Docker build
 ```
 
@@ -65,7 +70,18 @@ npx ng build
 npx ng serve
 ```
 
-### Development Setup
+### Automated Development Setup
+
+**For GitHub Copilot Agents:**
+The environment is automatically configured when an agent starts. The `.github/copilot-setup.sh` script installs all prerequisites and sets up the development environment.
+
+**For Local Development:**
+Use the automated setup script:
+```powershell
+pwsh scripts/dev-setup.ps1
+```
+
+**Manual Setup:**
 1. Build Angular client: `cd src/clients/mix-server-client && npm ci --legacy-peer-deps && npx ng build`
 2. Link wwwroot: `pwsh scripts/link_wwwroot.ps1`
 3. Create `data/` directory in repo root
@@ -79,6 +95,8 @@ npx ng serve
    ```
 5. Run API: `dotnet run --project src/api/MixServer/MixServer.csproj`
 6. Access: Angular UI at `http://localhost:4200`, API at `http://localhost:5225`
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed setup instructions.
 
 ### Docker
 ```powershell
