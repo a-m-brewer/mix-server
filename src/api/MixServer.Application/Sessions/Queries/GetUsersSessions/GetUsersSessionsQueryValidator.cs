@@ -9,8 +9,12 @@ public class GetUsersSessionsQueryValidator : AbstractValidator<GetUsersSessions
         RuleFor(r => r.StartIndex)
             .GreaterThanOrEqualTo(0);
 
-        RuleFor(r => r.PageSize)
+        RuleFor(r => r.EndIndex)
             .GreaterThan(0)
-            .LessThanOrEqualTo(100);
+            .LessThanOrEqualTo(1000);
+        
+        RuleFor(r => r)
+            .Must(r => r.EndIndex > r.StartIndex)
+            .WithMessage("EndIndex must be greater than StartIndex");
     }
 }

@@ -1,13 +1,5 @@
-<div
-  infinite-scroll
-  [infiniteScrollDistance]="scrollDistance"
-  [infiniteScrollUpDistance]="scrollUpDistance"
-  [infiniteScrollThrottle]="throttle"
-  [infiniteScrollContainer]="selector"
-  [fromRoot]="true"
-  (scrolled)="onScrollDown()"
-  >
-  @for (session of sessions; track session; let last = $last) {
+<cdk-virtual-scroll-viewport [itemSize]="72" class="history-viewport">
+  @for (session of sessions; track session.id; let last = $last) {
     <app-node-list-item
       [key]="session.currentNode.path.key"
       [nodeType]="session.currentNode.type"
@@ -32,13 +24,4 @@
             />
           </app-node-list-item>
         }
-
-        @if (!moreItemsAvailable) {
-          <div class="end-of-history-message-container">
-            <mat-divider [inset]="true"></mat-divider>
-            <h3 class="end-of-history-message">
-              End of History
-            </h3>
-          </div>
-        }
-      </div>
+</cdk-virtual-scroll-viewport>

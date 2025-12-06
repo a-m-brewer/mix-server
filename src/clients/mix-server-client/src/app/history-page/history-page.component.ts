@@ -11,6 +11,8 @@ import {AudioPlayerStateService} from "../services/audio-player/audio-player-sta
 import {AudioPlayerStateModel} from "../services/audio-player/models/audio-player-state-model";
 import {SessionService} from "../services/sessions/session.service";
 import {AuthenticationService} from "../services/auth/authentication.service";
+import {HistoryDataSource} from "./history-data-source";
+import {CurrentPlaybackSessionRepositoryService} from "../services/repositories/current-playback-session-repository.service";
 
 @Component({
     selector: 'app-history-page',
@@ -23,27 +25,36 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
 
   public audioPlayerState: AudioPlayerStateModel = new AudioPlayerStateModel();
   public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
+  public dataSource!: HistoryDataSource;
   public sessions: PlaybackSession[] = [];
-  public moreItemsAvailable: boolean = true;
-
-  public throttle = 300;
-  public scrollDistance = 1;
-  public scrollUpDistance = 2;
-  public selector: string = '#content-scroll-container';
 
   constructor(private _authenticationService: AuthenticationService,
               private _audioPlayerStateService: AudioPlayerStateService,
+              private _currentPlaybackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _historyRepository: HistoryRepositoryService,
               private _loadingRepository: LoadingRepositoryService,
               private _sessionService: SessionService) {
   }
 
   public ngOnInit(): void {
+    // Initialize data source
+    this.dataSource = new HistoryDataSource(
+      (start, end) => this._historyRepository.fetchRange(start, end),
+      () => this._historyRepository.getInitialLength()
+    );
+
     this._authenticationService.connected$
       .subscribe(connected => {
         if (connected) {
-          this._historyRepository.loadMoreItems().then();
+          this.dataSource.initialize().then();
         }
+      });
+
+    // Subscribe to data source to get sessions for template
+    this.dataSource.connect({ viewChange: new Subject() })
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(sessions => {
+        this.sessions = sessions;
       });
 
     this._audioPlayerStateService.state$
@@ -52,28 +63,35 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
         this.audioPlayerState = state;
       });
 
-    this._historyRepository.sessions$
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(sessions => {
-        this.sessions = sessions;
-      });
-
-    this._historyRepository.moreItemsAvailable$
-      .pipe(takeUntil(this._unsubscribe$))
-      .subscribe(moreItemsAvailable => {
-        this.moreItemsAvailable = moreItemsAvailable;
-      });
-
     this._loadingRepository.status$()
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(status => {
         this.loadingStatus = status;
+      });
+
+    // Handle live session updates
+    this._currentPlaybackSessionRepository.currentSession$
+      .pipe(takeUntil(this._unsubscribe$))
+      .subscribe(session => {
+        if (session) {
+          // Check if this is a new session (not already in our list)
+          const existingIndex = this.sessions.findIndex(s => s.id === session.id);
+          if (existingIndex === -1) {
+            // New session - add to top
+            this.dataSource.handleNewSession(session);
+          } else if (existingIndex !== 0) {
+            // Existing session changed - if it's not already at top, reset
+            // This is a complex case where history order changed
+            this.dataSource.reset().then();
+          }
+        }
       });
   }
 
   public ngOnDestroy(): void {
     this._unsubscribe$.next(null);
     this._unsubscribe$.complete();
+    this.dataSource.disconnect();
   }
 
   public onNodeClick(event: NodeListItemChangedEvent) {
@@ -84,9 +102,5 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
     }
 
     this._sessionService.setFile(session.currentNode);
-  }
-
-  public onScrollDown() {
-    this._historyRepository.loadMoreItems().then();
   }
 }

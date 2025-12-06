@@ -29,7 +29,6 @@ import {DurationDisplayComponent} from './bottom-bar/audio-control/duration-disp
 import {SessionComponent} from './bottom-bar/audio-control/session/session.component';
 import {getMixServerApiUrl} from "./api-url-getter";
 import {HistoryPageComponent} from './history-page/history-page.component';
-import {InfiniteScrollModule} from "ngx-infinite-scroll";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {ToastrModule} from "ngx-toastr";
 import {AuthInterceptor} from "./services/auth/auth.interceptor";
@@ -89,6 +88,7 @@ import {
 import {
   RequestTranscodeButtonComponent
 } from "./components/nodes/node-list/node-list-item/context-menu/request-transcode-button/request-transcode-button.component";
+import {ScrollingModule} from "@angular/cdk/scrolling";
 
 @NgModule({
   declarations: [
@@ -133,7 +133,7 @@ import {
     MatInputModule,
     MatCardModule,
     MatProgressSpinnerModule,
-    InfiniteScrollModule,
+    ScrollingModule,
     MatTooltipModule,
     ToastrModule.forRoot(),
     MatButtonToggleModule,
