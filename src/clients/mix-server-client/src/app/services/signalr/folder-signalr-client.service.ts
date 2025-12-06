@@ -6,10 +6,9 @@ import {
   FolderScanStatusDto,
   MediaInfoRemovedDto,
   MediaInfoUpdatedDto,
-  PagedFileExplorerFolderResponse
+  RangedFileExplorerFolderResponse, ResetFolderDto
 } from "../../generated-clients/mix-server-clients";
 import {FileExplorerNodeConverterService} from "../converters/file-explorer-node-converter.service";
-import {NodeUpdatedEvent} from "./models/node-updated-event";
 import {MediaInfoRemovedEvent, MediaInfoUpdatedEvent} from "./models/media-info-event";
 import {FileMetadataConverterService} from "../converters/file-metadata-converter.service";
 import {NodePathConverterService} from "../converters/node-path-converter.service";
@@ -52,12 +51,12 @@ export class FolderSignalrClientService implements ISignalrClient {
 
   registerMethods(connection: HubConnection): void {
     connection.on(
-      'FolderRefreshed',
-      (dtoObject: object) => this.handleFolderRefreshed(PagedFileExplorerFolderResponse.fromJS(dtoObject)));
+      'FolderScanned',
+      (dtoObject: object) => this.handleFolderRefreshed(ResetFolderDto.fromJS(dtoObject)));
 
     connection.on(
       'FolderSorted',
-      (dtoObject: object) => this.handleFolderSorted(PagedFileExplorerFolderResponse.fromJS(dtoObject)));
+      (dtoObject: object) => this.handleFolderSorted(ResetFolderDto.fromJS(dtoObject)));
 
     connection.on(
       'MediaInfoUpdated',
@@ -75,14 +74,14 @@ export class FolderSignalrClientService implements ISignalrClient {
     );
   }
 
-  private handleFolderRefreshed(dto: PagedFileExplorerFolderResponse): void {
-    const converted = this._folderNodeConverter.fromPagedFileExplorerFolder(dto);
+  private handleFolderRefreshed(dto: ResetFolderDto): void {
+    const converted = this._folderNodeConverter.fromRangedFileExplorerFolder(dto);
 
     this._folderRefreshed$.next(converted);
   }
 
-  private handleFolderSorted(dto: PagedFileExplorerFolderResponse): void {
-    const converted = this._folderNodeConverter.fromPagedFileExplorerFolder(dto);
+  private handleFolderSorted(dto: ResetFolderDto): void {
+    const converted = this._folderNodeConverter.fromRangedFileExplorerFolder(dto);
 
     this._folderSortedSubject$.next(converted);
   }

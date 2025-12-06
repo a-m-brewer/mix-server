@@ -411,7 +411,7 @@ public class EfQueueRepository(
                             w.Exists &&
                             w.Metadata != null &&
                             w.Metadata.IsMedia)
-                .ApplySort(folderSort, null)
+                .ApplySort(folderSort, null, null)
                 .Skip(skip)
                 .Take(BatchSize)
                 .Select(s => s.Id)

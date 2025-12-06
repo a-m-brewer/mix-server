@@ -234,7 +234,7 @@ export class NodeCacheService {
       return new NodePathHeader("", "");
     }
 
-    const folder = this._fileExplorerNodeConverter.fromPagedFileExplorerFolder(result.result);
+    const folder = this._fileExplorerNodeConverter.fromRangedFileExplorerFolder(result.result);
     this.updateFolder(folder, pageIndex === undefined);
 
     return folder.node.path;
@@ -244,11 +244,10 @@ export class NodeCacheService {
     this._nodeClient.request(nodePath.key,
       client => client.refreshFolder(new RefreshFolderCommand({
         nodePath: this._nodePathConverter.toRequestDto(nodePath),
-        recursive: recursive ?? false,
-        pageSize: this._pageSize
+        recursive: recursive ?? false
       })), 'Failed to refresh folder')
       .then(result => result.success(dto => {
-        const folder = this._fileExplorerNodeConverter.fromPagedFileExplorerFolder(dto);
+        const folder = this._fileExplorerNodeConverter.fromRangedFileExplorerFolder(dto);
         this.updateFolder(folder, true);
       }))
   }
@@ -267,8 +266,7 @@ export class NodeCacheService {
       client => client.setFolderSortMode(new SetFolderSortCommand({
         nodePath: this._nodePathConverter.toRequestDto(nodePath),
         sortMode: this.toFolderSortMode(sortMode),
-        descending: descending,
-        pageSize: this._pageSize
+        descending: descending
       })), 'Failed to update folder sort');
   }
 

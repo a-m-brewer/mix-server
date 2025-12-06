@@ -2,6 +2,7 @@
 using MixServer.Domain.FileExplorer.Enums;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Settings;
+using Range = MixServer.Domain.FileExplorer.Models.Range;
 
 namespace MixServer.Domain.Extensions;
 
@@ -29,6 +30,7 @@ public static class FileSystemInfoExtensions
 
     public static IEnumerable<T> MsEnumerateFileSystem<T>(this DirectoryInfo directoryInfo,
         Page? page = null,
+        Range? range = null,
         IFolderSort? sort = null)
         where T : FileSystemInfo
     {
@@ -36,26 +38,29 @@ public static class FileSystemInfoExtensions
         {
             return directoryInfo.MsEnumerateFiles()
                 .Cast<T>()
-                .MsEnumerateFileSystem(page, sort);
+                .MsEnumerateFileSystem(page, range, sort);
         }
 
         if (typeof(T) == typeof(DirectoryInfo))
         {
             return directoryInfo.MsEnumerateDirectories()
                 .Cast<T>()
-                .MsEnumerateFileSystem(page, sort);
+                .MsEnumerateFileSystem(page, range, sort);
         }
 
         return directoryInfo.MsEnumerateFileSystemInfos()
             .Cast<T>()
-            .MsEnumerateFileSystem(page, sort);
+            .MsEnumerateFileSystem(page, range, sort);
     }
 
     public static IEnumerable<T> MsEnumerateFileSystem<T>(this IEnumerable<T> fsEnumerable,
         Page? page = null,
+        Range? range = null,
         IFolderSort? sort = null)
         where T : FileSystemInfo
     {
+        if (range is not null && page is not null) throw new ArgumentException("Cannot specify both range and page");
+        
         var internalSort = sort ?? FolderSortModel.Default;
         
         Func<T, object> func = internalSort.SortMode switch
@@ -81,6 +86,13 @@ public static class FileSystemInfoExtensions
         {
             output = output.Skip(page.PageIndex * page.PageSize)
                            .Take(page.PageSize);
+        }
+        
+        if (range is not null)
+        {
+            output = output
+                .Skip(range.Start)
+                .Take(range.End);
         }
 
         return output;

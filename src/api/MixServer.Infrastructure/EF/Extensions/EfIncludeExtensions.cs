@@ -8,6 +8,7 @@ using MixServer.Domain.Queueing.Entities;
 using MixServer.Domain.Sessions.Entities;
 using MixServer.Domain.Streams.Entities;
 using MixServer.Domain.Users.Models;
+using Range = MixServer.Domain.FileExplorer.Models.Range;
 
 namespace MixServer.Infrastructure.EF.Extensions;
 
@@ -112,8 +113,13 @@ public static class EfIncludeExtensions
             .ThenInclude(t => t.Players.OrderBy(b => b.Type));
     }
 
-    public static IQueryable<FileExplorerNodeEntity> ApplySort(this IQueryable<FileExplorerNodeEntity> query, IFolderSort sort, Page? page)
+    public static IQueryable<FileExplorerNodeEntity> ApplySort(this IQueryable<FileExplorerNodeEntity> query, IFolderSort sort, Page? page, Range? range)
     {
+        if (page is not null && range is not null)
+        {
+            throw new ArgumentException("Cannot specify both page and range");
+        }
+        
         Expression<Func<FileExplorerNodeEntity, object>> func = sort.SortMode switch
         {
             FolderSortMode.Name => i => i.RelativePath,
@@ -131,16 +137,20 @@ public static class EfIncludeExtensions
 
         orderedQuery = orderedQuery.ThenBy(t => t.Id);
 
-        if (page is null)
+        if (page is not null)
         {
-            return orderedQuery;
+            return orderedQuery.Skip(page.PageIndex * page.PageSize)
+                .Take(page.PageSize);
+        }
+        
+        if (range is not null)
+        {
+            return orderedQuery
+                .Skip(range.Start)
+                .Take(range.End);
         }
 
-        var queryable = orderedQuery
-            .Skip(page.PageIndex * page.PageSize)
-            .Take(page.PageSize);
-        
-        return queryable;
+        return orderedQuery;
     }
     
     private static (int DirectoryIndex, int FileIndex) GetDirectoryFileSort(this IFolderSort sort)

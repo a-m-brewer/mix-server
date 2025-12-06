@@ -11,6 +11,4 @@ public class SetFolderSortCommand
     public bool Descending { get; set; }
 
     public FolderSortMode SortMode { get; set; }
-
-    public int PageSize { get; set; } = FileExplorerPageConstants.DefaultPageSize;
 }

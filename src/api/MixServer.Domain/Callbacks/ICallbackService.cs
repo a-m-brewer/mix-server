@@ -18,8 +18,8 @@ public interface ICallbackService
     Task CurrentSessionUpdated(string userId, Guid deviceId, PlaybackSession? session);
     Task DeviceUpdated(Device device);
     Task DeviceStateUpdated(IDeviceState deviceState);
-    Task FolderSorted(string userId, IFileExplorerFolderPage folder);
-    Task FolderRefreshed(string userId, Guid deviceId, IFileExplorerFolderPage folder);
+    Task FolderSorted(string userId, NodePath nodePath);
+    Task FolderScanned(string userId, NodePath nodePath);
     Task FolderScanStatusChanged(bool scanInProgress);
     Task DeviceDeleted(string userId, Guid deviceId);
     Task PlaybackStateUpdated(IPlaybackState playbackState, AudioPlayerStateUpdateType audioPlayerStateUpdateType);

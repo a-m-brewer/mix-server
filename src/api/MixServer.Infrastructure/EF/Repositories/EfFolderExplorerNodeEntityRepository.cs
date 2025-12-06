@@ -220,7 +220,7 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
         await context.Entry(folder)
             .Collection(c => c.Children)
             .Query()
-            .ApplySort(options.Sort, options.Page)
+            .ApplySort(options.Sort, options.Page, options.Range)
             .IncludeParents()
             .LoadAsync(cancellationToken: cancellationToken);
         
@@ -238,7 +238,7 @@ public class EfFileExplorerNodeRepository(MixServerDbContext context) : IFileExp
             .Collection(c => c.Children)
             .Query()
             .Where(w => w.Parent == null)
-            .ApplySort(options.Sort, options.Page)
+            .ApplySort(options.Sort, options.Page, options.Range)
             .IncludeParents()
             .LoadAsync(cancellationToken: cancellationToken);
         

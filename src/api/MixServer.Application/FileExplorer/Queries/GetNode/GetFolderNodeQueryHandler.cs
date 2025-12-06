@@ -14,13 +14,13 @@ public class GetFolderNodeQueryHandler(
     INodePathDtoConverter nodePathConverter,
     IFileService fileService,
     IUnitOfWork unitOfWork)
-    : IQueryHandler<PagedNodePathRequestDto, PagedFileExplorerFolderResponse>
+    : IQueryHandler<RangedNodePathRequestDto, RangedFileExplorerFolderResponse>
 {
-    public async Task<PagedFileExplorerFolderResponse> HandleAsync(PagedNodePathRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<RangedFileExplorerFolderResponse> HandleAsync(RangedNodePathRequestDto request, CancellationToken cancellationToken = default)
     {
         var sw = Stopwatch.StartNew();
 
-        var folder = await fileService.GetFolderOrRootPageAsync(nodePathConverter.Convert(request), nodePathConverter.ConvertToPage(request), cancellationToken);
+        var folder = await fileService.GetFolderOrRootRangeAsync(nodePathConverter.Convert(request), nodePathConverter.ConvertToRange(request), cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         

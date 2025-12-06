@@ -1,9 +1,9 @@
 import {Injectable} from '@angular/core';
 import {
-  FileExplorerFileNodeResponse, FileExplorerFolderChildPageResponse,
+  FileExplorerFileNodeResponse,
   FileExplorerFolderNodeResponse,
   FileExplorerNodeResponse, FolderSortDto,
-  FolderSortMode, PagedFileExplorerFolderResponse,
+  FolderSortMode, RangedFileExplorerFolderResponse,
 } from "../../generated-clients/mix-server-clients";
 import {FolderSort} from "../../main-content/file-explorer/models/folder-sort";
 import {FileExplorerFolderSortMode} from "../../main-content/file-explorer/enums/file-explorer-folder-sort-mode";
@@ -27,15 +27,15 @@ export class FileExplorerNodeConverterService {
               private _audioElementRepository: AudioElementRepositoryService) {
   }
 
-  public fromPagedFileExplorerFolder(dto: PagedFileExplorerFolderResponse): PagedFileExplorerFolder {
+  public fromRangedFileExplorerFolder(dto: RangedFileExplorerFolderResponse): PagedFileExplorerFolder {
     return new PagedFileExplorerFolder(this.fromFileExplorerFolderNode(dto.node),
       [
-        this.fromFileExplorerFolderPage(dto.page)
+        this.fromFileExplorerFolderPage(dto.items)
       ],
       this.fromFolderSortDto(dto.sort));
   }
 
-  public fromFileExplorerFolderPage(dto: FileExplorerFolderChildPageResponse): PagedDataPage<FileExplorerNode> {
+  public fromFileExplorerFolderPage(dto: RangedFileExplorerFolderResponse): PagedDataPage<FileExplorerNode> {
     return new PagedDataPage<FileExplorerNode>(
       dto.pageIndex,
       dto.children.map(child => this.fromFileExplorerNode(child))

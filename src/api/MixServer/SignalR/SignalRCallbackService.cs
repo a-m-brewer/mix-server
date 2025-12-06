@@ -88,27 +88,32 @@ public class SignalRCallbackService(
             .DeviceStateUpdated(dto);
     }
 
-    public async Task FolderSorted(string userId, IFileExplorerFolderPage folder)
+    public async Task FolderSorted(string userId, NodePath nodePath)
     {
         var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
 
-        var dto = fileExplorerResponseConverter.Convert(folder);
+        var dto = nodePathDtoConverter.Convert(nodePath);
 
         await context.Clients
             .Clients(clients)
-            .FolderSorted(dto);
+            .FolderSorted(new ResetFolderDto
+            {
+                Path = dto
+            });
     }
 
-    public async Task FolderRefreshed(string userId, Guid deviceId, IFileExplorerFolderPage folder)
+    public async Task FolderScanned(string userId, NodePath nodePath)
     {
-        // Current Device is notified via RefreshFolderCommandHandler
-        var (_, otherDevicesConnections) = GetDevicesConnectionWithOtherDevices(userId, deviceId);
+        var clients = userManager.GetConnectionsInGroups(new SignalRGroup(userId));
 
-        var dto = fileExplorerResponseConverter.Convert(folder);
+        var dto = nodePathDtoConverter.Convert(nodePath);
 
         await context.Clients
-            .Clients(otherDevicesConnections)
-            .FolderRefreshed(dto);
+            .Clients(clients)
+            .FolderScanned(new ResetFolderDto
+            {
+                Path = dto
+            });
     }
 
     public Task FolderScanStatusChanged(bool scanInProgress)

@@ -1,6 +1,7 @@
 using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.Interfaces;
+using Range = MixServer.Domain.FileExplorer.Models.Range;
 
 namespace MixServer.Application.FileExplorer.Converters;
 
@@ -10,10 +11,10 @@ public interface INodePathDtoConverter :
 {
     NodePathDto ConvertToResponse(NodePath value);
     
-    Page ConvertToPage(PagedNodePathRequestDto value);
+    Range ConvertToRange(RangedNodePathRequestDto value);
 }
 
-public class NodePathDtoConverter(IPageConverter pageConverter) : INodePathDtoConverter
+public class NodePathDtoConverter(IRangeConverter rangeConverter) : INodePathDtoConverter
 {
     public NodePathHeaderDto Convert(NodePath value)
     {
@@ -48,8 +49,8 @@ public class NodePathDtoConverter(IPageConverter pageConverter) : INodePathDtoCo
         };
     }
 
-    public Page ConvertToPage(PagedNodePathRequestDto value)
+    public Range ConvertToRange(RangedNodePathRequestDto value)
     {
-        return pageConverter.Convert(value.Page);
+        return rangeConverter.Convert(value.Range);
     }
 }

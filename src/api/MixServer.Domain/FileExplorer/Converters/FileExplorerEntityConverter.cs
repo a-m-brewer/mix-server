@@ -9,7 +9,7 @@ public interface IFileExplorerEntityConverter
     : IConverter<IFileExplorerFolderEntity, IFileExplorerFolder>,
         IConverter<FileExplorerFileNodeEntity, IFileExplorerFileNode>
 {
-    IFileExplorerFolderPage ConvertPage(IFileExplorerFolderEntity value, Page page, IFolderSort sort);
+    IFileExplorerFolderRange ConvertPage(IFileExplorerFolderEntity value, IFolderSort sort);
 }
 
 public class FileExplorerEntityConverter(IRootFileExplorerFolder rootFolder) : IFileExplorerEntityConverter
@@ -41,7 +41,7 @@ public class FileExplorerEntityConverter(IRootFileExplorerFolder rootFolder) : I
         return ConvertFileEntityToNode(value, parent);
     }
 
-    public IFileExplorerFolderPage ConvertPage(IFileExplorerFolderEntity value, Page page, IFolderSort sort)
+    public IFileExplorerFolderRange ConvertPage(IFileExplorerFolderEntity value, IFolderSort sort)
     {
         var node = ConvertEntityToNode(value);
 
@@ -59,14 +59,10 @@ public class FileExplorerEntityConverter(IRootFileExplorerFolder rootFolder) : I
             }
         }
 
-        return new FileExplorerFolderPage
+        return new FileExplorerFolderRange
         {
             Node = node,
-            Page = new FileExplorerFolderChildPage
-            {
-                PageIndex = page.PageIndex,
-                Children = convertedChildren
-            },
+            Items = convertedChildren,
             Sort = sort
         };
     }

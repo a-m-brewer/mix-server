@@ -6,6 +6,7 @@ using MixServer.Domain.FileExplorer.Entities;
 using MixServer.Domain.FileExplorer.Models;
 using MixServer.Domain.FileExplorer.Repositories;
 using MixServer.Domain.FileExplorer.Repositories.DbQueryOptions;
+using Range = MixServer.Domain.FileExplorer.Models.Range;
 
 namespace MixServer.Domain.FileExplorer.Services;
 
@@ -21,7 +22,7 @@ public class ChildEntityMap
 public interface IFolderPersistenceService
 {
     Task<IFileExplorerFolderEntity> GetOrAddFolderAsync(NodePath nodePath,
-        Page page,
+        Range range,
         IFolderSort sort,
         CancellationToken cancellationToken = default);
 
@@ -53,11 +54,11 @@ public class FolderPersistenceService(
 {
 
     public async Task<IFileExplorerFolderEntity> GetOrAddFolderAsync(NodePath nodePath,
-        Page page,
+        Range range,
         IFolderSort sort,
         CancellationToken cancellationToken = default)
     {
-        var existingFolder = await fileSystemQueryService.GetRootChildOrFolderNodeOrDefaultAsync(nodePath, GetFolderQueryOptions.Full(page, sort), cancellationToken);
+        var existingFolder = await fileSystemQueryService.GetRootChildOrFolderNodeOrDefaultAsync(nodePath, GetFolderQueryOptions.Full(range, sort), cancellationToken);
 
         if (existingFolder is not null && !string.IsNullOrWhiteSpace(existingFolder.Hash))
         {
@@ -77,7 +78,7 @@ public class FolderPersistenceService(
         await EnsureChildrenUpdatedAsync(
             nodePath.Parent,
             directory,
-            page,
+            range,
             sort,
             null,
             root,
@@ -221,6 +222,29 @@ public class FolderPersistenceService(
             new Result<FileExplorerFolderNodeEntity>(true, parentEntity),
             cancellationToken);
     }
+
+    private async Task<List<FileSystemInfo>> EnsureChildrenUpdatedAsync(
+        NodePath parentNodePath,
+        DirectoryInfo parentDirectory,
+        Range range,
+        IFolderSort? sort = null,
+        FsHashBuilder? hashBuilder = null,
+        FileExplorerRootChildNodeEntity? rootEntity = null,
+        Result<FileExplorerFolderNodeEntity>? parentResult = null,
+        CancellationToken cancellationToken = default)
+    {
+        var children = parentDirectory.MsEnumerateFileSystem<FileSystemInfo>(range: range, sort: sort)
+            .ToList();
+        
+        return await EnsureChildrenUpdatedAsync(
+            parentNodePath,
+            children,
+            sort,
+            hashBuilder,
+            rootEntity,
+            parentResult,
+            cancellationToken);
+    }
     
     private async Task<List<FileSystemInfo>> EnsureChildrenUpdatedAsync(
         NodePath parentNodePath,
@@ -232,9 +256,28 @@ public class FolderPersistenceService(
         Result<FileExplorerFolderNodeEntity>? parentResult = null,
         CancellationToken cancellationToken = default)
     {
-        var children = parentDirectory.MsEnumerateFileSystem<FileSystemInfo>(page, sort)
+        var children = parentDirectory.MsEnumerateFileSystem<FileSystemInfo>(page, sort: sort)
             .ToList();
         
+        return await EnsureChildrenUpdatedAsync(
+            parentNodePath,
+            children,
+            sort,
+            hashBuilder,
+            rootEntity,
+            parentResult,
+            cancellationToken);
+    }
+    
+    private async Task<List<FileSystemInfo>> EnsureChildrenUpdatedAsync(
+        NodePath parentNodePath,
+        List<FileSystemInfo> children,
+        IFolderSort? sort = null,
+        FsHashBuilder? hashBuilder = null,
+        FileExplorerRootChildNodeEntity? rootEntity = null,
+        Result<FileExplorerFolderNodeEntity>? parentResult = null,
+        CancellationToken cancellationToken = default)
+    {
         var root = rootEntity ?? await fileExplorerNodeRepository.GetRootChildOrThrowAsync(parentNodePath.RootPath, cancellationToken);;
         var parentEntity = parentResult is { Success: true }
             ? parentResult.Value

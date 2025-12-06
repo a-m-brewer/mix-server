@@ -14,8 +14,7 @@ public interface IFileExplorerEntityToResponseConverter
     : IConverter<FileExplorerFileNodeEntity, FileExplorerFileNodeResponse>;
 
 public interface IPagedFileExplorerResponseConverter
-    : IConverter<IFileExplorerFolderPage, PagedFileExplorerFolderResponse>,
-        IConverter<IChildPage, FileExplorerFolderChildPageResponse>;
+    : IConverter<IFileExplorerFolderRange, RangedFileExplorerFolderResponse>;
 
 public interface IFileExplorerResponseConverter
     : IFileExplorerEntityToResponseConverter,
@@ -115,22 +114,13 @@ public class FileExplorerResponseConverter(
         return Convert(file);
     }
 
-    public PagedFileExplorerFolderResponse Convert(IFileExplorerFolderPage value)
+    public RangedFileExplorerFolderResponse Convert(IFileExplorerFolderRange value)
     {
-        return new PagedFileExplorerFolderResponse
+        return new RangedFileExplorerFolderResponse
         {
             Node = Convert(value.Node),
-            Page = Convert(value.Page),
-            Sort = new FolderSortDto(value.Sort)
-        };
-    }
-
-    public FileExplorerFolderChildPageResponse Convert(IChildPage value)
-    {
-        return new FileExplorerFolderChildPageResponse
-        {
-            PageIndex = value.PageIndex,
-            Children = value.Children.Select(Convert).ToList()
+            Items = value.Items.Select(Convert).ToList(),
+            Sort = new FolderSortDto(value.Sort),
         };
     }
 }

@@ -13,8 +13,8 @@ public interface ISignalRCallbackClient
     Task CurrentSessionUpdated(CurrentSessionUpdatedEventDto dto);
     Task DeviceUpdated(DeviceDto dto);
     Task DeviceStateUpdated(DeviceStateDto dto);
-    Task FolderRefreshed(PagedFileExplorerFolderResponse dto);
-    Task FolderSorted(PagedFileExplorerFolderResponse dto);
+    Task FolderScanned(ResetFolderDto dto);
+    Task FolderSorted(ResetFolderDto dto);
     Task FolderScanStatusChanged(FolderScanStatusDto dto);
     Task DeviceDeleted(DeviceDeletedDto dto);
     Task PlaybackStateUpdated(PlaybackStateDto dto);
