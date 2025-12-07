@@ -70,9 +70,20 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
   }
 
   private _isRangeFetched(start: number, end: number): boolean {
-    return this._fetchedRanges.some(
-      range => range.start <= start && range.end >= end
-    );
+    // Check if entire range is covered by fetched ranges
+    let currentPos = start;
+    const sortedRanges = [...this._fetchedRanges].sort((a, b) => a.start - b.start);
+    
+    for (const range of sortedRanges) {
+      if (range.start <= currentPos && range.end > currentPos) {
+        currentPos = range.end;
+        if (currentPos >= end) {
+          return true;
+        }
+      }
+    }
+    
+    return currentPos >= end;
   }
 
   private async _fetchRangeData(start: number, end: number): Promise<void> {
@@ -133,12 +144,13 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
 
   private _updateDataStream(): void {
     // Build contiguous array from cached data
-    const dataArray: PlaybackSession[] = [];
+    // Only include items that are actually cached to avoid empty space
+    const dataArray: PlaybackSession[] = new Array(this._totalLength);
     
     for (let i = 0; i < this._totalLength; i++) {
       const session = this._cachedData.get(i);
       if (session) {
-        dataArray.push(session);
+        dataArray[i] = session;
       }
     }
 
