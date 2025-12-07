@@ -39,7 +39,7 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
     // Initialize data source
     this.dataSource = new HistoryDataSource(
       (start, end) => this._historyRepository.fetchRange(start, end),
-      () => this._historyRepository.getInitialLength()
+      () => this._historyRepository.getTotalCount()
     );
 
     this._authenticationService.connected$

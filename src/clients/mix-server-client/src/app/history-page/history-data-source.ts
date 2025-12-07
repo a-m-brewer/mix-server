@@ -1,17 +1,17 @@
 import { DataSource, CollectionViewer } from '@angular/cdk/collections';
-import { Observable, BehaviorSubject, Subject, Subscription } from 'rxjs';
+import { Observable, BehaviorSubject, Subscription } from 'rxjs';
 import { PlaybackSession } from '../services/repositories/models/playback-session';
 
 export class HistoryDataSource extends DataSource<PlaybackSession> {
-  private _length$ = new BehaviorSubject<number>(0);
   private _cachedData = new Map<number, PlaybackSession>();
   private _fetchedRanges: { start: number; end: number }[] = [];
   private _dataStream$ = new BehaviorSubject<PlaybackSession[]>([]);
   private _subscription = new Subscription();
+  private _totalLength = 0;
 
   constructor(
     private _fetchRange: (start: number, end: number) => Promise<PlaybackSession[]>,
-    private _getInitialLength: () => Promise<number>
+    private _getTotalCount: () => Promise<number>
   ) {
     super();
   }
@@ -20,10 +20,10 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
     this._subscription.add(
       collectionViewer.viewChange.subscribe(range => {
         const startIndex = range.start;
-        const endIndex = range.end;
+        const endIndex = Math.min(range.end, this._totalLength);
         
         // Check if we need to fetch this range
-        if (!this._isRangeFetched(startIndex, endIndex)) {
+        if (endIndex > startIndex && !this._isRangeFetched(startIndex, endIndex)) {
           this._fetchRangeData(startIndex, endIndex).then();
         }
       })
@@ -36,26 +36,36 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
     this._subscription.unsubscribe();
   }
 
-  get length$(): Observable<number> {
-    return this._length$.asObservable();
-  }
-
   get currentData(): PlaybackSession[] {
     return this._dataStream$.value;
   }
 
   async initialize(): Promise<void> {
-    const initialLength = await this._getInitialLength();
-    this._length$.next(initialLength);
+    // Fetch initial data to determine actual count
+    const initialData = await this._fetchRange(0, 50);
     
-    // Load initial range
-    await this._fetchRangeData(0, Math.min(50, initialLength));
+    if (initialData.length === 0) {
+      this._totalLength = 0;
+      this._dataStream$.next([]);
+      return;
+    }
+    
+    // If we got full page, there's likely more
+    const estimatedTotal = await this._getTotalCount();
+    this._totalLength = estimatedTotal;
+    
+    // Cache initial data
+    initialData.forEach((session, index) => {
+      this._cachedData.set(index, session);
+    });
+    
+    this._fetchedRanges.push({ start: 0, end: initialData.length });
+    this._updateDataStream();
   }
 
   async reset(): Promise<void> {
     this._cachedData.clear();
     this._fetchedRanges = [];
-    this._dataStream$.next([]);
     await this.initialize();
   }
 
@@ -69,14 +79,26 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
     try {
       const data = await this._fetchRange(start, end);
       
+      if (data.length === 0) {
+        // No more data available, update total length
+        this._totalLength = Math.max(start, this._cachedData.size);
+        return;
+      }
+      
       // Cache the fetched data
       data.forEach((session, index) => {
         this._cachedData.set(start + index, session);
       });
 
       // Record the fetched range
-      this._fetchedRanges.push({ start, end });
+      this._fetchedRanges.push({ start, end: start + data.length });
       this._mergeFetchedRanges();
+
+      // Update total if we have more data than expected
+      const maxIndex = Math.max(...Array.from(this._cachedData.keys()));
+      if (maxIndex + 1 > this._totalLength) {
+        this._totalLength = maxIndex + 1;
+      }
 
       // Update the data stream
       this._updateDataStream();
@@ -98,9 +120,8 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
       }
 
       const last = merged[merged.length - 1];
-      // Merge if ranges overlap or are adjacent (e.g., [0,10] and [10,20] or [11,20])
+      // Merge if ranges overlap or are adjacent
       if (range.start <= last.end + 1) {
-        // Merge with previous range
         last.end = Math.max(last.end, range.end);
       } else {
         merged.push(range);
@@ -111,17 +132,17 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
   }
 
   private _updateDataStream(): void {
-    const data: PlaybackSession[] = [];
-    const keys = Array.from(this._cachedData.keys()).sort((a, b) => a - b);
+    // Build contiguous array from cached data
+    const dataArray: PlaybackSession[] = [];
     
-    for (const key of keys) {
-      const session = this._cachedData.get(key);
+    for (let i = 0; i < this._totalLength; i++) {
+      const session = this._cachedData.get(i);
       if (session) {
-        data.push(session);
+        dataArray.push(session);
       }
     }
 
-    this._dataStream$.next(data);
+    this._dataStream$.next(dataArray);
   }
 
   // Handle live updates
@@ -148,7 +169,7 @@ export class HistoryDataSource extends DataSource<PlaybackSession> {
     this._mergeFetchedRanges();
     
     // Increment total length
-    this._length$.next(this._length$.value + 1);
+    this._totalLength++;
     
     this._updateDataStream();
   }

@@ -38,7 +38,7 @@ export class HistoryRepositoryService {
     return sessions;
   }
 
-  public async getInitialLength(): Promise<number> {
+  public async getTotalCount(): Promise<number> {
     // Fetch a small initial range to determine if there are items
     const result = await this._sessionClient.request(
       'GetInitialHistoryLength',
