@@ -152,9 +152,9 @@ Tracklists are imported using JSON and must match the following schema
 
 ## Developing
 
-Mix Server is developed using ASP.NET Core 8.0 and Angular 17. Using Powershell Core for development scripts
+Mix Server is developed using ASP.NET Core 10.0 and Angular 21. Using Powershell Core for development scripts
 
-1. Download .NET 8.0 SDK and Node.js LTS and Powershell Core
+1. Download .NET 10.0 SDK and Node.js LTS and Powershell Core
 2. Open the client (`src/clients/mix-server-client`) project and run the following
    1. `npm install`
    2. `ng build`
