@@ -171,22 +171,42 @@ export class HistoryDataSource extends DataSource<PlaybackSession | undefined> {
 
   // Handle live updates
   handleNewSession(session: PlaybackSession): void {
-    // New session goes at index 0
-    // Shift all existing items down by 1
+    // Check if this session already exists in the cache
+    let existingIndex = -1;
+    for (const [index, cachedSession] of this._cachedData.entries()) {
+      if (cachedSession.id === session.id) {
+        existingIndex = index;
+        break;
+      }
+    }
+
+    // Build new cache with existing items, excluding the duplicate
     const newCache = new Map<number, PlaybackSession>();
     newCache.set(0, session);
 
+    let newIndex = 1;
     this._cachedData.forEach((value, key) => {
-      newCache.set(key + 1, value);
+      // Skip the existing session if it was found
+      if (key !== existingIndex) {
+        newCache.set(newIndex, value);
+        newIndex++;
+      }
     });
 
     this._cachedData = newCache;
 
-    // Update ranges
-    this._fetchedRanges = this._fetchedRanges.map(range => ({
-      start: range.start + 1,
-      end: range.end + 1
-    }));
+    // Update ranges to account for shifted indices
+    this._fetchedRanges = this._fetchedRanges.map(range => {
+      let newStart = range.start + 1;
+      let newEnd = range.end + 1;
+
+      // Adjust for removed item if it was within this range
+      if (existingIndex !== -1 && existingIndex >= range.start && existingIndex < range.end) {
+        newEnd--;
+      }
+
+      return { start: newStart, end: newEnd };
+    });
 
     // Add the new first item as a fetched range
     this._fetchedRanges.unshift({ start: 0, end: 1 });
@@ -194,16 +214,5 @@ export class HistoryDataSource extends DataSource<PlaybackSession | undefined> {
 
 
     this._updateDataStream();
-  }
-
-  updateSession(sessionId: string, updatedSession: PlaybackSession): void {
-    // Find and update the session in cache
-    for (const [index, session] of this._cachedData.entries()) {
-      if (session.id === sessionId) {
-        this._cachedData.set(index, updatedSession);
-        this._updateDataStream();
-        break;
-      }
-    }
   }
 }
