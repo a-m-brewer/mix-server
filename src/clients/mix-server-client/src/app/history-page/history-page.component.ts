@@ -1,6 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subject, takeUntil} from "rxjs";
-import {PlaybackSession} from "../services/repositories/models/playback-session";
 import {HistoryRepositoryService} from "../services/repositories/history-repository.service";
 import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../services/repositories/models/loading-node-status";
 import {LoadingRepositoryService} from "../services/repositories/loading-repository.service";
@@ -38,8 +37,7 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
   public ngOnInit(): void {
     // Initialize data source
     this.dataSource = new HistoryDataSource(
-      (start, end) => this._historyRepository.fetchRange(start, end),
-      () => this._historyRepository.getTotalCount()
+      (start, end) => this._historyRepository.fetchRange(start, end)
     );
 
     this._authenticationService.connected$
@@ -80,7 +78,7 @@ export class HistoryPageComponent implements OnInit, OnDestroy {
 
   public onNodeClick(event: NodeListItemChangedEvent) {
     // Find the session by key in the current data
-    const session = this.dataSource.currentData.find(f => f.currentNode.path.key === event.key);
+    const session = this.dataSource.currentData.find(f => f?.currentNode.path.key === event.key);
 
     if (!session) {
       return;
