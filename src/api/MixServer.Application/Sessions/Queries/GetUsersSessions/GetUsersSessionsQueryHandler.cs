@@ -16,7 +16,8 @@ public class GetUsersSessionsQueryHandler(
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
         
-        var sessions = await sessionService.GetUsersPlaybackSessionHistoryAsync(request.StartIndex, request.PageSize, cancellationToken);
+        var rangeSize = request.EndIndex - request.StartIndex;
+        var sessions = await sessionService.GetUsersPlaybackSessionHistoryAsync(request.StartIndex, rangeSize, cancellationToken);
 
         return new GetUsersSessionsResponse
         {

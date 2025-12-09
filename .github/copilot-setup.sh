@@ -224,7 +224,7 @@ if [ -d "src/clients/mix-server-client" ]; then
     
     if [ -f "package.json" ]; then
         echo "  Installing npm packages (this may take a few minutes)..."
-        npm ci --legacy-peer-deps --silent || npm install --legacy-peer-deps --silent
+        npm ci --silent || npm install --silent
         echo "  [✓] Angular dependencies installed"
     fi
     

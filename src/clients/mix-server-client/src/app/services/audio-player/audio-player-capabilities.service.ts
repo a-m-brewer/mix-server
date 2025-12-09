@@ -3,7 +3,6 @@ import {CurrentPlaybackSessionRepositoryService} from "../repositories/current-p
 import {QueueRepositoryService} from "../repositories/queue-repository.service";
 import {AudioElementRepositoryService} from "./audio-element-repository.service";
 import {distinctUntilChanged, Subject} from "rxjs";
-import {HistoryRepositoryService} from "../repositories/history-repository.service";
 import {UpdateDevicePlaybackCapabilitiesCommand} from "../../generated-clients/mix-server-clients";
 import {ToastService} from "../toasts/toast-service";
 import {FileExplorerNodeRepositoryService} from "../repositories/file-explorer-node-repository.service";
@@ -23,7 +22,6 @@ export class AudioPlayerCapabilitiesService {
               private _audioElementRepository: AudioElementRepositoryService,
               private _devicesClient: DeviceApiService,
               private _fileExplorer: FileExplorerNodeRepositoryService,
-              private _historyRepository: HistoryRepositoryService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _toastService: ToastService,
               private _queueRepository: QueueRepositoryService) {
@@ -47,12 +45,6 @@ export class AudioPlayerCapabilitiesService {
         if (connected) {
           this.updateAudioCapabilities([]);
         }
-      });
-
-    this._historyRepository.sessions$
-      .subscribe(sessions => {
-        const mimeTypes = [...new Set(sessions.map(m => m.currentNode.metadata.mimeType))]
-        this.updateAudioCapabilities(mimeTypes);
       });
 
     this._playbackSessionRepository.currentSession$

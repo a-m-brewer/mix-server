@@ -139,12 +139,12 @@ if (Test-Path $angularClientPath) {
     Push-Location $angularClientPath
     try {
         Write-Host "  Installing npm packages (this may take a few minutes)..." -ForegroundColor Cyan
-        npm ci --legacy-peer-deps 2>&1 | Out-Null
+        npm ci 2>&1 | Out-Null
         if ($LASTEXITCODE -eq 0) {
             Write-Host "  [✓] Angular dependencies installed successfully" -ForegroundColor Green
         } else {
             Write-Host "  [!] npm ci failed, trying npm install..." -ForegroundColor Yellow
-            npm install --legacy-peer-deps
+            npm install
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "  [✓] Angular dependencies installed successfully" -ForegroundColor Green
             } else {

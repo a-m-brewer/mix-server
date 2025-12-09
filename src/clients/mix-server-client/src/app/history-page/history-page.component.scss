@@ -1,7 +1,10 @@
-.end-of-history-message-container {
-  text-align: center;
+.history-viewport {
+  height: 100%;
+  width: 100%;
 }
 
-.end-of-history-message {
-  margin: 15px 0;
+:host {
+  display: block;
+  height: 100%;
+  width: 100%;
 }

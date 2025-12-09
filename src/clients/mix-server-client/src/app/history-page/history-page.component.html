@@ -1,44 +1,34 @@
-<div
-  infinite-scroll
-  [infiniteScrollDistance]="scrollDistance"
-  [infiniteScrollUpDistance]="scrollUpDistance"
-  [infiniteScrollThrottle]="throttle"
-  [infiniteScrollContainer]="selector"
-  [fromRoot]="true"
-  (scrolled)="onScrollDown()"
-  >
-  @for (session of sessions; track session; let last = $last) {
-    <app-node-list-item
-      [key]="session.currentNode.path.key"
-      [nodeType]="session.currentNode.type"
-      [defaultIcon]="session.currentNode.mdIcon"
-      [loadingStatus]="loadingStatus"
-      [audioPlayerState]="audioPlayerState"
-      [disabled]="session.currentNode.disabled"
-      [last]="last"
-      (contentClick)="onNodeClick($event)"
+<cdk-virtual-scroll-viewport [itemSize]="56" class="history-viewport">
+  <ng-container *cdkVirtualFor="let session of dataSource; let last = last">
+    @if (session) {
+      <app-node-list-item
+        [key]="session.currentNode.path.key"
+        [nodeType]="session.currentNode.type"
+        [defaultIcon]="session.currentNode.mdIcon"
+        [loadingStatus]="loadingStatus"
+        [audioPlayerState]="audioPlayerState"
+        [disabled]="session.currentNode.disabled"
+        [last]="last"
+        (contentClick)="onNodeClick($event)"
       >
-      <div appNodeListItemTitle>
-        {{ session.currentNode.path.fileName }}
-      </div>
-      <app-file-metadata-subtitle appNodeListItemSubtitle
-        [metadata]="session.currentNode.metadata"
+        <div appNodeListItemTitle>
+          {{ session.currentNode.path.fileName }}
+        </div>
+        <app-file-metadata-subtitle appNodeListItemSubtitle
+                                    [metadata]="session.currentNode.metadata"
         />
         <app-add-to-queue-button
           [file]="session.currentNode"
-          />
-          <app-open-location-button
-            [folder]="session.currentNode.parent"
-            />
-          </app-node-list-item>
-        }
-
-        @if (!moreItemsAvailable) {
-          <div class="end-of-history-message-container">
-            <mat-divider [inset]="true"></mat-divider>
-            <h3 class="end-of-history-message">
-              End of History
-            </h3>
-          </div>
-        }
-      </div>
+        />
+        <app-open-location-button
+          [folder]="session.currentNode.parent"
+        />
+      </app-node-list-item>
+    }
+    @else {
+      <app-node-list-item
+        defaultIcon="description"
+      />
+    }
+  </ng-container>
+</cdk-virtual-scroll-viewport>

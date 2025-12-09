@@ -254,8 +254,8 @@ dotnet test src/api/MixServer.Application.Tests/MixServer.Application.Tests.cspr
 # Navigate to client directory
 cd src/clients/mix-server-client
 
-# Install dependencies (use --legacy-peer-deps for compatibility)
-npm ci --legacy-peer-deps
+# Install dependencies
+npm ci
 
 # Build for production
 npx ng build
@@ -620,7 +620,6 @@ describe('QueuePageComponent', () => {
 ✅ Regenerate API clients after backend changes
 ✅ Run tests frequently during development
 ✅ Use `appsettings.Local.json` for local configuration (gitignored)
-✅ Use `--legacy-peer-deps` when installing npm packages
 ✅ Check existing patterns before implementing new features
 
 ### DON'T
@@ -650,7 +649,7 @@ lsof -ti:4200 | xargs kill -9
 ```bash
 cd src/clients/mix-server-client
 rm -rf node_modules package-lock.json
-npm install --legacy-peer-deps
+npm install
 ```
 
 ### "Database locked" error
