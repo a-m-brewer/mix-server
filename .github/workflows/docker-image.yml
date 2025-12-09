@@ -7,9 +7,19 @@ on:
       - 'main'
     tags:
       - '*.*.*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'screenshots/**'
+      - 'LICENSE'
   pull_request:
     branches:
       - 'main'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'screenshots/**'
+      - 'LICENSE'
 
 # permissions are needed if pushing to ghcr.io
 permissions: 
