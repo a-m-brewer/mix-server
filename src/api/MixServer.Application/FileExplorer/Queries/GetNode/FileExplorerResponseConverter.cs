@@ -67,21 +67,30 @@ public class FileExplorerResponseConverter(
         return value switch
         {
             IRootFileExplorerFolder rootFolder => Convert(rootFolder),
-            _ => new FileExplorerFolderResponse
-            {
-                Node = Convert(value.Node),
-                Children = value.Children.Select(Convert).ToList(),
-                Sort = new FolderSortDto(value.Sort)
-            }
+            _ => ConvertFolder(value)
+        };
+    }
+
+    private FileExplorerFolderResponse ConvertFolder(IFileExplorerFolder value)
+    {
+        var children = value.Children.Select(Convert).ToList();
+        return new FileExplorerFolderResponse
+        {
+            Node = Convert(value.Node),
+            Children = children,
+            TotalCount = children.Count,
+            Sort = new FolderSortDto(value.Sort)
         };
     }
 
     public RootFileExplorerFolderResponse Convert(IRootFileExplorerFolder value)
     {
+        var children = value.Children.Select(Convert).ToList();
         return new RootFileExplorerFolderResponse
         {
             Node = Convert(value.Node),
-            Children = value.Children.Select(Convert).ToList(),
+            Children = children,
+            TotalCount = children.Count,
             Sort = new FolderSortDto(value.Sort)
         };
     }

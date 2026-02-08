@@ -56,7 +56,9 @@ public class FileExplorerFolderResponse
 {
     public required FileExplorerFolderNodeResponse Node { get; init; }
 
-    public IReadOnlyCollection<FileExplorerNodeResponse> Children { get; init; } = [];
+    public IReadOnlyCollection<FileExplorerNodeResponse> Children { get; set; } = [];
+
+    public int TotalCount { get; set; }
 
     public FolderSortDto Sort { get; set; } = FolderSortDto.Default;
     

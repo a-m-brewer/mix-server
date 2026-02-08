@@ -22,25 +22,39 @@ public class UpdateMediaMetadataCommandHandler(
     {
         var mediaInfos = new ConcurrentBag<MediaInfo>();
 
-        var transformBlock = new TransformBlock<NodePath, MediaInfo>(path =>
-        {
-            using var tb = tagBuilderFactory.CreateReadOnly(path.AbsolutePath);
-            var tracklist = tracklistTagService.GetTracklist(tb);
-            return new MediaInfo
+        var transformBlock = new TransformBlock<NodePath, MediaInfo?>(path =>
             {
-                Bitrate = tb.Bitrate,
-                Duration = tb.Duration,
-                Tracklist = tracklist,
-                Path = path
-            };
-        }, new ExecutionDataflowBlockOptions
-        {
-            CancellationToken = cancellationToken,
-            MaxDegreeOfParallelism = Environment.ProcessorCount
-        });
+                try
+                {
+                    using var tb = tagBuilderFactory.CreateReadOnly(path.AbsolutePath);
+                    var tracklist = tracklistTagService.GetTracklist(tb);
+                    return new MediaInfo
+                    {
+                        Bitrate = tb.Bitrate,
+                        Duration = tb.Duration,
+                        Tracklist = tracklist,
+                        Path = path
+                    };
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Error processing file {Path}", path.AbsolutePath);
+                    return null;
+                }
+            },
+            new ExecutionDataflowBlockOptions
+            {
+                CancellationToken = cancellationToken,
+                MaxDegreeOfParallelism = Environment.ProcessorCount
+            });
 
-        var actionBlock = new ActionBlock<MediaInfo>(mediaInfo =>
+        var actionBlock = new ActionBlock<MediaInfo?>(mediaInfo =>
         {
+            if (mediaInfo is null)
+            {
+                return;
+            }
+            
             mediaInfos.Add(mediaInfo);
         }, new ExecutionDataflowBlockOptions
         {

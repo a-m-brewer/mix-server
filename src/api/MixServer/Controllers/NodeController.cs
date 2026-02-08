@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MixServer.Application.FileExplorer.Commands.RefreshFolder;
 using MixServer.Application.FileExplorer.Commands.SetFolderSort;
-using MixServer.Application.FileExplorer.Dtos;
 using MixServer.Application.FileExplorer.Queries.GetNode;
 using MixServer.Domain.Interfaces;
 
@@ -11,7 +10,7 @@ namespace MixServer.Controllers;
 [Produces("application/json")]
 [Route("api/[controller]")]
 public class NodeController(
-    IQueryHandler<NodePathRequestDto, FileExplorerFolderResponse> getFolderNodeQueryHandler,
+    IQueryHandler<GetFolderNodeQuery, FileExplorerFolderResponse> getFolderNodeQueryHandler,
     ICommandHandler<RefreshFolderCommand, FileExplorerFolderResponse> refreshFolderCommandHandler,
     ICommandHandler<SetFolderSortCommand> setFolderSortCommandHandler)
     : ControllerBase
@@ -20,7 +19,7 @@ public class NodeController(
     [ProducesResponseType(typeof(FileExplorerFolderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetNode([FromQuery] NodePathRequestDto query, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetNode([FromQuery] GetFolderNodeQuery query, CancellationToken cancellationToken)
     {
         return Ok(await getFolderNodeQueryHandler.HandleAsync(query, cancellationToken));
     }

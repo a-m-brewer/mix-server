@@ -202,40 +202,69 @@ public class PlaybackTrackingService(
             logger.LogWarning("Failed to save playback state as there is currently no session associated with User: {UserId}", playbackState.UserId);
             return;
         }
-        
-        if (type == AudioPlayerStateUpdateType.CurrentTime)
+
+        switch (type)
         {
-            return;
+            // Debounce saving
+            case AudioPlayerStateUpdateType.CurrentTime:
+            {
+                await _saveSessionStateDebouncer.DebounceAsync(playbackState.SessionId.Value,
+                    async () => { await SavePlaybackStateAsync(playbackState, cancellationToken); }, cancellationToken);
+                break;
+            }
+            // Save immediately
+            case AudioPlayerStateUpdateType.Seek:
+            case AudioPlayerStateUpdateType.Playing:
+            {
+                await SavePlaybackStateAsync(playbackState, cancellationToken);
+                break;
+            }
+            // Don't save
+            case AudioPlayerStateUpdateType.PlaybackGranted:
+            default:
+            {
+                logger.LogTrace("Not saving playback state for update type: {UpdateType}", type);
+                break;
+            }
         }
-
-        await _saveSessionStateDebouncer.DebounceAsync(playbackState.SessionId.Value, async () =>
+    }
+    
+    private async Task SavePlaybackStateAsync(IPlaybackState playbackState, CancellationToken cancellationToken = default)
+    {
+        try
         {
-            try
+            using var scope = serviceProvider.CreateScope();
+            var currentUserRepository = scope.ServiceProvider.GetRequiredService<ICurrentUserRepository>();
+            var playbackSessionRepository = scope.ServiceProvider.GetRequiredService<IPlaybackSessionRepository>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+            logger.LogDebug("Saving Session: {SessionId}", playbackState.SessionId);
+            currentUserRepository.SetUserId(playbackState.UserId);
+            var currentUser = await currentUserRepository.GetCurrentUserAsync();
+            
+            if (playbackState.SessionId == null || playbackState.SessionId == Guid.Empty)
             {
-                using var scope = serviceProvider.CreateScope();
-                var currentUserRepository = scope.ServiceProvider.GetRequiredService<ICurrentUserRepository>();
-                var playbackSessionRepository = scope.ServiceProvider.GetRequiredService<IPlaybackSessionRepository>();
-                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
-                logger.LogDebug("Saving Session: {SessionId}", playbackState.SessionId);
-                currentUserRepository.SetUserId(playbackState.UserId);
-                var currentUser = await currentUserRepository.GetCurrentUserAsync();
-
-                var session = await playbackSessionRepository.GetAsync(playbackState.SessionId.Value, cancellationToken);
-
-                if (currentUser.Id != session.UserId)
-                {
-                    return;
-                }
-
-                session.CurrentTime = playbackState.CurrentTime;
-
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+                logger.LogWarning("Failed to save playback state as there is currently no session associated with User: {UserId}", playbackState.UserId);
+                return;
             }
-            catch (Exception e)
+
+            var session = await playbackSessionRepository.GetAsync(playbackState.SessionId.Value, cancellationToken);
+
+            if (currentUser.Id != session.UserId)
             {
-                logger.LogError(e, "Failed to save playback state");
+                logger.LogWarning("Failed to save playback state due to mismatching user ids. Current UserId: {CurrentUserId} Session UserId: {SessionUserId}",
+                    currentUser.Id,
+                    session.UserId);
+                return;
             }
-        }, cancellationToken);
+
+            session.CurrentTime = playbackState.CurrentTime;
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to save playback state");
+        }
     }
 }

@@ -256,7 +256,7 @@ export class DeviceClient implements IDeviceClient {
 }
 
 export interface INodeClient {
-    getNode(rootPath?: string | null | undefined, relativePath?: string | null | undefined): Observable<FileExplorerFolderResponse>;
+    getNode(rootPath?: string | null | undefined, relativePath?: string | null | undefined, startIndex?: number | null | undefined, endIndex?: number | null | undefined): Observable<FileExplorerFolderResponse>;
     refreshFolder(command: RefreshFolderCommand): Observable<FileExplorerFolderResponse>;
     setFolderSortMode(command: SetFolderSortCommand): Observable<void>;
 }
@@ -274,12 +274,16 @@ export class NodeClient implements INodeClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getNode(rootPath?: string | null | undefined, relativePath?: string | null | undefined): Observable<FileExplorerFolderResponse> {
+    getNode(rootPath?: string | null | undefined, relativePath?: string | null | undefined, startIndex?: number | null | undefined, endIndex?: number | null | undefined): Observable<FileExplorerFolderResponse> {
         let url_ = this.baseUrl + "/api/node?";
         if (rootPath !== undefined && rootPath !== null)
             url_ += "RootPath=" + encodeURIComponent("" + rootPath) + "&";
         if (relativePath !== undefined && relativePath !== null)
             url_ += "RelativePath=" + encodeURIComponent("" + relativePath) + "&";
+        if (startIndex !== undefined && startIndex !== null)
+            url_ += "StartIndex=" + encodeURIComponent("" + startIndex) + "&";
+        if (endIndex !== undefined && endIndex !== null)
+            url_ += "EndIndex=" + encodeURIComponent("" + endIndex) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -2868,6 +2872,7 @@ export interface IUpdateDevicePlaybackCapabilitiesCommand {
 export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
     node!: FileExplorerFolderNodeResponse;
     children!: FileExplorerNodeResponse[];
+    totalCount!: number;
     sort!: FolderSortDto;
 
     protected _discriminator: string;
@@ -2882,6 +2887,7 @@ export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
         if (!data) {
             this.node = new FileExplorerFolderNodeResponse();
             this.children = [];
+            this.totalCount = 0;
             this.sort = new FolderSortDto();
         }
         this._discriminator = "FileExplorerFolderResponse";
@@ -2895,6 +2901,7 @@ export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
                 for (let item of _data["children"])
                     this.children!.push(FileExplorerNodeResponse.fromJS(item));
             }
+            this.totalCount = _data["totalCount"] !== undefined ? _data["totalCount"] : 0;
             this.sort = _data["sort"] ? FolderSortDto.fromJS(_data["sort"]) : new FolderSortDto();
         }
     }
@@ -2920,6 +2927,7 @@ export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
             for (let item of this.children)
                 data["children"].push(item.toJSON());
         }
+        data["totalCount"] = this.totalCount;
         data["sort"] = this.sort ? this.sort.toJSON() : <any>undefined;
         return data;
     }
@@ -2928,6 +2936,7 @@ export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
 export interface IFileExplorerFolderResponse {
     node: FileExplorerFolderNodeResponse;
     children: FileExplorerNodeResponse[];
+    totalCount: number;
     sort: FolderSortDto;
 }
 

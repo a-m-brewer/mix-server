@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {BehaviorSubject, filter, firstValueFrom, from, map, Observable, tap} from "rxjs";
+import {BehaviorSubject, filter, firstValueFrom, from, map, Observable} from "rxjs";
 import {LoadingRepositoryService} from "./loading-repository.service";
 import {FileExplorerFolderNode} from "../../main-content/file-explorer/models/file-explorer-folder-node";
 import {ActivatedRoute, NavigationEnd, Router} from "@angular/router";
@@ -15,7 +15,7 @@ import {NodePathHeader} from "../../main-content/file-explorer/models/node-path"
   providedIn: 'root'
 })
 export class FileExplorerNodeRepositoryService {
-  private _currentFolderPath$ = new BehaviorSubject<NodePathHeader>(NodePathHeader.Default);
+  private _currentFolderPath$ = new BehaviorSubject<NodePathHeader | null>(null);
 
   private _loggedIn: boolean = false;
 
@@ -45,8 +45,16 @@ export class FileExplorerNodeRepositoryService {
       });
   }
 
+  public get currentFolderPath$(): Observable<NodePathHeader | null> {
+    return this._currentFolderPath$.asObservable();
+  }
+
   public get currentFolder$(): Observable<FileExplorerFolder> {
-    return this._nodeCache.getFolder$(this._currentFolderPath$);
+    return this._nodeCache.getFolder$(
+      this._currentFolderPath$.pipe(
+        map(p => p ?? NodePathHeader.Default)
+      )
+    );
   }
 
   public changeDirectory(node?: FileExplorerFolderNode | null): void {
@@ -89,26 +97,33 @@ export class FileExplorerNodeRepositoryService {
   }
 
   public refreshFolder(): void {
-    this._nodeCache.refreshFolder(this._currentFolderPath$.value)
-  }
-
-  public setFolderSort(sortMode: FileExplorerFolderSortMode, descending: boolean) {
-    if (this._currentFolderPath$.value.empty) {
+    const path = this._currentFolderPath$.value;
+    if (!path) {
       return;
     }
 
-    this._nodeCache.setFolderSort(this._currentFolderPath$.value, sortMode, descending)
+    this._nodeCache.refreshFolder(path);
+  }
+
+  public setFolderSort(sortMode: FileExplorerFolderSortMode, descending: boolean) {
+    const path = this._currentFolderPath$.value;
+    if (!path) {
+      return;
+    }
+
+    this._nodeCache.setFolderSort(path, sortMode, descending)
       .then();
   }
 
   private loadDirectory(root: string, relativePath: string): void {
-    this._nodeCache.loadDirectory(new NodePathHeader(root, relativePath))
-      .then(loadedPath => {
-        this._currentFolderPath$.next(loadedPath);
-      })
+    const path = new NodePathHeader(root, relativePath);
+    this._currentFolderPath$.next(path);
+
+    // Also load into NodeCacheService for other consumers (nav-bar, title, sort form, etc.)
+    this._nodeCache.loadDirectory(path).then();
   }
 
   private clear(): void {
-    this._currentFolderPath$.next(NodePathHeader.Default);
+    this._currentFolderPath$.next(null);
   }
 }
