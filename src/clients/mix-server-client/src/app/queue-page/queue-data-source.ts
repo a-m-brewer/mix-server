@@ -74,9 +74,17 @@ export class QueueDataSource extends DataSource<QueueItem | undefined> {
   }
 
   async reset(): Promise<void> {
+    this._clearCache();
+    await this.initialize();
+  }
+
+  private _clearCache(): void {
     this._cachedData.clear();
     this._fetchedRanges = [];
-    await this.initialize();
+    this._totalCount = 0;
+    this._hasMore = true;
+    this._isFetching = false;
+    this._fetchingRanges.clear();
   }
 
   private _isRangeFetched(start: number, end: number): boolean {
@@ -176,21 +184,5 @@ export class QueueDataSource extends DataSource<QueueItem | undefined> {
     });
 
     this._dataStream$.next(dataArray);
-  }
-
-  // Handle queue updates from SignalR
-  updateQueue(items: QueueItem[], totalCount: number): void {
-    this._cachedData.clear();
-    this._fetchedRanges = [];
-    this._totalCount = totalCount;
-
-    items.forEach((item, index) => {
-      this._cachedData.set(index, item);
-    });
-
-    this._fetchedRanges.push({ start: 0, end: items.length });
-    this._hasMore = items.length < totalCount;
-
-    this._updateDataStream();
   }
 }

@@ -67,9 +67,9 @@ export class QueuePageComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(queue => {
         this.queue = queue;
-        // Update the data source when queue changes via SignalR
-        if (queue.items.length > 0) {
-          this.dataSource.updateQueue(queue.items, queue.items.length);
+        // Reset the data source when queue changes via SignalR to re-fetch with pagination
+        if (queue.items.length > 0 && this.dataSource) {
+          this.dataSource.reset().then();
         }
       });
 
