@@ -15,6 +15,7 @@ public interface IQueueService
     Task ResortQueueAsync(CancellationToken cancellationToken);
     void ClearQueue();
     Task<QueueSnapshot> GenerateQueueSnapshotAsync(CancellationToken cancellationToken);
+    Task<(QueueSnapshot Snapshot, int TotalCount)> GenerateQueueSnapshotRangeAsync(int startIndex, int endIndex, CancellationToken cancellationToken);
     Task<IFileExplorerFileNode> GetCurrentPositionFileOrThrowAsync(CancellationToken cancellationToken);
     Task<NodePath?> GetCurrentQueueFolderPathAsync(CancellationToken cancellationToken);
 }

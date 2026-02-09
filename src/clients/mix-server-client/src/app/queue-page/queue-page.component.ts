@@ -16,6 +16,8 @@ import {
   NodeListItemSelectedEvent
 } from "../components/nodes/node-list/node-list-item/interfaces/node-list-item-selected-event";
 import {SessionService} from "../services/sessions/session.service";
+import {QueueDataSource} from "./queue-data-source";
+import {AuthenticationService} from "../services/auth/authentication.service";
 
 @Component({
     selector: 'app-queue-page',
@@ -32,8 +34,10 @@ export class QueuePageComponent implements OnInit, OnDestroy {
   public queue: Queue = new Queue(null, null, null, []);
   public editQueueForm: EditQueueFormModel = new EditQueueFormModel();
   public loadingStatus: LoadingNodeStatus = LoadingNodeStatusImpl.new;
+  public dataSource!: QueueDataSource;
 
-  constructor(private _audioPlayerStateService: AudioPlayerStateService,
+  constructor(private _authenticationService: AuthenticationService,
+              private _audioPlayerStateService: AudioPlayerStateService,
               private _loadingRepository: LoadingRepositoryService,
               private _sessionService: SessionService,
               private _queueRepository: QueueRepositoryService,
@@ -41,6 +45,18 @@ export class QueuePageComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
+    // Initialize data source
+    this.dataSource = new QueueDataSource(
+      (start, end) => this._queueRepository.fetchRange(start, end)
+    );
+
+    this._authenticationService.connected$
+      .subscribe(connected => {
+        if (connected) {
+          this.dataSource.initialize().then();
+        }
+      });
+
     this._audioPlayerStateService.state$
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(state => {
@@ -51,6 +67,10 @@ export class QueuePageComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this._unsubscribe$))
       .subscribe(queue => {
         this.queue = queue;
+        // Reset the data source when queue changes via SignalR to re-fetch with pagination
+        if (queue.items.length > 0 && this.dataSource) {
+          this.dataSource.reset().then();
+        }
       });
 
     this._queueEditFormRepository.editForm$
@@ -69,6 +89,7 @@ export class QueuePageComponent implements OnInit, OnDestroy {
   public ngOnDestroy(): void {
     this._unsubscribe$.next(null);
     this._unsubscribe$.complete();
+    this.dataSource.disconnect();
   }
 
   public onNodeClick(event: NodeListItemChangedEvent): void {
