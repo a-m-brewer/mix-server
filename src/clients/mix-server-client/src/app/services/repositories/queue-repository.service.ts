@@ -127,6 +127,32 @@ export class QueueRepositoryService {
       }));
   }
 
+  public async fetchRange(startIndex: number, endIndex: number): Promise<{ items: QueueItem[], totalCount: number }> {
+    const loadingId = `LoadQueueRange-${startIndex}-${endIndex}`;
+    const result = await this._queueClient.request(
+      loadingId,
+      c => c.queue(startIndex, endIndex),
+      'Failed to fetch queue range');
+
+    const queueDto = result.result;
+    if (!queueDto || !queueDto.items) {
+      return { items: [], totalCount: 0 };
+    }
+
+    const queue = this._queueConverter.fromDto(queueDto);
+
+    // Pre-load directories for these queue items
+    const folders = [...new Set(queue.items.map(item => item.file.parent.path))];
+    folders.forEach(folder => {
+      void this._nodeCache.loadDirectory(folder)
+    });
+
+    return {
+      items: queue.items,
+      totalCount: queueDto.totalCount ?? queue.items.length
+    };
+  }
+
   public setNextQueue(queue: Queue) {
     const folders = [...new Set(queue.items.map(item => item.file.parent.path))];
     folders.forEach(folder => {

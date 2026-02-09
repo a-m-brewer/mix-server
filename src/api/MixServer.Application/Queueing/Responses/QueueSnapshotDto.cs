@@ -9,4 +9,6 @@ public class QueueSnapshotDto
     public required Guid? NextQueuePosition { get; init; }
 
     public required List<QueueSnapshotItemDto> Items { get; init; }
+    
+    public int? TotalCount { get; set; }
 }

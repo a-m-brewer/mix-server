@@ -617,7 +617,7 @@ export class NodeManagementClient implements INodeManagementClient {
 }
 
 export interface IQueueClient {
-    queue(): Observable<QueueSnapshotDto>;
+    queue(startIndex?: number | null | undefined, endIndex?: number | null | undefined): Observable<QueueSnapshotDto>;
     addToQueue(command: AddToQueueCommand): Observable<QueueSnapshotDto>;
     removeFromQueue(queueItemId: string): Observable<QueueSnapshotDto>;
     removeFromQueue2(command: RemoveFromQueueCommand): Observable<QueueSnapshotDto>;
@@ -637,8 +637,12 @@ export class QueueClient implements IQueueClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    queue(): Observable<QueueSnapshotDto> {
-        let url_ = this.baseUrl + "/api/queue";
+    queue(startIndex?: number | null | undefined, endIndex?: number | null | undefined): Observable<QueueSnapshotDto> {
+        let url_ = this.baseUrl + "/api/queue?";
+        if (startIndex !== undefined && startIndex !== null)
+            url_ += "StartIndex=" + encodeURIComponent("" + startIndex) + "&";
+        if (endIndex !== undefined && endIndex !== null)
+            url_ += "EndIndex=" + encodeURIComponent("" + endIndex) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -2887,7 +2891,6 @@ export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
         if (!data) {
             this.node = new FileExplorerFolderNodeResponse();
             this.children = [];
-            this.totalCount = 0;
             this.sort = new FolderSortDto();
         }
         this._discriminator = "FileExplorerFolderResponse";
@@ -2901,7 +2904,7 @@ export class FileExplorerFolderResponse implements IFileExplorerFolderResponse {
                 for (let item of _data["children"])
                     this.children!.push(FileExplorerNodeResponse.fromJS(item));
             }
-            this.totalCount = _data["totalCount"] !== undefined ? _data["totalCount"] : 0;
+            this.totalCount = _data["totalCount"];
             this.sort = _data["sort"] ? FolderSortDto.fromJS(_data["sort"]) : new FolderSortDto();
         }
     }
@@ -3925,6 +3928,7 @@ export class QueueSnapshotDto implements IQueueSnapshotDto {
     previousQueuePosition?: string | undefined;
     nextQueuePosition?: string | undefined;
     items!: QueueSnapshotItemDto[];
+    totalCount?: number | undefined;
 
     constructor(data?: IQueueSnapshotDto) {
         if (data) {
@@ -3948,6 +3952,7 @@ export class QueueSnapshotDto implements IQueueSnapshotDto {
                 for (let item of _data["items"])
                     this.items!.push(QueueSnapshotItemDto.fromJS(item));
             }
+            this.totalCount = _data["totalCount"];
         }
     }
 
@@ -3968,6 +3973,7 @@ export class QueueSnapshotDto implements IQueueSnapshotDto {
             for (let item of this.items)
                 data["items"].push(item.toJSON());
         }
+        data["totalCount"] = this.totalCount;
         return data;
     }
 }
@@ -3977,6 +3983,7 @@ export interface IQueueSnapshotDto {
     previousQueuePosition?: string | undefined;
     nextQueuePosition?: string | undefined;
     items: QueueSnapshotItemDto[];
+    totalCount?: number | undefined;
 }
 
 export class QueueSnapshotItemDto implements IQueueSnapshotItemDto {

@@ -281,4 +281,38 @@ public class QueueService(
 
         return null;
     }
+
+    public async Task<(QueueSnapshot Snapshot, int TotalCount)> GenerateQueueSnapshotRangeAsync(int startIndex, int endIndex, CancellationToken cancellationToken)
+    {
+        var queue = await GetOrAddQueueAsync(cancellationToken);
+        var userQueueFiles = await fileService.GetFilesAsync(queue.UserQueueItemsAbsoluteFilePaths);
+        var folderFiles = await GetPlayableFilesInFolderAsync(queue.CurrentFolderPath, cancellationToken);
+
+        var allFiles = new List<IFileExplorerFileNode>(userQueueFiles);
+        allFiles.AddRange(folderFiles);
+
+        var distinctFiles = allFiles
+            .DistinctBy(d => d.Path.AbsolutePath)
+            .ToDictionary(k => k.Path, v => v);
+
+        var allItems = queue.GenerateQueueSnapshotItems(distinctFiles);
+        var totalCount = allItems.Count;
+
+        // Get the requested range of items
+        var rangeItems = allItems
+            .Skip(startIndex)
+            .Take(endIndex - startIndex)
+            .ToList();
+
+        var previousValidOffset = queue.CurrentQueuePositionId.HasValue
+            ? await GetNextValidQueuePositionAsync(queue.CurrentQueuePositionId.Value, false, allItems)
+            : null;
+        var nextValidOffset = queue.CurrentQueuePositionId.HasValue
+            ? await GetNextValidQueuePositionAsync(queue.CurrentQueuePositionId.Value, true, allItems)
+            : null;
+
+        var snapshot = new QueueSnapshot(queue.CurrentQueuePositionId, previousValidOffset, nextValidOffset, rangeItems);
+
+        return (snapshot, totalCount);
+    }
 }
