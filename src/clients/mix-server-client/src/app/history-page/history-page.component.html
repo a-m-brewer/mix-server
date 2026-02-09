@@ -1,4 +1,4 @@
-<cdk-virtual-scroll-viewport [itemSize]="56" class="history-viewport">
+<cdk-virtual-scroll-viewport [itemSize]="56" class="history-viewport ms-viewport">
   <ng-container *cdkVirtualFor="let session of dataSource; let last = last">
     @if (session) {
       <app-node-list-item

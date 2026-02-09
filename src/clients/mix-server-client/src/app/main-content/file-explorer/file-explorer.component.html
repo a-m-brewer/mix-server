@@ -15,7 +15,7 @@
   </app-node-list-item>
 }
 
-<cdk-virtual-scroll-viewport [itemSize]="56" class="file-explorer-viewport">
+<cdk-virtual-scroll-viewport [itemSize]="56" class="file-explorer-viewport ms-viewport">
   <ng-container *cdkVirtualFor="let node of dataSource; let last = last">
     @if (node) {
       <app-node-list-item

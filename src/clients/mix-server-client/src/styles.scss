@@ -83,3 +83,12 @@ mat-toolbar {
   }
 }
 
+/* styles.scss (global) */
+.ms-viewport {
+  overflow-x: hidden;      /* prevent sideways page drift */
+}
+
+.ms-viewport .cdk-virtual-scroll-content-wrapper {
+  width: 100%;
+  max-width: 100%;
+}

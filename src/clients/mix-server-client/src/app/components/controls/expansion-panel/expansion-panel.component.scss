@@ -5,8 +5,10 @@
   display: flex;
   flex-direction: column;
 
-  background-color: var(--mat-toolbar-container-background-color);
-  color: var(--mat-tree-node-text-color);
+//   background-color: var(--mat-toolbar-container-background-color);
+//   color: var(--mat-tree-node-text-color);
+  background-color: #212121 !important;
+  color: rgba(255, 255, 255, 0.87) !important;
 }
 
 /* Adjustments for variable height content */
@@ -15,8 +17,10 @@
   overflow: hidden;
   transition: max-height 0.3s ease-out; /* Adjust timing as needed */
 
-  background-color: var(--mat-toolbar-container-background-color);
-  color: var(--mat-tree-node-text-color);
+//   background-color: var(--mat-toolbar-container-background-color);
+//   color: var(--mat-tree-node-text-color);
+  background-color: #212121 !important;
+  color: rgba(255, 255, 255, 0.87) !important;
 }
 
 .panel-header-content {
