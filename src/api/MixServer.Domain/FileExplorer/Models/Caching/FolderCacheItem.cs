@@ -9,6 +9,12 @@ namespace MixServer.Domain.FileExplorer.Models.Caching;
 public interface ICacheFolder
 {
     IFileExplorerFolder Folder { get; }
+    
+    /// <summary>
+    /// Adds a file node to the folder cache if it doesn't already exist.
+    /// This is used when a file is found on disk but not in cache.
+    /// </summary>
+    void AddChildIfNotExists(IFileExplorerNode node);
 }
 
 public interface IFolderCacheItem : ICacheFolder, IDisposable
@@ -96,6 +102,18 @@ public class FolderCacheItem : IFolderCacheItem
     public event EventHandler<IFileExplorerNode>? ItemRemoved;
     
     public IFileExplorerFolder Folder => _folder;
+
+    public void AddChildIfNotExists(IFileExplorerNode node)
+    {
+        // TryAddChild uses ConcurrentDictionary.TryAdd which is O(1) and thread-safe
+        if (!_folder.TryAddChild(node))
+        {
+            return;
+        }
+        
+        _logger.Log(_logLevel, "Added missing file to cache: {AbsolutePath}", node.Path.AbsolutePath);
+        ItemAdded?.Invoke(this, node);
+    }
 
     private void OnCreated(object sender, FileSystemEventArgs e) =>
         SubmitCacheUpdate(e.FullPath, ChangeType.Created, e.ChangeType);

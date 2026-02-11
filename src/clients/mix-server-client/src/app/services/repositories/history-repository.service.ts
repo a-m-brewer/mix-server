@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import {PlaybackSession} from "./models/playback-session";
-import {NodeCacheService} from "../nodes/node-cache.service";
 import {SessionApiService} from "../api.service";
 import {PlaybackSessionConverterService} from "../converters/playback-session-converter.service";
 
@@ -8,8 +7,7 @@ import {PlaybackSessionConverterService} from "../converters/playback-session-co
   providedIn: 'root'
 })
 export class HistoryRepositoryService {
-  constructor(private _nodeCache: NodeCacheService,
-              private _playbackSessionConverter: PlaybackSessionConverterService,
+  constructor(private _playbackSessionConverter: PlaybackSessionConverterService,
               private _sessionClient: SessionApiService) {
   }
 
@@ -25,14 +23,6 @@ export class HistoryRepositoryService {
       return [];
     }
 
-    const sessions = history.sessions.map(m => this._playbackSessionConverter.fromDto(m));
-
-    // Pre-load directories for these sessions
-    const folders = [...new Set(sessions.map(session => session.currentNode.parent.path))];
-    folders.forEach(folder => {
-      void this._nodeCache.loadDirectory(folder)
-    });
-
-    return sessions;
+    return history.sessions.map(m => this._playbackSessionConverter.fromDto(m));
   }
 }

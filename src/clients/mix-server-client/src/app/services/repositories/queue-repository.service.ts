@@ -12,7 +12,6 @@ import {AuthenticationService} from "../auth/authentication.service";
 import {QueueItem} from "./models/queue-item";
 import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 import {QueueEditFormRepositoryService} from "./queue-edit-form-repository.service";
-import {NodeCacheService} from "../nodes/node-cache.service";
 import {QueueApiService} from "../api.service";
 import {NodePathConverterService} from "../converters/node-path-converter.service";
 
@@ -24,7 +23,6 @@ export class QueueRepositoryService {
 
 
   constructor(private _authenticationService: AuthenticationService,
-              private _nodeCache: NodeCacheService,
               private _nodePathConverter: NodePathConverterService,
               private _queueConverter: QueueConverterService,
               private _queueSignalRClient: QueueSignalrClientService,
@@ -141,12 +139,6 @@ export class QueueRepositoryService {
 
     const queue = this._queueConverter.fromDto(queueDto);
 
-    // Pre-load directories for these queue items
-    const folders = [...new Set(queue.items.map(item => item.file.parent.path))];
-    folders.forEach(folder => {
-      void this._nodeCache.loadDirectory(folder)
-    });
-
     return {
       items: queue.items,
       totalCount: queueDto.totalCount ?? queue.items.length
@@ -154,13 +146,6 @@ export class QueueRepositoryService {
   }
 
   public setNextQueue(queue: Queue) {
-    const folders = [...new Set(queue.items.map(item => item.file.parent.path))];
-    folders.forEach(folder => {
-      void this._nodeCache.loadDirectory(folder)
-    })
-
-    this._queueBehaviourSubject$.value.destroy();
-
     this._queueBehaviourSubject$.next(queue);
   }
 
