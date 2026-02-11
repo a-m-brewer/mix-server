@@ -105,13 +105,12 @@ public class FolderCacheItem : IFolderCacheItem
 
     public void AddChildIfNotExists(IFileExplorerNode node)
     {
-        // Check if the node already exists in the folder
-        if (_folder.Children.Any(c => c.Path.AbsolutePath == node.Path.AbsolutePath))
+        // TryAddChild uses ConcurrentDictionary.TryAdd which is O(1) and thread-safe
+        if (!_folder.TryAddChild(node))
         {
             return;
         }
         
-        _folder.AddChild(node);
         _logger.Log(_logLevel, "Added missing file to cache: {AbsolutePath}", node.Path.AbsolutePath);
         ItemAdded?.Invoke(this, node);
     }

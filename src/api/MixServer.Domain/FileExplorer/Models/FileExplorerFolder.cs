@@ -49,6 +49,11 @@ public class FileExplorerFolder(IFileExplorerFolderNode node) : IFileExplorerFol
             }
         }
     }
+    
+    public bool TryAddChild(IFileExplorerNode node)
+    {
+        return ChildNodes.TryAdd(node.Path.FileName, node);
+    }
 
     public bool RemoveChild(string name, [MaybeNullWhen(false)] out IFileExplorerNode node)
     {

@@ -106,12 +106,7 @@ public class FolderCacheService : IFolderCacheService
             return file;
         }
 
-        _logger.LogWarning("File {FileAbsolutePath} not found in cache, loading from disk", nodePath.AbsolutePath);
-
-        if (Debugger.IsAttached && File.Exists(nodePath.AbsolutePath))
-        {
-            Debugger.Break();
-        }
+        _logger.LogDebug("File {FileAbsolutePath} not found in cache, loading from disk", nodePath.AbsolutePath);
 
         var fileFromDisk = _fileExplorerConverter.Convert(new FileInfo(nodePath.AbsolutePath), dir.Folder.Node);
         
