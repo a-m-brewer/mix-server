@@ -5,7 +5,7 @@ import {
   filter,
   map, merge,
   Observable,
-  Subject, Subscription
+  Subject
 } from "rxjs";
 import {PlaybackSession} from "./models/playback-session";
 import {
@@ -27,7 +27,6 @@ import {PlaybackGrantedEvent} from "./models/playback-granted-event";
 import {TracklistConverterService} from "../converters/tracklist-converter.service";
 import {markAllAsDirty} from "../../utils/form-utils";
 import {SessionApiService} from "../api.service";
-import {FileExplorerFileNode} from "../../main-content/file-explorer/models/file-explorer-file-node";
 
 @Injectable({
   providedIn: 'root'
@@ -38,9 +37,6 @@ export class CurrentPlaybackSessionRepositoryService {
   private _playbackGranted$ = new Subject<PlaybackGrantedEvent>();
   private _tracklistChanged$ = new Subject<void>();
   private _currentSession$ = new BehaviorSubject<PlaybackSession | null>(null);
-
-  private _currentNodeSub: Subscription | null | undefined = null;
-  private _currentSessionNode$ = new BehaviorSubject<FileExplorerFileNode | null>(null);
 
   constructor(audioElementRepository: AudioElementRepositoryService,
               private _playbackSessionConverter: PlaybackSessionConverterService,
@@ -86,18 +82,6 @@ export class CurrentPlaybackSessionRepositoryService {
   }
 
   public set currentSession(value: PlaybackSession | null) {
-    if (this._currentSession$.value) {
-      this._currentSession$.value.destroy();
-    }
-
-    if (this._currentNodeSub) {
-      this._currentNodeSub.unsubscribe();
-    }
-
-    this._currentNodeSub = value?.currentNode$.subscribe(node => {
-      this._currentSessionNode$.next(node);
-    })
-
     this._currentSession$.next(value);
   }
 
@@ -109,7 +93,6 @@ export class CurrentPlaybackSessionRepositoryService {
   public get currentSessionTracklistChanged$(): Observable<PlaybackSession | null> {
     return merge(
       this._currentSession$,
-      this._currentSessionNode$,
       this._tracklistChanged$
     )
       .pipe(map(() => this.currentSession));
