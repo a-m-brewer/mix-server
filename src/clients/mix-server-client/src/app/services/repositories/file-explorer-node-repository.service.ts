@@ -22,6 +22,9 @@ import {
   SetFolderSortCommand
 } from "../../generated-clients/mix-server-clients";
 
+const ROOT_FOLDER_KEY = "";
+const ROOT_LOADING_KEY = "root";
+
 @Injectable({
   providedIn: 'root'
 })
@@ -63,7 +66,7 @@ export class FileExplorerNodeRepositoryService {
     this._playbackDeviceService.requestPlaybackDevice$
       .subscribe(device => {
         const folder = this._currentFolder$.value;
-        if (folder.node.path.key === "") {
+        if (folder.node.path.key === ROOT_FOLDER_KEY) {
           return;
         }
 
@@ -249,7 +252,7 @@ export class FileExplorerNodeRepositoryService {
     const path = new NodePathHeader(root, relativePath);
     this._currentFolderPath$.next(path);
 
-    const loadingKey = path.key === "" ? "root" : path.key;
+    const loadingKey = path.key === ROOT_FOLDER_KEY ? ROOT_LOADING_KEY : path.key;
 
     if (this._loadingRepository.isLoading(loadingKey)) {
       return;
