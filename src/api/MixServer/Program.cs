@@ -188,6 +188,7 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(ConfigS
 builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 
 builder.Services.Configure<InitialUserSettings>(builder.Configuration.GetSection(ConfigSection.InitialUser));
+builder.Services.Configure<E2eUserSettings>(builder.Configuration.GetSection(ConfigSection.E2eUser));
 
 builder.Services.Configure<FolderCacheSettings>(builder.Configuration.GetSection(ConfigSection.FolderCache));
 

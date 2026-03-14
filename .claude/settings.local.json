@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find c:Usersavoidsourcereposgithubmix-serversrcclientsmix-server-clientsrc -name *worker* -o -name *service-worker* -o -name *ngsw*)",
+      "Bash(npm install:*)",
+      "Bash(ls -la \"c:\\\\Users\\\\avoid\\\\source\\\\repos\\\\github\\\\mix-server\\\\src\\\\clients\\\\mix-server-client\\\\src\\\\app\\\\authentication\"\" 2>/dev/null || ls -la \"/c/Users/avoid/source/repos/github/mix-server/src/clients/mix-server-client/src/app/authentication/ \")",
+      "Bash(npx ng:*)",
+      "Bash(echo \"ANDROID_HOME=$ANDROID_HOME\")",
+      "Bash(echo \"JAVA_HOME=$JAVA_HOME\")",
+      "Bash(where sdkmanager:*)",
+      "Read(//c/Program Files/Android/**)",
+      "Read(//c/Users/avoid/AppData/Local/Android/Sdk/**)"
+    ]
+  }
+}

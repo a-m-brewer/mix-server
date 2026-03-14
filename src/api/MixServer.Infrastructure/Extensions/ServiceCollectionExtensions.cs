@@ -36,6 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICurrentUserRepository, CurrentUserRepository>();
         services.AddTransient<IUserAuthenticationService, IdentityUserAuthenticationService>();
         services.AddTransient<IIdentityUserAuthenticationService, IdentityUserAuthenticationService>();
+        services.AddTransient<IE2eUserInitializationService, E2eUserInitializationService>();
         services.AddTransient<IFirstUserInitializationService, FirstUserInitializationService>();
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IStreamKeyService>(i => i.GetRequiredService<IJwtService>());

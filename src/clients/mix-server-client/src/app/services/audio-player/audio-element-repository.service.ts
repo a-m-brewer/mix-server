@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import Hls from "hls.js";
+import { Capacitor } from '@capacitor/core';
+import { NativeAudioBridgeService } from './native-audio-bridge.service';
 
 @Injectable({
   providedIn: 'root'
@@ -7,10 +9,16 @@ import Hls from "hls.js";
 export class AudioElementRepositoryService {
   private readonly _audio: HTMLAudioElement;
   private readonly _hls: Hls;
+  private readonly _isNative: boolean;
 
-  constructor() {
+  constructor(private _nativeAudioBridge: NativeAudioBridgeService) {
     this._audio = new Audio();
     this._hls = new Hls();
+    this._isNative = Capacitor.isNativePlatform();
+  }
+
+  public get isNative(): boolean {
+    return this._isNative;
   }
 
   public get audio(): HTMLAudioElement {
@@ -20,6 +28,12 @@ export class AudioElementRepositoryService {
   // https://stackoverflow.com/a/64821821/12939184
   // This weirdness is due to iOS safari, not letting you set currentTime until the audio is loaded
   public async playFromTime(currentTime: number, streamUrl: string, transcode: boolean): Promise<void> {
+    if (this._isNative) {
+      await this._nativeAudioBridge.setSource(streamUrl);
+      await this._nativeAudioBridge.play(currentTime);
+      return;
+    }
+
     let that = this;
     that.audio.load();
     that.audio.pause();
@@ -41,6 +55,11 @@ export class AudioElementRepositoryService {
   }
 
   public attachHls(streamUrl: string, transcode: boolean) {
+    if (this._isNative) {
+      this._nativeAudioBridge.setSource(streamUrl);
+      return;
+    }
+
     if (transcode && Hls.isSupported()) {
       this._hls.loadSource(streamUrl);
       this._hls.attachMedia(this.audio);

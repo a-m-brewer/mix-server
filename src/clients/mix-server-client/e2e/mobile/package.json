@@ -1,0 +1,11 @@
+{
+  "name": "mix-server-client-mobile-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:auth": "node ./login-auth.e2e.mjs"
+  },
+  "dependencies": {
+    "puppeteer-core": "^24.7.1"
+  }
+}

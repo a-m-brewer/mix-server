@@ -146,6 +146,20 @@ dotnet run --project src/api/MixServer/MixServer.csproj
 
 Access at: http://localhost:5225
 
+### Android Emulator
+
+To run the Capacitor Android app locally:
+
+```powershell
+pwsh scripts/setup-android.ps1
+pwsh scripts/run-android.ps1 -StartApi
+```
+
+Notes:
+- `setup-android.ps1` installs the Android SDK command-line tools, emulator, API 36 system image, and creates the `MixServer_API_36` virtual device.
+- `run-android.ps1` builds the Angular app, syncs Capacitor, reapplies the native audio plugin files, boots the emulator, starts the API if needed, and deploys the debug build.
+- On first emulator launch, use `http://10.0.2.2:5225` as the server URL in the app's login screen.
+
 ## Testing
 
 ### Backend Tests
@@ -191,6 +205,8 @@ See [AGENTS.md](./AGENTS.md) for detailed code style guidelines.
 All development scripts are located in the `scripts/` directory:
 
 - **`dev-setup.ps1`** - Automated development environment setup
+- **`setup-android.ps1`** - Install Android SDK tools, emulator packages, and create the Android virtual device
+- **`run-android.ps1`** - Build and launch the Android app on the emulator
 - **`link_wwwroot.ps1`** - Link Angular build output to .NET wwwroot
 - **`regenerate_api_clients.ps1`** - Regenerate TypeScript API clients from backend
 - **`migration-add.ps1`** - Add a new Entity Framework migration

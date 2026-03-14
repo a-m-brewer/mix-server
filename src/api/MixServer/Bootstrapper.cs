@@ -17,6 +17,7 @@ public interface IBootstrapper
 
 public class Bootstrapper(
     AbsolutePathMigrationService absolutePathMigrationService,
+    IE2eUserInitializationService e2eUserInitializationService,
     IWebHostEnvironment environment,
     MixServerDbContext context,
     IFileNotificationService fileNotificationService,
@@ -36,6 +37,7 @@ public class Bootstrapper(
 
         await userRoleService.InitializeAsync();
         await firstUserInitializationService.AddFirstUserIfNotExistsAsync();
+        await e2eUserInitializationService.EnsureUserAsync();
         fileNotificationService.Initialize();
         
         await transcodeCache.InitializeAsync();

@@ -24,6 +24,7 @@ import {PlaybackGrantedEvent} from "../repositories/models/playback-granted-even
 import {Mutex} from "async-mutex";
 import {timespanToTotalSeconds} from "../../utils/timespan-helpers";
 import {PlaybackDeviceService} from "./playback-device.service";
+import {NativeAudioBridgeService} from "./native-audio-bridge.service";
 
 @Injectable({
   providedIn: 'root'
@@ -49,22 +50,61 @@ export class AudioPlayerService {
               private _authenticationService: AuthenticationService,
               private _deviceRepository: DeviceRepositoryService,
               private _loadingRepository: LoadingRepositoryService,
+              private _nativeAudioBridge: NativeAudioBridgeService,
               private _playbackDeviceService: PlaybackDeviceService,
               private _playbackSessionRepository: CurrentPlaybackSessionRepositoryService,
               private _queueRepository: QueueRepositoryService,
               private _sessionService: SessionService,
               private _streamUrlService: StreamUrlService,
               private _toastService: ToastService) {
-    this.audio.ontimeupdate = () => {
-      this.updateTimeChangedBehaviourSubject();
-    }
+    if (this._audioElementRepository.isNative) {
+      this._nativeAudioBridge.onTimeUpdate$.subscribe(() => {
+        this.updateTimeChangedBehaviourSubject();
+      });
 
-    this.audio.onended = () => {
-      this.handleOnSessionEnded();
-    }
+      this._nativeAudioBridge.onEnded$.subscribe(() => {
+        this.handleOnSessionEnded();
+      });
 
-    this.audio.ondurationchange = () => {
-      this._clientDurationBehaviourSubject$.next(this.getSanitizedClientDuration());
+      this._nativeAudioBridge.onDurationChange$.subscribe((duration) => {
+        this._clientDurationBehaviourSubject$.next(duration);
+      });
+
+      this._nativeAudioBridge.onPlayRequest$.subscribe(() => {
+        this.requestPlaybackOnCurrentPlaybackDevice();
+      });
+
+      this._nativeAudioBridge.onPauseRequest$.subscribe(() => {
+        this.requestPause();
+      });
+
+      this._nativeAudioBridge.onSeekRequest$.subscribe((time) => {
+        this.seek(time);
+      });
+
+      this._nativeAudioBridge.onNextTrackRequest$.subscribe(() => {
+        this._sessionService.skip();
+      });
+
+      this._nativeAudioBridge.onPreviousTrackRequest$.subscribe(() => {
+        this._sessionService.back();
+      });
+
+      this._nativeAudioBridge.onError$.subscribe((message) => {
+        this._toastService.error(message, 'Playback Error');
+      });
+    } else {
+      this.audio.ontimeupdate = () => {
+        this.updateTimeChangedBehaviourSubject();
+      }
+
+      this.audio.onended = () => {
+        this.handleOnSessionEnded();
+      }
+
+      this.audio.ondurationchange = () => {
+        this._clientDurationBehaviourSubject$.next(this.getSanitizedClientDuration());
+      }
     }
 
     this._playbackSessionRepository
@@ -247,6 +287,9 @@ export class AudioPlayerService {
   }
 
   public get playing(): boolean {
+    if (this._audioElementRepository.isNative) {
+      return this._playbackGranted && !this._nativeAudioBridge.paused;
+    }
     return this._playbackGranted && this.audio.duration > 0 && !this.audio.paused
   }
 
@@ -256,7 +299,11 @@ export class AudioPlayerService {
 
   public set currentTime(value: number) {
     this._timeChangedBehaviourSubject$.next(value);
-    this.audio.currentTime = value;
+    if (this._audioElementRepository.isNative) {
+      this._nativeAudioBridge.currentTime = value;
+    } else {
+      this.audio.currentTime = value;
+    }
   }
 
   public get duration$(): Observable<number> {
@@ -270,18 +317,30 @@ export class AudioPlayerService {
   }
 
   public get volume(): number {
+    if (this._audioElementRepository.isNative) {
+      return 1.0;
+    }
     return this.audio.volume;
   }
 
   public set volume(value: number) {
+    if (this._audioElementRepository.isNative) {
+      return;
+    }
     this.audio.volume = value;
   }
 
   public get muted(): boolean {
+    if (this._audioElementRepository.isNative) {
+      return false;
+    }
     return this.audio.muted;
   }
 
   public set muted(value: boolean) {
+    if (this._audioElementRepository.isNative) {
+      return;
+    }
     this.audio.muted = value;
   }
 
@@ -389,7 +448,11 @@ export class AudioPlayerService {
   }
 
   private internalPause(): void {
-    this.audio.pause();
+    if (this._audioElementRepository.isNative) {
+      this._nativeAudioBridge.pause();
+    } else {
+      this.audio.pause();
+    }
     this.setPaused();
   }
 
@@ -441,8 +504,12 @@ export class AudioPlayerService {
   }
 
   private clearSession(): void {
-    this.audio.src = '';
-    this.audio.load();
+    if (this._audioElementRepository.isNative) {
+      this._nativeAudioBridge.stop();
+    } else {
+      this.audio.src = '';
+      this.audio.load();
+    }
     this.updateTimeChangedBehaviourSubject();
     this._audioPlayerState.clear();
     this._serverDurationBehaviourSubject$.next(0);
@@ -466,7 +533,11 @@ export class AudioPlayerService {
   }
 
   private updateTimeChangedBehaviourSubject() {
-    this._timeChangedBehaviourSubject$.next(this.audio.currentTime);
+    if (this._audioElementRepository.isNative) {
+      this._timeChangedBehaviourSubject$.next(this._nativeAudioBridge.currentTime);
+    } else {
+      this._timeChangedBehaviourSubject$.next(this.audio.currentTime);
+    }
   }
 
   private handlePauseRequested(): void {
@@ -494,6 +565,9 @@ export class AudioPlayerService {
   }
 
   private getSanitizedClientDuration(): number {
+    if (this._audioElementRepository.isNative) {
+      return this._nativeAudioBridge.duration;
+    }
     return !!this.audio && !isNaN(this.audio.duration) ? this.audio.duration : 0
   }
 
