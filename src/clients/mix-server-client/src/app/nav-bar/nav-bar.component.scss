@@ -1,3 +1,7 @@
+:host mat-toolbar {
+  padding-top: env(safe-area-inset-top);
+}
+
 .page-title {
   overflow: hidden;
   text-overflow: ellipsis;

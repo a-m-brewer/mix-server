@@ -51,3 +51,7 @@
     display: none;
   }
 }
+
+#app-bottom-bar {
+  padding-bottom: env(safe-area-inset-bottom);
+}
