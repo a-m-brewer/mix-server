@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:auth": "node ./login-auth.e2e.mjs"
+    "test:auth": "node ./login-auth.e2e.mjs",
+    "test:auth:ios": "node ./login-auth-ios.e2e.mjs"
   },
   "dependencies": {
-    "puppeteer-core": "^24.7.1"
+    "puppeteer-core": "^24.7.1",
+    "ws": "^8.18.0"
   }
 }

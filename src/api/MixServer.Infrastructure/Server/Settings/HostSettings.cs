@@ -33,7 +33,13 @@ public class HostSettings
         var initialValidUrls = string.IsNullOrWhiteSpace(ValidUrls)
             ? []
             : ValidUrls.Split(";");
-        var validUrls = new List<string>(initialValidUrls);
+        var validUrls = new List<string>(initialValidUrls)
+        {
+            // Capacitor iOS WKWebView always uses the capacitor:// scheme as its
+            // CORS origin regardless of the configured server URL, so it must be
+            // explicitly allowed in every deployment.
+            "capacitor://localhost"
+        };
 
         if (ValidSchemes.Count == 0 ||
             ValidDomains.Count == 0 ||

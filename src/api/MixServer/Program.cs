@@ -233,7 +233,8 @@ builder.Services.AddCors(c =>
 // Identity
 builder.Services
     .AddIdentity<DbUser, IdentityRole>()
-    .AddEntityFrameworkStores<MixServerDbContext>();
+    .AddEntityFrameworkStores<MixServerDbContext>()
+    .AddDefaultTokenProviders();
 
 builder.Services
     .AddAuthentication(options =>

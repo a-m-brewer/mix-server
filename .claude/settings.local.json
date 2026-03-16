@@ -9,7 +9,27 @@
       "Bash(echo \"JAVA_HOME=$JAVA_HOME\")",
       "Bash(where sdkmanager:*)",
       "Read(//c/Program Files/Android/**)",
-      "Read(//c/Users/avoid/AppData/Local/Android/Sdk/**)"
+      "Read(//c/Users/avoid/AppData/Local/Android/Sdk/**)",
+      "Bash(xcrun simctl:*)",
+      "Bash(ios-webkit-debug-proxy --version)",
+      "Bash(pwsh scripts/setup-ios.ps1)",
+      "Bash(nc -z localhost 5225)",
+      "Bash(pwsh scripts/test-ios-auth.ps1 -StartApi)",
+      "Read(//usr/local/Cellar/ios-webkit-debug-proxy/**)",
+      "Bash(brew --prefix)",
+      "Bash(ls /usr/local/bin/ios*)",
+      "Bash(npx cap:*)",
+      "Bash(pwsh scripts/test-ios-auth.ps1)",
+      "Bash(xcodebuild -project \"App.xcodeproj\" -scheme \"App\" -destination \"platform=iOS Simulator,name=iPhone 17\" -configuration Debug -derivedDataPath /Users/adambrewer/source/gitlab/services/mix-server/data/ios-build -clonedSourcePackagesDirPath /Users/adambrewer/source/gitlab/services/mix-server/data/ios-build/SourcePackages CODE_SIGN_IDENTITY=\"\" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO build)",
+      "Bash(grep -v \"^Command line\\\\|^note:\\\\|^Build settings\\\\|^Resolve\\\\|Resolved\\\\|^\\\\s*$\\\\|CreateBuild\\\\|ComputeTarget\\\\|ComputePackage\\\\|SendProject\\\\|PreparePackages\\\\|WriteAuxiliary\\\\|SwiftCompile\\\\|SwiftEmit\\\\|SwiftDriver\\\\|Precompile\\\\|CompileC\\\\|CompileSwift\\\\|Ld \\\\|Merge\\\\|Touch\\\\|ProcessInfo\\\\|CopyBundle\\\\|Strip\\\\|CreateUniversal\\\\|GenerateDSYM\\\\|Link\\\\|Ditto\")",
+      "Bash(find ~/Library/Developer/CoreSimulator/Devices/A971CE7E-4E30-489E-BD32-5F789E39C914/data -name *.sock)",
+      "Bash(open -a Simulator)",
+      "Bash(ios_webkit_debug_proxy --version)",
+      "Bash(ios_webkit_debug_proxy -V)",
+      "Bash(ios_webkit_debug_proxy --help)",
+      "Bash(xcrun xcresulttool:*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); acts=d.get\\(''''actions'''',{}\\).get\\(''''_values'''',[]\\); [print\\(a.get\\(''''title'''',{}\\).get\\(''''_value'''',''''''''\\)\\) for a in acts]\")",
+      "Bash(dotnet build:*)"
     ]
   }
 }

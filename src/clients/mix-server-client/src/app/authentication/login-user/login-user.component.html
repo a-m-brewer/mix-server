@@ -7,7 +7,7 @@
       @if (isNative && serverUrlControl) {
         <mat-form-field class="form-field-block">
           <mat-label>Server URL</mat-label>
-          <input type="url" matInput [formControl]="serverUrlControl" placeholder="https://your-server.example.com">
+          <input type="url" matInput [formControl]="serverUrlControl" placeholder="https://your-server.example.com" autocomplete="off" autocorrect="off" spellcheck="false">
           @if (serverUrlControl.hasError('required')) {
             <mat-error>
               A server URL is required

@@ -20,40 +20,45 @@ public class E2eUserInitializationService(
 {
     public async Task EnsureUserAsync()
     {
-        if (string.IsNullOrWhiteSpace(e2eUserSettings.Value.Username) ||
-            string.IsNullOrWhiteSpace(e2eUserSettings.Value.Password))
+        foreach (var entry in e2eUserSettings.Value.Users)
         {
-            return;
-        }
+            if (string.IsNullOrWhiteSpace(entry.Username) ||
+                string.IsNullOrWhiteSpace(entry.Password))
+            {
+                continue;
+            }
 
-        var user = await userManager.FindByNameAsync(e2eUserSettings.Value.Username);
+            await EnsureSingleUserAsync(entry.Username, entry.Password);
+        }
+    }
+
+    private async Task EnsureSingleUserAsync(string username, string password)
+    {
+        var user = await userManager.FindByNameAsync(username);
 
         if (user == null)
         {
-            logger.LogInformation("Creating E2E user: {Username}", e2eUserSettings.Value.Username);
+            logger.LogInformation("Creating seeded user: {Username}", username);
 
             user = new DbUser
             {
                 PasswordResetRequired = false,
-                UserName = e2eUserSettings.Value.Username
+                UserName = username
             };
 
-            var createResult = await userManager.CreateAsync(user, e2eUserSettings.Value.Password);
+            var createResult = await userManager.CreateAsync(user, password);
             ThrowIfInvalidIdentityResult(createResult);
             return;
         }
 
         if (await userManager.HasPasswordAsync(user))
         {
-            var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
-            var resetResult = await userManager.ResetPasswordAsync(user, resetToken, e2eUserSettings.Value.Password);
-            ThrowIfInvalidIdentityResult(resetResult);
+            var removeResult = await userManager.RemovePasswordAsync(user);
+            ThrowIfInvalidIdentityResult(removeResult);
         }
-        else
-        {
-            var addPasswordResult = await userManager.AddPasswordAsync(user, e2eUserSettings.Value.Password);
-            ThrowIfInvalidIdentityResult(addPasswordResult);
-        }
+
+        var addPasswordResult = await userManager.AddPasswordAsync(user, password);
+        ThrowIfInvalidIdentityResult(addPasswordResult);
 
         user.PasswordResetRequired = false;
 
