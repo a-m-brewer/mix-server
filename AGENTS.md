@@ -70,6 +70,12 @@ npx ng build
 npx ng serve
 ```
 
+#### Mobile Testing
+
+##### iOS
+
+- Always ensure you use the iPhone 17 or newer simulator when running tests
+
 ### Automated Development Setup
 
 **For GitHub Copilot Agents:**

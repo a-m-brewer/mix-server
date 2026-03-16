@@ -1,11 +1,14 @@
 import AVFoundation
 import MediaPlayer
+import UIKit
 
 /// Native audio player using AVPlayer with background audio support and lock screen controls.
-/// This is the core class that solves the iOS JS suspension issue:
-/// - AVAudioSession category `.playback` keeps the audio session alive in background
-/// - MPRemoteCommandCenter handlers fire in the native process even when WKWebView JS is suspended
-/// - When the user taps play on the lock screen, the native handler starts playback and wakes JS
+///
+/// Uses `MPNowPlayingSession` to create an isolated Now Playing session tied to
+/// our `AVPlayer`.  This prevents WKWebView from overriding the shared
+/// `MPRemoteCommandCenter` / `MPNowPlayingInfoCenter` and ensures play/pause,
+/// skip, and seek controls appear on the lock screen and Control Center on
+/// iOS 16+ / iOS 26.
 class NativeAudioPlayer: NSObject {
     private weak var plugin: NativeAudioPlugin?
     private var player: AVPlayer?
@@ -14,6 +17,12 @@ class NativeAudioPlayer: NSObject {
     private var statusObservation: NSKeyValueObservation?
     private var durationObservation: NSKeyValueObservation?
 
+    /// Session-scoped Now Playing session (iOS 16+).  Created once we have a
+    /// player so that the system associates our remote-command handlers with
+    /// this player rather than having WKWebView override them on the shared
+    /// singletons.
+    private var nowPlayingSession: AnyObject? // MPNowPlayingSession, stored as AnyObject for iOS 15 compat
+
     private var _currentTime: Double = 0
     private var _duration: Double = 0
     private var _title: String = ""
@@ -21,19 +30,39 @@ class NativeAudioPlayer: NSObject {
     var currentTime: Double { return _currentTime }
     var duration: Double { return _duration }
 
+    /// Convenience accessor – returns the session-scoped info center when
+    /// available, otherwise falls back to the global default.
+    private var infoCenter: MPNowPlayingInfoCenter {
+        if #available(iOS 16.0, *), let session = nowPlayingSession as? MPNowPlayingSession {
+            return session.nowPlayingInfoCenter
+        }
+        return MPNowPlayingInfoCenter.default()
+    }
+
+    /// Convenience accessor – returns the session-scoped command center when
+    /// available, otherwise falls back to the global shared instance.
+    private var commandCenter: MPRemoteCommandCenter {
+        if #available(iOS 16.0, *), let session = nowPlayingSession as? MPNowPlayingSession {
+            return session.remoteCommandCenter
+        }
+        return MPRemoteCommandCenter.shared()
+    }
+
     init(plugin: NativeAudioPlugin) {
         self.plugin = plugin
         super.init()
         setupAudioSession()
-        setupRemoteCommands()
+        // On iOS < 16 (no MPNowPlayingSession) register commands on the
+        // shared command center immediately.  On iOS 16+ we defer until
+        // setSource() creates the session-scoped command center.
+        if #unavailable(iOS 16.0) {
+            registerRemoteCommands(on: MPRemoteCommandCenter.shared())
+        }
     }
 
     // MARK: - Audio Session
 
     /// Configure AVAudioSession for background playback.
-    /// Category `.playback` tells iOS this app plays audio that should continue in the background.
-    /// Combined with the `audio` UIBackgroundMode in Info.plist, this keeps the native process
-    /// alive and MPRemoteCommandCenter handlers responsive even when the screen is locked.
     private func setupAudioSession() {
         do {
             let session = AVAudioSession.sharedInstance()
@@ -43,7 +72,10 @@ class NativeAudioPlayer: NSObject {
             print("NativeAudioPlayer: Failed to set up audio session: \(error)")
         }
 
-        // Handle audio interruptions (phone calls, Siri, etc.)
+        DispatchQueue.main.async {
+            UIApplication.shared.beginReceivingRemoteControlEvents()
+        }
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleInterruption(_:)),
@@ -74,32 +106,60 @@ class NativeAudioPlayer: NSObject {
         }
     }
 
-    // MARK: - Remote Command Center (Lock Screen Controls)
+    // MARK: - Now Playing Session & Remote Commands
 
-    /// Register handlers with MPRemoteCommandCenter.
-    /// These handlers fire in the NATIVE process even when WKWebView JS is suspended.
-    /// This is the key fix for the iOS lock screen issue.
-    private func setupRemoteCommands() {
-        let commandCenter = MPRemoteCommandCenter.shared()
+    /// Create (or recreate) the `MPNowPlayingSession` tied to `player` and
+    /// register all remote-command handlers on the **session-scoped** command
+    /// center.  This isolates us from WKWebView overriding the shared
+    /// `MPRemoteCommandCenter`.
+    private func setupNowPlayingSession() {
+        guard let player = player else { return }
 
-        commandCenter.playCommand.isEnabled = true
-        commandCenter.playCommand.addTarget { [weak self] _ in
+        if #available(iOS 16.0, *) {
+            let session = MPNowPlayingSession(players: [player])
+            nowPlayingSession = session
+            registerRemoteCommands(on: session.remoteCommandCenter)
+            session.becomeActiveIfPossible()
+        } else {
+            // iOS 15 – commands already registered in init on the shared center
+        }
+    }
+
+    /// Register all remote-command handlers on the provided command center.
+    private func registerRemoteCommands(on cc: MPRemoteCommandCenter) {
+        cc.playCommand.isEnabled = true
+        cc.playCommand.addTarget { [weak self] _ in
             self?.player?.play()
             self?.updateNowPlayingPlaybackState(playing: true)
             self?.plugin?.notifyPlayRequest()
             return .success
         }
 
-        commandCenter.pauseCommand.isEnabled = true
-        commandCenter.pauseCommand.addTarget { [weak self] _ in
+        cc.pauseCommand.isEnabled = true
+        cc.pauseCommand.addTarget { [weak self] _ in
             self?.player?.pause()
             self?.updateNowPlayingPlaybackState(playing: false)
             self?.plugin?.notifyPauseRequest()
             return .success
         }
 
-        commandCenter.changePlaybackPositionCommand.isEnabled = true
-        commandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
+        cc.togglePlayPauseCommand.isEnabled = true
+        cc.togglePlayPauseCommand.addTarget { [weak self] _ in
+            guard let self = self else { return .commandFailed }
+            if self.player?.rate == 0 {
+                self.player?.play()
+                self.updateNowPlayingPlaybackState(playing: true)
+                self.plugin?.notifyPlayRequest()
+            } else {
+                self.player?.pause()
+                self.updateNowPlayingPlaybackState(playing: false)
+                self.plugin?.notifyPauseRequest()
+            }
+            return .success
+        }
+
+        cc.changePlaybackPositionCommand.isEnabled = true
+        cc.changePlaybackPositionCommand.addTarget { [weak self] event in
             guard let positionEvent = event as? MPChangePlaybackPositionCommandEvent else {
                 return .commandFailed
             }
@@ -110,14 +170,14 @@ class NativeAudioPlayer: NSObject {
         }
 
         // Next/Previous — initially disabled, enabled via setSkipControls()
-        commandCenter.nextTrackCommand.isEnabled = false
-        commandCenter.nextTrackCommand.addTarget { [weak self] _ in
+        cc.nextTrackCommand.isEnabled = false
+        cc.nextTrackCommand.addTarget { [weak self] _ in
             self?.plugin?.notifyNextTrackRequest()
             return .success
         }
 
-        commandCenter.previousTrackCommand.isEnabled = false
-        commandCenter.previousTrackCommand.addTarget { [weak self] _ in
+        cc.previousTrackCommand.isEnabled = false
+        cc.previousTrackCommand.addTarget { [weak self] _ in
             self?.plugin?.notifyPreviousTrackRequest()
             return .success
         }
@@ -142,6 +202,10 @@ class NativeAudioPlayer: NSObject {
         } else {
             player?.replaceCurrentItem(with: playerItem!)
         }
+
+        // (Re-)create the MPNowPlayingSession so iOS associates the commands
+        // with this player instance.
+        setupNowPlayingSession()
 
         setupItemObservers()
         setupTimeObserver()
@@ -191,7 +255,7 @@ class NativeAudioPlayer: NSObject {
             _duration = dur
         }
 
-        var nowPlayingInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
+        var nowPlayingInfo = infoCenter.nowPlayingInfo ?? [String: Any]()
         nowPlayingInfo[MPMediaItemPropertyTitle] = title
         if let artist = artist {
             nowPlayingInfo[MPMediaItemPropertyArtist] = artist
@@ -201,47 +265,73 @@ class NativeAudioPlayer: NSObject {
         }
         if let duration = duration {
             nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = duration
+        } else if _duration > 0 {
+            nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = _duration
         }
         nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = _currentTime
         nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = player?.rate ?? 0.0
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+        infoCenter.nowPlayingInfo = nowPlayingInfo
+        infoCenter.playbackState = (player?.rate ?? 0) > 0 ? .playing : .paused
     }
 
     func setNowPlayingPosition(position: Double, duration: Double, playbackRate: Double) {
         _duration = duration
-        var nowPlayingInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
+        var nowPlayingInfo = infoCenter.nowPlayingInfo ?? [String: Any]()
         nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = position
         nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = duration
         nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = playbackRate
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+        infoCenter.nowPlayingInfo = nowPlayingInfo
+        infoCenter.playbackState = playbackRate > 0 ? .playing : .paused
     }
 
     func setSkipControls(hasNext: Bool, hasPrevious: Bool) {
-        let commandCenter = MPRemoteCommandCenter.shared()
         commandCenter.nextTrackCommand.isEnabled = hasNext
         commandCenter.previousTrackCommand.isEnabled = hasPrevious
     }
 
     private func updateNowPlayingPlaybackState(playing: Bool) {
-        var nowPlayingInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
+        var nowPlayingInfo = infoCenter.nowPlayingInfo ?? [String: Any]()
         nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = _currentTime
         nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = playing ? 1.0 : 0.0
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+        if nowPlayingInfo[MPMediaItemPropertyTitle] == nil && !_title.isEmpty {
+            nowPlayingInfo[MPMediaItemPropertyTitle] = _title
+        }
+        if _duration > 0 {
+            nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = _duration
+        }
+        infoCenter.nowPlayingInfo = nowPlayingInfo
+        infoCenter.playbackState = playing ? .playing : .paused
     }
 
     private func updateNowPlayingElapsedTime() {
-        var nowPlayingInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
+        var nowPlayingInfo = infoCenter.nowPlayingInfo ?? [String: Any]()
         nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = _currentTime
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+        infoCenter.nowPlayingInfo = nowPlayingInfo
+    }
+
+    private func updateNowPlayingWithDuration(_ duration: Double) {
+        var nowPlayingInfo = infoCenter.nowPlayingInfo ?? [String: Any]()
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = duration
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = _currentTime
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = player?.rate ?? 0.0
+        if nowPlayingInfo[MPMediaItemPropertyTitle] == nil && !_title.isEmpty {
+            nowPlayingInfo[MPMediaItemPropertyTitle] = _title
+        }
+        infoCenter.nowPlayingInfo = nowPlayingInfo
     }
 
     private func clearNowPlaying() {
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        infoCenter.nowPlayingInfo = nil
+        infoCenter.playbackState = .stopped
     }
 
     // MARK: - Observers
 
+    private var _timeObserverTickCount: Int = 0
+    private let nowPlayingUpdateInterval: Int = 10 // every 5 seconds
+
     private func setupTimeObserver() {
+        _timeObserverTickCount = 0
         let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self = self else { return }
@@ -249,6 +339,12 @@ class NativeAudioPlayer: NSObject {
             if seconds.isFinite {
                 self._currentTime = seconds
                 self.plugin?.notifyTimeUpdate(currentTime: seconds)
+
+                self._timeObserverTickCount += 1
+                if self._timeObserverTickCount >= self.nowPlayingUpdateInterval {
+                    self._timeObserverTickCount = 0
+                    self.updateNowPlayingElapsedTime()
+                }
             }
         }
     }
@@ -272,6 +368,7 @@ class NativeAudioPlayer: NSObject {
                 let duration = CMTimeGetSeconds(item.duration)
                 if duration.isFinite && duration != self?._duration {
                     self?._duration = duration
+                    self?.updateNowPlayingWithDuration(duration)
                     self?.plugin?.notifyDurationChange(duration: duration)
                 }
             default:
@@ -283,6 +380,7 @@ class NativeAudioPlayer: NSObject {
             let duration = CMTimeGetSeconds(item.duration)
             if duration.isFinite && duration != self?._duration {
                 self?._duration = duration
+                self?.updateNowPlayingWithDuration(duration)
                 self?.plugin?.notifyDurationChange(duration: duration)
             }
         }

@@ -68,6 +68,8 @@ export class AudioPlayerService {
 
       this._nativeAudioBridge.onDurationChange$.subscribe((duration) => {
         this._clientDurationBehaviourSubject$.next(duration);
+        // Update the lock screen now-playing position with the real duration
+        this._audioSession.updatePositionState();
       });
 
       this._nativeAudioBridge.onPlayRequest$.subscribe(() => {
