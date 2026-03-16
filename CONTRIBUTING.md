@@ -157,7 +157,7 @@ pwsh scripts/run-android.ps1 -StartApi
 
 Notes:
 - `setup-android.ps1` installs the Android SDK command-line tools, emulator, API 36 system image, and creates the `MixServer_API_36` virtual device.
-- `run-android.ps1` builds the Angular app, syncs Capacitor, reapplies the native audio plugin files, boots the emulator, starts the API if needed, and deploys the debug build.
+- `run-android.ps1` builds the Angular app, syncs Capacitor, boots the emulator, starts the API if needed, and deploys the debug build.
 - On first emulator launch, use `http://10.0.2.2:5225` as the server URL in the app's login screen.
 
 ## Testing

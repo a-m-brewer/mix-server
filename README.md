@@ -181,8 +181,6 @@ The repository now includes scripted Android emulator setup and app launch helpe
 2. Run `pwsh scripts/run-android.ps1 -StartApi` to build the Capacitor app, sync the Android project, boot the emulator, start the API, and install the app.
 3. On first launch in the emulator, enter `http://10.0.2.2:5225` as the server URL on the login screen.
 
-The Android script also re-applies the native audio plugin wiring automatically after each Capacitor sync.
-
 ### Regenerating API Clients
 
 If you make a change to an API Controller / DTO / SignalR Dto you will need to regenerate the API client.
