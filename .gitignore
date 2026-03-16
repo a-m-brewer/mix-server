@@ -804,3 +804,6 @@ src/api/MixServer/appsettings.Local.json
 
 data/
 .idea/
+
+# Claude Code
+.claude/settings.local.json
