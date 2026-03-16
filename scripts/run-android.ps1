@@ -13,8 +13,6 @@ $repoRoot = Join-Path $PSScriptRoot ".."
 $clientPath = Join-Path $repoRoot "src\clients\mix-server-client"
 $androidPath = Join-Path $clientPath "android"
 $androidPackageRoot = Join-Path $androidPath "app\src\main\java\com\mixserver\app"
-$nativeAudioSourcePath = Join-Path $clientPath "android-plugin\nativeaudio"
-$nativeAudioTargetPath = Join-Path $androidPackageRoot "plugins\nativeaudio"
 $apiProjectPath = Join-Path $repoRoot "src\api\MixServer\MixServer.csproj"
 $logDirectoryPath = Join-Path $repoRoot "data\logs"
 
@@ -55,14 +53,8 @@ package com.mixserver.app;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
-import com.mixserver.app.plugins.nativeaudio.NativeAudioPlugin;
 
 public class MainActivity extends BridgeActivity {
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        registerPlugin(NativeAudioPlugin.class);
-        super.onCreate(savedInstanceState);
-    }
 }
 "@
         [System.IO.File]::WriteAllText($javaPath, $updatedJava)
@@ -75,14 +67,8 @@ package com.mixserver.app
 
 import android.os.Bundle
 import com.getcapacitor.BridgeActivity
-import com.mixserver.app.plugins.nativeaudio.NativeAudioPlugin
 
-class MainActivity : BridgeActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        registerPlugin(NativeAudioPlugin::class.java)
-        super.onCreate(savedInstanceState)
-    }
-}
+class MainActivity : BridgeActivity()
 "@
         [System.IO.File]::WriteAllText($kotlinPath, $updatedKotlin)
         return
@@ -113,92 +99,12 @@ function Update-BuildGradle {
     $buildGradlePath = Join-Path $androidPath "app\build.gradle"
     $content = Get-Content $buildGradlePath -Raw
 
-    if ($content -notmatch "apply plugin: 'kotlin-android'") {
-        $content = $content.Replace(
-            "apply plugin: 'com.android.application'",
-@"
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-"@)
-    }
-
-    if ($content -notmatch "androidx.media3:media3-exoplayer") {
-        $content = $content.Replace(
-@"
-    implementation project(':capacitor-cordova-android-plugins')
-}
-"@,
-@"
-    implementation project(':capacitor-cordova-android-plugins')
-    implementation 'androidx.media3:media3-exoplayer:1.8.0'
-    implementation 'androidx.media3:media3-exoplayer-hls:1.8.0'
-    implementation 'androidx.media3:media3-session:1.8.0'
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.2.21'
-}
-"@)
-    }
-    elseif ($content -notmatch "org.jetbrains.kotlin:kotlin-stdlib") {
-        $content = $content.Replace(
-@"
-    implementation 'androidx.media3:media3-session:1.8.0'
-}
-"@,
-@"
-    implementation 'androidx.media3:media3-session:1.8.0'
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.2.21'
-}
-"@)
-    }
-
     [System.IO.File]::WriteAllText($buildGradlePath, $content)
 }
 
 function Update-AndroidManifest {
     $manifestPath = Join-Path $androidPath "app\src\main\AndroidManifest.xml"
     $content = Get-Content $manifestPath -Raw
-
-    if ($content -notmatch "android.permission.FOREGROUND_SERVICE") {
-        $content = $content.Replace(
-            '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
-            @"
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-"@)
-    }
-
-    if ($content -notmatch "NativeAudioService") {
-        $content = $content.Replace(
-@'
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
-        </provider>
-    </application>
-'@,
-@'
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
-        </provider>
-
-        <service
-            android:name=".plugins.nativeaudio.NativeAudioService"
-            android:foregroundServiceType="mediaPlayback"
-            android:exported="false" />
-    </application>
-'@)
-    }
 
     [System.IO.File]::WriteAllText($manifestPath, $content)
 }
@@ -348,17 +254,14 @@ finally {
     Pop-Location
 }
 
-Write-Step "Step 3: Applying native Android audio integration..."
-
-New-Item -ItemType Directory -Path $nativeAudioTargetPath -Force | Out-Null
-Copy-Item (Join-Path $nativeAudioSourcePath "*") $nativeAudioTargetPath -Recurse -Force
+Write-Step "Step 3: Applying Android configuration..."
 
 Update-MainActivity
 Update-RootBuildGradle
 Update-BuildGradle
 Update-AndroidManifest
 
-Write-Host "  [✓] Native audio plugin copied and registered" -ForegroundColor Green
+Write-Host "  [✓] Android configuration applied" -ForegroundColor Green
 
 Write-Step "Step 4: Starting the Android emulator..."
 

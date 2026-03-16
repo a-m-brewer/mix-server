@@ -13,8 +13,6 @@ $repoRoot = Join-Path $PSScriptRoot ".."
 $clientPath = Join-Path $repoRoot "src/clients/mix-server-client"
 $iosPath = Join-Path $clientPath "ios"
 $iosAppPath = Join-Path $iosPath "App"
-$nativeAudioSourcePath = Join-Path $clientPath "ios-plugin/NativeAudio"
-$nativeAudioTargetPath = Join-Path $iosAppPath "App/Plugins/NativeAudio"
 $apiProjectPath = Join-Path $repoRoot "src/api/MixServer/MixServer.csproj"
 $logDirectoryPath = Join-Path $repoRoot "data/logs"
 $buildPath = Join-Path $repoRoot "data/ios-build"
@@ -404,63 +402,6 @@ end
     }
 }
 
-function Add-NativeAudioToXcodeProject {
-    param([string]$ProjectPath, [string]$PluginSourcePath)
-
-    if (-not (Get-Command ruby -ErrorAction SilentlyContinue)) {
-        Write-Host "  [!] Ruby not found — add NativeAudio Swift files to Xcode manually." -ForegroundColor Yellow
-        return
-    }
-
-    ruby -e "require 'xcodeproj'" 2>/dev/null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  [!] xcodeproj gem not available. Install with: gem install xcodeproj" -ForegroundColor Yellow
-        return
-    }
-
-    $rubyScript = @'
-require 'xcodeproj'
-
-project_path = ARGV[0]
-plugin_dir   = ARGV[1]
-
-project = Xcodeproj::Project.open(project_path)
-target  = project.targets.find { |t| t.name == 'App' }
-abort("Target 'App' not found in #{project_path}") unless target
-
-app_group = project.main_group.find_subpath('App', false)
-abort("Group 'App' not found in Xcode project") unless app_group
-
-plugins_group    = app_group.find_subpath('Plugins', false)    || app_group.new_group('Plugins', 'Plugins')
-nativeaudio_group = plugins_group.find_subpath('NativeAudio', false) || plugins_group.new_group('NativeAudio', 'NativeAudio')
-
-Dir.glob(File.join(plugin_dir, '*.swift')).each do |swift_file|
-  filename = File.basename(swift_file)
-  if nativeaudio_group.files.any? { |f| f.display_name == filename }
-    puts "  Skipped (already in project): #{filename}"
-  else
-    file_ref = nativeaudio_group.new_file(filename)
-    target.source_build_phase.add_file_reference(file_ref)
-    puts "  Added: #{filename}"
-  end
-end
-
-project.save
-'@
-
-    $tempScript = [System.IO.Path]::GetTempFileName() + ".rb"
-    [System.IO.File]::WriteAllText($tempScript, $rubyScript)
-
-    try {
-        ruby $tempScript $ProjectPath $PluginSourcePath
-        Assert-LastExitCode -Action "Adding NativeAudio to Xcode project"
-        Write-Host "  [✓] NativeAudio Swift files registered in Xcode project" -ForegroundColor Green
-    }
-    finally {
-        Remove-Item $tempScript -ErrorAction SilentlyContinue
-    }
-}
-
 function Boot-Simulator {
     param([string]$Udid)
 
@@ -528,17 +469,13 @@ finally {
     Pop-Location
 }
 
-Write-Step "Step 3: Applying native iOS audio integration..."
-
-New-Item -ItemType Directory -Path $nativeAudioTargetPath -Force | Out-Null
-Copy-Item (Join-Path $nativeAudioSourcePath "*") $nativeAudioTargetPath -Recurse -Force
+Write-Step "Step 3: Applying iOS configuration..."
 
 $xcodeProjectPath = Join-Path $iosAppPath "App.xcodeproj"
-Add-NativeAudioToXcodeProject -ProjectPath $xcodeProjectPath -PluginSourcePath $nativeAudioTargetPath
 
 Update-InfoPlist
 
-Write-Host "  [✓] Native audio plugin configured" -ForegroundColor Green
+Write-Host "  [✓] iOS configuration applied" -ForegroundColor Green
 
 Write-Step "Step 3b: Registering the XCUITest target in the Xcode project..."
 Add-UITestToXcodeProject -ProjectPath $xcodeProjectPath
