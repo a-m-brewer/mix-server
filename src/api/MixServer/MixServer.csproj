@@ -13,5 +13,11 @@
         <PackageReference Include="NSwag.AspNetCore" Version="14.2.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Include="appsettings.Local.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 
 </Project>
