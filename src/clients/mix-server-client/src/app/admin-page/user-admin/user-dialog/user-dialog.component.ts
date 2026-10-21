@@ -1,4 +1,4 @@
-import {Component, Inject, OnInit} from '@angular/core';
+import {Component, Inject, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {MatButtonModule} from "@angular/material/button";
 import {
   MAT_DIALOG_DATA,
@@ -40,6 +40,7 @@ export class AddUserDialogResponse {
     MatCheckboxModule
 ],
     templateUrl: './user-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './user-dialog.component.scss'
 })
 export class UserDialogComponent {

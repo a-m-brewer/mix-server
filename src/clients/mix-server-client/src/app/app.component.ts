@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {BehaviorSubject, combineLatest, filter, fromEvent, map, merge, Subject, takeUntil} from "rxjs";
 import {
   MixServerSignalrConnectionServiceService
@@ -25,6 +25,7 @@ import {AudioPlayerCapabilitiesService} from "./services/audio-player/audio-play
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AppComponent implements OnInit, AfterViewInit, OnDestroy {

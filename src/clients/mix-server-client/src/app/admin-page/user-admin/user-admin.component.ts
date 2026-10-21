@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {MatListModule} from "@angular/material/list";
 import {UserRepositoryService} from "../../services/repositories/user-repository.service";
 import {Subject, take, takeUntil} from "rxjs";
@@ -18,6 +18,7 @@ import {AuthenticationService} from "../../services/auth/authentication.service"
     selector: 'app-user-admin',
     templateUrl: './user-admin.component.html',
     styleUrl: './user-admin.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class UserAdminComponent implements OnInit, OnDestroy {

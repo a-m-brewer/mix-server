@@ -1,4 +1,4 @@
-import {Component, forwardRef, Input, OnInit} from '@angular/core';
+import {Component, forwardRef, Input, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ContextMenuButton} from "../context-menu-button";
 import {QueueItem} from "../../../../../../services/repositories/models/queue-item";
 import {QueueSnapshotItemType} from "../../../../../../generated-clients/mix-server-clients";
@@ -9,6 +9,7 @@ import {QueueRepositoryService} from "../../../../../../services/repositories/qu
     templateUrl: './remove-from-queue-button.component.html',
     styleUrls: ['./remove-from-queue-button.component.scss'],
     providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => RemoveFromQueueButtonComponent) }],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class RemoveFromQueueButtonComponent extends ContextMenuButton {

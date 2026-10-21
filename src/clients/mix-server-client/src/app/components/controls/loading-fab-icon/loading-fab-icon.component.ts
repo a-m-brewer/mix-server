@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
 
 import {MatIcon} from "@angular/material/icon";
@@ -10,6 +10,7 @@ import {MatIcon} from "@angular/material/icon";
     MatIcon
 ],
     templateUrl: './loading-fab-icon.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './loading-fab-icon.component.scss'
 })
 export class LoadingFabIconComponent {

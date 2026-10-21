@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {LoadingRepositoryService} from "../../services/repositories/loading-repository.service";
 import {Subject, takeUntil} from "rxjs";
 
@@ -6,6 +6,7 @@ import {Subject, takeUntil} from "rxjs";
     selector: 'app-loading-bar',
     templateUrl: './loading-bar.component.html',
     styleUrls: ['./loading-bar.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class LoadingBarComponent implements OnInit, OnDestroy {

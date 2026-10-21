@@ -1,4 +1,4 @@
-import {Component, forwardRef, Input} from '@angular/core';
+import {Component, forwardRef, Input, ChangeDetectionStrategy} from '@angular/core';
 import {ContextMenuButton} from "../context-menu-button";
 import {FileExplorerFileNode} from "../../../../../../main-content/file-explorer/models/file-explorer-file-node";
 import {MatIcon} from "@angular/material/icon";
@@ -14,6 +14,7 @@ import {TranscodeService} from "../../../../../../services/audio-player/transcod
 ],
     templateUrl: './request-transcode-button.component.html',
     styleUrl: './request-transcode-button.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => RequestTranscodeButtonComponent) }]
 })
 export class RequestTranscodeButtonComponent extends ContextMenuButton {

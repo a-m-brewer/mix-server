@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import {MatButton} from "@angular/material/button";
 import {TracklistFormService} from "../../../services/tracklist/tracklist-form.service";
 
@@ -8,6 +8,7 @@ import {TracklistFormService} from "../../../services/tracklist/tracklist-form.s
         MatButton
     ],
     templateUrl: './save-tracklist-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './save-tracklist-form.component.scss'
 })
 export class SaveTracklistFormComponent {

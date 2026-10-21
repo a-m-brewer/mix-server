@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {MatDivider} from "@angular/material/divider";
 import { NgClass } from "@angular/common";
@@ -27,6 +27,7 @@ import {MatTooltip} from "@angular/material/tooltip";
     MatTooltip
 ],
     templateUrl: './tracklist-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './tracklist-form.component.scss'
 })
 export class TracklistFormComponent implements OnInit, OnDestroy {

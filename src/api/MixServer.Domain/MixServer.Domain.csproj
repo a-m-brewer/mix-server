@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="CliWrap" Version="3.9.0" />
+    <PackageReference Include="CliWrap" Version="3.10.5" />
     <PackageReference Include="DebounceThrottle" Version="3.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Primitives" Version="10.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Scrutor" Version="5.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Primitives" Version="10.0.13" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Subject, takeUntil} from "rxjs";
 import {
   CurrentPlaybackSessionRepositoryService
@@ -27,6 +27,7 @@ import {FileExplorerNodeRepositoryService} from "../../../services/repositories/
     MatMenuModule,
     MatTooltipModule
 ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./audio-context-menu.component.scss']
 })
 export class AudioContextMenuComponent implements OnInit, OnDestroy{

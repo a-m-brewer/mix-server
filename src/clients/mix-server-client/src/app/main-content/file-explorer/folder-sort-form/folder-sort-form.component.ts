@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {FileExplorerFolderSortMode} from "../enums/file-explorer-folder-sort-mode";
 import {FileExplorerNodeRepositoryService} from "../../../services/repositories/file-explorer-node-repository.service";
@@ -22,6 +22,7 @@ interface IFolderSortForm {
     KeyValuePipe,
     MatIconModule
 ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./folder-sort-form.component.scss']
 })
 export class FolderSortFormComponent implements OnInit, OnDestroy {

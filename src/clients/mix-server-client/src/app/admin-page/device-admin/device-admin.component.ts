@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {DeviceRepositoryService} from "../../services/repositories/device-repository.service";
 import {Subject, takeUntil} from "rxjs";
 import {Device} from "../../services/repositories/models/device";
@@ -9,6 +9,7 @@ import {DeleteDialogComponent} from "../../components/dialogs/delete-dialog/dele
     selector: 'app-device-admin',
     templateUrl: './device-admin.component.html',
     styleUrls: ['./device-admin.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DeviceAdminComponent implements OnInit, OnDestroy {

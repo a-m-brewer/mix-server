@@ -38,7 +38,7 @@ COPY src/clients/mix-server-client/ /usr/local/app/
 
 # Install all the dependencies
 RUN npm install -g @angular/cli
-RUN npm ci --legacy-peer-deps
+RUN npm ci --omit=peer
 
 # Generate the build of the application
 RUN npx ng build --configuration production

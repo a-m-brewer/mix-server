@@ -3,7 +3,6 @@
 @use './app/components/nodes/node-list/node-list-item/node-list-item.component-theme' as node-list-item-theme;
 @use './app/bottom-bar/audio-control/audio-control.component-theme' as audio-control-theme;
 @use './app/tracklist-page/tracklist-form/tracklist-form.component-theme' as tracklist-form-theme;
-@use 'ngx-toastr/toastr';
 
 @include mat.elevation-classes();
 @include mat.app-background();

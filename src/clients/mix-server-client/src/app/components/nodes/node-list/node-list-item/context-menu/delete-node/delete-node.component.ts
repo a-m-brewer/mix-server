@@ -1,4 +1,4 @@
-import {Component, forwardRef, Input, OnInit, OnDestroy} from '@angular/core';
+import {Component, forwardRef, Input, OnInit, OnDestroy, ChangeDetectionStrategy} from '@angular/core';
 import {MatIcon} from "@angular/material/icon";
 import {MatMenuItem} from "@angular/material/menu";
 
@@ -19,6 +19,7 @@ import {Role} from "../../../../../../generated-clients/mix-server-clients";
 ],
     templateUrl: './delete-node.component.html',
     styleUrl: './delete-node.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => DeleteNodeComponent) }]
 })
 export class DeleteNodeComponent extends ContextMenuButton implements OnInit, OnDestroy {

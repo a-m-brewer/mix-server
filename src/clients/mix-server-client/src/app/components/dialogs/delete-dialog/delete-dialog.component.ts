@@ -1,4 +1,4 @@
-import {Component, Inject} from '@angular/core';
+import {Component, Inject, ChangeDetectionStrategy} from '@angular/core';
 import {MAT_DIALOG_DATA} from "@angular/material/dialog";
 import {DeleteDialogData} from "./delete-dialog-data";
 
@@ -6,6 +6,7 @@ import {DeleteDialogData} from "./delete-dialog-data";
     selector: 'app-delete-dialog',
     templateUrl: './delete-dialog.component.html',
     styleUrls: ['./delete-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DeleteDialogComponent {

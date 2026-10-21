@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {Subject, takeUntil} from "rxjs";
 import {QueueRepositoryService} from "../../services/repositories/queue-repository.service";
@@ -18,6 +18,7 @@ interface IQueueEditForm {
     ReactiveFormsModule,
     MatButtonModule
 ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./queue-edit-form.component.scss']
 })
 export class QueueEditFormComponent implements OnInit, OnDestroy {

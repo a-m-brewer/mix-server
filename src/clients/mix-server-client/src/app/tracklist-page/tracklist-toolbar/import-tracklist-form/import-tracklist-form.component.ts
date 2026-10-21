@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, ReactiveFormsModule} from "@angular/forms";
 import {MatButton} from "@angular/material/button";
 import {TracklistFormService} from "../../../services/tracklist/tracklist-form.service";
@@ -15,6 +15,7 @@ interface ImportTracklistFormGroup {
         MatButton
     ],
     templateUrl: './import-tracklist-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './import-tracklist-form.component.scss'
 })
 export class ImportTracklistFormComponent {

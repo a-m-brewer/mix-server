@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ImportTracklistFormComponent} from "./import-tracklist-form/import-tracklist-form.component";
 import {SaveTracklistFormComponent} from "./save-tracklist-form/save-tracklist-form.component";
 
@@ -16,6 +16,7 @@ import {TracklistForm} from "../../services/tracklist/models/tracklist-form.inte
     SaveTracklistFormComponent
 ],
     templateUrl: './tracklist-toolbar.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './tracklist-toolbar.component.scss'
 })
 export class TracklistToolbarComponent implements OnInit, OnDestroy {

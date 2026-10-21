@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {RoleRepositoryService} from "../services/repositories/role-repository.service";
 import {Subject, takeUntil} from "rxjs";
 import {Role} from "../generated-clients/mix-server-clients";
@@ -7,6 +7,7 @@ import {Role} from "../generated-clients/mix-server-clients";
     selector: 'app-admin-page',
     templateUrl: './admin-page.component.html',
     styleUrls: ['./admin-page.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AdminPageComponent implements OnInit, OnDestroy {

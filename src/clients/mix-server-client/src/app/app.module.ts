@@ -4,7 +4,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {MIXSERVER_BASE_URL} from './generated-clients/mix-server-clients';
-import {HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
+import {HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXhr} from '@angular/common/http';
 import {BottomBarComponent} from './bottom-bar/bottom-bar.component';
 import {AudioControlComponent} from './bottom-bar/audio-control/audio-control.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -30,7 +30,7 @@ import {SessionComponent} from './bottom-bar/audio-control/session/session.compo
 import {getMixServerApiUrl} from "./api-url-getter";
 import {HistoryPageComponent} from './history-page/history-page.component';
 import {MatTooltipModule} from "@angular/material/tooltip";
-import {ToastrModule} from "ngx-toastr";
+import {MatSnackBarModule} from "@angular/material/snack-bar";
 import {AuthInterceptor} from "./services/auth/auth.interceptor";
 import {QueuePageComponent} from './queue-page/queue-page.component';
 import {FolderSortFormComponent} from './main-content/file-explorer/folder-sort-form/folder-sort-form.component';
@@ -135,7 +135,7 @@ import {ScrollingModule} from "@angular/cdk/scrolling";
     MatProgressSpinnerModule,
     ScrollingModule,
     MatTooltipModule,
-    ToastrModule.forRoot(),
+    MatSnackBarModule,
     MatButtonToggleModule,
     MatTabsModule,
     MatDialogModule,
@@ -159,7 +159,7 @@ import {ScrollingModule} from "@angular/cdk/scrolling";
       useClass: AuthInterceptor,
       multi: true
     },
-    provideHttpClient(withInterceptorsFromDi())
+    provideHttpClient(withXhr(), withInterceptorsFromDi())
   ]
 })
 export class AppModule {
