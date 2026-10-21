@@ -1,4 +1,4 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {DurationDisplayComponent} from "../duration-display/duration-display.component";
 import {MatSliderModule} from "@angular/material/slider";
 import {AudioPlayerService} from "../../../services/audio-player/audio-player.service";
@@ -16,6 +16,7 @@ import {WindowSizeRepositoryService} from "../../../services/repositories/window
         AudioSliderComponent,
     ],
     templateUrl: './audio-progress-slider.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './audio-progress-slider.component.scss'
 })
 export class AudioProgressSliderComponent implements OnInit, OnDestroy {

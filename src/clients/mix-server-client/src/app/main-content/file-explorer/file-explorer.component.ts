@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FileExplorerFolderNode} from "./models/file-explorer-folder-node";
 import {FileExplorerFileNode} from "./models/file-explorer-file-node";
 import {FileExplorerNodeRepositoryService} from "../../services/repositories/file-explorer-node-repository.service";
@@ -24,6 +24,7 @@ import {FolderSort} from "./models/folder-sort";
     selector: 'app-file-explorer',
     templateUrl: './file-explorer.component.html',
     styleUrls: ['./file-explorer.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class FileExplorerComponent implements OnInit, OnDestroy {

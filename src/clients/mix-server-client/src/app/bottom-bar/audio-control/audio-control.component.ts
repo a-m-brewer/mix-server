@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {AudioPlayerService} from "../../services/audio-player/audio-player.service";
 import {distinctUntilChanged, Observable, Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../services/repositories/current-playback-session-repository.service";
@@ -14,6 +14,7 @@ import {AuthenticationService} from "../../services/auth/authentication.service"
     selector: 'app-audio-control',
     templateUrl: './audio-control.component.html',
     styleUrls: ['./audio-control.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class AudioControlComponent implements OnInit, OnDestroy {

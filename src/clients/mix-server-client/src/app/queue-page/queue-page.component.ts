@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {QueueRepositoryService} from "../services/repositories/queue-repository.service";
 import {Subject, takeUntil} from "rxjs";
 import {Queue} from "../services/repositories/models/queue";
@@ -23,6 +23,7 @@ import {AuthenticationService} from "../services/auth/authentication.service";
     selector: 'app-queue-page',
     templateUrl: './queue-page.component.html',
     styleUrls: ['./queue-page.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class QueuePageComponent implements OnInit, OnDestroy {

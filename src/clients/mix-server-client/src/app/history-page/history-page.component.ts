@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Subject, takeUntil} from "rxjs";
 import {HistoryRepositoryService} from "../services/repositories/history-repository.service";
 import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../services/repositories/models/loading-node-status";
@@ -17,6 +17,7 @@ import {CurrentPlaybackSessionRepositoryService} from "../services/repositories/
     selector: 'app-history-page',
     templateUrl: './history-page.component.html',
     styleUrls: ['./history-page.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class HistoryPageComponent implements OnInit, OnDestroy {

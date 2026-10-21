@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {ExpansionPanelComponent} from "../../components/controls/expansion-panel/expansion-panel.component";
 import {AppModule} from "../../app.module";
 import {distinctUntilChanged, Subject, takeUntil} from "rxjs";
@@ -34,6 +34,7 @@ import {PlaybackDeviceService} from "../../services/audio-player/playback-device
     LoadingFabIconComponent
 ],
     templateUrl: './audio-control-mobile.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './audio-control-mobile.component.scss'
 })
 export class AudioControlMobileComponent implements OnInit, OnDestroy {

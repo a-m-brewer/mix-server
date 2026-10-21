@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {MatIconModule} from "@angular/material/icon";
 import {MatMenuModule} from "@angular/material/menu";
 import {MatButtonModule} from "@angular/material/button";
@@ -20,6 +20,7 @@ import {PlaybackDeviceService} from "../../../services/audio-player/playback-dev
     MatButtonModule
 ],
     templateUrl: './switch-device-menu.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './switch-device-menu.component.scss'
 })
 export class SwitchDeviceMenuComponent implements OnInit, OnDestroy {

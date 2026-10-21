@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {MatButtonModule} from "@angular/material/button";
 import {MatMenuModule} from "@angular/material/menu";
@@ -40,6 +40,7 @@ import {FolderPasteFormComponent} from "../main-content/file-explorer/folder-pas
     FolderPasteFormComponent
 ],
     templateUrl: './nav-bar.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './nav-bar.component.scss'
 })
 export class NavBarComponent implements OnInit, OnDestroy {

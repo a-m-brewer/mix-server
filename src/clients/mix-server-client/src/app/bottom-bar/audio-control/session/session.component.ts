@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {Subject, takeUntil} from "rxjs";
 import {CurrentPlaybackSessionRepositoryService} from "../../../services/repositories/current-playback-session-repository.service";
 import {FileExplorerNodeRepositoryService} from "../../../services/repositories/file-explorer-node-repository.service";
@@ -13,6 +13,7 @@ import {PageRoutes} from "../../../page-routes.enum";
         MatButtonModule
     ],
     templateUrl: './session.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./session.component.scss']
 })
 export class SessionComponent implements OnInit, OnDestroy {

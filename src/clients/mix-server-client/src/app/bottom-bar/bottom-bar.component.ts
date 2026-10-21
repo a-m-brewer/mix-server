@@ -1,4 +1,4 @@
-import {Component, HostListener, OnDestroy, OnInit} from '@angular/core';
+import {Component, HostListener, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {Subject, takeUntil} from "rxjs";
 import {WindowSizeRepositoryService} from "../services/repositories/window-size-repository.service";
 import {WindowType} from "../services/repositories/enums/window-type";
@@ -7,6 +7,7 @@ import {WindowType} from "../services/repositories/enums/window-type";
     selector: 'app-bottom-bar',
     templateUrl: './bottom-bar.component.html',
     styleUrls: ['./bottom-bar.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class BottomBarComponent implements OnInit, OnDestroy {

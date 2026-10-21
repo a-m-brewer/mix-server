@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {MatButton} from "@angular/material/button";
 import {CopyNodeService} from "../../../services/nodes/copy-node.service";
 import {Subject, takeUntil} from "rxjs";
@@ -13,6 +13,7 @@ import {FileExplorerFolder} from "../models/file-explorer-folder";
     MatButton
 ],
     templateUrl: './folder-paste-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './folder-paste-form.component.scss'
 })
 export class FolderPasteFormComponent implements OnInit, OnDestroy {

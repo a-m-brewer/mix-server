@@ -1,0 +1,12 @@
+# Never send local runtime state or developer-specific configuration to Docker.
+data/
+src/api/MixServer/appsettings.Local.json
+src/api/MixServer.Infrastructure/mix-server.db
+
+# Build outputs and local tooling caches.
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+.angular/
+.git/

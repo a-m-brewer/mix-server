@@ -1,4 +1,4 @@
-import {Component, forwardRef, Input} from '@angular/core';
+import {Component, forwardRef, Input, ChangeDetectionStrategy} from '@angular/core';
 import {
   FileExplorerNodeRepositoryService
 } from "../../../../../../services/repositories/file-explorer-node-repository.service";
@@ -10,6 +10,7 @@ import {ContextMenuButton} from "../context-menu-button";
     templateUrl: './open-location-button.component.html',
     styleUrls: ['./open-location-button.component.scss'],
     providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => OpenLocationButtonComponent) }],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class OpenLocationButtonComponent extends ContextMenuButton {

@@ -1,4 +1,4 @@
-import {Component, ElementRef, EventEmitter, Input, Output, ViewChild} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, Output, ViewChild, ChangeDetectionStrategy} from '@angular/core';
 import {MatRippleModule} from "@angular/material/core";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
 
@@ -10,6 +10,7 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
     MatProgressBarModule
 ],
     templateUrl: './expansion-panel.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './expansion-panel.component.scss'
 })
 export class ExpansionPanelComponent {

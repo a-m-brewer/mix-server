@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy} from '@angular/core';
 
 import {AbstractControl} from "@angular/forms";
 import {MatTooltip} from "@angular/material/tooltip";
@@ -9,6 +9,7 @@ import {MatTooltip} from "@angular/material/tooltip";
     MatTooltip
 ],
     templateUrl: './control-dirty-marker.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './control-dirty-marker.component.scss'
 })
 export class ControlDirtyMarkerComponent {

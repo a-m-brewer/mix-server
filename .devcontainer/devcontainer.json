@@ -1,0 +1,22 @@
+{
+  "name": "mix-server Development",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "mounts": [
+    "source=mix-server-nuget-cache,target=/root/.nuget/packages,type=volume"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "angular.ng-template"
+      ]
+    }
+  },
+  "remoteUser": "root"
+}

@@ -1,20 +1,27 @@
 import {Injectable} from "@angular/core";
-import {ToastrService} from "ngx-toastr";
+import {MatSnackBar} from "@angular/material/snack-bar";
 import {ApiException, ProblemDetails} from "../../generated-clients/mix-server-clients";
 
 @Injectable({
   providedIn: 'root'
 })
 export class ToastService {
-  constructor(private _toastService: ToastrService) {
+  constructor(private _snackBar: MatSnackBar) {
   }
 
   public warning(message?: string, title?: string): void {
-    this._toastService.warning(message, title);
+    this.open(message, title, 'toast-warning');
   }
 
   public error(message?: string, title?: string): void {
-    this._toastService.error(message, title);
+    this.open(message, title, 'toast-error');
+  }
+
+  private open(message?: string, title?: string, panelClass?: string): void {
+    this._snackBar.open(message ?? '', title, {
+      duration: 5_000,
+      panelClass
+    });
   }
 
   public logServerError(err: any, message?: string) {
@@ -23,14 +30,14 @@ export class ToastService {
 
     if (err instanceof ProblemDetails) {
       const problem = err as ProblemDetails;
-      this._toastService.error(`${extraMessage}${problem.detail}`, `${problem.status}: ${problem.title}`);
+      this.error(`${extraMessage}${problem.detail}`, `${problem.status}: ${problem.title}`);
     }
     else if (err instanceof ApiException) {
       const title = err.status === 0 ? 'Network Error' : err.status.toString();
-      this._toastService.error(`${extraMessage}${err.message}`, title);
+      this.error(`${extraMessage}${err.message}`, title);
     }
     else if (err instanceof Error) {
-      this._toastService.error(`${extraMessage}${err.message}`, 'Error');
+      this.error(`${extraMessage}${err.message}`, 'Error');
     }
     else {
       this.error(`${extraMessage}check console output`, 'Unknown Error');

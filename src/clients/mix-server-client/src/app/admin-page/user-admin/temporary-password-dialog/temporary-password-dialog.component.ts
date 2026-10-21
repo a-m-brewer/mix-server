@@ -1,4 +1,4 @@
-import {Component, Inject} from '@angular/core';
+import {Component, Inject, ChangeDetectionStrategy} from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {MatButtonModule} from "@angular/material/button";
 import {MatCheckboxModule} from "@angular/material/checkbox";
@@ -30,6 +30,7 @@ import {CopyTextComponent} from "../../../components/controls/copy-text/copy-tex
     CopyTextComponent
 ],
     templateUrl: './temporary-password-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './temporary-password-dialog.component.scss'
 })
 export class TemporaryPasswordDialogComponent {

@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {LoginUserForm} from "./login-user-form.interface";
 import {Subject} from "rxjs";
@@ -9,6 +9,7 @@ import {TitleService} from "../../services/title/title.service";
     selector: 'app-login-user',
     templateUrl: './login-user.component.html',
     styleUrls: ['./login-user.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class LoginUserComponent implements OnDestroy {

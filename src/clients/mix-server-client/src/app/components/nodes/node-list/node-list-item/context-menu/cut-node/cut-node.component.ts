@@ -1,4 +1,4 @@
-import {Component, forwardRef, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, forwardRef, Input, OnDestroy, OnInit, ChangeDetectionStrategy} from '@angular/core';
 import {MatIcon} from "@angular/material/icon";
 import {MatMenuItem} from "@angular/material/menu";
 
@@ -17,6 +17,7 @@ import {RoleRepositoryService} from "../../../../../../services/repositories/rol
 ],
     templateUrl: './cut-node.component.html',
     styleUrl: './cut-node.component.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [{ provide: ContextMenuButton, useExisting: forwardRef(() => CutNodeComponent) }]
 })
 export class CutNodeComponent extends ContextMenuButton implements OnInit, OnDestroy {

@@ -1,4 +1,4 @@
-import {Component, ContentChildren, EventEmitter, Input, Output, QueryList} from '@angular/core';
+import {Component, ContentChildren, EventEmitter, Input, Output, QueryList, ChangeDetectionStrategy} from '@angular/core';
 import {FileExplorerNodeType} from "../../../../main-content/file-explorer/enums/file-explorer-node-type";
 import {ContextMenuButton} from "./context-menu/context-menu-button";
 import {LoadingNodeStatus, LoadingNodeStatusImpl} from "../../../../services/repositories/models/loading-node-status";
@@ -10,6 +10,7 @@ import {NodeListItemSelectedEvent} from "./interfaces/node-list-item-selected-ev
     selector: 'app-node-list-item',
     templateUrl: './node-list-item.component.html',
     styleUrls: ['./node-list-item.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class NodeListItemComponent {

@@ -6,7 +6,8 @@ import {
   OnDestroy,
   OnInit,
   QueryList, ViewChild,
-  ViewChildren
+  ViewChildren,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { AsyncPipe, NgClass, NgStyle } from "@angular/common";
 import {FormsModule} from "@angular/forms";
@@ -41,6 +42,7 @@ interface SliderMarkerDetails extends SliderMarker {
     MatTooltip
 ],
     templateUrl: './audio-slider.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './audio-slider.component.scss'
 })
 export class AudioSliderComponent implements OnInit, OnDestroy, AfterViewInit {

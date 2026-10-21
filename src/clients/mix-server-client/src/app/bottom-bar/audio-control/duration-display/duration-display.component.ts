@@ -1,10 +1,11 @@
-import {Component, Input, OnChanges, SimpleChanges} from '@angular/core';
+import {Component, Input, OnChanges, SimpleChanges, ChangeDetectionStrategy} from '@angular/core';
 import {ComponentChanges} from "../../../utils/component-changes";
 
 @Component({
   selector: 'app-duration-display',
   templateUrl: './duration-display.component.html',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./duration-display.component.scss']
 })
 export class DurationDisplayComponent implements OnChanges {
